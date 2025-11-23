@@ -8,14 +8,16 @@
 ::Contents::
 
 :: PROLOGUE ::
+
 :: ACT I ::
+
 :: ACT II ::
 
 ## 0: PROLOGUE ##
 
-[Overture; forest sounds, roaring of lions, Christian hymn faintly.]
+[[Overture; forest sounds, roaring of lions, Christian hymn faintly.]]
 
-[A jungle path. A lion’s roar, a melancholy suffering roar, comes from
+[[A jungle path. A lion’s roar, a melancholy suffering roar, comes from
 the jungle. It is repeated nearer. The lion limps from the jungle on
 three legs, holding up his right forepaw, in which a huge thorn sticks.
 He sits down and contemplates it. He licks it. He shakes it. He tries
@@ -23,19 +25,19 @@ to extract it by scraping it along the ground, and hurts himself worse.
 He roars piteously. He licks it again. Tears drop from his eyes. He
 limps painfully off the path and lies down under the trees, exhausted
 with pain. Heaving a long sigh, like wind in a trombone, he goes to
-sleep.]
+sleep.]]
 
-[Androcles and his wife Megæra come along the path. He is a small, thin,
+[[Androcles and his wife Megæra come along the path. He is a small, thin,
 ridiculous little man who might be any age from thirty to fifty-five.
 He has sandy hair, watery compassionate blue eyes, sensitive nostrils,
 and a very presentable forehead; but his good points go no further; his
 arms and legs and back, though wiry of their kind, look shrivelled and
 starved. He carries a big bundle, is very poorly clad, and seems tired
-and hungry.]
+and hungry.]]
 
-[His wife is a rather handsome pampered slattern, well fed and in the
+[[His wife is a rather handsome pampered slattern, well fed and in the
 prime of life. She has nothing to carry, and has a stout stick to help
-her along.]
+her along.]]
 
 MEGAERA.
 (_suddenly throwing down her stick_) I won’t go another step.
@@ -197,10 +199,10 @@ Megæra. She rises with an effort and totters after him_).
 MEGAERA.
 No, Andy: you’ll be killed. Come back.
 
-_The lion utters a long snoring sigh. Androcles sees the lion and
+__The lion utters a long snoring sigh. Androcles sees the lion and
 recoils fainting into the arms of Megæra, who falls back on the bundle.
 They roll apart and lie staring in terror at one another. The lion is
-heard groaning heavily in the jungle._
+heard groaning heavily in the jungle.__
 
 ANDROCLES.
 (_whispering_) Did you see? A lion.
@@ -270,7 +272,7 @@ jungle_).
 ## 1: ACT I ##
 
 
-[Evening. The end of three converging roads to Rome. Three triumphal
+[[Evening. The end of three converging roads to Rome. Three triumphal
 arches span them where they debouch on a square at the gate of the
 city. Looking north through the arches one can see the campagna
 threaded by the three long dusty tracks. On the east and west sides of
@@ -283,10 +285,10 @@ fellow-prisoners. A centurion, carrying his vinewood cudgel, trudges
 alongside the squad, on its right, in command of it. All are tired and
 dusty; but the soldiers are dogged and indifferent, the Christians
 light-hearted and determined to treat their hardships as a joke and
-encourage one another.]
+encourage one another.]]
 
-_A bugle is heard far behind on the road, where the rest of the cohort
-is following._
+__A bugle is heard far behind on the road, where the rest of the cohort
+is following.__
 
 CENTURION.
 (_stopping_) Halt! Orders from the Captain. (_They halt and wait_). Now
@@ -304,10 +306,10 @@ A CHRISTIAN.
 CENTURION.
 (_scandalised_) Silence!
 
-_The Captain, a patrician, handsome, about thirty-five, very cold and
+__The Captain, a patrician, handsome, about thirty-five, very cold and
 distinguished, very superior and authoritative, steps up on a stone
 seat at the west side of the square, behind the centurion, so as to
-dominate the others more effectually._
+dominate the others more effectually.__
 
 THE CAPTAIN.
 Centurion.
@@ -335,8 +337,8 @@ called Onward Christian Soldiers. This may be sung, except when
 marching through the forum or within hearing of the Emperor’s palace;
 but the words must be altered to “Throw them to the Lions.”
 
-_The Christians burst into shrieks of uncontrollable laughter, to the
-great scandal of the Centurion._
+__The Christians burst into shrieks of uncontrollable laughter, to the
+great scandal of the Centurion.__
 
 CENTURION.
 Silence! Silen-n-n-n-nce! Where’s your behavior? Is that the way to
@@ -399,7 +401,7 @@ In throwing you to the lions he will be upholding the interests of
 religion in Rome. If you were to throw him to the lions, that would no
 doubt be persecution.
 
-_The Christians again laugh heartily._
+__The Christians again laugh heartily.__
 
 CENTURION.
 (_horrified_) Silence, I tell you! Keep silence there. Did anyone ever
@@ -648,10 +650,10 @@ CENTURION.
 out with me to receive them. (_He goes out through the western arch,
 followed by four soldiers in two files_).
 
-_Lentulus and Metellus come into the square from the west side with a
+__Lentulus and Metellus come into the square from the west side with a
 little retinue of servants. Both are young courtiers, dressed in the
 extremity of fashion. Lentulus is slender, fair-haired, epicene.
-Metellus is manly, compactly built, olive skinned, not a talker._
+Metellus is manly, compactly built, olive skinned, not a talker.__
 
 LENTULUS.
 Christians, by Jove! Let’s chaff them.
@@ -809,8 +811,8 @@ to strike_).
 ANDROCLES.
 Easy, Ferrovius, easy: you broke the last man’s jaw.
 
-_Lentulus, with a moan of terror, attempts to fly; but Ferrovius holds
-him ruthlessly._
+__Lentulus, with a moan of terror, attempts to fly; but Ferrovius holds
+him ruthlessly.__
 
 FERROVIUS.
 Yes; but I saved his soul. What matters a broken jaw?
@@ -876,10 +878,10 @@ may depend on me. Good evening, sir.
 FERROVIUS.
 (_with unction_) The blessing of heaven upon you and him.
 
-_Metellus follows Lentulus. The Centurion returns to his seat to resume
+__Metellus follows Lentulus. The Centurion returns to his seat to resume
 his interrupted nap. The deepest awe has settled on the spectators.
 Ferrovius, with a long sigh of happiness, goes to Lavinia, and offers
-her his hand._
+her his hand.__
 
 LAVINIA.
 (_taking it_) So that is how you convert people, Ferrovius.
@@ -904,8 +906,8 @@ Every day lightens the load of the great terror.
 LAVINIA.
 The great terror? What is that?
 
-_Ferrovius shakes his head and does not answer. He sits down beside her
-on her left, and buries his face in his hands in gloomy meditation._
+__Ferrovius shakes his head and does not answer. He sits down beside her
+on her left, and buries his face in his hands in gloomy meditation.__
 
 ANDROCLES.
 Well, you see, sister, he’s never quite sure of himself. Suppose at the
@@ -1060,13 +1062,13 @@ SPINTHO.
 They do: they do. (_Scrambling out of Ferrovius’s reach_). Oh, curse
 you for frightening me!
 
-_A bugle call is heard._
+__A bugle call is heard.__
 
 CENTURION.
 (_waking up_) Tention! Form as before. Now then, prisoners, up with you
 and trot along spry. (_The soldiers fall in. The Christians rise_).
 
-_A man with an ox goad comes running through the central arch._
+__A man with an ox goad comes running through the central arch.__
 
 THE OX DRIVER.
 Here, you soldiers! clear out of the way for the Emperor.
@@ -1124,8 +1126,8 @@ It’s too dreadful: I’m not fit to die.
 CENTURION.
 Fitter than you are to live, you swine.
 
-_They pass from the square westward. The oxen, drawing a waggon with a
-great wooden cage and the lion in it, arrive through the central arch._
+__They pass from the square westward. The oxen, drawing a waggon with a
+great wooden cage and the lion in it, arrive through the central arch.__
 
 
 
@@ -1133,39 +1135,39 @@ great wooden cage and the lion in it, arrive through the central arch._
 ## 2. ACT II ##
 
 
-[Behind the Emperor’s box at the Coliseum, where the performers assemble
+[[Behind the Emperor’s box at the Coliseum, where the performers assemble
 before entering the arena. In the middle a wide passage leading to the
 arena descends from the floor level under the imperial box. On both
 sides of this passage steps ascend to a landing at the back entrance to
 the box. The landing forms a bridge across the passage. At the entrance
-to the passage are two bronze mirrors, one on each side.]
+to the passage are two bronze mirrors, one on each side.]]
 
-[On the west side of this passage, on the right hand of any one coming
+[[On the west side of this passage, on the right hand of any one coming
 from the box and standing on the bridge, the martyrs are sitting on the
 steps. Lavinia is seated half-way up, thoughtful, trying to look death
 in the face. On her left Androcles consoles himself by nursing a cat.
 Ferrovius stands behind them, his eyes blazing, his figure stiff with
 intense resolution. At the foot of the steps crouches Spintho, with his
 head clutched in his hands, full of horror at the approach of
-martyrdom.]
+martyrdom.]]
 
-[On the east side of the passage the gladiators are standing and sitting
+[[On the east side of the passage the gladiators are standing and sitting
 at ease, waiting, like the Christians, for their turn in the arena. One
 (_Retiarius_) is a nearly naked man with a net and a trident. Another
 (_Secutor_) is in armor with a sword. He carries a helmet with a barred
 visor. The editor of the gladiators sits on a chair a little apart from
-them.]
+them.]]
 
-_The Call Boy enters from the passage._
+__The Call Boy enters from the passage.__
 
 THE CALL BOY.
 Number six. Retiarius versus Secutor.
 
-_The gladiator with the net picks it up. The gladiator with the helmet
+__The gladiator with the net picks it up. The gladiator with the helmet
 puts it on; and the two go into the arena, the net thrower taking out a
 little brush and arranging his hair as he goes, the other tightening
 his straps and shaking his shoulders loose. Both look at themselves in
-the mirrors before they enter the passage._
+the mirrors before they enter the passage.__
 
 LAVINIA.
 Will they really kill one another?
@@ -1296,7 +1298,7 @@ THE EDITOR.
 (_flushing with rage_) For two pins I’d take a turn in the arena myself
 to-day, and pay you out for daring to talk to me like that.
 
-_Ferrovius springs forward._
+__Ferrovius springs forward.__
 
 LAVINIA.
 (_rising quickly and interposing_) Brother, brother: you forget.
@@ -1322,8 +1324,8 @@ FERROVIUS.
 (_on the border line between zeal and ferocity_) Oh, don’t give way to
 pride and wrath, brother. I could do it so easily. I could—
 
-_They are separated by the Menagerie Keeper, who rushes in from the
-passage, furious._
+__They are separated by the Menagerie Keeper, who rushes in from the
+passage, furious.__
 
 THE KEEPER.
 Here’s a nice business! Who let that Christian out of here down to the
@@ -1335,9 +1337,9 @@ Nobody let him. He let himself.
 THE KEEPER.
 Well, the lion’s ate him.
 
-_Consternation. The Christians rise, greatly agitated. The gladiators
+__Consternation. The Christians rise, greatly agitated. The gladiators
 sit callously, but are highly amused. All speak or cry out or laugh at
-once. Tumult._
+once. Tumult.__
 
 LAVINIA. Oh, poor wretch! FERROVIUS. The apostate has perished. Praise
 be to God’s justice! ANDROCLES. The poor beast was starving. It
@@ -1399,8 +1401,8 @@ Hail, Caesar! those about to die salute thee.
 CAESAR.
 Good morrow, friends.
 
-_Metellus shakes hands with the Editor, who accepts his condescension
-with bluff respect._
+__Metellus shakes hands with the Editor, who accepts his condescension
+with bluff respect.__
 
 LAVINIA.
 Blessing, Caesar, and forgiveness!
@@ -1492,9 +1494,9 @@ I cannot believe that the archangels—whoever they may be—would not
 prefer to be recruited from the Pretorian Guard. However, as you
 please. Come: let us see the show.
 
-_As the Court ascends the steps, Secutor and the Retiarius return from
+__As the Court ascends the steps, Secutor and the Retiarius return from
 the arena through the passage; Secutor covered with dust and very
-angry: Retiarius grinning._
+angry: Retiarius grinning.__
 
 SECUTOR.
 Ha, the Emperor. Now we shall see. Caesar: I ask you whether it is fair
@@ -1543,10 +1545,10 @@ and pieces of armor which they throw down in a heap.
 THE CALL BOY.
 By your leave, Caesar. Number eleven! Gladiators and Christians!
 
-_Ferrovius springs up, ready for martyrdom. The other Christians take
+__Ferrovius springs up, ready for martyrdom. The other Christians take
 the summons as best they can, some joyful and brave, some patient and
 dignified, some tearful and helpless, some embracing one another with
-emotion. The Call Boy goes back into the passage._
+emotion. The Call Boy goes back into the passage.__
 
 CAESAR.
 (_turning at the door of the box_) The hour has come, Ferrovius. I
@@ -1607,7 +1609,7 @@ THE EDITOR.
 Then get out of the way and hold your noise. (_Androcles steps aside
 with cheerful docility_). Now then! Are you all ready there?
 
-_A trumpet is heard from the arena._
+__A trumpet is heard from the arena.__
 
 FERROVIUS.
 (_starting convulsively_) Heaven give me strength!
@@ -1688,9 +1690,9 @@ Aye, aye: that is right. Not as a lamb is slain by the butcher; but as
 a butcher might let himself be slain by a (_looking at the Editor_) by
 a silly ram whose head he could fetch off in one twist.
 
-_Before the Editor can retort, the Call Boy rushes up through the
+__Before the Editor can retort, the Call Boy rushes up through the
 passage; and the Captain comes from the Emperor’s box and descends the
-steps._
+steps.__
 
 THE CALL BOY.
 In with you: into the arena. The stage is waiting.
@@ -1720,8 +1722,8 @@ Farewell.
 THE EDITOR.
 (_out of patience_) Shove them in, there.
 
-_The remaining gladiators and the Call Boy make a movement towards
-them._
+__The remaining gladiators and the Call Boy make a movement towards
+them.__
 
 FERROVIUS.
 (_interposing_) Touch them, dogs; and we die here, and cheat the
@@ -1743,14 +1745,14 @@ THE EDITOR.
 to the lions? It’s not a man’s job. (_He throws himself moodily into
 his chair_).
 
-_The remaining gladiators go back to their former places indifferently.
+__The remaining gladiators go back to their former places indifferently.
 The Call Boy shrugs his shoulders and squats down at the entrance to
-the passage, near the Editor._
+the passage, near the Editor.__
 
-_Lavinia and the Christian women sit down again, wrung with grief, some
+__Lavinia and the Christian women sit down again, wrung with grief, some
 weeping silently, some praying, some calm and steadfast. Androcles sits
 down at Lavinia’s feet. The Captain stands on the stairs, watching her
-curiously._
+curiously.__
 
 ANDROCLES.
 I’m glad I haven’t to fight. That would really be an awful martyrdom. I
@@ -1765,7 +1767,7 @@ ANDROCLES.
 Don’t think of me, sister. Think of yourself. That will keep your heart
 up.
 
-_The Captain laughs sardonically._
+__The Captain laughs sardonically.__
 
 LAVINIA.
 (_startled: she had forgotten his presence_) Are you there, handsome
@@ -1865,9 +1867,9 @@ for such nonsense, and that I should look on helplessly when my whole
 soul cries out against it! Die then if you must; but at least I can cut
 the Emperor’s throat and then my own when I see your blood.
 
-[The Emperor throws open the door of his box angrily, and appears in
+[[The Emperor throws open the door of his box angrily, and appears in
 wrath on the threshold. The Editor, the Call Boy, and the gladiators
-spring to their feet.]
+spring to their feet.]]
 
 THE EMPEROR.
 The Christians will not fight; and your curs cannot get their blood up
@@ -1876,8 +1878,8 @@ the whip. (_The Call Boy rushes out on the east side for the whip_). If
 that will not move them, bring the hot irons. The man is like a
 mountain. (_He returns angrily into the box and slams the door_).
 
-_The Call Boy returns with a man in a hideous Etruscan mask, carrying a
-whip. They both rush down the passage into the arena._
+__The Call Boy returns with a man in a hideous Etruscan mask, carrying a
+whip. They both rush down the passage into the arena.__
 
 LAVINIA.
 (_rising_) Oh, that is unworthy. Can they not kill him without
@@ -1919,7 +1921,7 @@ hooks there! Ropes and hooks.
 THE EDITOR.
 Well, need you excite yourself about it? (_Another burst of applause_).
 
-_Two slaves in Etruscan masks, with ropes and drag hooks, hurry in._
+__Two slaves in Etruscan masks, with ropes and drag hooks, hurry in.__
 
 ONE OF THE SLAVES. How many dead?
 
@@ -1946,10 +1948,10 @@ THE EMPEROR.
 (_again bursting from his box, this time in an ecstasy of delight_)
 Where is he? Magnificent! He shall have a laurel crown.
 
-_Ferrovius, madly waving his bloodstained sword, rushes through the
+__Ferrovius, madly waving his bloodstained sword, rushes through the
 passage in despair, followed by his co-religionists, and by the
 menagerie keeper, who goes to the gladiators. The gladiators draw their
-swords nervously._
+swords nervously.__
 
 FERROVIUS.
 Lost! lost forever! I have betrayed my Master. Cut off this right hand:
@@ -2042,15 +2044,15 @@ that she should be happy with her next, poor fellow! Caesar: go to your
 box and see how a tailor can die. Make way for number twelve there.
 (_He marches out along the passage_).
 
-_The vast audience in the amphitheatre now sees the Emperor re-enter
+__The vast audience in the amphitheatre now sees the Emperor re-enter
 his box and take his place as Androcles, desperately frightened, but
 still marching with piteous devotion, emerges from the other end of the
 passage, and finds himself at the focus of thousands of eager eyes. The
 lion’s cage, with a heavy portcullis grating, is on his left. The
 Emperor gives a signal. A gong sounds. Androcles shivers at the sound;
-then falls on his knees and prays._
+then falls on his knees and prays.__
 
-_The grating rises with a clash. The lion bounds into the arena. He
+__The grating rises with a clash. The lion bounds into the arena. He
 rushes round frisking in his freedom. He sees Androcles. He stops;
 rises stiffly by straightening his legs; stretches out his nose forward
 and his tail in a horizontal line behind, like a pointer, and utters an
@@ -2070,7 +2072,7 @@ shakes with enthusiasm. They embrace rapturously, finally waltz round
 the arena amid a sudden burst of deafening applause, and out through
 the passage, the Emperor watching them in breathless astonishment until
 they disappear, when he rushes from his box and descends the steps in
-frantic excitement._
+frantic excitement.__
 
 THE EMPEROR.
 My friends, an incredible! an amazing thing! has happened. I can no
@@ -2114,12 +2116,12 @@ now, Tommy; and speak nicely to the Emperor, the great, good Emperor
 who has power to have all our heads cut off if we don’t behave very,
 VERY respectfully to him.
 
-_The lion utters a fearful roar. The Emperor dashes madly up the steps,
+__The lion utters a fearful roar. The Emperor dashes madly up the steps,
 across the landing, and down again on the other side, with the lion in
 hot pursuit. Androcles rushes after the lion; overtakes him as he is
 descending; and throws himself on his back, trying to use his toes as a
 brake. Before he can stop him the lion gets hold of the trailing end of
-the Emperor’s robe._
+the Emperor’s robe.__
 
 ANDROCLES.
 Oh bad wicked Tommy, to chase the Emperor like that! Let go the
@@ -2157,8 +2159,8 @@ THE EMPEROR.
 sweetest friend, my long lost brother, come to my arms. (_He embraces
 Androcles_). Oh, what an abominable smell of garlic!
 
-_The lion lets go the robe and rolls over on his back, clasping his
-forepaws over one another coquettishly above his nose._
+__The lion lets go the robe and rolls over on his back, clasping his
+forepaws over one another coquettishly above his nose.__
 
 ANDROCLES.
 There! You see, your worship, a child might play with him now. See!

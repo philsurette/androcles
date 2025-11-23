@@ -10,7 +10,7 @@ OUT_PATH = ROOT / "paragraphs.txt"
 def collapse_to_paragraphs(text: str) -> list[str]:
     """
     Join consecutive non-empty lines with spaces and use blank lines as
-    paragraph boundaries.
+    paragraph boundaries, without emitting blank lines.
     """
     output: list[str] = []
     buffer: list[str] = []
@@ -23,14 +23,9 @@ def collapse_to_paragraphs(text: str) -> list[str]:
             if buffer:
                 output.append(" ".join(buffer))
                 buffer.clear()
-            output.append("")  # keep explicit paragraph break
 
     if buffer:
         output.append(" ".join(buffer))
-
-    # Drop trailing empty boundaries to avoid extra blank lines at EOF.
-    while output and output[-1] == "":
-        output.pop()
 
     return output
 
