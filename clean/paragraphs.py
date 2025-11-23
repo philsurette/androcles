@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parent
+SRC_PATH = ROOT / "src.txt"
+OUT_PATH = ROOT / "paragraphs.txt"
+
+
+def collapse_to_paragraphs(text: str) -> list[str]:
+    """
+    Join consecutive non-empty lines with spaces and use blank lines as
+    paragraph boundaries.
+    """
+    output: list[str] = []
+    buffer: list[str] = []
+
+    for raw_line in text.splitlines():
+        # Treat any whitespace-only line as a boundary.
+        if raw_line.strip():
+            buffer.append(raw_line.strip())
+        else:
+            if buffer:
+                output.append(" ".join(buffer))
+                buffer.clear()
+            output.append("")  # keep explicit paragraph break
+
+    if buffer:
+        output.append(" ".join(buffer))
+
+    # Drop trailing empty boundaries to avoid extra blank lines at EOF.
+    while output and output[-1] == "":
+        output.pop()
+
+    return output
+
+
+def main() -> None:
+    text = SRC_PATH.read_text(encoding="utf-8-sig")
+    paragraphs = collapse_to_paragraphs(text)
+    if paragraphs:
+        OUT_PATH.write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
+    else:
+        OUT_PATH.write_text("", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()
