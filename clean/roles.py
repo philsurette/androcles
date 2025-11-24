@@ -70,17 +70,18 @@ def ensure_roles_dir() -> None:
         path.unlink()
 
 
-def cue_lines(cue_target: str, cue_key: Tuple[str, str], blocks_map: Dict[str, Dict[Tuple[str, str], List[str]]]) -> List[str]:
-    """Format cue lines for the given target/key."""
+def cue_lines(
+    cue_target: str, cue_key: Tuple[str, str], blocks_map: Dict[str, Dict[Tuple[str, str], List[str]]]
+) -> Tuple[str, List[str]]:
+    """Return cue label and formatted cue lines for the given target/key."""
     cue_blocks = blocks_map.get(cue_target)
     if not cue_blocks:
-        return []
+        return "", []
     cue = cue_blocks.get(cue_key)
     if not cue:
-        return []
+        return "", []
     part_id, block_no = cue_key
     label = cue_target.lstrip("_")
-    header = f"  # {part_id}:{block_no} {label}"
 
     cue_body: List[str] = []
     for line in cue[1:]:
@@ -94,8 +95,8 @@ def cue_lines(cue_target: str, cue_key: Tuple[str, str], blocks_map: Dict[str, D
         cue_body.append(text)
 
     shortened = shorten_cue_lines(cue_body)
-    lines: List[str] = [header] + [f"    # {text}" for text in shortened]
-    return lines
+    lines: List[str] = [f"    # {text}" for text in shortened]
+    return label, lines
 
 
 def build_roles() -> None:
@@ -116,12 +117,16 @@ def build_roles() -> None:
 
         # Build cue if available.
         cue_lines_block: List[str] = []
+        cue_label = ""
         if idx > 0:
             cue_part, cue_no, cue_target = index_entries[idx - 1]
-            cue_lines_block = cue_lines(cue_target, (cue_part, cue_no), blocks_map)
+            cue_label, cue_lines_block = cue_lines(cue_target, (cue_part, cue_no), blocks_map)
 
         output_lines: List[str] = []
-        output_lines.append(block_lines[0])  # header
+        header_line = block_lines[0]
+        if cue_label:
+            header_line = f"{header_line} < {cue_label}"
+        output_lines.append(header_line)
         if cue_lines_block:
             output_lines.extend(cue_lines_block)
         output_lines.extend(block_lines[1:])  # original bullet lines
