@@ -96,6 +96,13 @@ def cue_lines(
 
     shortened = shorten_cue_lines(cue_body)
     lines: List[str] = [f"    # {text}" for text in shortened]
+
+    if shortened and shortened[0].lstrip().startswith("(_"):
+        speech_snippet = last_speech_snippet(cue_body)
+        snippet_line = f"    # {speech_snippet}" if speech_snippet else ""
+        if speech_snippet and snippet_line not in lines:
+            lines.append(snippet_line)
+
     return label, lines
 
 
@@ -145,8 +152,8 @@ def shorten_cue_lines(lines: List[str]) -> List[str]:
     Limit cue text to a maximum of 20 words; if longer, include the last
     10 words with a leading ellipsis, preserving line order from the end.
     When pulling earlier lines to reach the 10-word minimum, include the
-    whole line if it is 10 words or fewer; otherwise include its last
-    10 words prefixed with an ellipsis.
+    whole line if it is 13 words or fewer; otherwise include its last
+    10 words, and prefix the ellipsis with the first three words of that line.
     """
     meta = [(line, line.strip().startswith("(_")) for line in lines]
     total_words = sum(len(line.split()) for line in lines)
@@ -154,49 +161,66 @@ def shorten_cue_lines(lines: List[str]) -> List[str]:
         return lines
 
     remaining = 10
-    collected: List[Tuple[str, bool, bool]] = []
+    collected: List[Tuple[str, bool, bool, str]] = []
     for line, is_direction in reversed(meta):
         words = line.split()
         if not words:
             continue
 
-        if len(words) <= 10:
+        if len(words) <= 13:
             segment = " ".join(words)
             truncated_segment = False
+            prefix = ""
             count = len(words)
         else:
             segment = " ".join(words[-10:])
             truncated_segment = True
+            prefix = " ".join(words[:3])
             count = 10
 
-        collected.append((segment, is_direction, truncated_segment))
+        collected.append((segment, is_direction, truncated_segment, prefix))
         remaining -= count
         if remaining <= 0:
             break
 
     collected = list(reversed(collected))
     if collected:
-        segment, is_direction, truncated_segment = collected[0]
+        segment, is_direction, truncated_segment, prefix = collected[0]
         # If we truncated the overall cue, mark the leading segment with an ellipsis.
-        if not segment.lstrip().startswith("..."):
-            segment = "... " + segment.lstrip()
+        if truncated_segment and not segment.lstrip().startswith("..."):
+            segment = f"{prefix} ... {segment}".strip()
 
         if is_direction:
             cleaned = segment.strip()
-            leading_ellipsis = False
+            has_ellipsis = False
             if cleaned.startswith("..."):
-                leading_ellipsis = True
+                has_ellipsis = True
                 cleaned = cleaned[3:].lstrip()
             if cleaned.startswith("(_"):
                 cleaned = cleaned[2:].lstrip()
             rebuilt = "(_ "
-            if leading_ellipsis:
+            if has_ellipsis:
                 rebuilt += "... "
             rebuilt += cleaned
             segment = rebuilt
-        collected[0] = (segment, is_direction, truncated_segment)
+        collected[0] = (segment, is_direction, truncated_segment, prefix)
 
-    return [segment for segment, _, _ in collected]
+    return [segment for segment, _, _, _ in collected]
+
+
+def last_speech_snippet(lines: List[str]) -> str:
+    """Return up to 10 trailing words (with prefix if cropped) from the last spoken line."""
+    for line in reversed(lines):
+        text = line.strip()
+        if not text or text.startswith("(_"):
+            continue
+        words = text.split()
+        if len(words) <= 13:
+            return " ".join(words)
+        prefix = " ".join(words[:3])
+        tail = " ".join(words[-10:])
+        return f"{prefix} ... {tail}"
+    return ""
 
 
 def main() -> None:

@@ -5,6 +5,7 @@ from pathlib import Path
 import paragraphs as pg
 import blocks
 import roles
+import narration
 
 
 def build_paragraphs() -> None:
@@ -22,6 +23,7 @@ def build_blocks() -> None:
     blocks.write_blocks(block_map)
     blocks.write_index(index)
     roles.build_roles()
+    narration.build_narration()
 
 
 def main() -> None:
