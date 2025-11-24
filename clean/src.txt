@@ -1999,7 +1999,7 @@ the house and enjoy the spectacle to which your brother has so
 splendidly contributed. Captain: oblige me by conducting them to the
 seats reserved for my personal friends.
 
-MENAGERIE KEEPER.
+KEEPER.
 Caesar: I must have one Christian for the lion. The people have been
 promised it; and they will tear the decorations to bits if they are
 disappointed.
@@ -2015,7 +2015,7 @@ No, no: you would tear him in pieces, my friend; and we cannot afford
 to throw away lions as if they were mere slaves. But we must have
 somebody. This is really extremely awkward.
 
-MENAGERIE KEEPER.
+KEEPER.
 Why not that little Greek chap? He’s not a Christian: he’s a sorcerer.
 
 CAESAR.
@@ -2230,7 +2230,7 @@ And now, my friends, though I do not, as you see, fear this lion, yet
 the strain of his presence is considerable; for none of us can feel
 quite sure what he will do next.
 
-MENAGERIE KEEPER.
+KEEPER.
 Caesar: give us this Greek sorcerer to be a slave in the menagerie. He
 has a way with the beasts.
 
