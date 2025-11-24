@@ -64,16 +64,18 @@ def prepare_output_dirs() -> None:
             path.unlink()
 
 
-def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
+def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str, int, str]]]:
     """
     Parse paragraphs into parts and character blocks.
 
     Returns a tuple of:
     - parts: mapping part_id -> list of paragraph strings (excluding headings)
     - blocks: mapping character name -> list of numbered block strings
+    - index: list of tuples (part_id, block_no, target_name)
     """
     parts: Dict[str, List[str]] = {}
     blocks: Dict[str, List[str]] = {}
+    index: List[Tuple[str, int, str]] = []
 
     current_part_id = None
     current_part_name = None
@@ -106,14 +108,18 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
         if desc_text is not None:
             block_counter += 1
             entry = format_block_entry(current_part_id, block_counter, [desc_text])
-            blocks.setdefault("_DESCRIPTIONS", []).append(entry)
+            target = "_DESCRIPTION"
+            blocks.setdefault(target, []).append(entry)
+            index.append((current_part_id, block_counter, target))
             continue
 
         stage_text = extract_stage_direction(paragraph)
         if stage_text is not None:
             block_counter += 1
             entry = format_block_entry(current_part_id, block_counter, [stage_text])
-            blocks.setdefault("_DIRECTIONS", []).append(entry)
+            target = "_DIRECTION"
+            blocks.setdefault(target, []).append(entry)
+            index.append((current_part_id, block_counter, target))
             continue
 
         block_match = BLOCK_RE.match(paragraph)
@@ -124,19 +130,21 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]]]:
             segments = split_block_segments(speech_text)
             entry = format_block_entry(current_part_id, block_counter, segments)
             blocks.setdefault(character, []).append(entry)
+            index.append((current_part_id, block_counter, character))
 
     # Flush the final part.
     if current_part_id is not None:
         parts[current_part_id] = list(current_paragraphs)
         write_part(current_part_id, current_part_name or "", current_paragraphs)
 
-    return parts, blocks
+    return parts, blocks, index
 
 
 def main() -> None:
     prepare_output_dirs()
-    _, blocks = parse()
+    _, blocks, index = parse()
     write_blocks(blocks)
+    write_index(index)
 
 
 def split_block_segments(text: str) -> List[str]:
@@ -198,6 +206,19 @@ def format_block_entry(part_id: str, block_no: int, segments: List[str]) -> str:
         if segment:
             lines.append(f"  - {segment}")
     return "\n".join(lines)
+
+
+def write_index(index_entries: List[Tuple[str, int, str]]) -> None:
+    """Write a master index mapping part:block to destination file."""
+    lines = []
+    for part_id, block_no, target in index_entries:
+        lines.append(f"{part_id}:{block_no} {target}")
+    content = "\n".join(lines)
+    if content:
+        content += "\n"
+    (BLOCKS_DIR / "_INDEX.txt").write_text(content, encoding="utf-8")
+
+
 
 
 if __name__ == "__main__":
