@@ -144,8 +144,8 @@ def shorten_cue_lines(lines: List[str]) -> List[str]:
     10 words prefixed with an ellipsis.
     """
     meta = [(line, line.strip().startswith("(_")) for line in lines]
-    word_count = sum(len(line.split()) for line in lines)
-    if word_count <= 20:
+    total_words = sum(len(line.split()) for line in lines)
+    if total_words <= 20:
         return lines
 
     remaining = 10
@@ -157,31 +157,39 @@ def shorten_cue_lines(lines: List[str]) -> List[str]:
 
         if len(words) <= 10:
             segment = " ".join(words)
-            truncated = False
+            truncated_segment = False
             count = len(words)
         else:
             segment = " ".join(words[-10:])
-            truncated = True
+            truncated_segment = True
             count = 10
 
-        collected.append((segment, is_direction, truncated))
+        collected.append((segment, is_direction, truncated_segment))
         remaining -= count
         if remaining <= 0:
             break
 
     collected = list(reversed(collected))
     if collected:
-        segment, is_direction, truncated = collected[0]
+        segment, is_direction, truncated_segment = collected[0]
+        # If we truncated the overall cue, mark the leading segment with an ellipsis.
         if not segment.lstrip().startswith("..."):
-            segment = "... " + segment
-            truncated = True
-        if is_direction and not segment.lstrip().startswith("(_"):
-            cleaned = segment.lstrip()
+            segment = "... " + segment.lstrip()
+
+        if is_direction:
+            cleaned = segment.strip()
+            leading_ellipsis = False
             if cleaned.startswith("..."):
-                segment = "(_ " + cleaned
-            else:
-                segment = "(_ " + cleaned
-        collected[0] = (segment, is_direction, truncated)
+                leading_ellipsis = True
+                cleaned = cleaned[3:].lstrip()
+            if cleaned.startswith("(_"):
+                cleaned = cleaned[2:].lstrip()
+            rebuilt = "(_ "
+            if leading_ellipsis:
+                rebuilt += "... "
+            rebuilt += cleaned
+            segment = rebuilt
+        collected[0] = (segment, is_direction, truncated_segment)
 
     return [segment for segment, _, _ in collected]
 
