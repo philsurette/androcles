@@ -311,13 +311,13 @@ distinguished, very superior and authoritative, steps up on a stone
 seat at the west side of the square, behind the centurion, so as to
 dominate the others more effectually.__
 
-THE CAPTAIN.
+CAPTAIN.
 Centurion.
 
 CENTURION.
 (_standing at attention and saluting_) Sir?
 
-THE CAPTAIN.
+CAPTAIN.
 (_speaking stiffly and officially_) You will remind your men,
 Centurion, that we are now entering Rome. You will instruct them that
 once inside the gates of Rome they are in the presence of the Emperor.
@@ -331,7 +331,7 @@ this, but actually doing it yourself.
 CENTURION.
 The men march better, Captain.
 
-THE CAPTAIN.
+CAPTAIN.
 No doubt. For that reason an exception is made in the case of the march
 called Onward Christian Soldiers. This may be sung, except when
 marching through the forum or within hearing of the Emperor’s palace;
@@ -354,7 +354,7 @@ You’ll find out how funny it is when you’re thrown to the lions
 to-morrow. (_To the Captain, who looks displeased_) Beg pardon, Sir.
 (_To the Christians_) Silennnnce!
 
-THE CAPTAIN.
+CAPTAIN.
 You are to instruct your men that all intimacy with Christian prisoners
 must now cease. The men have fallen into habits of dependence upon the
 prisoners, especially the female prisoners, for cooking, repairs to
@@ -369,7 +369,7 @@ Prisoners.
 CENTURION.
 (_fiercely_) Prisonerrrrrs! Tention! Silence!
 
-THE CAPTAIN.
+CAPTAIN.
 I call your attention, prisoners, to the fact that you may be called on
 to appear in the Imperial Circus at any time from tomorrow onwards
 according to the requirements of the managers. I may inform you that as
@@ -382,7 +382,7 @@ What will they do to us, Captain?
 CENTURION.
 Silence!
 
-THE CAPTAIN.
+CAPTAIN.
 The women will be conducted into the arena with the wild beasts of the
 Imperial Menagerie, and will suffer the consequences. The men, if of an
 age to bear arms, will be given weapons to defend themselves, if they
@@ -394,7 +394,7 @@ Captain: is there no hope that this cruel persecution—
 CENTURION.
 (_shocked_) Silence! Hold your tongue, there. Persecution, indeed!
 
-THE CAPTAIN.
+CAPTAIN.
 (_unmoved and somewhat sardonic_) Persecution is not a term applicable
 to the acts of the Emperor. The Emperor is the Defender of the Faith.
 In throwing you to the lions he will be upholding the interests of
@@ -411,7 +411,7 @@ LAVINIA.
 Captain: there will be nobody to appreciate your jokes when we are
 gone.
 
-THE CAPTAIN.
+CAPTAIN.
 (_unshaken in his official delivery_) I call the attention of the
 female prisoner Lavinia to the fact that as the Emperor is a divine
 personage, her imputation of cruelty is not only treason, but
@@ -439,21 +439,21 @@ when we walked in darkness and had nothing to live for. Death is harder
 for us than for you: the martyr’s agony is as bitter as his triumph is
 glorious.
 
-THE CAPTAIN.
+CAPTAIN.
 (_rather troubled, addressing her personally and gravely_) A martyr,
 Lavinia, is a fool. Your death will prove nothing.
 
 LAVINIA.
 Then why kill me?
 
-THE CAPTAIN.
+CAPTAIN.
 I mean that truth, if there be any truth, needs no martyrs.
 
 LAVINIA.
 No; but my faith, like your sword, needs testing. Can you test your
 sword except by staking your life on it?
 
-THE CAPTAIN.
+CAPTAIN.
 (_suddenly resuming his official tone_) I call the attention of the
 female prisoner to the fact that Christians are not allowed to draw the
 Emperor’s officers into arguments and put questions to them for which
@@ -462,7 +462,7 @@ the military regulations provide no answer. (_The Christians titter_).
 LAVINIA.
 Captain: how CAN you?
 
-THE CAPTAIN.
+CAPTAIN.
 I call the female prisoner’s attention specially to the fact that four
 comfortable homes have been offered her by officers of this regiment,
 of which she can have her choice the moment she chooses to sacrifice as
@@ -471,7 +471,7 @@ all well-bred Roman ladies do. I have no more to say to the prisoners.
 CENTURION.
 Dismiss! But stay where you are.
 
-THE CAPTAIN.
+CAPTAIN.
 Centurion: you will remain here with your men in charge of the
 prisoners until the arrival of three Christian prisoners in the custody
 of a cohort of the tenth legion. Among these prisoners you will
@@ -486,7 +486,7 @@ understand your instructions?
 CENTURION.
 Yes, Sir.
 
-THE CAPTAIN.
+CAPTAIN.
 Dismiss. (_He throws off his air of parade, and descends down from the
 perch. The Centurion seats on it and prepares for a nap, whilst his men
 stand at ease. The Christians sit down on the west side of the square,
@@ -496,7 +496,7 @@ LAVINIA.
 Captain: is this man who is to join us the famous Ferrovius, who has
 made such wonderful conversions in the northern cities?
 
-THE CAPTAIN.
+CAPTAIN.
 Yes. We are warned that he has the strength of an elephant and the
 temper of a mad bull. Also that he is stark mad. Not a model Christian,
 it would seem.
@@ -504,38 +504,38 @@ it would seem.
 LAVINIA.
 You need not fear him if he is a Christian, Captain.
 
-THE CAPTAIN.
+CAPTAIN.
 (_coldly_) I shall not fear him in any case, Lavinia.
 
 LAVINIA.
 (_her eyes dancing_) How brave of you, Captain!
 
-THE CAPTAIN.
+CAPTAIN.
 You are right: it was silly thing to say. (_In a lower tone, humane and
 urgent_) Lavinia: do Christians know how to love?
 
 LAVINIA.
 (_composedly_) Yes, Captain: they love even their enemies.
 
-THE CAPTAIN.
+CAPTAIN.
 Is that easy?
 
 LAVINIA.
 Very easy, Captain, when their enemies are as handsome as you.
 
-THE CAPTAIN.
+CAPTAIN.
 Lavinia: you are laughing at me.
 
 LAVINIA.
 At you, Captain! Impossible.
 
-THE CAPTAIN.
+CAPTAIN.
 Then you are flirting with me, which is worse. Don’t be foolish.
 
 LAVINIA.
 But such a very handsome captain.
 
-THE CAPTAIN.
+CAPTAIN.
 Incorrigible! (_Urgently_) Listen to me. The men in that audience
 tomorrow will be the vilest of voluptuaries: men in whom the only
 passion excited by a beautiful woman is a lust to see her tortured and
@@ -548,7 +548,7 @@ LAVINIA.
 They cannot violate my soul. I alone can do that by sacrificing to
 false gods.
 
-THE CAPTAIN.
+CAPTAIN.
 Sacrifice then to the true God. What does his name matter? We call him
 Jupiter. The Greeks call him Zeus. Call him what you will as you drop
 the incense on the altar flame: He will understand.
@@ -583,7 +583,7 @@ even if you could corrupt my mind. And all the time I should believe
 more in Diana than my persecutors have ever believed in anything. Can
 you understand that?
 
-THE CAPTAIN.
+CAPTAIN.
 (_simply_) Yes: I understand that. But my hand would not come back. The
 hand that holds the sword has been trained not to come back from
 anything but victory.
@@ -591,20 +591,20 @@ anything but victory.
 LAVINIA.
 Not even from death?
 
-THE CAPTAIN.
+CAPTAIN.
 Least of all from death.
 
 LAVINIA.
 Then I must not come back either. A woman has to be braver than a
 soldier.
 
-THE CAPTAIN.
+CAPTAIN.
 Prouder, you mean.
 
 LAVINIA.
 (_startled_) Prouder! You call our courage pride!
 
-THE CAPTAIN.
+CAPTAIN.
 There is no such thing as courage: there is only pride. You Christians
 are the proudest devils on earth.
 
@@ -614,13 +614,13 @@ turns away as if she did not wish to continue the conversation, but
 softens and says to him with a smile_) Thank you for trying to save me
 from death.
 
-THE CAPTAIN.
+CAPTAIN.
 I knew it was no use; but one tries in spite of one’s knowledge.
 
 LAVINIA.
 Something stirs, even in the iron breast of a Roman soldier!
 
-THE CAPTAIN.
+CAPTAIN.
 It will soon be iron again. I have seen many women die, and forgotten
 them in a week.
 
@@ -628,7 +628,7 @@ LAVINIA.
 Remember me for a fortnight, handsome Captain. I shall be watching you,
 perhaps.
 
-THE CAPTAIN.
+CAPTAIN.
 From the skies? Do not deceive yourself, Lavinia. There is no future
 for you beyond the grave.
 
@@ -638,7 +638,7 @@ terrors of life into the comfort of heaven? If there were no future, or
 if the future were one of torment, I should have to go just the same.
 The hand of God is upon me.
 
-THE CAPTAIN.
+CAPTAIN.
 Yes: when all is said, we are both patricians, Lavinia, and must die
 for our beliefs. Farewell. (_He offers her his hand. She takes it and
 presses it. He walks away, trim and calm. She looks after him for a
@@ -1070,13 +1070,13 @@ and trot along spry. (_The soldiers fall in. The Christians rise_).
 
 __A man with an ox goad comes running through the central arch.__
 
-THE OX DRIVER.
+OX DRIVER.
 Here, you soldiers! clear out of the way for the Emperor.
 
 CENTURION.
 Emperor! Where’s the Emperor? You ain’t the Emperor, are you?
 
-THE OX DRIVER.
+OX DRIVER.
 It’s the menagerie service. My team of oxen is drawing the new lion to
 the Coliseum. You clear the road.
 
@@ -1084,7 +1084,7 @@ CENTURION.
 What! Go in after you in your dust, with half the town at the heels of
 you and your lion! Not likely. We go first.
 
-THE OX DRIVER.
+OX DRIVER.
 The menagerie service is the Emperor’s personal retinue. You clear out,
 I tell you.
 
@@ -1160,7 +1160,7 @@ them.]]
 
 __The Call Boy enters from the passage.__
 
-THE CALL BOY.
+CALL BOY.
 Number six. Retiarius versus Secutor.
 
 __The gladiator with the net picks it up. The gladiator with the helmet
@@ -1175,7 +1175,7 @@ Will they really kill one another?
 SPINTHO.
 Yes, if the people turn down their thumbs.
 
-THE EDITOR.
+EDITOR.
 You know nothing about it. The people indeed! Do you suppose we would
 kill a man worth perhaps fifty talents to please the riffraff? I should
 like to catch any of my men at it.
@@ -1183,7 +1183,7 @@ like to catch any of my men at it.
 SPINTHO.
 I thought—
 
-THE EDITOR.
+EDITOR.
 (_contemptuously_) You thought! Who cares what you think? You’ll be
 killed all right enough.
 
@@ -1194,14 +1194,14 @@ except us poor—
 LAVINIA.
 Christians?
 
-THE EDITOR.
+EDITOR.
 If the vestal virgins turn down their thumbs, that’s another matter.
 They’re ladies of rank.
 
 LAVINIA.
 Does the Emperor ever interfere?
 
-THE EDITOR.
+EDITOR.
 Oh, yes: he turns his thumbs up fast enough if the vestal virgins want
 to have one of his pet fighting men killed.
 
@@ -1210,7 +1210,7 @@ But don’t they ever just only pretend to kill one another? Why
 shouldn’t you pretend to die, and get dragged out as if you were dead;
 and then get up and go home, like an actor?
 
-THE EDITOR.
+EDITOR.
 See here: you want to know too much. There will be no pretending about
 the new lion: let that be enough for you. He’s hungry.
 
@@ -1223,7 +1223,7 @@ I’m glad he’s hungry. Not that I want him to suffer, poor chap! but
 then he’ll enjoy eating me so much more. There’s a cheerful side to
 everything.
 
-THE EDITOR.
+EDITOR.
 (_rising and striding over to Androcles_) Here: don’t you be obstinate.
 Come with me and drop the pinch of incense on the altar. That’s all you
 need do to be let off.
@@ -1231,14 +1231,14 @@ need do to be let off.
 ANDROCLES.
 No: thank you very much indeed; but I really mustn’t.
 
-THE EDITOR.
+EDITOR.
 What! Not to save your life?
 
 ANDROCLES.
 I’d rather not. I couldn’t sacrifice to Diana: she’s a huntress, you
 know, and kills things.
 
-THE EDITOR.
+EDITOR.
 That don’t matter. You can choose your own altar. Sacrifice to Jupiter:
 he likes animals: he turns himself into an animal when he goes off
 duty.
@@ -1246,7 +1246,7 @@ duty.
 ANDROCLES.
 No: it’s very kind of you; but I feel I can’t save myself that way.
 
-THE EDITOR.
+EDITOR.
 But I don’t ask you to do it to save yourself: I ask you to do it to
 oblige me personally.
 
@@ -1257,7 +1257,7 @@ to disoblige you. If you could arrange for me to sacrifice when there’s
 nobody looking, I shouldn’t mind. But I must go into the arena with the
 rest. My honor, you know.
 
-THE EDITOR.
+EDITOR.
 Honor! The honor of a tailor?
 
 ANDROCLES.
@@ -1265,7 +1265,7 @@ ANDROCLES.
 Still, you know, I couldn’t allow the tailors to get a bad name through
 me.
 
-THE EDITOR.
+EDITOR.
 How much will you remember of all that when you smell the beast’s
 breath and see his jaws opening to tear out your throat?
 
@@ -1287,14 +1287,14 @@ ANDROCLES.
 (_to the Editor, pointing after Spintho_) Brother: I can’t do that, not
 even to oblige you. Don’t ask me.
 
-THE EDITOR.
+EDITOR.
 Well, if you’re determined to die, I can’t help you. But I wouldn’t be
 put off by a swine like that.
 
 FERROVIUS.
 Peace, peace: tempt him not. Get thee behind him, Satan.
 
-THE EDITOR.
+EDITOR.
 (_flushing with rage_) For two pins I’d take a turn in the arena myself
 to-day, and pay you out for daring to talk to me like that.
 
@@ -1309,7 +1309,7 @@ FERROVIUS.
 brother. My heart was full of wrath: I should have been thinking of
 your dear precious soul.
 
-THE EDITOR.
+EDITOR.
 Yah! (_He turns his back on Ferrovius contemptuously, and goes back to
 his seat_).
 
@@ -1317,7 +1317,7 @@ FERROVIUS.
 (_continuing_) And I forgot it all: I thought of nothing but offering
 to fight you with one hand tied behind me.
 
-THE EDITOR.
+EDITOR.
 (_turning pugnaciously_) What!
 
 FERROVIUS.
@@ -1327,14 +1327,14 @@ pride and wrath, brother. I could do it so easily. I could—
 __They are separated by the Menagerie Keeper, who rushes in from the
 passage, furious.__
 
-THE KEEPER.
+KEEPER.
 Here’s a nice business! Who let that Christian out of here down to the
 dens when we were changing the lion into the cage next the arena?
 
-THE EDITOR.
+EDITOR.
 Nobody let him. He let himself.
 
-THE KEEPER.
+KEEPER.
 Well, the lion’s ate him.
 
 __Consternation. The Christians rise, greatly agitated. The gladiators
@@ -1352,14 +1352,14 @@ Old Jock doesn’t like that: look at his face. Devil a better! The
 Emperor will laugh when he hears of it. I can’t help smiling. Ha ha
 ha!!!!!
 
-THE KEEPER.
+KEEPER.
 Now his appetite’s taken off, he won’t as much as look at another
 Christian for a week.
 
 ANDROCLES.
 Couldn’t you have saved him brother?
 
-THE KEEPER.
+KEEPER.
 Saved him! Saved him from a lion that I’d just got mad with hunger! a
 wild one that came out of the forest not four weeks ago! He bolted him
 before you could say Balbus.
@@ -1368,26 +1368,26 @@ LAVINIA.
 (_sitting down again_) Poor Spintho! And it won’t even count as
 martyrdom!
 
-THE KEEPER.
+KEEPER.
 Serve him right! What call had he to walk down the throat of one of my
 lions before he was asked?
 
 ANDROCLES.
 Perhaps the lion won’t eat me now.
 
-THE KEEPER.
+KEEPER.
 Yes: that’s just like a Christian: think only of yourself! What am I to
 do? What am I to say to the Emperor when he sees one of my lions coming
 into the arena half asleep?
 
-THE EDITOR.
+EDITOR.
 Say nothing. Give your old lion some bitters and a morsel of fried fish
 to wake up his appetite. (_Laughter_).
 
-THE KEEPER.
+KEEPER.
 Yes: it’s easy for you to talk; but—
 
-THE EDITOR.
+EDITOR.
 (_scrambling to his feet_) Sh! Attention there! The Emperor. (_The
 Keeper bolts precipitately into the passage. The gladiators rise
 smartly and form into line_).
@@ -1395,7 +1395,7 @@ smartly and form into line_).
 The Emperor enters on the Christians’ side, conversing with Metellus,
 and followed by his suite.
 
-THE GLADIATORS.
+GLADIATORS.
 Hail, Caesar! those about to die salute thee.
 
 CAESAR.
@@ -1421,7 +1421,7 @@ do no wrong and therefore cannot be forgiven?
 LAVINIA.
 I expect the Emperor knows better. Anyhow, we forgive him.
 
-THE CHRISTIANS. Amen!
+CHRISTIANS. Amen!
 
 CAESAR.
 Metellus: you see now the disadvantage of too much severity. These
@@ -1528,7 +1528,7 @@ you smudge his face and spoil his armor they will show their
 displeasure by not letting you kill him. And when your turn comes, they
 will remember it against you and turn their thumbs down.
 
-THE RETIARIUS.
+RETIARIUS.
 Perhaps that is why I did it, Caesar. He bet me ten sesterces that he
 would vanquish me. If I had had to kill him I should not have had the
 money.
@@ -1542,7 +1542,7 @@ comes from the passage, followed by three attendants carrying
 respectively a bundle of swords, some helmets, and some breastplates
 and pieces of armor which they throw down in a heap.
 
-THE CALL BOY.
+CALL BOY.
 By your leave, Caesar. Number eleven! Gladiators and Christians!
 
 __Ferrovius springs up, ready for martyrdom. The other Christians take
@@ -1561,7 +1561,7 @@ passage_).
 LAVINIA.
 (_to Ferrovius_) Farewell.
 
-THE EDITOR.
+EDITOR.
 Steady there. You Christians have got to fight. Here! arm yourselves.
 
 FERROVIUS.
@@ -1569,19 +1569,19 @@ FERROVIUS.
 could fight if it were my Master’s will, and that I could kill the man
 who kills me if I chose.
 
-THE EDITOR.
+EDITOR.
 Put on that armor.
 
 FERROVIUS.
 No armor.
 
-THE EDITOR.
+EDITOR.
 (_bullying him_) Do what you’re told. Put on that armor.
 
 FERROVIUS.
 (_gripping the sword and looking dangerous_) I said, No armor.
 
-THE EDITOR.
+EDITOR.
 And what am I to say when I am accused of sending a naked man in to
 fight my men in armor?
 
@@ -1589,7 +1589,7 @@ FERROVIUS.
 Say your prayers, brother; and have no fear of the princes of this
 world.
 
-THE EDITOR.
+EDITOR.
 Tsha! You obstinate fool! (_He bites his lips irresolutely, not knowing
 exactly what to do_).
 
@@ -1597,7 +1597,7 @@ ANDROCLES.
 (_to Ferrovius_) Farewell, brother, till we meet in the sweet
 by-and-by.
 
-THE EDITOR.
+EDITOR.
 (_to Androcles_) You are going too. Take a sword there; and put on any
 armor you can find to fit you.
 
@@ -1605,7 +1605,7 @@ ANDROCLES.
 No, really: I can’t fight: I never could. I can’t bring myself to
 dislike anyone enough. I’m to be thrown to the lions with the lady.
 
-THE EDITOR.
+EDITOR.
 Then get out of the way and hold your noise. (_Androcles steps aside
 with cheerful docility_). Now then! Are you all ready there?
 
@@ -1614,7 +1614,7 @@ __A trumpet is heard from the arena.__
 FERROVIUS.
 (_starting convulsively_) Heaven give me strength!
 
-THE EDITOR.
+EDITOR.
 Aha! That frightens you, does it?
 
 FERROVIUS.
@@ -1694,24 +1694,24 @@ __Before the Editor can retort, the Call Boy rushes up through the
 passage; and the Captain comes from the Emperor’s box and descends the
 steps.__
 
-THE CALL BOY.
+CALL BOY.
 In with you: into the arena. The stage is waiting.
 
-THE CAPTAIN.
+CAPTAIN.
 The Emperor is waiting. (_To the Editor_) What are you dreaming of,
 man? Send your men in at once.
 
-THE EDITOR.
+EDITOR.
 Yes, Sir: it’s these Christians hanging back.
 
 FERROVIUS.
 (_in a voice of thunder_) Liar!
 
-THE EDITOR.
+EDITOR.
 (_not heeding him_) March. (_The gladiators told off to fight with the
 Christians march down the passage_) Follow up there, you.
 
-THE CHRISTIAN MEN AND WOMEN.
+CHRISTIAN MEN AND WOMEN.
 (_as they part_) Be steadfast, brother. Farewell. Hold up the faith,
 brother. Farewell. Go to glory, dearest. Farewell. Remember: we are
 praying for you. Farewell. Be strong, brother. Farewell. Don’t forget
@@ -1719,7 +1719,7 @@ that the divine love and our love surround you. Farewell. Nothing can
 hurt you: remember that, brother. Farewell. Eternal glory, dearest.
 Farewell.
 
-THE EDITOR.
+EDITOR.
 (_out of patience_) Shove them in, there.
 
 __The remaining gladiators and the Call Boy make a movement towards
@@ -1740,7 +1740,7 @@ FERROVIUS.
 It is true. Do not envy me because I pass before you to glory. (_He
 goes through the passage_).
 
-THE EDITOR.
+EDITOR.
 (_to the Call Boy_) Sickening work, this. Why can’t they all be thrown
 to the lions? It’s not a man’s job. (_He throws himself moodily into
 his chair_).
@@ -1773,13 +1773,13 @@ LAVINIA.
 (_startled: she had forgotten his presence_) Are you there, handsome
 Captain? Have you come to see me die?
 
-THE CAPTAIN.
+CAPTAIN.
 (_coming to her side_) I am on duty with the Emperor, Lavinia.
 
 LAVINIA.
 Is it part of your duty to laugh at us?
 
-THE CAPTAIN.
+CAPTAIN.
 No: that is part of my private pleasure. Your friend here is a
 humorist. I laughed at his telling you to think of yourself to keep up
 your heart. I say, think of yourself and burn the incense.
@@ -1788,7 +1788,7 @@ LAVINIA.
 He is not a humorist: he was right. You ought to know that, Captain:
 you have been face to face with death.
 
-THE CAPTAIN.
+CAPTAIN.
 Not with certain death, Lavinia. Only death in battle, which spares
 more men than death in bed. What you are facing is certain death. You
 have nothing left now but your faith in this craze of yours: this
@@ -1804,14 +1804,14 @@ them—fade into mere dreams beside that inexorable reality. I know now
 that I am not dying for stories or dreams. Did you hear of the dreadful
 thing that happened here while we were waiting?
 
-THE CAPTAIN.
+CAPTAIN.
 I heard that one of your fellows bolted, and ran right into the jaws of
 the lion. I laughed. I still laugh.
 
 LAVINIA.
 Then you don’t understand what that meant?
 
-THE CAPTAIN.
+CAPTAIN.
 It meant that the lion had a cur for his breakfast.
 
 LAVINIA.
@@ -1823,7 +1823,7 @@ minute whilst I’ve been sitting here, with death coming nearer and
 nearer, with reality becoming realler and realler, with stories and
 dreams fading away into nothing.
 
-THE CAPTAIN.
+CAPTAIN.
 Are you then going to die for nothing?
 
 LAVINIA.
@@ -1831,7 +1831,7 @@ Yes: that is the wonderful thing. It is since all the stories and
 dreams have gone that I have now no doubt at all that I must die for
 something greater than dreams or stories.
 
-THE CAPTAIN.
+CAPTAIN.
 But for what?
 
 LAVINIA.
@@ -1839,13 +1839,13 @@ I don’t know. If it were for anything small enough to know, it would be
 too small to die for. I think I’m going to die for God. Nothing else is
 real enough to die for.
 
-THE CAPTAIN.
+CAPTAIN.
 What is God?
 
 LAVINIA.
 When we know that, Captain, we shall be gods ourselves.
 
-THE CAPTAIN.
+CAPTAIN.
 Lavinia; come down to earth. Burn the incense and marry me.
 
 LAVINIA.
@@ -1853,7 +1853,7 @@ Handsome Captain: would you marry me if I hauled down the flag in the
 day of battle and burnt the incense? Sons take after their mothers, you
 know. Do you want your son to be a coward?
 
-THE CAPTAIN.
+CAPTAIN.
 (_strongly moved_). By great Diana, I think I would strangle you if you
 gave in now.
 
@@ -1861,7 +1861,7 @@ LAVINIA.
 (_putting her hand on the head of Androcles_) The hand of God is on us
 three, Captain.
 
-THE CAPTAIN.
+CAPTAIN.
 What nonsense it all is! And what a monstrous thing that you should die
 for such nonsense, and that I should look on helplessly when my whole
 soul cries out against it! Die then if you must; but at least I can cut
@@ -1871,7 +1871,7 @@ the Emperor’s throat and then my own when I see your blood.
 wrath on the threshold. The Editor, the Call Boy, and the gladiators
 spring to their feet.]]
 
-THE EMPEROR.
+CAESAR.
 The Christians will not fight; and your curs cannot get their blood up
 to attack them. It’s all that fellow with the blazing eyes. Send for
 the whip. (_The Call Boy rushes out on the east side for the whip_). If
@@ -1895,13 +1895,13 @@ the arena and kill him first. (_He makes a wild dash into the passage.
 As he does so a great clamor is heard from the arena, ending in wild
 applause. The gladiators listen and look inquiringly at one another_).
 
-THE EDITOR.
+EDITOR.
 What’s up now?
 
 LAVINIA.
 (_to the Captain_) What has happened, do you think?
 
-THE CAPTAIN.
+CAPTAIN.
 What CAN happen? They are killing them, I suppose.
 
 ANDROCLES.
@@ -1915,26 +1915,26 @@ ANDROCLES.
 Oh, don’t ask me, don’t ask me. Something too dreadful. Oh! (_He
 crouches by her and hides his face in her robe, sobbing_).
 
-THE CALL BOY. (_rushing through from the passage as before_) Ropes and
+CALL BOY. (_rushing through from the passage as before_) Ropes and
 hooks there! Ropes and hooks.
 
-THE EDITOR.
+EDITOR.
 Well, need you excite yourself about it? (_Another burst of applause_).
 
 __Two slaves in Etruscan masks, with ropes and drag hooks, hurry in.__
 
 ONE OF THE SLAVES. How many dead?
 
-THE CALL BOY.
+CALL BOY.
 Six. (_The slave blows a whistle twice; and four more masked slaves
 rush through into the arena with the same apparatus_) And the basket.
 Bring the baskets. (_The slave whistles three times, and runs through
 the passage with his companion_).
 
-THE CAPTAIN.
+CAPTAIN.
 Who are the baskets for?
 
-THE CALL BOY.
+CALL BOY.
 For the whip. He’s in pieces. They’re all in pieces, more or less.
 (_Lavinia hides her face_).
 
@@ -1944,7 +1944,7 @@ exhausted_)
 
 Boys, he’s killed the lot.
 
-THE EMPEROR.
+CAESAR.
 (_again bursting from his box, this time in an ecstasy of delight_)
 Where is he? Magnificent! He shall have a laurel crown.
 
@@ -1964,7 +1964,7 @@ FERROVIUS.
 I know not; but there was blood behind my eyes; and there’s blood on my
 sword. What does that mean?
 
-THE EMPEROR.
+CAESAR.
 (_enthusiastically, on the landing outside his box_) What does it mean?
 It means that you are the greatest man in Rome. It means that you shall
 have a laurel crown of gold. Superb fighter, I could almost yield you
@@ -1979,49 +1979,49 @@ hear?
 RETIARIUS. It is all one to us, Caesar. Had I been there with my net,
 the story would have been different.
 
-THE CAPTAIN.
+CAPTAIN.
 (_suddenly seizing Lavinia by the wrist and dragging her up the steps
 to the Emperor_) Caesar this woman is the sister of Ferrovius. If she
 is thrown to the lions he will fret. He will lose weight; get out of
 condition.
 
-THE EMPEROR.
+CAESAR.
 The lions? Nonsense! (_To Lavinia_) Madam: I am proud to have the honor
 of making your acquaintance. Your brother is the glory of Rome.
 
 LAVINIA.
 But my friends here. Must they die?
 
-THE EMPEROR.
+CAESAR.
 Die! Certainly not. There has never been the slightest idea of harming
 them. Ladies and gentlemen: you are all free. Pray go into the front of
 the house and enjoy the spectacle to which your brother has so
 splendidly contributed. Captain: oblige me by conducting them to the
 seats reserved for my personal friends.
 
-THE MENAGERIE KEEPER.
+MENAGERIE KEEPER.
 Caesar: I must have one Christian for the lion. The people have been
 promised it; and they will tear the decorations to bits if they are
 disappointed.
 
-THE EMPEROR.
+CAESAR.
 True, true: we must have somebody for the new lion.
 
 FERROVIUS.
 Throw me to him. Let the apostate perish.
 
-THE EMPEROR.
+CAESAR.
 No, no: you would tear him in pieces, my friend; and we cannot afford
 to throw away lions as if they were mere slaves. But we must have
 somebody. This is really extremely awkward.
 
-THE MENAGERIE KEEPER.
+MENAGERIE KEEPER.
 Why not that little Greek chap? He’s not a Christian: he’s a sorcerer.
 
-THE EMPEROR.
+CAESAR.
 The very thing: he will do very well.
 
-THE CALL BOY. (_issuing from the passage_) Number twelve. The Christian
+CALL BOY. (_issuing from the passage_) Number twelve. The Christian
 for the new lion.
 
 ANDROCLES.
@@ -2032,7 +2032,7 @@ LAVINIA.
 I’ll go in his place, Caesar. Ask the Captain whether they do not like
 best to see a woman torn to pieces. He told me so yesterday.
 
-THE EMPEROR.
+CAESAR.
 There is something in that: there is certainly something in that—if
 only I could feel sure that your brother would not fret.
 
@@ -2074,7 +2074,7 @@ the passage, the Emperor watching them in breathless astonishment until
 they disappear, when he rushes from his box and descends the steps in
 frantic excitement.__
 
-THE EMPEROR.
+CAESAR.
 My friends, an incredible! an amazing thing! has happened. I can no
 longer doubt the truth of Christianity. (_The Christians press to him
 joyfully_) This Christian sorcerer—(_with a yell, he breaks off as he
@@ -2089,7 +2089,7 @@ ANDROCLES.
 lion combining a series of yawns, purrs, and roars, achieves something
 very like a laugh_).
 
-THE EMPEROR.
+CAESAR.
 (_standing on a chair inside his box and looking over the wall_)
 Sorcerer: I command you to put that lion to death instantly. It is
 guilty of high treason. Your conduct is most disgra— (_the lion charges
@@ -2102,7 +2102,7 @@ Don’t run away, sir: he can’t help springing if you run. (_He seizes
 the Emperor and gets between him and the lion, who stops at once_).
 Don’t be afraid of him.
 
-THE EMPEROR.
+CAESAR.
 I am NOT afraid of him. (_The lion crouches, growling. The Emperor
 clutches Androcles_) Keep between us.
 
@@ -2131,7 +2131,7 @@ only playing. Now I shall be really angry with you, Tommy, if you don’t
 let go. (_The lion growls again_) I’ll tell you what it is, sir: he
 thinks you and I are not friends.
 
-THE EMPEROR.
+CAESAR.
 (_trying to undo the clasp of his brooch_) Friends! You infernal
 scoundrel (_the lion growls_) don’t let him go. Curse this brooch! I
 can’t get it loose.
@@ -2143,7 +2143,7 @@ seizes the Emperor’s hands, and shakes them cordially_), Look, Tommy:
 the nice Emperor is the dearest friend Andy Wandy has in the whole
 world: he loves him like a brother.
 
-THE EMPEROR.
+CAESAR.
 You little brute, you damned filthy little dog of a Greek tailor: I’ll
 have you burnt alive for daring to touch the divine person of the
 Emperor. (_The lion roars_).
@@ -2154,7 +2154,7 @@ animals do: they take it from the tone of your voice. (_The lion growls
 and lashes his tail_). I think he’s going to spring at your worship. If
 you wouldn’t mind saying something affectionate. (_The lion roars_).
 
-THE EMPEROR.
+CAESAR.
 (_shaking Androcles’ hands frantically_) My dearest Mr. Androcles, my
 sweetest friend, my long lost brother, come to my arms. (_He embraces
 Androcles_). Oh, what an abominable smell of garlic!
@@ -2167,21 +2167,21 @@ There! You see, your worship, a child might play with him now. See!
 (_He tickles the lion’s belly. The lion wriggles ecstatically_). Come
 and pet him.
 
-THE EMPEROR.
+CAESAR.
 I must conquer these unkingly terrors. Mind you don’t go away from him,
 though. (_He pats the lion’s chest_).
 
 ANDROCLES.
 Oh, sir, how few men would have the courage to do that—
 
-THE EMPEROR.
+CAESAR.
 Yes: it takes a bit of nerve. Let us invite the Court in and frighten
 them. Is he safe, do you think?
 
 ANDROCLES.
 Quite safe now, sir.
 
-THE EMPEROR.
+CAESAR.
 (_majestically_) What ho, there! All who are within hearing, return
 without fear. Caesar has tamed the lion. (_All the fugitives steal
 cautiously in. The menagerie keeper comes from the passage with other
@@ -2192,10 +2192,10 @@ FERROVIUS.
 (_timidly approaching the Emperor and looking down with awe on the
 lion_) It is strange that I, who fear no man, should fear a lion.
 
-THE CAPTAIN.
+CAPTAIN.
 Every man fears something, Ferrovius.
 
-THE EMPEROR.
+CAESAR.
 How about the Pretorian Guard now?
 
 FERROVIUS.
@@ -2206,31 +2206,31 @@ He will come when Mars and I are dust; but meanwhile I must serve the
 gods that are, not the God that will be. Until then I accept service in
 the Guard, Caesar.
 
-THE EMPEROR.
+CAESAR.
 Very wisely said. All really sensible men agree that the prudent course
 is to be neither bigoted in our attachment to the old nor rash and
 unpractical in keeping an open mind for the new, but to make the best
 of both dispensations.
 
-THE CAPTAIN.
+CAPTAIN.
 What do you say, Lavinia? Will you too be prudent?
 
 LAVINIA.
 (_on the stair_) No: I’ll strive for the coming of the God who is not
 yet.
 
-THE CAPTAIN.
+CAPTAIN.
 May I come and argue with you occasionally?
 
 LAVINIA.
 Yes, handsome Captain: you may. (_He kisses her hands_).
 
-THE EMPEROR.
+CAESAR.
 And now, my friends, though I do not, as you see, fear this lion, yet
 the strain of his presence is considerable; for none of us can feel
 quite sure what he will do next.
 
-THE MENAGERIE KEEPER.
+MENAGERIE KEEPER.
 Caesar: give us this Greek sorcerer to be a slave in the menagerie. He
 has a way with the beasts.
 
@@ -2238,7 +2238,7 @@ ANDROCLES.
 (_distressed_). Not if they are in cages. They should not be kept in
 cages. They must all be let out.
 
-THE EMPEROR.
+CAESAR.
 I give this sorcerer to be a slave to the first man who lays hands on
 him. (_The menagerie keepers and the gladiators rush for Androcles. The
 lion starts up and faces them. They surge back_). You see how

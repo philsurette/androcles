@@ -49,22 +49,22 @@ another character_) say something else.
 
 ## Staging
 Top-level stage instructions that do not involve a character speaking. 
-These are on their own paragraph, enclosed in '_'s.
+These are on their own paragraph, enclosed in '__'s.
 
 Example
 ```
-_The Ox Driver arrives, wielding a whip and flashing his
-terrible, toothy smile._
+__The Ox Driver arrives, wielding a whip and flashing his
+terrible, toothy smile.__
 ```
 
 ## Description
 A paragraph that describes the look and feel of the play. These are
-largely about set design and atmosphere.
+largely about set design and atmosphere. They are contained in '[[' and ']]'
 
 Example:
 ```
-[There is a stump in the corner of the stage, and jungle cries are 
-audible in the distance.]
+[[There is a stump in the corner of the stage, and jungle cries are 
+audible in the distance.]]
 ```
 
 ## Commentary
