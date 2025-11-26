@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 
-from paths import ROOT, SRC_PATH, PARAGRAPHS_PATH as OUT_PATH
+from paths import ROOT, DEFAULT_PLAY, PARAGRAPHS_PATH as OUT_PATH
 
 
 def collapse_to_paragraphs(text: str) -> list[str]:
@@ -29,7 +29,7 @@ def collapse_to_paragraphs(text: str) -> list[str]:
 
 def main() -> None:
     (ROOT.parent / "build").mkdir(parents=True, exist_ok=True)
-    text = SRC_PATH.read_text(encoding="utf-8-sig")
+    text = DEFAULT_PLAY.read_text(encoding="utf-8-sig")
     paragraphs = collapse_to_paragraphs(text)
     if paragraphs:
         OUT_PATH.write_text("\n".join(paragraphs) + "\n", encoding="utf-8")

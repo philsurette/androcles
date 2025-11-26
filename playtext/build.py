@@ -9,7 +9,7 @@ import narration
 
 
 def build_paragraphs() -> None:
-    text = pg.SRC_PATH.read_text(encoding="utf-8-sig")
+    text = pg.DEFAULT_PLAY.read_text(encoding="utf-8-sig")
     paragraphs = pg.collapse_to_paragraphs(text)
     if paragraphs:
         pg.OUT_PATH.write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
