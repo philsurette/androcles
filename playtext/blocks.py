@@ -14,14 +14,16 @@ from typing import Dict, List, Optional, Tuple
 
 
 ROOT = Path(__file__).resolve().parent
+BUILD_DIR = ROOT.parent / "build"
 PARAGRAPHS_PATH = ROOT / "paragraphs.txt"
-PARTS_DIR = ROOT / "parts"
-BLOCKS_DIR = ROOT / "blocks"
+PARTS_DIR = BUILD_DIR / "parts"
+BLOCKS_DIR = BUILD_DIR / "blocks"
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 BLOCK_RE = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
 DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
 STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
+META_RE = re.compile(r"^::(.*)::$")
 
 
 def slugify(name: str) -> str:
@@ -57,6 +59,7 @@ def write_blocks(blocks: Dict[str, List[str]]) -> None:
 
 def prepare_output_dirs() -> None:
     """Ensure output directories exist and are cleared of old .txt files."""
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
     PARTS_DIR.mkdir(parents=True, exist_ok=True)
     BLOCKS_DIR.mkdir(parents=True, exist_ok=True)
     for folder in (PARTS_DIR, BLOCKS_DIR):
@@ -76,6 +79,7 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
     parts: Dict[str, List[str]] = {}
     blocks: Dict[str, List[str]] = {}
     index: List[Tuple[str, int, str]] = []
+    meta_counters: Dict[str, int] = {}
 
     current_part_id = None
     current_part_name = None
@@ -96,13 +100,32 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
             current_part_id, current_part_name = part_match.groups()
             current_paragraphs = []
             block_counter = 0
+            heading_entry = format_block_entry(current_part_id, 0, [current_part_name.strip()])
+            blocks.setdefault("_HEADING", []).append(heading_entry)
+            index.append((current_part_id, 0, "_HEADING"))
             continue
 
         # Ignore content before the first part heading.
         if current_part_id is None:
+            meta_match = META_RE.match(paragraph)
+            if meta_match:
+                part_key = ""
+                meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
+                entry = format_block_entry(part_key, meta_counters[part_key], [meta_match.group(1).strip()], label="META")
+                blocks.setdefault("_META", []).append(entry)
+                index.append((part_key, meta_counters[part_key], "_META"))
             continue
 
         current_paragraphs.append(paragraph)
+
+        meta_match = META_RE.match(paragraph)
+        if meta_match:
+            part_key = current_part_id
+            meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
+            entry = format_block_entry(part_key, meta_counters[part_key], [meta_match.group(1).strip()], label="META")
+            blocks.setdefault("_META", []).append(entry)
+            index.append((part_key, meta_counters[part_key], "_META"))
+            continue
 
         desc_text = extract_description(paragraph)
         if desc_text is not None:
@@ -199,9 +222,12 @@ def extract_stage_direction(paragraph: str) -> Optional[str]:
     return match.group(1).strip()
 
 
-def format_block_entry(part_id: str, block_no: int, segments: List[str]) -> str:
+def format_block_entry(part_id: str, block_no: int, segments: List[str], label: Optional[str] = None) -> str:
     """Render a block entry with a header and bullet-pointed segments."""
-    lines = [f"{part_id}:{block_no}"]
+    header = f"{part_id}:{block_no}" if part_id is not None else f":{block_no}"
+    if label:
+        header = f"{header} {label}"
+    lines = [header]
     for segment in segments:
         if segment:
             lines.append(f"  - {segment}")

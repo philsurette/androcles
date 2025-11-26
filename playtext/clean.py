@@ -4,7 +4,8 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
-TARGET_DIRS = [ROOT / "blocks", ROOT / "parts", ROOT / "roles"]
+BUILD_DIR = ROOT.parent / "build"
+TARGET_DIRS = [BUILD_DIR / "blocks", BUILD_DIR / "parts", BUILD_DIR / "roles"]
 EXTRA_FILES = [ROOT / "paragraphs.txt"]
 
 
