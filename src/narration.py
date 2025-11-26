@@ -6,9 +6,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Tuple
 
-from paths import BLOCKS_DIR, ROLES_DIR, PARAGRAPHS_PATH, BLOCKS_EXT
-
-INDEX_PATH = BLOCKS_DIR / f"_INDEX{BLOCKS_EXT}"
+from paths import BLOCKS_DIR, ROLES_DIR, PARAGRAPHS_PATH, BLOCKS_EXT, INDEX_PATH
 
 HEADER_RE = re.compile(r"^(\d+):(\d+)$")
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")

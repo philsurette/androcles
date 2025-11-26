@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from paths import PARAGRAPHS_PATH, BLOCKS_DIR, BUILD_DIR, BLOCKS_EXT
+from paths import PARAGRAPHS_PATH, BLOCKS_DIR, BUILD_DIR, BLOCKS_EXT, INDEX_PATH
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 BLOCK_RE = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
@@ -82,8 +82,8 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
             current_paragraphs = []
             block_counter = 0
             heading_entry = format_block_entry(current_part_id, 0, [current_part_name.strip()])
-            blocks.setdefault("_HEADING", []).append(heading_entry)
-            index.append((current_part_id, 0, "_HEADING"))
+            blocks.setdefault("_NARRATOR", []).append(heading_entry)
+            index.append((current_part_id, 0, "_NARRATOR"))
             continue
 
         # Ignore content before the first part heading.
@@ -93,8 +93,8 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
                 part_key = ""
                 meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
                 entry = format_block_entry(part_key, meta_counters[part_key], [meta_match.group(1).strip()], label="META")
-                blocks.setdefault("_META", []).append(entry)
-                index.append((part_key, meta_counters[part_key], "_META"))
+                blocks.setdefault("_NARRATOR", []).append(entry)
+                index.append((part_key, meta_counters[part_key], "_NARRATOR"))
             continue
 
         current_paragraphs.append(paragraph)
@@ -104,15 +104,15 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
             part_key = current_part_id
             meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
             entry = format_block_entry(part_key, meta_counters[part_key], [meta_match.group(1).strip()], label="META")
-            blocks.setdefault("_META", []).append(entry)
-            index.append((part_key, meta_counters[part_key], "_META"))
+            blocks.setdefault("_NARRATOR", []).append(entry)
+            index.append((part_key, meta_counters[part_key], "_NARRATOR"))
             continue
 
         desc_text = extract_description(paragraph)
         if desc_text is not None:
             block_counter += 1
             entry = format_block_entry(current_part_id, block_counter, [desc_text])
-            target = "_DESCRIPTION"
+            target = "_NARRATOR"
             blocks.setdefault(target, []).append(entry)
             index.append((current_part_id, block_counter, target))
             continue
@@ -121,7 +121,7 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
         if stage_text is not None:
             block_counter += 1
             entry = format_block_entry(current_part_id, block_counter, [stage_text])
-            target = "_DIRECTION"
+            target = "_NARRATOR"
             blocks.setdefault(target, []).append(entry)
             index.append((current_part_id, block_counter, target))
             continue
@@ -223,7 +223,7 @@ def write_index(index_entries: List[Tuple[str, int, str]]) -> None:
     content = "\n".join(lines)
     if content:
         content += "\n"
-    (BLOCKS_DIR / f"_INDEX{BLOCKS_EXT}").write_text(content, encoding="utf-8")
+    INDEX_PATH.write_text(content, encoding="utf-8")
 
 
 
