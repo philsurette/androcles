@@ -6,11 +6,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-
-ROOT = Path(__file__).resolve().parent
-BUILD_DIR = ROOT.parent / "build"
-PARAGRAPHS_PATH = BUILD_DIR / "paragraphs.txt"
-BLOCKS_DIR = BUILD_DIR / "blocks"
+from paths import PARAGRAPHS_PATH, BLOCKS_DIR, BUILD_DIR
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 BLOCK_RE = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")

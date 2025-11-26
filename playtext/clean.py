@@ -1,12 +1,6 @@
 #!/usr/bin/env python3
 """Remove generated files in the blocks and parts folders."""
-from pathlib import Path
-
-
-ROOT = Path(__file__).resolve().parent
-BUILD_DIR = ROOT.parent / "build"
-TARGET_DIRS = [BUILD_DIR / "blocks", BUILD_DIR / "roles"]
-EXTRA_FILES = [ROOT / "paragraphs.txt"]
+from paths import TARGET_DIRS, EXTRA_FILES
 
 
 def main() -> None:

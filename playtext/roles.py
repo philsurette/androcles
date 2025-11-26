@@ -6,11 +6,8 @@ import re
 from pathlib import Path
 from typing import Dict, List, Tuple
 
+from paths import BLOCKS_DIR, ROLES_DIR
 
-ROOT = Path(__file__).resolve().parent
-BUILD_DIR = ROOT.parent / "build"
-BLOCKS_DIR = BUILD_DIR / "blocks"
-ROLES_DIR = BUILD_DIR / "roles"
 INDEX_PATH = BLOCKS_DIR / "_INDEX.txt"
 
 HEADER_RE = re.compile(r"^(\d+):(\d+)$")
