@@ -6,9 +6,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 BUILD_DIR = ROOT.parent / "build"
 PLAYS_DIR = ROOT.parent / "plays"
-
+DEFAULT_PLAY = PLAYS_DIR / "androcles" / "play.txt"
 PARAGRAPHS_PATH = BUILD_DIR / "paragraphs.txt"
-DEFAULT_PLAY = PLAYS_DIR / "androcles.txt"
 
 # Output directories
 BLOCKS_DIR = BUILD_DIR / "blocks"
