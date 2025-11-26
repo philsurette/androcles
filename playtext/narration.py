@@ -16,6 +16,9 @@ PARAGRAPHS_PATH = ROOT / "paragraphs.txt"
 HEADER_RE = re.compile(r"^(\d+):(\d+)$")
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 META_RE = re.compile(r"^::(.*)::$")
+DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
+STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
+BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 
 
 def load_index() -> List[Tuple[str, str, str]]:
@@ -73,47 +76,12 @@ def build_narration() -> None:
     ROLES_DIR.mkdir(parents=True, exist_ok=True)
     blocks_map = load_blocks()
     index_entries = load_index()
+    index_lookup = {(p, b): t for p, b, t in index_entries}
 
     output_entries: List[str] = []
-
-    # Meta blocks from paragraphs (including pre-first-heading with part -1).
-    output_entries.extend(collect_meta_entries())
-
-    for part_id, block_no, target in index_entries:
-        key = (part_id, block_no)
-        block_map = blocks_map.get(target)
-        if not block_map or key not in block_map:
-            continue
-        lines = block_map[key]
-
-        label = target.lstrip("_").upper()
-
-        if target in {"_DESCRIPTION", "_DIRECTION"}:
-            header = f"{part_id}:{block_no} {label}"
-            entry_lines = [header] + lines[1:]
-            output_entries.append("\n".join(entry_lines))
-            continue
-
-        directions = collect_inline_directions(lines)
-        if directions:
-            header = f"{part_id}:{block_no} {target}"
-            entry_lines = [header] + directions
-            output_entries.append("\n".join(entry_lines))
-
-    content = "\n\n".join(output_entries)
-    if content:
-        content += "\n"
-    (ROLES_DIR / "_NARRATOR.txt").write_text(content, encoding="utf-8")
-
-
-def collect_meta_entries() -> List[str]:
-    """Extract meta paragraphs (::...::) from paragraphs.txt."""
-    if not PARAGRAPHS_PATH.exists():
-        return []
-
-    entries: List[str] = []
+    meta_counters: Dict[str, int] = {}
     current_part: str | None = None
-    counters: Dict[str, int] = {}
+    block_counter = 0
 
     for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
         line = line.strip()
@@ -123,16 +91,66 @@ def collect_meta_entries() -> List[str]:
         part_match = PART_HEADING_RE.match(line)
         if part_match:
             current_part = part_match.group(1)
+            block_counter = 0
+            part_name = part_match.group(2).strip()
+            output_entries.append("\n".join([f"{current_part}:0", f"  - {part_name}"]))
             continue
 
         meta_match = META_RE.match(line)
         if meta_match:
             part_key = current_part if current_part is not None else "-1"
-            counters[part_key] = counters.get(part_key, 0) + 1
-            header = f"{part_key}:{counters[part_key]} META"
-            entries.append("\n".join([header, f"  - {meta_match.group(1).strip()}"]))
+            meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
+            header = f"{part_key}:{meta_counters[part_key]} META"
+            output_entries.append("\n".join([header, f"  - {meta_match.group(1).strip()}"]))
+            continue
 
-    return entries
+        if DESCRIPTION_RE.match(line):
+            if current_part is None:
+                continue
+            block_counter += 1
+            target = index_lookup.get((current_part, str(block_counter)))
+            if target:
+                block_map = blocks_map.get(target)
+                key = (current_part, str(block_counter))
+                if block_map and key in block_map:
+                    lines = block_map[key]
+                    header = f"{current_part}:{block_counter} {target.lstrip('_').upper()}"
+                    output_entries.append("\n".join([header] + lines[1:]))
+            continue
+
+        if STAGE_RE.match(line):
+            if current_part is None:
+                continue
+            block_counter += 1
+            target = index_lookup.get((current_part, str(block_counter)))
+            if target:
+                block_map = blocks_map.get(target)
+                key = (current_part, str(block_counter))
+                if block_map and key in block_map:
+                    lines = block_map[key]
+                    header = f"{current_part}:{block_counter} {target.lstrip('_').upper()}"
+                    output_entries.append("\n".join([header] + lines[1:]))
+            continue
+
+        if BLOCK_RE.match(line):
+            if current_part is None:
+                continue
+            block_counter += 1
+            target = index_lookup.get((current_part, str(block_counter)))
+            if target:
+                block_map = blocks_map.get(target)
+                key = (current_part, str(block_counter))
+                if block_map and key in block_map:
+                    lines = block_map[key]
+                    directions = collect_inline_directions(lines)
+                    if directions:
+                        header = f"{current_part}:{block_counter} {target}"
+                        output_entries.append("\n".join([header] + directions))
+
+    content = "\n\n".join(output_entries)
+    if content:
+        content += "\n"
+    (ROLES_DIR / "_NARRATOR.txt").write_text(content, encoding="utf-8")
 
 
 def main() -> None:
