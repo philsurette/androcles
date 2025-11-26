@@ -98,7 +98,7 @@ def build_narration() -> None:
 
         meta_match = META_RE.match(line)
         if meta_match:
-            part_key = current_part if current_part is not None else "-1"
+            part_key = current_part if current_part is not None else ""
             meta_counters[part_key] = meta_counters.get(part_key, 0) + 1
             header = f"{part_key}:{meta_counters[part_key]} META"
             output_entries.append("\n".join([header, f"  - {meta_match.group(1).strip()}"]))
