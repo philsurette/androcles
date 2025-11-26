@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Generate per-part and per-character block files from the normalized paragraphs.
-
-Outputs:
-- parts/<part_id>_<slug>.txt : paragraphs belonging to each part
-- blocks/<CHARACTER>.txt     : each block line prefixed with part:block_number
-"""
+"""Generate per-character block files from the normalized paragraphs."""
 from __future__ import annotations
 
 import re
@@ -16,7 +10,6 @@ from typing import Dict, List, Optional, Tuple
 ROOT = Path(__file__).resolve().parent
 BUILD_DIR = ROOT.parent / "build"
 PARAGRAPHS_PATH = ROOT / "paragraphs.txt"
-PARTS_DIR = BUILD_DIR / "parts"
 BLOCKS_DIR = BUILD_DIR / "blocks"
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
@@ -39,13 +32,7 @@ def read_paragraphs() -> List[str]:
 
 
 def write_part(part_id: str, part_name: str, paragraphs: List[str]) -> None:
-    """Write collected paragraphs for a part to parts/<id>_<slug>.txt."""
-    slug = slugify(part_name)
-    path = PARTS_DIR / f"{part_id}_{slug}.txt"
-    content = "\n".join(paragraphs)
-    if content:
-        content += "\n"
-    path.write_text(content, encoding="utf-8")
+    """Deprecated: parts output removed."""
 
 
 def write_blocks(blocks: Dict[str, List[str]]) -> None:
@@ -60,11 +47,9 @@ def write_blocks(blocks: Dict[str, List[str]]) -> None:
 def prepare_output_dirs() -> None:
     """Ensure output directories exist and are cleared of old .txt files."""
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    PARTS_DIR.mkdir(parents=True, exist_ok=True)
     BLOCKS_DIR.mkdir(parents=True, exist_ok=True)
-    for folder in (PARTS_DIR, BLOCKS_DIR):
-        for path in folder.glob("*.txt"):
-            path.unlink()
+    for path in BLOCKS_DIR.glob("*.txt"):
+        path.unlink()
 
 
 def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str, int, str]]]:
