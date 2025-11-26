@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parent
 BUILD_DIR = ROOT.parent / "build"
-PARAGRAPHS_PATH = ROOT / "paragraphs.txt"
+PARAGRAPHS_PATH = BUILD_DIR / "paragraphs.txt"
 BLOCKS_DIR = BUILD_DIR / "blocks"
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")

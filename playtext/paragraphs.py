@@ -3,8 +3,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parent
+BUILD_DIR = ROOT.parent / "build"
 SRC_PATH = ROOT / "src.txt"
-OUT_PATH = ROOT / "paragraphs.txt"
+OUT_PATH = BUILD_DIR / "paragraphs.txt"
 
 
 def collapse_to_paragraphs(text: str) -> list[str]:
@@ -31,6 +32,7 @@ def collapse_to_paragraphs(text: str) -> list[str]:
 
 
 def main() -> None:
+    BUILD_DIR.mkdir(parents=True, exist_ok=True)
     text = SRC_PATH.read_text(encoding="utf-8-sig")
     paragraphs = collapse_to_paragraphs(text)
     if paragraphs:

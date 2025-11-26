@@ -12,7 +12,7 @@ BUILD_DIR = ROOT.parent / "build"
 BLOCKS_DIR = BUILD_DIR / "blocks"
 ROLES_DIR = BUILD_DIR / "roles"
 INDEX_PATH = BLOCKS_DIR / "_INDEX.txt"
-PARAGRAPHS_PATH = ROOT / "paragraphs.txt"
+PARAGRAPHS_PATH = BUILD_DIR / "paragraphs.txt"
 
 HEADER_RE = re.compile(r"^(\d+):(\d+)$")
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
