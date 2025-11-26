@@ -6,7 +6,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
-from paths import PARAGRAPHS_PATH, BLOCKS_DIR, BUILD_DIR
+from paths import PARAGRAPHS_PATH, BLOCKS_DIR, BUILD_DIR, BLOCKS_EXT
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 BLOCK_RE = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
@@ -37,14 +37,14 @@ def write_blocks(blocks: Dict[str, List[str]]) -> None:
         content = "\n".join(entries)
         if content:
             content += "\n"
-        (BLOCKS_DIR / f"{character}.txt").write_text(content, encoding="utf-8")
+        (BLOCKS_DIR / f"{character}{BLOCKS_EXT}").write_text(content, encoding="utf-8")
 
 
 def prepare_output_dirs() -> None:
     """Ensure output directories exist and are cleared of old .txt files."""
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     BLOCKS_DIR.mkdir(parents=True, exist_ok=True)
-    for path in BLOCKS_DIR.glob("*.txt"):
+    for path in BLOCKS_DIR.glob(f"*{BLOCKS_EXT}"):
         path.unlink()
 
 
@@ -223,7 +223,7 @@ def write_index(index_entries: List[Tuple[str, int, str]]) -> None:
     content = "\n".join(lines)
     if content:
         content += "\n"
-    (BLOCKS_DIR / "_INDEX.txt").write_text(content, encoding="utf-8")
+    (BLOCKS_DIR / f"_INDEX{BLOCKS_EXT}").write_text(content, encoding="utf-8")
 
 
 
