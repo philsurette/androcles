@@ -150,6 +150,7 @@ def audioplay(
     segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(False, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
+    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
 ) -> None:
     setup_logging()
     build_paragraphs()
@@ -166,6 +167,7 @@ def audioplay(
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
     )
 
 

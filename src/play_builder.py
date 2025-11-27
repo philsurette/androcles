@@ -119,6 +119,7 @@ def build_part_audio(
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
+    minimal_callouts: bool = False,
 ) -> Path:
     """Stitch snippets for a given part (or None for preamble) into one WAV."""
     silence = AudioSegment.silent(duration=spacing_ms) if spacing_ms > 0 else None
@@ -142,6 +143,9 @@ def build_part_audio(
 
     combined = AudioSegment.empty()
     last_block_key: Tuple[str, int] | None = None
+    prev_role: str | None = None
+    prev2_role: str | None = None
+    seen_roles: set[str] = set()
     for idx, (role, block, seg_id) in enumerate(ordered_ids):
         wav_path = AUDIO_OUT_DIR / role / f"{seg_id}.wav"
         if not wav_path.exists():
@@ -150,17 +154,29 @@ def build_part_audio(
         if include_callouts and role != "_NARRATOR":
             block_key = (role, block)
             if block_key != last_block_key:
-                if role not in callout_cache:
-                    callout_cache[role] = load_callout(role)
-                call = callout_cache[role]
-                if call:
-                    combined += call
-                    if callout_gap:
-                        combined += callout_gap
+                need_callout = True
+                if minimal_callouts:
+                    if role in seen_roles:
+                        if role == prev_role:
+                            need_callout = False
+                        elif prev2_role == role and prev_role and prev_role != role:
+                            # simple alternating dialogue with two roles
+                            need_callout = False
+                if need_callout:
+                    if role not in callout_cache:
+                        callout_cache[role] = load_callout(role)
+                    call = callout_cache[role]
+                    if call:
+                        combined += call
+                        if callout_gap:
+                            combined += callout_gap
                 last_block_key = block_key
+                seen_roles.add(role)
         combined += AudioSegment.from_file(wav_path)
         if silence and idx < len(ordered_ids) - 1:
             combined += silence
+        if role != "_NARRATOR":
+            prev2_role, prev_role = prev_role, role
 
     AUDIO_OUT_DIR.mkdir(parents=True, exist_ok=True)
     if part_filter is None:
