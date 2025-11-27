@@ -25,7 +25,7 @@ def detect_spans_ms(
     min_silence_ms: int,
     silence_thresh: int,
     pad_end_ms: int | None = None,
-    chunk_size: int = 25,
+    chunk_size: int = 50,
 ) -> List[Tuple[int, int]]:
     """
     Detect non-silent spans (start_ms, end_ms), padding start/end by one chunk of surrounding silence.

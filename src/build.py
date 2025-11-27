@@ -99,9 +99,9 @@ def main(ctx: typer.Context) -> None:
 def segments(
     role: str = typer.Option(None, help="Limit to a specific role"),
     part: str = typer.Option(None, help="Limit to a specific part id (use '_' for no-part narration entries)"),
-    silence_thresh: int = typer.Option(-45, help="Silence threshold dBFS for splitting"),
+    silence_thresh: int = typer.Option(-60, help="Silence threshold dBFS for splitting"),
     separator_len_ms: int = typer.Option(1700, "--separator-length-ms", help="Minimum silence length (ms) to split on"),
-    chunk_size: int = typer.Option(25, help="Chunk size (ms) for silence detection"),
+    chunk_size: int = typer.Option(50, help="Chunk size (ms) for silence detection"),
 ) -> None:
     setup_logging()
     build_paragraphs()
