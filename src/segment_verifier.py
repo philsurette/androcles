@@ -55,7 +55,7 @@ def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> Path:
     AUDIO_OUT_DIR.mkdir(parents=True, exist_ok=True)
     with timings_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
-            f, fieldnames=["id", "warning", "expected_seconds", "actual_seconds", "percent", "start_seconds", "role", "text"]
+            f, fieldnames=["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "role", "text"]
         )
         writer.writeheader()
         for row in rows:
@@ -76,7 +76,7 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
         row["actual_seconds"] = None
         row["percent"] = None
         row["warning"] = ""
-        row["start_seconds"] = None
+        row["start"] = None
 
         text = row["text"]
         if text and not all(ch in punct for ch in text):
@@ -87,7 +87,7 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
             row["actual_seconds"] = round(len(audio) / 1000.0, 1)
             if role not in offsets_cache:
                 offsets_cache[role] = load_offsets(role)
-            row["start_seconds"] = offsets_cache[role].get(row["id"])
+            row["start"] = offsets_cache[role].get(row["id"])
         else:
             logging.error("Missing snippet %s for role %s", row["id"], row["role"])
             row["warning"] = "-"

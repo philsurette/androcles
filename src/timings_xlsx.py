@@ -47,6 +47,9 @@ def write_sheet(ws, headers, rows):
         elif header == "percent":
             for cell in col:
                 cell.number_format = "0.0"
+        elif header == "start":
+            for cell in col:
+                cell.number_format = "mm:ss.0"
     # Widen text column
     if "text" in headers:
         idx = headers.index("text") + 1  # 1-based
@@ -55,7 +58,7 @@ def write_sheet(ws, headers, rows):
 
 def generate_xlsx():
     rows = compute_rows()
-    headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start_seconds", "role", "text"]
+    headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "role", "text"]
     wb = Workbook()
     ws = wb.active
     ws.title = "All"
