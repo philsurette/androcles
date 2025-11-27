@@ -16,6 +16,7 @@ BLOCKS_EXT = ".blocks"
 INDEX_PATH = BUILD_DIR / "INDEX.files"
 AUDIO_OUT_DIR = BUILD_DIR / "audio"
 RECORDINGS_DIR = DEFAULT_PLAY.parent / "recordings"
+CALLOUTS_DIR = DEFAULT_PLAY.parent / "callouts"
 
 # Clean targets
 TARGET_DIRS = [BLOCKS_DIR, ROLES_DIR]

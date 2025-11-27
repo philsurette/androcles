@@ -15,6 +15,7 @@ from narrator_splitter import split_narration
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
+from play_builder import build_part_audio
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR
 
 
@@ -141,6 +142,31 @@ def check_recording() -> None:
 def generate_timings() -> None:
     setup_logging()
     generate_xlsx()
+
+
+@app.command()
+def audioplay(
+    part: str = typer.Option(..., help="Part number to assemble, or '_' for preamble (no part)"),
+    segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
+    callouts: bool = typer.Option(False, help="Prepend each role line with its callout audio"),
+    callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
+) -> None:
+    setup_logging()
+    build_paragraphs()
+    build_blocks()
+    if part == "_":
+        part_filter = None
+    else:
+        try:
+            part_filter = int(part)
+        except ValueError:
+            raise typer.BadParameter("Part must be an integer or '_'")
+    build_part_audio(
+        part_filter,
+        spacing_ms=segment_spacing_ms,
+        include_callouts=callouts,
+        callout_spacing_ms=callout_spacing_ms,
+    )
 
 
 if __name__ == "__main__":
