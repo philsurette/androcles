@@ -98,6 +98,14 @@ def main(ctx: typer.Context) -> None:
 
 
 @app.command()
+def text() -> None:
+    """Build text artifacts (paragraphs, blocks, roles, narration)."""
+    setup_logging()
+    build_paragraphs()
+    build_blocks()
+
+
+@app.command()
 def segments(
     role: str = typer.Option(None, help="Limit to a specific role"),
     part: str = typer.Option(None, help="Limit to a specific part id (use '_' for no-part narration entries)"),
