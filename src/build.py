@@ -195,7 +195,11 @@ def cues(
     if role:
         roles = [role]
     else:
-        roles = [p.name for p in AUDIO_OUT_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
+        roles = [
+            p.name
+            for p in AUDIO_OUT_DIR.iterdir()
+            if p.is_dir() and not p.name.startswith("_") and p.name != "cues"
+        ]
     for r in roles:
         build_cues(
             r,
