@@ -15,7 +15,7 @@ from narrator_splitter import split_narration
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
-from play_builder import build_part_audio
+from play_builder import build_audio, list_parts
 from cue_builder import build_cues
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR
 
@@ -155,28 +155,37 @@ def generate_timings() -> None:
 
 @app.command()
 def audioplay(
-    part: str = typer.Option(..., help="Part number to assemble, or '_' for preamble (no part)"),
+    part: str = typer.Option(None, help="Part number to assemble, '_' for preamble, omit for all parts"),
     segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
     minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
+    audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
 ) -> None:
     setup_logging()
     build_paragraphs()
     build_blocks()
-    if part == "_":
-        part_filter = None
+    if audio_format not in ("mp4", "mp3", "wav"):
+        raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
+    parts = []
+    if part is None:
+        parts = list_parts()
     else:
-        try:
-            part_filter = int(part)
-        except ValueError:
-            raise typer.BadParameter("Part must be an integer or '_'")
-    build_part_audio(
-        part_filter,
+        if part == "_":
+            parts = [None]
+        else:
+            try:
+                parts = [int(part)]
+            except ValueError:
+                raise typer.BadParameter("Part must be an integer or '_'")
+    build_audio(
+        parts=parts,
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
+        audio_format=audio_format,
+        part_chapters=len(parts) > 1,
     )
 
 

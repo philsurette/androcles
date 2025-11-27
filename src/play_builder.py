@@ -23,7 +23,7 @@ def parse_index() -> List[IndexEntry]:
         if not raw.strip():
             continue
         try:
-            id_part, role = raw.split()
+            id_part, role = raw.split(maxsplit=1)
         except ValueError:
             continue
         if id_part.startswith(":"):
@@ -114,14 +114,14 @@ def load_callout(role: str) -> AudioSegment | None:
     return AudioSegment.from_file(path)
 
 
-def build_part_audio(
+def build_part_audio_segment(
     part_filter: int | None,
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
-) -> Path:
-    """Stitch snippets for a given part (or None for preamble) into one WAV."""
+) -> AudioSegment:
+    """Stitch snippets for a given part (or None for preamble) into one AudioSegment."""
     silence = AudioSegment.silent(duration=spacing_ms) if spacing_ms > 0 else None
     callout_gap = AudioSegment.silent(duration=callout_spacing_ms) if callout_spacing_ms > 0 else None
     entries = parse_index()
@@ -178,13 +178,96 @@ def build_part_audio(
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
-    AUDIO_OUT_DIR.mkdir(parents=True, exist_ok=True)
-    if part_filter is None:
-        out_path = AUDIO_OUT_DIR / "preamble.wav"
+    return combined
+
+
+def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path, fmt: str) -> None:
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    if fmt == "wav" or not chapters:
+        audio.export(out_path, format=fmt)
+        return
+
+    # Use ffmpeg to embed chapter metadata
+    import tempfile
+    import subprocess
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        wav_path = Path(tmpdir) / "tmp.wav"
+        meta_path = Path(tmpdir) / "chapters.txt"
+        audio.export(wav_path, format="wav")
+        lines = [";FFMETADATA1"]
+        for start, end, title in chapters:
+            lines.append("[CHAPTER]")
+            lines.append("TIMEBASE=1/1000")
+            lines.append(f"START={start}")
+            lines.append(f"END={end}")
+            lines.append(f"title={title}")
+        meta_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(wav_path),
+            "-i",
+            str(meta_path),
+            "-map_metadata",
+            "1",
+            "-c:a",
+            "aac" if fmt == "mp4" else "libmp3lame",
+            str(out_path),
+        ]
+        subprocess.run(cmd, check=True)
+
+
+def list_parts() -> List[int | None]:
+    parts: List[int | None] = []
+    for p, _, _ in parse_index():
+        if p not in parts:
+            parts.append(p)
+    # sort with None (preamble) first
+    parts_sorted = sorted([x for x in parts if x is not None])
+    if None in parts:
+        return [None] + parts_sorted
+    return parts_sorted
+
+
+def build_audio(
+    parts: List[int | None],
+    spacing_ms: int = 0,
+    include_callouts: bool = False,
+    callout_spacing_ms: int = 300,
+    minimal_callouts: bool = False,
+    audio_format: str = "mp4",
+    part_chapters: bool = False,
+) -> Path:
+    combined = AudioSegment.empty()
+    chapters: List[Tuple[int, int, str]] = []
+    for part in parts:
+        part_start = len(combined)
+        seg = build_part_audio_segment(
+            part_filter=part,
+            spacing_ms=spacing_ms,
+            include_callouts=include_callouts,
+            callout_spacing_ms=callout_spacing_ms,
+            minimal_callouts=minimal_callouts,
+        )
+        combined += seg
+        part_end = len(combined)
+        if part_chapters:
+            title = "PREAMBLE" if part is None else f"PART {part}"
+            chapters.append((part_start, part_end, title))
+    ext = "mp4" if audio_format == "mp4" else audio_format
+    if len(parts) == 1:
+        part = parts[0]
+        if part is None:
+            out_path = AUDIO_OUT_DIR / f"preamble.{ext}"
+        else:
+            out_path = AUDIO_OUT_DIR / f"part_{part}.{ext}"
     else:
-        out_path = AUDIO_OUT_DIR / f"part_{part_filter}.wav"
-    combined.export(out_path, format="wav")
-    logging.info("Wrote %s (%d segments)", out_path, len(ordered_ids))
+        out_path = AUDIO_OUT_DIR / f"play.{ext}"
+    export_with_chapters(combined, chapters if part_chapters else [], out_path, fmt=audio_format)
+    logging.info("Wrote %s", out_path)
     return out_path
 
 
