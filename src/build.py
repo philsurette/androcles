@@ -16,6 +16,7 @@ from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import build_part_audio
+from cue_builder import build_cues
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR
 
 
@@ -148,9 +149,9 @@ def generate_timings() -> None:
 def audioplay(
     part: str = typer.Option(..., help="Part number to assemble, or '_' for preamble (no part)"),
     segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
-    callouts: bool = typer.Option(False, help="Prepend each role line with its callout audio"),
+    callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
-    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
+    minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
 ) -> None:
     setup_logging()
     build_paragraphs()
@@ -169,6 +170,32 @@ def audioplay(
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
     )
+
+
+@app.command()
+def cues(
+    role: str = typer.Option(None, help="Role to build cues for; default builds all roles"),
+    response_delay_ms: int = typer.Option(2000, help="Silence (ms) between cue and response"),
+    max_cue_size_ms: int = typer.Option(5000, help="Max cue length before cropping (ms)"),
+    include_prompts: bool = typer.Option(True, help="Include preceding prompts; disables if set false"),
+    callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
+) -> None:
+    setup_logging()
+    build_paragraphs()
+    build_blocks()
+    roles = []
+    if role:
+        roles = [role]
+    else:
+        roles = [p.name for p in AUDIO_OUT_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
+    for r in roles:
+        build_cues(
+            r,
+            response_delay_ms=response_delay_ms,
+            max_cue_size_ms=max_cue_size_ms,
+            include_prompts=include_prompts,
+            callout_spacing_ms=callout_spacing_ms,
+        )
 
 
 if __name__ == "__main__":
