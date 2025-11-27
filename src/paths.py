@@ -14,6 +14,8 @@ BLOCKS_DIR = BUILD_DIR / "blocks"
 ROLES_DIR = BUILD_DIR / "roles"
 BLOCKS_EXT = ".blocks"
 INDEX_PATH = BUILD_DIR / "INDEX.files"
+AUDIO_OUT_DIR = BUILD_DIR / "audio"
+RECORDINGS_DIR = DEFAULT_PLAY.parent / "recordings"
 
 # Clean targets
 TARGET_DIRS = [BLOCKS_DIR, ROLES_DIR]

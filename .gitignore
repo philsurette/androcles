@@ -1,10 +1,11 @@
 *.aup3
+*.aup3-shm
+*.aup3-wal
 *.mp3
+*.xlsx
+*.wav
+*.pyc
 **/.DS_Store
 **/__pycache__/
-*.pyc
 .venv/
 build/
-*.aup3
-*.mp3
-

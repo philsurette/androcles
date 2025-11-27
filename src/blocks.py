@@ -132,9 +132,17 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
             block_counter += 1
             speech_text = speech.strip()
             segments = split_block_segments(speech_text)
+
+            # Character entry with all segments.
             entry = format_block_entry(current_part_id, block_counter, segments)
             blocks.setdefault(character, []).append(entry)
             index.append((current_part_id, block_counter, character))
+
+            # Inline directions (and accompanying speech) for narrator: only if any inline direction present.
+            if segments and any(seg.startswith("(_") for seg in segments):
+                narr_entry = format_block_entry(current_part_id, block_counter, segments)
+                blocks.setdefault("_NARRATOR", []).append(narr_entry)
+                index.append((current_part_id, block_counter, "_NARRATOR"))
 
     # Flush the final part.
     if current_part_id is not None:
@@ -171,13 +179,20 @@ def split_block_segments(text: str) -> List[str]:
         direction = match.group(0)
         # Attach immediate trailing punctuation (e.g., ".") to the direction.
         punct_end = match.end()
+        trailing_punct = ""
         while punct_end < len(text) and text[punct_end] in ".,;:!?":
-            direction += text[punct_end]
+            trailing_punct += text[punct_end]
             punct_end += 1
 
         direction = direction.strip()
         if direction:
             segments.append(direction)
+            if trailing_punct and punct_end == len(text):
+                # If punctuation trails the final direction at end of string, keep it separate.
+                segments.append(trailing_punct)
+            elif trailing_punct:
+                # Otherwise append to previous direction segment.
+                segments[-1] = segments[-1] + trailing_punct
         last_end = punct_end
 
     tail = text[last_end:]
