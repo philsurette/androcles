@@ -8,6 +8,7 @@ from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill
 
 from paths import AUDIO_OUT_DIR
 from segment_verifier import compute_rows
@@ -27,6 +28,10 @@ def safe_sheet_name(name: str, existing: set[str]) -> str:
 
 def write_sheet(ws, headers, rows):
     ws.append(headers)
+    id_col_idx = headers.index("id") + 1 if "id" in headers else None
+    warn_col_idx = headers.index("warning") + 1 if "warning" in headers else None
+    warn_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    missing_fill = PatternFill(start_color="FF0000", end_color="FF0000", fill_type="solid")
     for row in rows:
         values = []
         for h in headers:
@@ -38,19 +43,52 @@ def write_sheet(ws, headers, rows):
                     pass
             values.append(val)
         ws.append(values)
+        if id_col_idx and warn_col_idx:
+            warn_val = values[warn_col_idx - 1]
+            if warn_val == "-":
+                ws.cell(row=ws.max_row, column=id_col_idx).fill = missing_fill
+            elif warn_val in ("<", ">"):
+                ws.cell(row=ws.max_row, column=id_col_idx).fill = warn_fill
     # Apply number formats
     for col in ws.iter_cols(min_row=2, max_row=ws.max_row):
         header = col[0].offset(row=-1).value  # header cell above data
         if header in ("expected_seconds", "actual_seconds"):
             for cell in col:
                 cell.number_format = "0.0"
+                cell.alignment = cell.alignment.copy(horizontal="right")
         elif header == "percent":
             for cell in col:
                 cell.number_format = "0.0"
+                cell.alignment = cell.alignment.copy(horizontal="right")
+        elif header == "start":
+            for cell in col:
+                cell.alignment = cell.alignment.copy(horizontal="right")
     # Widen text column
+    # Column widths
+    if "warning" in headers:
+        idx = headers.index("warning") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 2.5  # ~7-8px
+        for cell in ws[get_column_letter(idx)]:
+            cell.alignment = cell.alignment.copy(horizontal="center")
+    if "expected_seconds" in headers:
+        idx = headers.index("expected_seconds") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 5  # ~20px
+    if "actual_seconds" in headers:
+        idx = headers.index("actual_seconds") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 5  # ~20px
+    if "percent" in headers:
+        idx = headers.index("percent") + 1
+        ws.column_dimensions[get_column_letter(idx)].hidden = True
     if "text" in headers:
-        idx = headers.index("text") + 1  # 1-based
-        ws.column_dimensions[get_column_letter(idx)].width = 60
+        idx = headers.index("text") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 106  # ~800px
+    if "role" in headers:
+        idx = headers.index("role") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 5  # match expected/actual columns
+    if "id" in headers:
+        idx = headers.index("id") + 1
+        for cell in ws[get_column_letter(idx)]:
+            cell.alignment = cell.alignment.copy(horizontal="right")
 
 
 def generate_xlsx():
