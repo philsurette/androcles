@@ -47,9 +47,6 @@ def write_sheet(ws, headers, rows):
         elif header == "percent":
             for cell in col:
                 cell.number_format = "0.0"
-        elif header == "start":
-            for cell in col:
-                cell.number_format = "mm:ss.0"
     # Widen text column
     if "text" in headers:
         idx = headers.index("text") + 1  # 1-based

@@ -87,7 +87,11 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
             row["actual_seconds"] = round(len(audio) / 1000.0, 1)
             if role not in offsets_cache:
                 offsets_cache[role] = load_offsets(role)
-            row["start"] = offsets_cache[role].get(row["id"])
+            start_sec = offsets_cache[role].get(row["id"])
+            if start_sec is not None:
+                mins = int(start_sec // 60)
+                secs = start_sec - mins * 60
+                row["start"] = f"{mins}:{secs:04.1f}"
         else:
             logging.error("Missing snippet %s for role %s", row["id"], row["role"])
             row["warning"] = "-"
