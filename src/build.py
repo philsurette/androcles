@@ -16,6 +16,7 @@ from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import build_audio, list_parts
+from loudnorm.normalizer import Normalizer
 from cue_builder import build_cues
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR
 
@@ -189,6 +190,23 @@ def audioplay(
         part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
     )
+
+
+@app.command()
+def normalize(
+    src: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+) -> None:
+    """
+    Normalize an audio file using ffmpeg loudnorm. Writes to a sibling 'normalized' folder.
+    """
+    setup_logging()
+    normalizer = Normalizer()
+    src_parent = src.parent
+    out_dir = src_parent / "normalized"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / src.name
+    result = normalizer.normalize(str(src), str(out_path))
+    typer.echo(result.render())
 
 
 @app.command()

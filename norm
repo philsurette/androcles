@@ -1,0 +1,3 @@
+#!/bin/bash
+LORICK_DIR=../../github/lorick
+PYTHONPATH=$LORICK_DIR/src $LORICK_DIR/.venv/bin/python $LORICK_DIR/src/main.py "$@"
