@@ -165,6 +165,7 @@ def audioplay(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
     minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
     callout_descriptions: bool = typer.Option(True, help="Prepend description callouts for narrator blocks"),
+    generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
@@ -199,15 +200,18 @@ def audioplay(
         audio_format=audio_format,
         part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
+        generate_audio=generate_audio,
     )
     logging.info("Generated audioplay at %s", out_path)
-    if normalize_output:
+    if normalize_output and generate_audio:
         normalizer = Normalizer()
         target_dir = out_path.parent / "normalized"
         target_dir.mkdir(parents=True, exist_ok=True)
         norm_path = target_dir / out_path.name
         logging.info("Normalizing audioplay to %s", norm_path)
         normalizer.normalize(str(out_path), str(norm_path))
+    elif normalize_output and not generate_audio:
+        logging.info("Skipping normalization because audio rendering was skipped.")
 
 
 @app.command()
