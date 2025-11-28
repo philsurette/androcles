@@ -50,7 +50,7 @@ def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str
 
 
 def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, captions_path: Path | None = None) -> None:
-    """Render the audio plan into a single audio file, optionally muxing captions."""
+    """Render the audio plan into a single audio file, optionally muxing captions and a blank video track."""
     cache: Dict[Path, AudioSegment | None] = {}
     audio = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
@@ -81,25 +81,25 @@ def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, ca
 
     export_with_chapters(audio, chapters if chapters else [], out_path, fmt=audio_format)
 
-    if captions_path and audio_format == "mp4" and captions_path.exists():
+    if audio_format == "mp4":
         tmp_out = out_path.with_suffix(".tmp.mp4")
         cmd = [
             "ffmpeg",
             "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=1280x720:rate=30:color=black",
             "-i",
             str(out_path),
-            "-i",
-            str(captions_path),
-            "-c:a",
-            "copy",
-            "-c:s",
-            "mov_text",
-            "-map",
-            "0:a",
-            "-map",
-            "1:s:0",
-            str(tmp_out),
         ]
-        logging.info("Muxing captions into %s", out_path)
+        map_args = ["-map", "0:v:0", "-map", "1:a:0"]
+        if captions_path and captions_path.exists():
+            cmd += ["-i", str(captions_path)]
+            map_args += ["-map", "2:s:0"]
+            cmd += ["-c:s", "mov_text"]
+        cmd += map_args
+        cmd += ["-shortest", "-c:v", "libx264", "-c:a", "copy", str(tmp_out)]
+        logging.info("Muxing video (and captions if present) into %s", out_path)
         subprocess.run(cmd, check=True)
         tmp_out.replace(out_path)
