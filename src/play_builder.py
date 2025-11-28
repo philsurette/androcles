@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple, Union
 from functools import lru_cache
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 from pydub import AudioSegment
 import re    
@@ -30,8 +31,62 @@ BlockMap = Dict[Tuple[int | None, int], List[str]]
 
 
 @dataclass(frozen=True)
-class Silence:
+class Clip(ABC):
+    path: Path | None
+    text: str | None
+    role: str | None
+    clip_id: str | None
     length_ms: int
+    offset_ms: int
+
+    @property
+    @abstractmethod
+    def kind(self) -> str:
+        ...
+
+
+@dataclass(frozen=True)
+class CalloutClip(Clip):
+    @property
+    def kind(self) -> str:
+        return "callout"
+
+    def __str__(self) -> str:
+        if self.path is None:
+            return "[callout missing]"
+        rel = _rel_path(self.path)
+        return f"{rel}: {self.clip_id}"
+
+
+@dataclass(frozen=True)
+class SegmentClip(Clip):
+    @property
+    def kind(self) -> str:
+        return "segment"
+
+    def __str__(self) -> str:
+        if self.path is None:
+            return "[segment missing]"
+        rel = _rel_path(self.path)
+        return f"{rel}: {self.clip_id}:{self.role} - {self.text}"
+
+
+@dataclass(frozen=True)
+class Silence(Clip):
+    def __init__(self, length_ms: int, offset_ms: int = 0):
+        object.__setattr__(self, "length_ms", length_ms)
+        object.__setattr__(self, "path", None)
+        object.__setattr__(self, "text", None)
+        object.__setattr__(self, "role", None)
+        object.__setattr__(self, "clip_id", None)
+        object.__setattr__(self, "offset_ms", offset_ms)
+
+    @property
+    def kind(self) -> str:
+        return "silence"
+
+    def __str__(self) -> str:
+        return f"[silence {self.length_ms}ms]"
 
 
 @dataclass(frozen=True)
@@ -39,21 +94,27 @@ class Chapter:
     title: str | None = None
 
 
-@dataclass(frozen=True)
-class Clip:
-    path: Path
-    text: str
-    role: str
-    clip_id: str
-
-
-PlanItem = Union[Clip, Silence, Chapter]
+PlanItem = Union[CalloutClip, SegmentClip, Silence, Chapter]
 
 PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
 META_RE = re.compile(r"^::(.*)::$")
 DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
 STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
 BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
+
+
+def _rel_path(path: Path) -> Path:
+    """Return path relative to AUDIO_OUT_DIR when possible."""
+    if hasattr(Path, "is_relative_to"):
+        try:
+            if path.is_relative_to(AUDIO_OUT_DIR):
+                return path.relative_to(AUDIO_OUT_DIR)
+        except Exception:
+            pass
+    try:
+        return path.relative_to(AUDIO_OUT_DIR)
+    except ValueError:
+        return Path(os.path.relpath(path, AUDIO_OUT_DIR))
 
 
 def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
@@ -233,6 +294,19 @@ def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> Au
     return audio
 
 
+def get_audio_length_ms(path: Path, cache: Dict[Path, int]) -> int:
+    """Return audio length in ms, caching results (0 if missing)."""
+    if path in cache:
+        return cache[path]
+    if not path.exists():
+        logging.warning("Audio file missing: %s", path)
+        cache[path] = 0
+        return 0
+    length = len(AudioSegment.from_file(path))
+    cache[path] = length
+    return length
+
+
 def compute_callout(
     part_filter: int | None,
     block_no: int,
@@ -293,16 +367,24 @@ def build_block_plan(
     is_last_block: bool,
     spacing_ms: int,
     callout_spacing_ms: int,
-) -> tuple[List[PlanItem], str | None, str | None]:
+    length_cache: Dict[Path, int],
+    base_offset_ms: int,
+) -> tuple[List[PlanItem], str | None, str | None, int]:
     """Build plan items for a single block, including optional callouts."""
     block_items: List[PlanItem] = []
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
+    current_offset = base_offset_ms
 
     if callout_path:
         callout_id = primary_role or "_NARRATOR"
-        block_items.append(Clip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id))
+        length_ms = get_audio_length_ms(callout_path, length_cache)
+        block_items.append(
+            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset)
+        )
+        current_offset += length_ms
         if callout_spacing_ms > 0:
-            block_items.append(Silence(callout_spacing_ms))
+            block_items.append(Silence(callout_spacing_ms, offset_ms=current_offset))
+            current_offset += callout_spacing_ms
 
     block_segments: List[Tuple[str, str]] = []
     source_role = primary_role or roles_in_block[0]
@@ -317,14 +399,19 @@ def build_block_plan(
         if not wav_path.exists():
             logging.error("Missing snippet %s for role %s", seg_id, role)
             continue
-        block_items.append(Clip(path=wav_path, text=text, role=role, clip_id=seg_id))
+        length_ms = get_audio_length_ms(wav_path, length_cache)
+        block_items.append(
+            SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset)
+        )
+        current_offset += length_ms
         is_last_seg = seg_idx == len(block_segments) - 1
         if spacing_ms > 0 and not (is_last_block and is_last_seg):
-            block_items.append(Silence(spacing_ms))
+            block_items.append(Silence(spacing_ms, offset_ms=current_offset))
+            current_offset += spacing_ms
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
-    return block_items, prev_role, prev2_role
+    return block_items, prev_role, prev2_role, current_offset
 
 def extract_blocks(entries: List[IndexEntry], part_filter: int|None) -> List[Tuple[int, List[str]]]:
     # Group entries by block to keep callouts preceding block audio.
@@ -355,10 +442,12 @@ def build_part_plan(
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
     include_description_callouts: bool = True,
-) -> List[PlanItem]:
+    base_offset_ms: int = 0,
+) -> tuple[List[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     entries = parse_index()
     description_blocks = description_block_keys()
+    length_cache: Dict[Path, int] = {}
 
     block_entries = extract_blocks(entries, part_filter)
 
@@ -367,6 +456,7 @@ def build_part_plan(
     seen_roles: set[str] = set()
     last_callout_type: str | None = None
     plan_items: List[PlanItem] = []
+    current_offset = base_offset_ms
 
     for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
         callout_path, _callout_type, seen_roles, last_callout_type = compute_callout(
@@ -383,7 +473,7 @@ def build_part_plan(
             last_callout_type=last_callout_type,
         )
 
-        block_items, prev_role, prev2_role = build_block_plan(
+        block_items, prev_role, prev2_role, _offset = build_block_plan(
             part_filter,
             block_no,
             roles_in_block,
@@ -393,27 +483,24 @@ def build_part_plan(
             is_last_block=b_idx == len(block_entries) - 1,
             spacing_ms=spacing_ms,
             callout_spacing_ms=callout_spacing_ms,
+            length_cache=length_cache,
+            base_offset_ms=current_offset,
         )
+        current_offset = _offset
         plan_items.extend(block_items)
 
-    return plan_items
+    return plan_items, current_offset
 
 
 def write_plan(plan: List[PlanItem], path: Path) -> None:
     """Persist plan items to a text file for inspection."""
     lines: List[str] = []
     for item in plan:
-        if isinstance(item, Clip):
-            if hasattr(Path, "is_relative_to") and item.path.is_relative_to(AUDIO_OUT_DIR):
-                rel = item.path.relative_to(AUDIO_OUT_DIR)
-            else:
-                rel = Path(os.path.relpath(item.path, AUDIO_OUT_DIR))
-            if item.role == "_NARRATOR" and item.text == "" and item.clip_id == item.clip_id.upper():
-                lines.append(f"{rel}: {item.clip_id}")
-            else:
-                lines.append(f"{rel}: {item.clip_id}:{item.role} - {item.text}")
-        elif isinstance(item, Silence):
-            lines.append(f"[silence {item.length_ms}ms]")
+        if isinstance(item, (CalloutClip, SegmentClip, Silence)):
+            mins = item.offset_ms // 60000
+            secs_ms = item.offset_ms % 60000
+            prefix = f"{mins:02d}:{secs_ms/1000:06.3f} "
+            lines.append(prefix + str(item))
         elif isinstance(item, Chapter):
             suffix = f" {item.title}" if item.title else ""
             lines.append(f"[chapter]{suffix}")
@@ -543,27 +630,31 @@ def build_audio(
     out_path = compute_output_path(parts, part, audio_format)
     logging.info("Generating audioplay plan to %s", out_path)
     plan: List[PlanItem] = []
+    current_offset = 0
     for part in parts:
         logging.info("Building plan for part %s", "PREAMBLE" if part is None else part)
         if part_chapters:
             title = "PREAMBLE" if part is None else f"PART {part}"
             plan.append(Chapter(title))
-        seg_plan = build_part_plan(
+        seg_plan, current_offset = build_part_plan(
             part_filter=part,
             spacing_ms=spacing_ms,
             include_callouts=include_callouts,
             callout_spacing_ms=callout_spacing_ms,
             minimal_callouts=minimal_callouts,
             include_description_callouts=include_description_callouts,
+            base_offset_ms=current_offset,
         )
         plan.extend(seg_plan)
         if part_gap_ms and part != parts[-1]:
-            plan.append(Silence(part_gap_ms))
+            plan.append(Silence(part_gap_ms, offset_ms=current_offset))
+            current_offset += part_gap_ms
     plan_path = BUILD_DIR / "audio_plan.txt"
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     write_plan(plan, plan_path)
     logging.info("Wrote audio plan to %s", plan_path)
     if generate_audio:
+        logging.info("Writing audio to %s", out_path)
         instantiate_plan(plan, out_path, audio_format=audio_format)
         logging.info("Wrote %s", out_path)
     else:
