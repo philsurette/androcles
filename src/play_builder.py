@@ -286,7 +286,6 @@ def build_block_plan(
     part_filter: int | None,
     block_no: int,
     roles_in_block: List[str],
-    seg_maps: Dict[str, BlockMap],
     *,
     callout_path: Path | None,
     prev_role: str | None,
@@ -308,19 +307,10 @@ def build_block_plan(
     block_segments: List[Tuple[str, str]] = []
     source_role = primary_role or roles_in_block[0]
     bullets = read_block_bullets(source_role, part_filter, block_no)
-    if bullets:
-        for idx, text in enumerate(bullets, start=1):
-            owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
-            sid = f"{'' if part_filter is None else part_filter}:{block_no}:{idx}"
-            block_segments.append((owner, sid, text))
-    else:
-        # Fallback to existing segment ordering if we couldn't read bullets.
-        for role in roles_in_block:
-            seg_ids = seg_maps.get(role, {}).get((part_filter, block_no), [])
-            if not seg_ids:
-                logging.warning("No segment ids for %s %s:%s", role, part_filter, block_no)
-                for sid in seg_ids:
-                    block_segments.append((role, sid.replace("_", ":"), ""))
+    for idx, text in enumerate(bullets, start=1):
+        owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
+        sid = f"{'' if part_filter is None else part_filter}:{block_no}:{idx}"
+        block_segments.append((owner, sid, text))
 
     for seg_idx, (role, seg_id, text) in enumerate(block_segments):
         wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
@@ -368,7 +358,6 @@ def build_part_plan(
 ) -> List[PlanItem]:
     """Build plan items for a given part (or None for preamble)."""
     entries = parse_index()
-    seg_maps = load_segment_maps()
     description_blocks = description_block_keys()
 
     block_entries = extract_blocks(entries, part_filter)
@@ -398,7 +387,6 @@ def build_part_plan(
             part_filter,
             block_no,
             roles_in_block,
-            seg_maps,
             callout_path=callout_path,
             prev_role=prev_role,
             prev2_role=prev2_role,
