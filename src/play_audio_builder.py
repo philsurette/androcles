@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Render audio from a plan."""
+"""Render audio from a plan and optionally mux captions."""
 from __future__ import annotations
-
+import logging
+import subprocess
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -48,8 +49,8 @@ def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str
         subprocess.run(cmd, check=True)
 
 
-def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str) -> None:
-    """Render the audio plan into a single audio file."""
+def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, captions_path: Path | None = None) -> None:
+    """Render the audio plan into a single audio file, optionally muxing captions."""
     cache: Dict[Path, AudioSegment | None] = {}
     audio = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
@@ -58,6 +59,7 @@ def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str) ->
 
     for item in plan:
         if isinstance(item, Chapter):
+            logging.info("Inserting chapter: %s", item.title or "")
             if current_chapter_start is not None:
                 chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
             current_chapter_title = item.title or ""
@@ -78,3 +80,26 @@ def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str) ->
         chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
 
     export_with_chapters(audio, chapters if chapters else [], out_path, fmt=audio_format)
+
+    if captions_path and audio_format == "mp4" and captions_path.exists():
+        tmp_out = out_path.with_suffix(".tmp.mp4")
+        cmd = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(out_path),
+            "-i",
+            str(captions_path),
+            "-c:a",
+            "copy",
+            "-c:s",
+            "mov_text",
+            "-map",
+            "0:a",
+            "-map",
+            "1:s:0",
+            str(tmp_out),
+        ]
+        logging.info("Muxing captions into %s", out_path)
+        subprocess.run(cmd, check=True)
+        tmp_out.replace(out_path)

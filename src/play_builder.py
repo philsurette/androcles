@@ -14,6 +14,7 @@ from play_plan_builder import (
     PlanItem,
 )
 from play_audio_builder import instantiate_plan
+from caption_builder import build_captions
 from paths import BUILD_DIR
 
 
@@ -29,6 +30,7 @@ def build_audio(
     part_chapters: bool = False,
     part_gap_ms: int = 0,
     generate_audio: bool = True,
+    generate_captions: bool = True,
 ) -> Path:
     out_path = compute_output_path(parts, part, audio_format)
     plan, _ = build_audio_plan(
@@ -45,9 +47,14 @@ def build_audio(
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     write_plan(plan, plan_path)
     logging.info("Wrote audio plan to %s", plan_path)
+    captions_path: Path | None = None
+    if generate_captions:
+        captions_path = BUILD_DIR / "captions.vtt"
+        build_captions(plan, captions_path)
+        logging.info("Wrote captions to %s", captions_path)
     if generate_audio:
         logging.info("Generating audioplay to %s", out_path)
-        instantiate_plan(plan, out_path, audio_format=audio_format)
+        instantiate_plan(plan, out_path, audio_format=audio_format, captions_path=captions_path)
         logging.info("Wrote %s", out_path)
     else:
         logging.info("Skipping audio rendering (generate-audio=false)")
