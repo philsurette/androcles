@@ -289,24 +289,7 @@ def build_block_audio_segment(
 
     return block_audio, prev_role, prev2_role, last_callout_type, description_callout, seen_roles
 
-
-def build_part_audio_segment(
-    part_filter: int | None,
-    spacing_ms: int = 0,
-    include_callouts: bool = False,
-    callout_spacing_ms: int = 300,
-    minimal_callouts: bool = False,
-    include_description_callouts: bool = True,
-) -> AudioSegment:
-    """Stitch snippets for a given part (or None for preamble) into one AudioSegment."""
-    silence = AudioSegment.silent(duration=spacing_ms) if spacing_ms > 0 else None
-    callout_gap = AudioSegment.silent(duration=callout_spacing_ms) if callout_spacing_ms > 0 else None
-    entries = parse_index()
-    seg_maps = load_segment_maps()
-    callout_cache: Dict[str, AudioSegment | None] = {}
-    description_callout: AudioSegment | None = None
-    description_blocks = description_block_keys()
-
+def extract_blocks(entries: List[IndexEntry], part_filter: int|None) -> List[Tuple[int, List[str]]]:
     # Group entries by block to keep callouts preceding block audio.
     block_entries: List[Tuple[int, List[str]]] = []
     current_block: int | None = None
@@ -325,6 +308,27 @@ def build_part_audio_segment(
 
     if not block_entries:
         raise RuntimeError(f"No segments found for part {part_filter!r}")
+    
+    return block_entries
+
+def build_part_audio_segment(
+    part_filter: int | None,
+    spacing_ms: int = 0,
+    include_callouts: bool = False,
+    callout_spacing_ms: int = 300,
+    minimal_callouts: bool = False,
+    include_description_callouts: bool = True,
+) -> AudioSegment:
+    """Stitch snippets for a given part (or None for preamble) into one AudioSegment."""
+    silence = AudioSegment.silent(duration=spacing_ms) if spacing_ms > 0 else None
+    callout_gap = AudioSegment.silent(duration=callout_spacing_ms) if callout_spacing_ms > 0 else None
+    entries = parse_index()
+    seg_maps = load_segment_maps()
+    callout_cache: Dict[str, AudioSegment | None] = {}
+    description_callout: AudioSegment | None = None
+    description_blocks = description_block_keys()
+
+    block_entries = extract_blocks(entries, part_filter)
 
     combined = AudioSegment.empty()
     prev_role: str | None = None
