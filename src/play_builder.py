@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 from typing import Dict, List, Tuple
+from functools import lru_cache
 
 from pydub import AudioSegment
 import re    
@@ -23,6 +24,37 @@ from paths import (
 
 IndexEntry = Tuple[int | None, int, str]  # (part, block, role)
 BlockMap = Dict[Tuple[int | None, int], List[str]]
+
+PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
+META_RE = re.compile(r"^::(.*)::$")
+DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
+STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
+BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
+
+
+def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
+    """Return bullet texts for the given role/part/block in source order."""
+    path = BLOCKS_DIR / f"{role}{BLOCKS_EXT}"
+    if not path.exists():
+        logging.warning("Block file missing for %s: %s", role, path)
+        return []
+
+    target_head = f"{'' if part is None else part}:{block}"
+    in_block = False
+    bullets: List[str] = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        stripped = raw.strip()
+        if not stripped:
+            continue
+        if stripped[0].isdigit() or stripped.startswith(":"):
+            head = stripped.split()[0]
+            if in_block and head != target_head:
+                break  # left the block
+            in_block = head == target_head
+            continue
+        if in_block and stripped.startswith("-"):
+            bullets.append(stripped[1:].strip())
+    return bullets
 
 
 def parse_index() -> List[IndexEntry]:
@@ -123,12 +155,54 @@ def load_callout(role: str) -> AudioSegment | None:
     return AudioSegment.from_file(path)
 
 
+def load_description_callout() -> AudioSegment | None:
+    """Load the description callout (_DESCRIPTION.wav) if present."""
+    path = CALLOUTS_DIR / "_DESCRIPTION.wav"
+    if not path.exists():
+        logging.warning("Description callout missing: %s", path)
+        return None
+    return AudioSegment.from_file(path)
+
+
+@lru_cache(maxsize=1)
+def description_block_keys() -> set[Tuple[int, int]]:
+    """
+    Return (part, block) pairs that correspond to description paragraphs ([[...]])
+    so we can limit description callouts to true descriptions (not titles or meta).
+    """
+    keys: set[Tuple[int, int]] = set()
+    current_part: int | None = None
+    block_counter = 0
+    for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        heading = PART_HEADING_RE.match(stripped)
+        if heading:
+            current_part = int(heading.group(1))
+            block_counter = 0
+            continue
+        if META_RE.match(stripped):
+            continue  # meta lines do not advance block numbering
+        if current_part is None:
+            continue
+        if DESCRIPTION_RE.match(stripped):
+            block_counter += 1
+            keys.add((current_part, block_counter))
+            continue
+        if STAGE_RE.match(stripped) or BLOCK_RE.match(stripped):
+            block_counter += 1
+            continue
+    return keys
+
+
 def build_part_audio_segment(
     part_filter: int | None,
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
+    include_description_callouts: bool = True,
 ) -> AudioSegment:
     """Stitch snippets for a given part (or None for preamble) into one AudioSegment."""
     silence = AudioSegment.silent(duration=spacing_ms) if spacing_ms > 0 else None
@@ -136,56 +210,97 @@ def build_part_audio_segment(
     entries = parse_index()
     seg_maps = load_segment_maps()
     callout_cache: Dict[str, AudioSegment | None] = {}
+    description_callout: AudioSegment | None = None
+    description_blocks = description_block_keys()
 
-    ordered_ids: List[Tuple[str, int, str]] = []  # (role, block, seg_id)
+    # Group entries by block to keep callouts preceding block audio.
+    block_entries: List[Tuple[int, List[str]]] = []
+    current_block: int | None = None
+    current_roles: List[str] = []
     for part, block, role in entries:
         if part != part_filter:
             continue
-        seg_ids = seg_maps.get(role, {}).get((part, block), [])
-        if not seg_ids:
-            logging.warning("No segment ids for %s %s:%s", role, part, block)
-        for sid in seg_ids:
-            ordered_ids.append((role, block, sid))
+        if current_block is None or block != current_block:
+            if current_block is not None:
+                block_entries.append((current_block, current_roles))
+            current_block = block
+            current_roles = []
+        current_roles.append(role)
+    if current_block is not None:
+        block_entries.append((current_block, current_roles))
 
-    if not ordered_ids:
+    if not block_entries:
         raise RuntimeError(f"No segments found for part {part_filter!r}")
 
     combined = AudioSegment.empty()
-    last_block_key: Tuple[str, int] | None = None
     prev_role: str | None = None
     prev2_role: str | None = None
     seen_roles: set[str] = set()
-    for idx, (role, block, seg_id) in enumerate(ordered_ids):
-        wav_path = SEGMENTS_DIR / role / f"{seg_id}.wav"
-        if not wav_path.exists():
-            logging.error("Missing snippet %s for role %s", seg_id, role)
-            continue
-        if include_callouts and role != "_NARRATOR":
-            block_key = (role, block)
-            if block_key != last_block_key:
-                need_callout = True
-                if minimal_callouts:
-                    if role in seen_roles:
-                        if role == prev_role:
-                            need_callout = False
-                        elif prev2_role == role and prev_role and prev_role != role:
-                            # simple alternating dialogue with two roles
-                            need_callout = False
-                if need_callout:
-                    if role not in callout_cache:
-                        callout_cache[role] = load_callout(role)
-                    call = callout_cache[role]
-                    if call:
-                        combined += call
-                        if callout_gap:
-                            combined += callout_gap
-                last_block_key = block_key
-                seen_roles.add(role)
-        combined += AudioSegment.from_file(wav_path)
-        if silence and idx < len(ordered_ids) - 1:
-            combined += silence
-        if role != "_NARRATOR":
-            prev2_role, prev_role = prev_role, role
+    last_callout_type: str | None = None
+
+    for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
+        # Determine primary role for callout (first non-narrator role in the block).
+        primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
+        # Build the block audio after deciding on callouts.
+        is_description = part_filter is not None and (part_filter, block_no) in description_blocks
+
+        # Description callout (narrator-only description blocks).
+        if include_description_callouts and primary_role is None and is_description:
+            if description_callout is None:
+                description_callout = load_description_callout()
+            if description_callout and last_callout_type != "description":
+                combined += description_callout
+                if callout_gap:
+                    combined += callout_gap
+                last_callout_type = "description"
+
+        # Role callout (before any block audio).
+        if include_callouts and primary_role:
+            need_callout = True
+            if minimal_callouts and primary_role in seen_roles:
+                if primary_role == prev_role:
+                    need_callout = False
+                elif prev2_role == primary_role and prev_role and prev_role != primary_role:
+                    need_callout = False
+            if need_callout:
+                if primary_role not in callout_cache:
+                    callout_cache[primary_role] = load_callout(primary_role)
+                call = callout_cache[primary_role]
+                if call:
+                    combined += call
+                    if callout_gap:
+                        combined += callout_gap
+                    last_callout_type = "role"
+                seen_roles.add(primary_role)
+
+        # Append block content in paragraph order.
+        block_segments: List[Tuple[str, str]] = []
+        source_role = primary_role or roles_in_block[0]
+        bullets = read_block_bullets(source_role, part_filter, block_no)
+        if bullets:
+            for idx, text in enumerate(bullets, start=1):
+                owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
+                sid = f"{'' if part_filter is None else part_filter}_{block_no}_{idx}"
+                block_segments.append((owner, sid))
+        else:
+            # Fallback to existing segment ordering if we couldn't read bullets.
+            for role in roles_in_block:
+                seg_ids = seg_maps.get(role, {}).get((part_filter, block_no), [])
+                if not seg_ids:
+                    logging.warning("No segment ids for %s %s:%s", role, part_filter, block_no)
+                for sid in seg_ids:
+                    block_segments.append((role, sid))
+
+        for seg_idx, (role, seg_id) in enumerate(block_segments):
+            wav_path = SEGMENTS_DIR / role / f"{seg_id}.wav"
+            if not wav_path.exists():
+                logging.error("Missing snippet %s for role %s", seg_id, role)
+                continue
+            combined += AudioSegment.from_file(wav_path)
+            if silence and not (b_idx == len(block_entries) - 1 and seg_idx == len(block_segments) - 1):
+                combined += silence
+            if role != "_NARRATOR":
+                prev2_role, prev_role = prev_role, role
 
     return combined
 
@@ -271,6 +386,7 @@ def build_audio(
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
+    include_description_callouts: bool = True,
     audio_format: str = "mp4",
     part_chapters: bool = False,
     part_gap_ms: int = 0,
@@ -288,6 +404,7 @@ def build_audio(
             include_callouts=include_callouts,
             callout_spacing_ms=callout_spacing_ms,
             minimal_callouts=minimal_callouts,
+            include_description_callouts=include_description_callouts,
         )
         combined += seg
         part_end = len(combined)

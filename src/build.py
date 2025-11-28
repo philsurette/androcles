@@ -164,6 +164,7 @@ def audioplay(
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
     minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
+    callout_descriptions: bool = typer.Option(True, help="Prepend description callouts for narrator blocks"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
@@ -194,6 +195,7 @@ def audioplay(
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
+        include_description_callouts=callout_descriptions,
         audio_format=audio_format,
         part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
