@@ -45,13 +45,15 @@ def build_audio(
                 parts=[part_id],
                 spacing_ms=spacing_ms,
                 include_callouts=False,
-        callout_spacing_ms=callout_spacing_ms,
-        minimal_callouts=minimal_callouts,
-        include_description_callouts=include_description_callouts,
-        part_chapters=False,
-        part_gap_ms=0,
-        librivox=True,
-    )
+                callout_spacing_ms=callout_spacing_ms,
+                minimal_callouts=minimal_callouts,
+                include_description_callouts=include_description_callouts,
+                part_chapters=False,
+                part_gap_ms=0,
+                part_index_offset=idx,
+                total_parts=len(parts_numeric),
+                librivox=True,
+            )
             # filter out chapters for librivox plain audio
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
             prepend: list[Path] = []

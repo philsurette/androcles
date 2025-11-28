@@ -624,7 +624,9 @@ def build_audio_plan(
                     length_ms = len(AudioSegment.from_file(endof_path))
                 except Exception:
                     pass
-                plan.append(CalloutClip(path=endof_path, text="end of", role="_NARRATOR", clip_id="_LIBRIVOX_ENDOF", length_ms=length_ms, offset_ms=current_offset))
+                plan.append(Silence(1000, offset_ms=current_offset))
+                current_offset += 1000
+                plan.append(CalloutClip(path=endof_path, text="", role="_NARRATOR", clip_id="_LIBRIVOX_ENDOF", length_ms=length_ms, offset_ms=current_offset))
                 current_offset += length_ms
             plan.append(Silence(500, offset_ms=current_offset))
             current_offset += 500
@@ -640,7 +642,7 @@ def build_audio_plan(
             # Post-title gap
             plan.append(Silence(1000, offset_ms=current_offset))
             current_offset += 1000
-            if epilogue.exists() and global_idx == total_count - 1:
+            if epilogue.exists() and part is not None and global_idx == total_count - 1:
                 try:
                     from pydub import AudioSegment
                     elen = len(AudioSegment.from_file(epilogue))
