@@ -232,6 +232,21 @@ def list_parts() -> List[int | None]:
     return parts_sorted
 
 
+def load_part_titles() -> Dict[int, str]:
+    titles: Dict[int, str] = {}
+    # read from paragraphs to get headings
+    from paths import PARAGRAPHS_PATH
+    import re
+
+    heading_re = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
+    for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
+        m = heading_re.match(line.strip())
+        if m:
+            pid = int(m.group(1))
+            titles[pid] = m.group(2).strip().replace(" ", "_")
+    return titles
+
+
 def derive_title_from_meta() -> str | None:
     """Return title from the first meta block (_:0:1) if available."""
     meta_id = "_0_1"
@@ -295,7 +310,9 @@ def build_audio(
         if part is None:
             out_path = AUDIO_OUT_DIR / "play" / f"preamble.{ext}"
         else:
-            out_path = AUDIO_OUT_DIR / "play" / f"part_{part}.{ext}"
+            titles = load_part_titles()
+            title_part = titles.get(part, str(part))
+            out_path = AUDIO_OUT_DIR / "play" / f"{part}_{title_part}.{ext}"
     else:
         title = derive_title_from_meta() or "play"
         safe_title = title.replace(" ", "_")
