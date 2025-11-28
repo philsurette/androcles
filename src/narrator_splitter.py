@@ -19,7 +19,7 @@ from typing import List, Tuple
 import logging
 
 from audio_splitter import detect_spans_ms, export_spans_ffmpeg
-from paths import BLOCKS_DIR, BLOCKS_EXT, RECORDINGS_DIR, AUDIO_OUT_DIR
+from paths import BLOCKS_DIR, BLOCKS_EXT, RECORDINGS_DIR, SEGMENTS_DIR
 
 
 def parse_narrator_blocks(part_filter: str | None = None) -> List[Tuple[str, str]]:
@@ -93,7 +93,7 @@ def split_narration(
     pf = "" if part_filter == "_" else part_filter
     expected = parse_narrator_blocks(part_filter=pf)
     spans = detect_spans_ms(src_path, min_silence_ms, silence_thresh, pad_end_ms=pad_end_ms, chunk_size=chunk_size)
-    export_spans_ffmpeg(src_path, spans, [eid for eid, _ in expected], AUDIO_OUT_DIR / "_NARRATOR")
+    export_spans_ffmpeg(src_path, spans, [eid for eid, _ in expected], SEGMENTS_DIR / "_NARRATOR")
 
     if len(spans) != len(expected):
         print(f"WARNING: expected {len(expected)} snippets, got {len(spans)}")

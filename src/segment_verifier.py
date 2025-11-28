@@ -12,7 +12,7 @@ from pydub import AudioSegment
 
 from narrator_splitter import parse_narrator_blocks
 from role_split_checker import load_expected as load_role_expected, expected_duration_seconds
-from paths import RECORDINGS_DIR, AUDIO_OUT_DIR
+from paths import RECORDINGS_DIR, SEGMENTS_DIR, AUDIO_OUT_DIR
 import re
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -71,7 +71,7 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
 
     for row in rows:
         role = row["role"] or "_NARRATOR"
-        fpath = AUDIO_OUT_DIR / role / f"{row['id']}.wav"
+        fpath = SEGMENTS_DIR / role / f"{row['id']}.wav"
         row["expected_seconds"] = None
         row["actual_seconds"] = None
         row["percent"] = None
@@ -130,7 +130,7 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
 
 
 def load_offsets(role: str) -> Dict[str, float]:
-    offsets_path = AUDIO_OUT_DIR / role / "offsets.txt"
+    offsets_path = SEGMENTS_DIR / role / "offsets.txt"
     mapping: Dict[str, float] = {}
     if not offsets_path.exists():
         return mapping

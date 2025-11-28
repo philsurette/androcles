@@ -12,13 +12,13 @@ from typing import Dict, List, Tuple
 from pydub import AudioSegment
 
 from play_builder import parse_index, load_segment_maps, load_callout
-from paths import AUDIO_OUT_DIR
+from paths import SEGMENTS_DIR, AUDIO_OUT_DIR
 
 
 def concat_segments(role: str, seg_ids: List[str]) -> AudioSegment:
     audio = AudioSegment.empty()
     for sid in seg_ids:
-        path = AUDIO_OUT_DIR / role / f"{sid}.wav"
+        path = SEGMENTS_DIR / role / f"{sid}.wav"
         if not path.exists():
             logging.warning("Missing snippet %s for role %s", sid, role)
             continue

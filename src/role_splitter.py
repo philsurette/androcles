@@ -18,7 +18,7 @@ from typing import Dict, List, Tuple
 import logging
 
 from audio_splitter import detect_spans_ms, export_spans_ffmpeg, find_recording
-from paths import BLOCKS_DIR, BLOCKS_EXT, AUDIO_OUT_DIR, RECORDINGS_DIR
+from paths import BLOCKS_DIR, BLOCKS_EXT, SEGMENTS_DIR, RECORDINGS_DIR
 
 
 def load_expected(role: str, part_filter: str | None = None) -> List[str]:
@@ -66,7 +66,7 @@ def process_role(
     logging.info("Processing role %s from %s", role, src_path)
     expected_ids = load_expected(role, part_filter=part_filter)
     spans = detect_spans_ms(src_path, min_silence_ms, silence_thresh, pad_end_ms=200, chunk_size=chunk_size)
-    export_spans_ffmpeg(src_path, spans, expected_ids, AUDIO_OUT_DIR / role)
+    export_spans_ffmpeg(src_path, spans, expected_ids, SEGMENTS_DIR / role)
 
     if len(spans) != len(expected_ids):
         print(f"WARNING {role}: expected {len(expected_ids)} snippets, got {len(spans)}")
@@ -84,7 +84,7 @@ def main() -> None:
     parser.add_argument("--silence-thresh", type=int, default=-35, help="Silence threshold dBFS (default -35)")
     args = parser.parse_args()
 
-    AUDIO_OUT_DIR.mkdir(parents=True, exist_ok=True)
+    SEGMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
     if args.role:
         roles = [args.role]

@@ -17,7 +17,7 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from paths import BLOCKS_DIR, BLOCKS_EXT, AUDIO_OUT_DIR
+from paths import BLOCKS_DIR, BLOCKS_EXT, SEGMENTS_DIR
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -67,7 +67,7 @@ def expected_duration_seconds(text: str, wpm: int = 150, pad: float = 0.2) -> fl
 
 
 def check_role(role: str, tolerance_low: float, tolerance_high: float) -> None:
-    out_dir = AUDIO_OUT_DIR / role
+    out_dir = SEGMENTS_DIR / role
     if not out_dir.exists():
         logging.warning("No audio output dir for role %s: %s", role, out_dir)
         return

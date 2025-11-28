@@ -16,6 +16,7 @@ ROLES_DIR = BUILD_DIR / "roles"
 BLOCKS_EXT = ".blocks"
 INDEX_PATH = BUILD_DIR / "INDEX.files"
 AUDIO_OUT_DIR = BUILD_DIR / "audio"
+SEGMENTS_DIR = AUDIO_OUT_DIR / "segments"
 RECORDINGS_DIR = DEFAULT_PLAY.parent / "recordings"
 CALLOUTS_DIR = DEFAULT_PLAY.parent / "callouts"
 

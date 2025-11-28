@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 from pydub import AudioSegment
 
 from narrator_splitter import parse_narrator_blocks
-from paths import AUDIO_OUT_DIR, BLOCKS_DIR, BLOCKS_EXT, INDEX_PATH, CALLOUTS_DIR
+from paths import AUDIO_OUT_DIR, SEGMENTS_DIR, BLOCKS_DIR, BLOCKS_EXT, INDEX_PATH, CALLOUTS_DIR
 
 
 IndexEntry = Tuple[int | None, int, str]  # (part, block, role)
@@ -147,7 +147,7 @@ def build_part_audio_segment(
     prev2_role: str | None = None
     seen_roles: set[str] = set()
     for idx, (role, block, seg_id) in enumerate(ordered_ids):
-        wav_path = AUDIO_OUT_DIR / role / f"{seg_id}.wav"
+        wav_path = SEGMENTS_DIR / role / f"{seg_id}.wav"
         if not wav_path.exists():
             logging.error("Missing snippet %s for role %s", seg_id, role)
             continue
@@ -248,30 +248,37 @@ def load_part_titles() -> Dict[int, str]:
 
 
 def derive_title_from_meta() -> str | None:
-    """Return title from the first meta block (_:0:1) if available."""
-    meta_id = "_0_1"
-    meta_path = AUDIO_OUT_DIR / "_NARRATOR" / f"{meta_id}.wav"
-    if meta_path.exists():
-        return meta_id  # audio not helpful for name; fall back to text
+    """Return title from the first meta block (_:1:1) if available."""
     # Read from blocks text instead of audio; look at narrator blocks
     from paths import BLOCKS_DIR, BLOCKS_EXT
 
     narr_path = BLOCKS_DIR / f"_NARRATOR{BLOCKS_EXT}"
-    if not narr_path.exists():
-        return None
-    current_block = None
-    for raw in narr_path.read_text(encoding="utf-8").splitlines():
-        s = raw.strip()
-        if not s:
-            continue
-        if s.startswith(":"):
-            current_block = s[1:]
-            continue
-        if s[0].isdigit():
-            current_block = s.split()[0].split(":")[1] if ":" in s else None
-            continue
-        if s.startswith("-") and current_block == "0":
-            return s[1:].strip()
+    if narr_path.exists():
+        current_part = None
+        current_block = None
+        for raw in narr_path.read_text(encoding="utf-8").splitlines():
+            s = raw.strip()
+            if not s:
+                continue
+            if s.startswith(":"):
+                current_part = None
+                current_block = s[1:]
+                continue
+            if s[0].isdigit():
+                head = s.split()[0]
+                if ":" in head:
+                    p_str, b_str = head.split(":", 1)
+                    current_part = p_str if p_str else None
+                    current_block = b_str
+                continue
+            if s.startswith("-") and current_part is None and current_block == "1":
+                return s[1:].strip()
+
+    # Fallback: check for a snippet _1_1.wav (not used for naming text)
+    meta_id = "_1_1"
+    meta_path = SEGMENTS_DIR / "_NARRATOR" / f"{meta_id}.wav"
+    if meta_path.exists():
+        return meta_id
     return None
 
 

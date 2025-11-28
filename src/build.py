@@ -18,7 +18,7 @@ from timings_xlsx import generate_xlsx
 from play_builder import build_audio, list_parts
 from loudnorm.normalizer import Normalizer
 from cue_builder import build_cues
-from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR
+from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
 
 
 app = typer.Typer(add_completion=False)
@@ -232,11 +232,7 @@ def cues(
     if role:
         roles = [role]
     else:
-        roles = [
-            p.name
-            for p in AUDIO_OUT_DIR.iterdir()
-            if p.is_dir() and not p.name.startswith("_") and p.name != "cues"
-        ]
+        roles = [p.name for p in SEGMENTS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
     for r in roles:
         build_cues(
             r,
