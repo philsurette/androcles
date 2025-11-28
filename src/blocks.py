@@ -135,14 +135,16 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
 
             # Character entry with all segments.
             entry = format_block_entry(current_part_id, block_counter, segments)
-            blocks.setdefault(character, []).append(entry)
-            index.append((current_part_id, block_counter, character))
 
+            has_inline_dir = segments and any(seg.startswith("(_") for seg in segments)
             # Inline directions (and accompanying speech) for narrator: only if any inline direction present.
-            if segments and any(seg.startswith("(_") for seg in segments):
+            if has_inline_dir:
                 narr_entry = format_block_entry(current_part_id, block_counter, segments)
                 blocks.setdefault("_NARRATOR", []).append(narr_entry)
                 index.append((current_part_id, block_counter, "_NARRATOR"))
+
+            blocks.setdefault(character, []).append(entry)
+            index.append((current_part_id, block_counter, character))
 
     # Flush the final part.
     if current_part_id is not None:
