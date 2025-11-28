@@ -181,6 +181,11 @@ def audioplay(
                 parts = [int(part)]
             except ValueError:
                 raise typer.BadParameter("Part must be an integer or '_'")
+    # Peek at output name for logging
+    out_name = None
+    if part is None and len(list_parts()) > 1:
+        # full play
+        out_name = None  # build_audio will compute title; log after call
     out_path = build_audio(
         parts=parts,
         spacing_ms=segment_spacing_ms,
@@ -191,6 +196,7 @@ def audioplay(
         part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
     )
+    logging.info("Generated audioplay at %s", out_path)
     if normalize_output:
         normalizer = Normalizer()
         target_dir = out_path.parent / "normalized"
