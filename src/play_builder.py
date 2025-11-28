@@ -232,6 +232,34 @@ def list_parts() -> List[int | None]:
     return parts_sorted
 
 
+def derive_title_from_meta() -> str | None:
+    """Return title from the first meta block (_:0:1) if available."""
+    meta_id = "_0_1"
+    meta_path = AUDIO_OUT_DIR / "_NARRATOR" / f"{meta_id}.wav"
+    if meta_path.exists():
+        return meta_id  # audio not helpful for name; fall back to text
+    # Read from blocks text instead of audio; look at narrator blocks
+    from paths import BLOCKS_DIR, BLOCKS_EXT
+
+    narr_path = BLOCKS_DIR / f"_NARRATOR{BLOCKS_EXT}"
+    if not narr_path.exists():
+        return None
+    current_block = None
+    for raw in narr_path.read_text(encoding="utf-8").splitlines():
+        s = raw.strip()
+        if not s:
+            continue
+        if s.startswith(":"):
+            current_block = s[1:]
+            continue
+        if s[0].isdigit():
+            current_block = s.split()[0].split(":")[1] if ":" in s else None
+            continue
+        if s.startswith("-") and current_block == "0":
+            return s[1:].strip()
+    return None
+
+
 def build_audio(
     parts: List[int | None],
     spacing_ms: int = 0,
@@ -245,6 +273,7 @@ def build_audio(
     combined = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
     for part in parts:
+        logging.info("Building part %s", "PREAMBLE" if part is None else part)
         part_start = len(combined)
         seg = build_part_audio_segment(
             part_filter=part,
@@ -268,7 +297,9 @@ def build_audio(
         else:
             out_path = AUDIO_OUT_DIR / "play" / f"part_{part}.{ext}"
     else:
-        out_path = AUDIO_OUT_DIR / "play" / f"play.{ext}"
+        title = derive_title_from_meta() or "play"
+        safe_title = title.replace(" ", "_")
+        out_path = AUDIO_OUT_DIR / "play" / f"{safe_title}.{ext}"
     export_with_chapters(combined, chapters if part_chapters else [], out_path, fmt=audio_format)
     logging.info("Wrote %s", out_path)
     return out_path
