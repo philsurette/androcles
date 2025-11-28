@@ -18,20 +18,33 @@ def fmt_ts(ms: int) -> str:
     return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
 
 
-def build_captions(plan: List[PlanItem], out_path: Path) -> Path:
-    """Write WebVTT captions for all clips with text."""
+def build_captions(plan: List[PlanItem], out_path: Path, include_callouts: bool = False) -> Path:
+    """Write WebVTT captions for all clips with text, optionally including callouts."""
     lines: List[str] = ["WEBVTT", ""]
     idx = 1
     for item in plan:
-        if isinstance(item, (SegmentClip, CalloutClip)):
-            text = item.text or ""
-            if not text.strip():
+        if isinstance(item, SegmentClip):
+            text = (item.text or "").strip()
+            if not text:
                 continue
             start_ms = item.offset_ms
             end_ms = item.offset_ms + item.length_ms
             lines.append(str(idx))
             lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
-            lines.append(text.strip())
+            lines.append(text)
+            lines.append("")  # blank separator
+            idx += 1
+        elif include_callouts and isinstance(item, CalloutClip):
+            label = (item.text or "").strip() or (item.clip_id or "").strip()
+            if item.path and item.path.stem.startswith("_DESCRIPTION"):
+                label = "description"
+            if not label:
+                continue
+            start_ms = item.offset_ms
+            end_ms = item.offset_ms + item.length_ms
+            lines.append(str(idx))
+            lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
+            lines.append(label)
             lines.append("")  # blank separator
             idx += 1
     content = "\n".join(lines)

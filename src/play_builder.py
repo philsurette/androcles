@@ -50,7 +50,7 @@ def build_audio(
     captions_path: Path | None = None
     if generate_captions:
         captions_path = BUILD_DIR / "captions.vtt"
-        build_captions(plan, captions_path)
+        build_captions(plan, captions_path, include_callouts=include_callouts)
         logging.info("Wrote captions to %s", captions_path)
     if generate_audio:
         logging.info("Generating audioplay to %s", out_path)
