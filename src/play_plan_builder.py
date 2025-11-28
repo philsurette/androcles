@@ -14,6 +14,7 @@ from typing import Dict, List, Tuple, Union
 from pydub import AudioSegment
 
 from narrator_splitter import parse_narrator_blocks
+from chapter_builder import Chapter, ChapterBuilder
 from paths import (
     AUDIO_OUT_DIR,
     BLOCKS_DIR,
@@ -107,11 +108,6 @@ class Silence(Clip):
 
     def __str__(self) -> str:
         return f"[silence {self.length_ms}ms]"
-
-
-@dataclass(frozen=True)
-class Chapter:
-    title: str | None = None
 
 
 PlanItem = Union[CalloutClip, SegmentClip, Silence, Chapter]
@@ -464,10 +460,13 @@ def build_part_plan(
     minimal_callouts: bool = False,
     include_description_callouts: bool = True,
     base_offset_ms: int = 0,
+    chapters: List[Chapter] | None = None,
 ) -> tuple[List[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     entries = parse_index()
     description_blocks = description_block_keys()
+    chapter_map = {c.block_id: c for c in (chapters or [])}
+    inserted_chapters: set[str] = set()
     length_cache: Dict[Path, int] = {}
 
     block_entries = extract_blocks(entries, part_filter)
@@ -507,7 +506,13 @@ def build_part_plan(
             length_cache=length_cache,
             base_offset_ms=current_offset,
         )
-        plan_items.extend(block_items)
+        for item in block_items:
+            if isinstance(item, (CalloutClip, SegmentClip)) and item.clip_id:
+                block_id = ":".join(item.clip_id.split(":")[:2])
+                if block_id in chapter_map and block_id not in inserted_chapters:
+                    plan_items.append(chapter_map[block_id])
+                    inserted_chapters.add(block_id)
+            plan_items.append(item)
 
     return plan_items, current_offset
 
@@ -540,12 +545,10 @@ def build_audio_plan(
     part_chapters: bool = False,
     part_gap_ms: int = 0,
 ) -> tuple[List[PlanItem], int]:
+    chapters = ChapterBuilder().build()
     plan: List[PlanItem] = []
     current_offset = 0
     for idx, part in enumerate(parts):
-        if part_chapters:
-            title = "PREAMBLE" if part is None else f"PART {part}"
-            plan.append(Chapter(title))
         seg_plan, current_offset = build_part_plan(
             part_filter=part,
             spacing_ms=spacing_ms,
@@ -554,6 +557,7 @@ def build_audio_plan(
             minimal_callouts=minimal_callouts,
             include_description_callouts=include_description_callouts,
             base_offset_ms=current_offset,
+            chapters=chapters,
         )
         plan.extend(seg_plan)
         if part_gap_ms and idx < len(parts) - 1:
