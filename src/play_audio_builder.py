@@ -14,7 +14,10 @@ from play_plan_builder import PlanItem, Silence, Chapter, CalloutClip, SegmentCl
 def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path, fmt: str) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if fmt == "wav" or not chapters:
-        audio.export(out_path, format=fmt)
+        export_kwargs = {}
+        if fmt == "mp3":
+            export_kwargs["bitrate"] = "128k"
+        audio.export(out_path, format=fmt, **export_kwargs)
         return
 
     import tempfile
@@ -44,6 +47,8 @@ def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str
             "1",
             "-c:a",
             "aac" if fmt == "mp4" else "libmp3lame",
+            "-b:a",
+            "128k" if fmt == "mp3" else "192k",
             str(out_path),
         ]
         subprocess.run(cmd, check=True)
