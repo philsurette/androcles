@@ -7,9 +7,18 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
-
+import re    
 from narrator_splitter import parse_narrator_blocks
-from paths import AUDIO_OUT_DIR, SEGMENTS_DIR, BLOCKS_DIR, BLOCKS_EXT, INDEX_PATH, CALLOUTS_DIR
+from paths import (
+    AUDIO_OUT_DIR, 
+    SEGMENTS_DIR, 
+    BLOCKS_DIR, 
+    BLOCKS_EXT, 
+    INDEX_PATH, 
+    CALLOUTS_DIR,
+    AUDIO_PLAY_DIR,
+    PARAGRAPHS_PATH
+    )
 
 
 IndexEntry = Tuple[int | None, int, str]  # (part, block, role)
@@ -235,55 +244,29 @@ def list_parts() -> List[int | None]:
 def load_part_titles() -> Dict[int, str]:
     titles: Dict[int, str] = {}
     # read from paragraphs to get headings
-    from paths import PARAGRAPHS_PATH
-    import re
 
     heading_re = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
     for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
+        if not titles:
+            titles[None] = re.match("^::(.*)::$", line).groups()[0].strip().replace(" ", "_")
+            continue
         m = heading_re.match(line.strip())
         if m:
             pid = int(m.group(1))
             titles[pid] = m.group(2).strip().replace(" ", "_")
     return titles
 
-
-def derive_title_from_meta() -> str | None:
-    """Return title from the first meta block (_:1:1) if available."""
-    # Read from blocks text instead of audio; look at narrator blocks
-    from paths import BLOCKS_DIR, BLOCKS_EXT
-
-    narr_path = BLOCKS_DIR / f"_NARRATOR{BLOCKS_EXT}"
-    if narr_path.exists():
-        current_part = None
-        current_block = None
-        for raw in narr_path.read_text(encoding="utf-8").splitlines():
-            s = raw.strip()
-            if not s:
-                continue
-            if s.startswith(":"):
-                current_part = None
-                current_block = s[1:]
-                continue
-            if s[0].isdigit():
-                head = s.split()[0]
-                if ":" in head:
-                    p_str, b_str = head.split(":", 1)
-                    current_part = p_str if p_str else None
-                    current_block = b_str
-                continue
-            if s.startswith("-") and current_part is None and current_block == "1":
-                return s[1:].strip()
-
-    # Fallback: check for a snippet _1_1.wav (not used for naming text)
-    meta_id = "_1_1"
-    meta_path = SEGMENTS_DIR / "_NARRATOR" / f"{meta_id}.wav"
-    if meta_path.exists():
-        return meta_id
-    return None
-
+def compute_output_path(parts: List[int | None], part: int, audio_format: str = "mp4") -> Path:
+    titles = load_part_titles()
+    if part is None:
+        title = titles.get(None, "play")
+    else: 
+        title = f"{part}_{titles.get(part, "part")}"
+    return AUDIO_PLAY_DIR / f"{title}.{audio_format}"
 
 def build_audio(
     parts: List[int | None],
+    part: int | None = None,
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
@@ -292,6 +275,8 @@ def build_audio(
     part_chapters: bool = False,
     part_gap_ms: int = 0,
 ) -> Path:
+    out_path = compute_output_path(parts, part, audio_format)
+    logging.info("Generating audioplay to %s", out_path)
     combined = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
     for part in parts:
@@ -312,29 +297,6 @@ def build_audio(
         if part_gap_ms and part != parts[-1]:
             combined += AudioSegment.silent(duration=part_gap_ms)
     ext = "mp4" if audio_format == "mp4" else audio_format
-    if len(parts) == 1:
-        part = parts[0]
-        if part is None:
-            out_path = AUDIO_OUT_DIR / "play" / f"preamble.{ext}"
-        else:
-            titles = load_part_titles()
-            title_part = titles.get(part, str(part))
-            out_path = AUDIO_OUT_DIR / "play" / f"{part}_{title_part}.{ext}"
-    else:
-        title = derive_title_from_meta() or "play"
-        safe_title = title.replace(" ", "_")
-        out_path = AUDIO_OUT_DIR / "play" / f"{safe_title}.{ext}"
     export_with_chapters(combined, chapters if part_chapters else [], out_path, fmt=audio_format)
     logging.info("Wrote %s", out_path)
     return out_path
-
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(description="Assemble play audio by part.")
-    parser.add_argument("--part", required=True, help="Part number, or '_' for no-part blocks")
-    parser.add_argument("--segment-spacing-ms", type=int, default=0, help="Silence inserted between snippets")
-    args = parser.parse_args()
-    part_arg = None if args.part == "_" else int(args.part)
-    build_part_audio(part_arg, spacing_ms=args.segment_spacing_ms)

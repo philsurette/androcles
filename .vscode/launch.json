@@ -1,0 +1,50 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+            {
+            "name": "Pydb: src",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Pydb: src with args",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/src"
+            },
+            "args": ["${command:pythonArgsParser}"],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "main",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/build.py",
+            "console": "integratedTerminal",
+            "args": [
+                "${input:commandLineArgs}"
+            ]
+        },        
+    ],
+    "inputs": [
+        {
+            "id": "commandLineArgs",
+            "type": "promptString",
+            "description": "Enter command-line arguments for the script",
+            "default": ""
+        }
+    ],
+    "command": {
+        "pythonArgsParser": {
+            "command": "echo ${input:commandLineArgs} | xargs"
+        }
+    }
+}

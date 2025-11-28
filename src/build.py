@@ -2,6 +2,8 @@
 """Build text artifacts, split audio segments, verify splits, and check recordings."""
 from pathlib import Path
 import logging
+import sys
+import shlex
 from datetime import datetime
 
 import typer
@@ -15,7 +17,7 @@ from narrator_splitter import split_narration
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
-from play_builder import build_audio, list_parts
+from play_builder import build_audio, list_parts, compute_output_path
 from loudnorm.normalizer import Normalizer
 from cue_builder import build_cues
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
@@ -176,18 +178,18 @@ def audioplay(
     else:
         if part == "_":
             parts = [None]
+            part = None
         else:
             try:
-                parts = [int(part)]
+                part = int(part)
+                parts = [part]
             except ValueError:
                 raise typer.BadParameter("Part must be an integer or '_'")
-    # Peek at output name for logging
-    out_name = None
-    if part is None and len(list_parts()) > 1:
-        # full play
-        out_name = None  # build_audio will compute title; log after call
+    if audio_format not in ("mp4", "mp3", "wav"):
+        raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     out_path = build_audio(
         parts=parts,
+        part=part,
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
@@ -249,5 +251,12 @@ def cues(
         )
 
 
+# if __name__ == "__main__":
+#     app()
+
 if __name__ == "__main__":
+    if len(sys.argv) == 2:
+        # If only one argument string is passed (e.g., from VSCode or manual entry)
+        preprocessed_args = shlex.split(sys.argv[1])
+        sys.argv = [sys.argv[0]] + preprocessed_args
     app()
