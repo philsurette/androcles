@@ -577,26 +577,72 @@ def build_audio_plan(
             base_offset_ms=current_offset,
             chapters=chapters,
         )
-        plan.extend(seg_plan)
         if librivox and global_idx > 0:
-            # Insert per-part Librivox bumper: 500ms silence, audio, 1s silence.
             from paths import RECORDINGS_DIR
 
             bumper_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-            plan.append(Silence(500, offset_ms=current_offset))
-            current_offset += 500
-            if bumper_path.exists():
-                # Represent as a callout clip to carry timing/text.
-                length_ms = 0
+            if bumper_path.exists() and seg_plan:
                 try:
                     from pydub import AudioSegment
-                    length_ms = len(AudioSegment.from_file(bumper_path))
+
+                    bump_len = len(AudioSegment.from_file(bumper_path))
                 except Exception:
-                    pass
-                plan.append(CalloutClip(path=bumper_path, text="", role="_NARRATOR", clip_id="_LIBRIVOX_EACH_PART", length_ms=length_ms, offset_ms=current_offset))
-                current_offset += length_ms
-            plan.append(Silence(1000, offset_ms=current_offset))
-            current_offset += 1000
+                    bump_len = 0
+                bump_duration = 500 + bump_len + 1000
+                first_idx = next(
+                    (i for i, item in enumerate(seg_plan) if isinstance(item, (CalloutClip, SegmentClip, Silence))),
+                    None,
+                )
+                if first_idx is not None:
+                    first_item = seg_plan[first_idx]
+                    insert_offset = first_item.offset_ms + first_item.length_ms
+                    bumper_items: List[PlanItem] = [
+                        Silence(500, offset_ms=insert_offset),
+                        CalloutClip(
+                            path=bumper_path,
+                            text="",
+                            role="_NARRATOR",
+                            clip_id="_LIBRIVOX_EACH_PART",
+                            length_ms=bump_len,
+                            offset_ms=insert_offset + 500,
+                        ),
+                        Silence(1000, offset_ms=insert_offset + 500 + bump_len),
+                    ]
+                    new_plan: List[PlanItem] = []
+                    for idx_item, item in enumerate(seg_plan):
+                        if idx_item == first_idx:
+                            new_plan.append(item)
+                            new_plan.extend(bumper_items)
+                            continue
+                        if isinstance(item, CalloutClip):
+                            new_plan.append(
+                                CalloutClip(
+                                    path=item.path,
+                                    text=item.text,
+                                    role=item.role,
+                                    clip_id=item.clip_id,
+                                    length_ms=item.length_ms,
+                                    offset_ms=item.offset_ms + bump_duration,
+                                )
+                            )
+                        elif isinstance(item, SegmentClip):
+                            new_plan.append(
+                                SegmentClip(
+                                    path=item.path,
+                                    text=item.text,
+                                    role=item.role,
+                                    clip_id=item.clip_id,
+                                    length_ms=item.length_ms,
+                                    offset_ms=item.offset_ms + bump_duration,
+                                )
+                            )
+                        elif isinstance(item, Silence):
+                            new_plan.append(Silence(item.length_ms, offset_ms=item.offset_ms + bump_duration))
+                        else:
+                            new_plan.append(item)
+                    seg_plan = new_plan
+                    current_offset += bump_duration
+        plan.extend(seg_plan)
         if part_gap_ms and idx < len(parts) - 1:
             plan.append(Silence(part_gap_ms, offset_ms=current_offset))
             current_offset += part_gap_ms
