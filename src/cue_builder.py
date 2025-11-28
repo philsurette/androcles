@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_builder import parse_index, load_segment_maps, load_callout
+from play_plan_builder import parse_index, load_segment_maps
 from paths import SEGMENTS_DIR, AUDIO_OUT_DIR
 
 
