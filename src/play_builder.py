@@ -240,6 +240,7 @@ def build_audio(
     minimal_callouts: bool = False,
     audio_format: str = "mp4",
     part_chapters: bool = False,
+    part_gap_ms: int = 0,
 ) -> Path:
     combined = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
@@ -257,6 +258,8 @@ def build_audio(
         if part_chapters:
             title = "PREAMBLE" if part is None else f"PART {part}"
             chapters.append((part_start, part_end, title))
+        if part_gap_ms and part != parts[-1]:
+            combined += AudioSegment.silent(duration=part_gap_ms)
     ext = "mp4" if audio_format == "mp4" else audio_format
     if len(parts) == 1:
         part = parts[0]
