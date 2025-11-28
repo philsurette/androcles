@@ -161,7 +161,7 @@ def audioplay(
     segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
-    minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
+    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
 ) -> None:
     setup_logging()
