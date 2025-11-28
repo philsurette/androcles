@@ -54,9 +54,10 @@ def parse_block_file(path: Path) -> Dict[Tuple[str, str], List[str]]:
 
 
 def load_blocks() -> Dict[str, Dict[Tuple[str, str], List[str]]]:
+    """Load all block files into a mapping by target name."""
     blocks: Dict[str, Dict[Tuple[str, str], List[str]]] = {}
-    for path in BLOCKS_DIR.glob("*.txt"):
-        if path.name == "_INDEX.txt":
+    for path in BLOCKS_DIR.glob(f"*{BLOCKS_EXT}"):
+        if path.name == f"_INDEX{BLOCKS_EXT}":
             continue
         blocks[path.stem] = parse_block_file(path)
     return blocks
