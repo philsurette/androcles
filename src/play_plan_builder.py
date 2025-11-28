@@ -544,11 +544,29 @@ def build_audio_plan(
     include_description_callouts: bool = True,
     part_chapters: bool = False,
     part_gap_ms: int = 0,
+    librivox: bool = False,
+    part_index_offset: int = 0,
+    total_parts: int | None = None,
 ) -> tuple[List[PlanItem], int]:
     chapters = ChapterBuilder().build()
     plan: List[PlanItem] = []
     current_offset = 0
+    total_count = total_parts if total_parts is not None else len(parts)
     for idx, part in enumerate(parts):
+        global_idx = part_index_offset + idx
+        if librivox and global_idx == 0:
+            from paths import RECORDINGS_DIR
+            prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
+            if prologue.exists():
+                try:
+                    from pydub import AudioSegment
+                    plen = len(AudioSegment.from_file(prologue))
+                except Exception:
+                    plen = 0
+                plan.append(CalloutClip(path=prologue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_PROLOGUE", length_ms=plen, offset_ms=current_offset))
+                current_offset += plen
+                plan.append(Silence(1000, offset_ms=current_offset))
+                current_offset += 1000
         seg_plan, current_offset = build_part_plan(
             part_filter=part,
             spacing_ms=spacing_ms,
@@ -560,9 +578,77 @@ def build_audio_plan(
             chapters=chapters,
         )
         plan.extend(seg_plan)
+        if librivox and global_idx > 0:
+            # Insert per-part Librivox bumper: 500ms silence, audio, 1s silence.
+            from paths import RECORDINGS_DIR
+
+            bumper_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
+            plan.append(Silence(500, offset_ms=current_offset))
+            current_offset += 500
+            if bumper_path.exists():
+                # Represent as a callout clip to carry timing/text.
+                length_ms = 0
+                try:
+                    from pydub import AudioSegment
+                    length_ms = len(AudioSegment.from_file(bumper_path))
+                except Exception:
+                    pass
+                plan.append(CalloutClip(path=bumper_path, text="", role="_NARRATOR", clip_id="_LIBRIVOX_EACH_PART", length_ms=length_ms, offset_ms=current_offset))
+                current_offset += length_ms
+            plan.append(Silence(1000, offset_ms=current_offset))
+            current_offset += 1000
         if part_gap_ms and idx < len(parts) - 1:
             plan.append(Silence(part_gap_ms, offset_ms=current_offset))
             current_offset += part_gap_ms
+
+        if librivox:
+            from paths import RECORDINGS_DIR
+            endof_path = RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
+            epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
+            # Use the first clip of the part as the title if no dedicated title clip.
+            title_audio = RECORDINGS_DIR / f"_TITLE_PART_{part}.wav" if part is not None else None
+            title_text = ""
+            if title_audio and title_audio.exists():
+                pass
+            else:
+                # Derive from first segment of the part.
+                first_seg = f"{'' if part is None else part}_0_1.wav"
+                title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
+                # Lookup text from narrator block if available.
+                first_texts = read_block_bullets("_NARRATOR", part, 0)
+                title_text = first_texts[0]
+            if endof_path.exists():
+                length_ms = 0
+                try:
+                    from pydub import AudioSegment
+                    length_ms = len(AudioSegment.from_file(endof_path))
+                except Exception:
+                    pass
+                plan.append(CalloutClip(path=endof_path, text="end of", role="_NARRATOR", clip_id="_LIBRIVOX_ENDOF", length_ms=length_ms, offset_ms=current_offset))
+                current_offset += length_ms
+            plan.append(Silence(500, offset_ms=current_offset))
+            current_offset += 500
+            if title_audio and title_audio.exists():
+                try:
+                    from pydub import AudioSegment
+                    tlen = len(AudioSegment.from_file(title_audio))
+                except Exception:
+                    tlen = 0
+                clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
+                plan.append(SegmentClip(path=title_audio, text=title_text, role="_NARRATOR", clip_id=clip_id, length_ms=tlen, offset_ms=current_offset))
+                current_offset += tlen
+            # Post-title gap
+            plan.append(Silence(1000, offset_ms=current_offset))
+            current_offset += 1000
+            if epilogue.exists() and global_idx == total_count - 1:
+                try:
+                    from pydub import AudioSegment
+                    elen = len(AudioSegment.from_file(epilogue))
+                except Exception:
+                    elen = 0
+                plan.append(CalloutClip(path=epilogue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_EPILOG", length_ms=elen, offset_ms=current_offset))
+                current_offset += elen
+
     return plan, current_offset
 
 

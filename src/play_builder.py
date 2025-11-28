@@ -45,16 +45,17 @@ def build_audio(
                 parts=[part_id],
                 spacing_ms=spacing_ms,
                 include_callouts=False,
-                callout_spacing_ms=callout_spacing_ms,
-                minimal_callouts=minimal_callouts,
-                include_description_callouts=include_description_callouts,
-                part_chapters=False,
-                part_gap_ms=0,
-            )
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+        include_description_callouts=include_description_callouts,
+        part_chapters=False,
+        part_gap_ms=0,
+        librivox=True,
+    )
             # filter out chapters for librivox plain audio
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
-            prepend = [prologue] if idx == 0 and prologue.exists() else []
-            append = [epilogue] if idx == len(parts_numeric) - 1 and epilogue.exists() else []
+            prepend: list[Path] = []
+            append: list[Path] = []
             plan_path = BUILD_DIR / f"audio_plan_part_{part_id}.txt"
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             write_plan(plan, plan_path)
@@ -72,8 +73,9 @@ def build_audio(
             minimal_callouts=minimal_callouts,
             include_description_callouts=include_description_callouts,
             part_chapters=len(parts) > 1 if part_chapters is None else part_chapters,
-            part_gap_ms=part_gap_ms,
-        )
+        part_gap_ms=part_gap_ms,
+        librivox=librivox,
+    )
         plan_path = BUILD_DIR / "audio_plan.txt"
         plan_path.parent.mkdir(parents=True, exist_ok=True)
         write_plan(plan, plan_path)
