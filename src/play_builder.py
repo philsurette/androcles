@@ -264,11 +264,11 @@ def build_audio(
     if len(parts) == 1:
         part = parts[0]
         if part is None:
-            out_path = AUDIO_OUT_DIR / f"preamble.{ext}"
+            out_path = AUDIO_OUT_DIR / "play" / f"preamble.{ext}"
         else:
-            out_path = AUDIO_OUT_DIR / f"part_{part}.{ext}"
+            out_path = AUDIO_OUT_DIR / "play" / f"part_{part}.{ext}"
     else:
-        out_path = AUDIO_OUT_DIR / f"play.{ext}"
+        out_path = AUDIO_OUT_DIR / "play" / f"play.{ext}"
     export_with_chapters(combined, chapters if part_chapters else [], out_path, fmt=audio_format)
     logging.info("Wrote %s", out_path)
     return out_path
