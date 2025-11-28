@@ -5,6 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 BUILD_DIR = ROOT.parent / "build"
+LOGS_DIR = BUILD_DIR / "logs"
 PLAYS_DIR = ROOT.parent / "plays"
 DEFAULT_PLAY = PLAYS_DIR / "androcles" / "play.txt"
 PARAGRAPHS_PATH = BUILD_DIR / "paragraphs.txt"

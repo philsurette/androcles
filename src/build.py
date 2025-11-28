@@ -17,7 +17,7 @@ from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import build_audio, list_parts
 from cue_builder import build_cues
-from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR
+from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR
 
 
 app = typer.Typer(add_completion=False)
@@ -25,10 +25,11 @@ app = typer.Typer(add_completion=False)
 
 def setup_logging() -> None:
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = BUILD_DIR / "build.log"
+    LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = LOGS_DIR / "build.log"
     if log_path.exists():
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_path.rename(BUILD_DIR / f"build-{timestamp}.log")
+        log_path.rename(LOGS_DIR / f"build-{timestamp}.log")
 
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
     console = logging.StreamHandler()
