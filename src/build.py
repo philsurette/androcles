@@ -167,6 +167,7 @@ def audioplay(
     callout_descriptions: bool = typer.Option(True, help="Prepend description callouts for narrator blocks"),
     captions: bool = typer.Option(True, help="Generate captions (WebVTT) and mux into mp4 when possible"),
     generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),
+    librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
@@ -203,6 +204,7 @@ def audioplay(
         part_gap_ms=2000 if len(parts) > 1 else 0,
         generate_audio=generate_audio,
         generate_captions=captions,
+        librivox=librivox,
     )
     logging.info("Generated audioplay at %s", out_path)
     if normalize_output and generate_audio:

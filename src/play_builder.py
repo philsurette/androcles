@@ -15,7 +15,7 @@ from play_plan_builder import (
 )
 from play_audio_builder import instantiate_plan
 from caption_builder import build_captions
-from paths import BUILD_DIR
+from paths import BUILD_DIR, RECORDINGS_DIR
 
 
 def build_audio(
@@ -31,34 +31,65 @@ def build_audio(
     part_gap_ms: int = 0,
     generate_audio: bool = True,
     generate_captions: bool = True,
+    librivox: bool = False,
 ) -> Path:
-    out_path = compute_output_path(parts, part, audio_format)
-    plan, _ = build_audio_plan(
-        parts=parts,
-        spacing_ms=spacing_ms,
-        include_callouts=include_callouts,
-        callout_spacing_ms=callout_spacing_ms,
-        minimal_callouts=minimal_callouts,
-        include_description_callouts=include_description_callouts,
-        part_chapters=len(parts) > 1 if part_chapters is None else part_chapters,
-        part_gap_ms=part_gap_ms,
-    )
-    plan_path = BUILD_DIR / "audio_plan.txt"
-    plan_path.parent.mkdir(parents=True, exist_ok=True)
-    write_plan(plan, plan_path)
-    logging.info("Wrote audio plan to %s", plan_path)
-    captions_path: Path | None = None
-    if generate_captions:
-        captions_path = BUILD_DIR / "captions.vtt"
-        build_captions(plan, captions_path, include_callouts=include_callouts)
-        logging.info("Wrote captions to %s", captions_path)
-    if generate_audio:
-        logging.info("Generating audioplay to %s", out_path)
-        instantiate_plan(plan, out_path, audio_format=audio_format, captions_path=captions_path)
-        logging.info("Wrote %s", out_path)
+    if librivox:
+        parts_numeric = [p for p in parts if p is not None]
+        if not parts_numeric:
+            raise ValueError("No numbered parts available for librivox output.")
+        prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
+        epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
+        for idx, part_id in enumerate(parts_numeric):
+            out_path = compute_output_path([part_id], part_id, audio_format="mp3")
+            plan, _ = build_audio_plan(
+                parts=[part_id],
+                spacing_ms=spacing_ms,
+                include_callouts=False,
+                callout_spacing_ms=callout_spacing_ms,
+                minimal_callouts=minimal_callouts,
+                include_description_callouts=include_description_callouts,
+                part_chapters=False,
+                part_gap_ms=0,
+            )
+            # filter out chapters for librivox plain audio
+            plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
+            prepend = [prologue] if idx == 0 and prologue.exists() else []
+            append = [epilogue] if idx == len(parts_numeric) - 1 and epilogue.exists() else []
+            plan_path = BUILD_DIR / f"audio_plan_part_{part_id}.txt"
+            plan_path.parent.mkdir(parents=True, exist_ok=True)
+            write_plan(plan, plan_path)
+            logging.info("Wrote audio plan to %s", plan_path)
+            instantiate_plan(plan, out_path, audio_format="mp3", captions_path=None, prepend_paths=prepend, append_paths=append)
+            logging.info("Wrote %s", out_path)
+        return out_path
     else:
-        logging.info("Skipping audio rendering (generate-audio=false)")
-    return out_path
+        out_path = compute_output_path(parts, part, audio_format)
+        plan, _ = build_audio_plan(
+            parts=parts,
+            spacing_ms=spacing_ms,
+            include_callouts=include_callouts,
+            callout_spacing_ms=callout_spacing_ms,
+            minimal_callouts=minimal_callouts,
+            include_description_callouts=include_description_callouts,
+            part_chapters=len(parts) > 1 if part_chapters is None else part_chapters,
+            part_gap_ms=part_gap_ms,
+        )
+        plan_path = BUILD_DIR / "audio_plan.txt"
+        plan_path.parent.mkdir(parents=True, exist_ok=True)
+        write_plan(plan, plan_path)
+        logging.info("Wrote audio plan to %s", plan_path)
+        captions_path: Path | None = None
+        if generate_captions:
+            captions_path = BUILD_DIR / "captions.vtt"
+            build_captions(plan, captions_path, include_callouts=include_callouts)
+            logging.info("Wrote captions to %s", captions_path)
+        if generate_audio:
+            logging.info("Generating audioplay to %s", out_path)
+            instantiate_plan(plan, out_path, audio_format=audio_format, captions_path=captions_path)
+            logging.info("Wrote %s", out_path)
+        else:
+            logging.info("Skipping audio rendering (generate-audio=false)")
+        return out_path
 
 
 __all__ = ["build_audio", "compute_output_path", "list_parts", "PlanItem"]

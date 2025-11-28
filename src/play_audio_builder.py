@@ -49,13 +49,25 @@ def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str
         subprocess.run(cmd, check=True)
 
 
-def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, captions_path: Path | None = None) -> None:
+def instantiate_plan(
+    plan: List[PlanItem],
+    out_path: Path,
+    audio_format: str,
+    captions_path: Path | None = None,
+    prepend_paths: List[Path] | None = None,
+    append_paths: List[Path] | None = None,
+) -> None:
     """Render the audio plan into a single audio file, optionally muxing captions and a blank video track."""
     cache: Dict[Path, AudioSegment | None] = {}
     audio = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
     current_chapter_title: str | None = None
     current_chapter_start: int | None = None
+
+    for extra in prepend_paths or []:
+        seg = load_audio_by_path(extra, cache)
+        if seg:
+            audio += seg
 
     for item in plan:
         if isinstance(item, Chapter):
@@ -78,6 +90,11 @@ def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, ca
 
     if current_chapter_start is not None:
         chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
+
+    for extra in append_paths or []:
+        seg = load_audio_by_path(extra, cache)
+        if seg:
+            audio += seg
 
     export_with_chapters(audio, chapters if chapters else [], out_path, fmt=audio_format)
 
