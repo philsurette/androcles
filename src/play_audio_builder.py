@@ -97,7 +97,7 @@ def instantiate_plan(plan: List[PlanItem], out_path: Path, audio_format: str, ca
         if captions_path and captions_path.exists():
             cmd += ["-i", str(captions_path)]
             map_args += ["-map", "2:s:0"]
-            cmd += ["-c:s", "mov_text"]
+            cmd += ["-c:s", "mov_text", "-metadata:s:s:0", "language=eng"]
         cmd += map_args
         cmd += ["-shortest", "-c:v", "libx264", "-c:a", "copy", str(tmp_out)]
         logging.info("Muxing video (and captions if present) into %s", out_path)
