@@ -163,6 +163,7 @@ def audioplay(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
     minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
+    normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
     setup_logging()
     build_paragraphs()
@@ -180,7 +181,7 @@ def audioplay(
                 parts = [int(part)]
             except ValueError:
                 raise typer.BadParameter("Part must be an integer or '_'")
-    build_audio(
+    out_path = build_audio(
         parts=parts,
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
@@ -190,6 +191,13 @@ def audioplay(
         part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
     )
+    if normalize_output:
+        normalizer = Normalizer()
+        target_dir = out_path.parent / "normalized"
+        target_dir.mkdir(parents=True, exist_ok=True)
+        norm_path = target_dir / out_path.name
+        logging.info("Normalizing audioplay to %s", norm_path)
+        normalizer.normalize(str(out_path), str(norm_path))
 
 
 @app.command()
