@@ -13,6 +13,7 @@ from pydub import AudioSegment
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import Clip, CalloutClip, SegmentClip, Silence
+from audio_plan import AudioPlan, PlanItem
 from paths import (
     AUDIO_OUT_DIR,
     BLOCKS_DIR,
@@ -48,9 +49,6 @@ def _rel_path(path: Path) -> Path:
         return path.relative_to(AUDIO_OUT_DIR)
     except ValueError:
         return Path(os.path.relpath(path, AUDIO_OUT_DIR))
-
-
-PlanItem = Union[CalloutClip, SegmentClip, Silence, Chapter]
 
 
 def parse_index() -> List[IndexEntry]:
@@ -325,9 +323,9 @@ def build_block_plan(
     callout_spacing_ms: int,
     length_cache: Dict[Path, int],
     base_offset_ms: int,
-) -> tuple[List[PlanItem], str | None, str | None, int]:
+) -> tuple[AudioPlan[PlanItem], str | None, str | None, int]:
     """Build plan items for a single block, including optional callouts."""
-    block_items: List[PlanItem] = []
+    block_items: AudioPlan[PlanItem] = AudioPlan()
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
     current_offset = base_offset_ms
 
@@ -401,7 +399,7 @@ def build_part_plan(
     include_description_callouts: bool = True,
     base_offset_ms: int = 0,
     chapters: List[Chapter] | None = None,
-) -> tuple[List[PlanItem], int]:
+) -> tuple[AudioPlan[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     entries = parse_index()
     description_blocks = description_block_keys()
@@ -415,7 +413,7 @@ def build_part_plan(
     prev2_role: str | None = None
     seen_roles: set[str] = set()
     last_callout_type: str | None = None
-    plan_items: List[PlanItem] = []
+    plan_items: AudioPlan[PlanItem] = AudioPlan()
     current_offset = base_offset_ms
 
     for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
@@ -457,7 +455,7 @@ def build_part_plan(
     return plan_items, current_offset
 
 
-def write_plan(plan: List[PlanItem], path: Path) -> None:
+def write_plan(plan: AudioPlan[PlanItem], path: Path) -> None:
     """Persist plan items to a text file for inspection."""
     lines: List[str] = []
     for item in plan:
@@ -487,9 +485,9 @@ def build_audio_plan(
     librivox: bool = False,
     part_index_offset: int = 0,
     total_parts: int | None = None,
-) -> tuple[List[PlanItem], int]:
+) -> tuple[AudioPlan[PlanItem], int]:
     chapters = ChapterBuilder().build()
-    plan: List[PlanItem] = []
+    plan: AudioPlan[PlanItem] = AudioPlan()
     current_offset = 0
     total_count = total_parts if total_parts is not None else len(parts)
     plan.append(Silence(1000, offset_ms=current_offset))
