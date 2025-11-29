@@ -15,7 +15,7 @@ from play_plan_builder import (
 )
 from play_audio_builder import instantiate_plan
 from caption_builder import build_captions
-from paths import BUILD_DIR, RECORDINGS_DIR
+from paths import BUILD_DIR, RECORDINGS_DIR, AUDIO_PLAY_DIR
 
 
 def build_audio(
@@ -32,15 +32,17 @@ def build_audio(
     generate_audio: bool = True,
     generate_captions: bool = True,
     librivox: bool = False,
-) -> Path:
+) -> List[Path]:
     if librivox:
         parts_numeric = [p for p in parts if p is not None]
         if not parts_numeric:
             raise ValueError("No numbered parts available for librivox output.")
         prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
         epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
+        outputs: List[Path] = []
         for idx, part_id in enumerate(parts_numeric):
-            out_path = compute_output_path([part_id], part_id, audio_format="mp3")
+            out_path = AUDIO_PLAY_DIR / f"androclesandthelion_{part_id}_shaw_128kb.mp3"
+            outputs.append(out_path)
             plan, _ = build_audio_plan(
                 parts=[part_id],
                 spacing_ms=spacing_ms,
@@ -67,7 +69,7 @@ def build_audio(
                 logging.info("Wrote %s", out_path)
             else:
                 logging.info("Skipping audio rendering (generate-audio=false)")
-        return out_path
+        return outputs
     else:
         out_path = compute_output_path(parts, part, audio_format)
         plan, _ = build_audio_plan(
@@ -96,7 +98,7 @@ def build_audio(
             logging.info("Wrote %s", out_path)
         else:
             logging.info("Skipping audio rendering (generate-audio=false)")
-        return out_path
+        return [out_path]
 
 
 __all__ = ["build_audio", "compute_output_path", "list_parts", "PlanItem"]

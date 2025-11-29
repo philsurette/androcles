@@ -68,8 +68,11 @@ class Normalizer:
             "-i", input_file,
             "-af", #audio format
             filter_spec,
-            output_file
         ]
+        # Preserve/force bitrate for mp3 outputs.
+        if output_file.lower().endswith(".mp3"):
+            normalize_command.extend(["-b:a", "128k"])
+        normalize_command.append(output_file)
         logger.info(F"{' '.join(normalize_command)}")
 
         normalize_process = subprocess.run(normalize_command, capture_output=True, text=True)
@@ -113,4 +116,3 @@ class NormalizationResult:
                 r.append(f"{m.score.checkmark}{m.metric.abbrev}:{m.value}")
 
         return " ".join(r)
-

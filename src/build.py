@@ -191,7 +191,7 @@ def audioplay(
                 raise typer.BadParameter("Part must be an integer or '_'")
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
-    out_path = build_audio(
+    out_paths = build_audio(
         parts=parts,
         part=part,
         spacing_ms=segment_spacing_ms,
@@ -208,11 +208,12 @@ def audioplay(
     )
     if normalize_output and generate_audio:
         normalizer = Normalizer()
-        target_dir = out_path.parent / "normalized"
-        target_dir.mkdir(parents=True, exist_ok=True)
-        norm_path = target_dir / out_path.name
-        logging.info("Normalizing audioplay to %s", norm_path)
-        normalizer.normalize(str(out_path), str(norm_path))
+        for out_path in out_paths:
+            target_dir = out_path.parent / "normalized"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            norm_path = target_dir / out_path.name
+            logging.info("Normalizing audioplay to %s", norm_path)
+            normalizer.normalize(str(out_path), str(norm_path))
     elif normalize_output and not generate_audio:
         logging.info("Skipping normalization because audio rendering was skipped.")
 
