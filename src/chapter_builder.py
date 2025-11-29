@@ -14,7 +14,7 @@ DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
 STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
 BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class Chapter:
     block_id: str
     title: str

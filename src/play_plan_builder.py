@@ -323,16 +323,17 @@ def build_block_plan(
     callout_spacing_ms: int,
     length_cache: Dict[Path, int],
     base_offset_ms: int,
-) -> AudioPlan:
+    plan_items: AudioPlan[PlanItem],
+) -> tuple[List[PlanItem], str | None, str | None, int]:
     """Build plan items for a single block, including optional callouts."""
-    block_plan: AudioPlan = AudioPlan()
+    start_idx = len(plan_items)
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
     current_offset = base_offset_ms
 
     if callout_path:
         callout_id = primary_role or "_NARRATOR"
         length_ms = get_audio_length_ms(callout_path, length_cache)
-        current_offset = block_plan.addClip(
+        current_offset = plan_items.addClip(
             CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=callout_spacing_ms,
         )
@@ -353,14 +354,14 @@ def build_block_plan(
         length_ms = get_audio_length_ms(wav_path, length_cache)
         is_last_seg = seg_idx == len(block_segments) - 1
         gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
-        current_offset = block_plan.addClip(
+        current_offset = plan_items.addClip(
             SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=gap,
         )
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
-    return block_plan, prev_role, prev2_role, current_offset
+    return list(plan_items[start_idx:]), prev_role, prev2_role, current_offset
 
 
 def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
@@ -438,21 +439,20 @@ def build_part_plan(
             callout_spacing_ms=callout_spacing_ms,
             length_cache=length_cache,
             base_offset_ms=current_offset,
+            plan_items=audio_plan,
         )
         for item in block_items:
             if isinstance(item, (CalloutClip, SegmentClip)) and item.clip_id:
                 block_id = ":".join(item.clip_id.split(":")[:2])
                 if block_id in chapter_map and block_id not in inserted_chapters:
                     chapter_template = chapter_map[block_id]
-                    audio_plan.append(
-                        Chapter(
-                            block_id=chapter_template.block_id,
-                            title=chapter_template.title,
-                            offset_ms=item.offset_ms,
-                        )
+                    chapter_obj = Chapter(
+                        block_id=chapter_template.block_id,
+                        title=chapter_template.title,
+                        offset_ms=item.offset_ms,
                     )
+                    audio_plan.addChapter(chapter_obj)
                     inserted_chapters.add(block_id)
-            audio_plan.append(item)
 
     return audio_plan, current_offset
 
