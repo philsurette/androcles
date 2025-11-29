@@ -37,20 +37,6 @@ BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 
 INTER_WORD_PAUSE_MS = 300
 
-def _rel_path(path: Path) -> Path:
-    """Return path relative to AUDIO_OUT_DIR when possible."""
-    if hasattr(Path, "is_relative_to"):
-        try:
-            if path.is_relative_to(AUDIO_OUT_DIR):
-                return path.relative_to(AUDIO_OUT_DIR)
-        except Exception:
-            pass
-    try:
-        return path.relative_to(AUDIO_OUT_DIR)
-    except ValueError:
-        return Path(os.path.relpath(path, AUDIO_OUT_DIR))
-
-
 def parse_index() -> List[IndexEntry]:
     """Read INDEX.files and return ordered (part, block, role) tuples."""
     entries: List[IndexEntry] = []
@@ -498,11 +484,7 @@ def build_audio_plan(
             from paths import RECORDINGS_DIR
             prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
             if prologue.exists():
-                try:
-                    from pydub import AudioSegment
-                    plen = len(AudioSegment.from_file(prologue))
-                except Exception:
-                    plen = 0
+                plen = len(AudioSegment.from_file(prologue))
                 plan.addClip(
                     CalloutClip(
                         path=prologue,
@@ -533,15 +515,7 @@ def build_audio_plan(
             from paths import RECORDINGS_DIR
 
             part_of_suffix_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-            if part_of_suffix_path.exists():
-                try:
-                    from pydub import AudioSegment
-
-                    part_of_suffix_len = len(AudioSegment.from_file(part_of_suffix_path))
-                except Exception:
-                    part_of_suffix_len = 0
-            else:
-                part_of_suffix_path = None
+            part_of_suffix_len = len(AudioSegment.from_file(part_of_suffix_path))
 
         for item in seg_plan:
             if isinstance(item, Chapter):
@@ -598,12 +572,7 @@ def build_audio_plan(
                 first_texts = read_block_bullets("_NARRATOR", part, 0)
                 title_text = first_texts[0]
             if endof_path.exists():
-                length_ms = 0
-                try:
-                    from pydub import AudioSegment
-                    length_ms = len(AudioSegment.from_file(endof_path))
-                except Exception:
-                    pass
+                length_ms = len(AudioSegment.from_file(endof_path))
                 plan.addSilence(1000)
                 plan.addClip(
                     CalloutClip(
@@ -617,11 +586,7 @@ def build_audio_plan(
                 )
             plan.addSilence(INTER_WORD_PAUSE_MS)
             if title_audio and title_audio.exists():
-                try:
-                    from pydub import AudioSegment
-                    tlen = len(AudioSegment.from_file(title_audio))
-                except Exception:
-                    tlen = 0
+                tlen = len(AudioSegment.from_file(title_audio))
                 clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
                 plan.addClip(
                     SegmentClip(
@@ -634,11 +599,7 @@ def build_audio_plan(
                     )
                 )
             if epilogue.exists() and part is not None and global_idx == total_count - 1:
-                try:
-                    from pydub import AudioSegment
-                    elen = len(AudioSegment.from_file(epilogue))
-                except Exception:
-                    elen = 0
+                elen = len(AudioSegment.from_file(epilogue))
                 # Post-title gap
                 plan.addSilence(1000)
                 plan.addClip(
