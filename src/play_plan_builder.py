@@ -336,7 +336,6 @@ def build_block_plan(
         plan_items.addClip(
             CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=0),
             following_silence_ms=callout_spacing_ms,
-            offset_ms=current_offset,
         )
         current_offset += length_ms + callout_spacing_ms
 
@@ -359,7 +358,6 @@ def build_block_plan(
         plan_items.addClip(
             SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
             following_silence_ms=gap,
-            offset_ms=current_offset,
         )
         current_offset += length_ms + gap
         if role != "_NARRATOR":
@@ -495,7 +493,7 @@ def build_audio_plan(
     chapters = ChapterBuilder().build()
     plan: AudioPlan[PlanItem] = AudioPlan()
     total_count = total_parts if total_parts is not None else len(parts)
-    plan.addSilence(1000, offset_ms=plan.duration_ms)
+    plan.addSilence(1000)
     for idx, part in enumerate(parts):
         global_idx = part_index_offset + idx
         if librivox and global_idx == 0:
@@ -553,7 +551,7 @@ def build_audio_plan(
                 plan.addChapter(item)
                 continue
             if isinstance(item, Silence):
-                plan.addSilence(item.length_ms, offset_ms=plan.duration_ms)
+                plan.addSilence(item.length_ms)
             elif isinstance(item, (CalloutClip, SegmentClip)):
                 plan.addClip(
                     item.__class__(
@@ -567,7 +565,7 @@ def build_audio_plan(
                 )
                 if part_of_suffix_path and not part_of_suffix_inserted:
                     # Insert part-of suffix after the first audio item.
-                    plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=plan.duration_ms)
+                    plan.addSilence(INTER_WORD_PAUSE_MS)
                     plan.addClip(
                         CalloutClip(
                             path=part_of_suffix_path,
@@ -583,7 +581,7 @@ def build_audio_plan(
                 raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
         if part_gap_ms and idx < len(parts) - 1:
-            plan.addSilence(part_gap_ms, offset_ms=plan.duration_ms)
+            plan.addSilence(part_gap_ms)
 
         if librivox:
             from paths import RECORDINGS_DIR
@@ -608,7 +606,7 @@ def build_audio_plan(
                     length_ms = len(AudioSegment.from_file(endof_path))
                 except Exception:
                     pass
-                plan.addSilence(1000, offset_ms=plan.duration_ms)
+                plan.addSilence(1000)
                 plan.addClip(
                     CalloutClip(
                         path=endof_path,
@@ -619,7 +617,7 @@ def build_audio_plan(
                         offset_ms=plan.duration_ms,
                     )
                 )
-            plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=plan.duration_ms)
+            plan.addSilence(INTER_WORD_PAUSE_MS)
             if title_audio and title_audio.exists():
                 try:
                     from pydub import AudioSegment
@@ -644,7 +642,7 @@ def build_audio_plan(
                 except Exception:
                     elen = 0
                 # Post-title gap
-                plan.addSilence(1000, offset_ms=plan.duration_ms)
+                plan.addSilence(1000)
                 plan.addClip(
                     CalloutClip(
                         path=epilogue,
@@ -655,7 +653,7 @@ def build_audio_plan(
                         offset_ms=plan.duration_ms,
                     )
                 )
-    plan.addSilence(1000, offset_ms=plan.duration_ms)
+    plan.addSilence(1000)
     return plan, plan.duration_ms
 
 
