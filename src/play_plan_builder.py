@@ -515,7 +515,7 @@ def build_audio_plan(
                     ),
                     following_silence_ms=1000,
                 )
-        seg_plan, current_offset = build_part_plan(
+        seg_plan, _ = build_part_plan(
             part_filter=part,
             spacing_ms=spacing_ms,
             include_callouts=include_callouts,
@@ -526,71 +526,64 @@ def build_audio_plan(
             chapters=chapters,
         )
 
+        # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
+        part_current = current_offset
+        part_of_suffix_inserted = False
+        part_of_suffix_path = None
+        part_of_suffix_len = 0
         if librivox and global_idx > 0:
             from paths import RECORDINGS_DIR
 
-            part_of_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-            if part_of_path.exists() and seg_plan:
+            part_of_suffix_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
+            if part_of_suffix_path.exists():
                 try:
                     from pydub import AudioSegment
 
-                    part_of_len = len(AudioSegment.from_file(part_of_path))
+                    part_of_suffix_len = len(AudioSegment.from_file(part_of_suffix_path))
                 except Exception:
-                    part_of_len = 0
-                part_of_duration = INTER_WORD_PAUSE_MS + part_of_len
-                first_idx = next(
-                    (i for i, item in enumerate(seg_plan) if isinstance(item, (CalloutClip, SegmentClip, Silence))),
-                    None,
+                    part_of_suffix_len = 0
+            else:
+                part_of_suffix_path = None
+
+        for item in seg_plan:
+            if isinstance(item, Chapter):
+                item.offset_ms = part_current
+                plan.addChapter(item)
+                continue
+            if isinstance(item, Silence):
+                part_current = plan.addSilence(item.length_ms, offset_ms=part_current)
+            elif isinstance(item, (CalloutClip, SegmentClip)):
+                part_current = plan.addClip(
+                    item.__class__(
+                        path=item.path,
+                        text=item.text,
+                        role=item.role,
+                        clip_id=item.clip_id,
+                        length_ms=item.length_ms,
+                        offset_ms=part_current,
+                    )
                 )
-                if first_idx is not None:
-                    first_item = seg_plan[first_idx]
-                    insert_offset = first_item.offset_ms + first_item.length_ms
-                    part_of_items: List[PlanItem] = [
-                        Silence(INTER_WORD_PAUSE_MS, offset_ms=insert_offset),
+                if part_of_suffix_path and not part_of_suffix_inserted:
+                    # Insert part-of suffix after the first audio item.
+                    part_current = plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=part_current)
+                    part_current = plan.addClip(
                         CalloutClip(
-                            path=part_of_path,
+                            path=part_of_suffix_path,
                             text="of [title] by [author]. This is a Librivox recording. All Librivox recordings are in the public domain. For more information, or to volunteer, please visit librivox.org.",
                             role="_NARRATOR",
                             clip_id="_LIBRIVOX_EACH_PART",
-                            length_ms=part_of_len,
-                            offset_ms=insert_offset + INTER_WORD_PAUSE_MS,
+                            length_ms=part_of_suffix_len,
+                            offset_ms=part_current,
                         ),
-                    ]
-                    new_plan: List[PlanItem] = []
-                    for idx_item, item in enumerate(seg_plan):
-                        if idx_item == first_idx:
-                            new_plan.append(item)
-                            new_plan.extend(part_of_items)
-                            continue
-                        if isinstance(item, CalloutClip):
-                            new_plan.append(
-                                CalloutClip(
-                                    path=item.path,
-                                    text=item.text,
-                                    role=item.role,
-                                    clip_id=item.clip_id,
-                                    length_ms=item.length_ms,
-                                    offset_ms=item.offset_ms + part_of_duration,
-                                )
-                            )
-                        elif isinstance(item, SegmentClip):
-                            new_plan.append(
-                                SegmentClip(
-                                    path=item.path,
-                                    text=item.text,
-                                    role=item.role,
-                                    clip_id=item.clip_id,
-                                    length_ms=item.length_ms,
-                                    offset_ms=item.offset_ms + part_of_duration,
-                                )
-                            )
-                        elif isinstance(item, Silence):
-                            new_plan.append(Silence(item.length_ms, offset_ms=item.offset_ms + part_of_duration))
-                        else:
-                            new_plan.append(item)
-                    seg_plan = new_plan
-                    current_offset += part_of_duration
-        plan.extend(seg_plan)
+                    )
+                    part_of_suffix_inserted = True
+            else:
+                plan.append(item)
+                if hasattr(item, "offset_ms"):
+                    plan.duration_ms = max(plan.duration_ms, getattr(item, "offset_ms", 0))
+
+        current_offset = part_current
+
         if part_gap_ms and idx < len(parts) - 1:
             current_offset = plan.addSilence(part_gap_ms, offset_ms=current_offset)
 
