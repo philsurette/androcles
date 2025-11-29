@@ -2,12 +2,9 @@
 """Build audio plans for the play."""
 from __future__ import annotations
 
-from dataclasses import dataclass
-from abc import ABC, abstractmethod
 from functools import lru_cache
 from pathlib import Path
 import logging
-import os
 import re
 from typing import Dict, List, Tuple, Union
 
@@ -15,6 +12,7 @@ from pydub import AudioSegment
 
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
+from clip import Clip, CalloutClip, SegmentClip, Silence
 from paths import (
     AUDIO_OUT_DIR,
     BLOCKS_DIR,
@@ -50,65 +48,6 @@ def _rel_path(path: Path) -> Path:
         return path.relative_to(AUDIO_OUT_DIR)
     except ValueError:
         return Path(os.path.relpath(path, AUDIO_OUT_DIR))
-
-
-@dataclass(frozen=True)
-class Clip(ABC):
-    path: Path | None
-    text: str | None
-    role: str | None
-    clip_id: str | None
-    length_ms: int
-    offset_ms: int
-
-    @property
-    @abstractmethod
-    def kind(self) -> str:
-        ...
-
-
-@dataclass(frozen=True)
-class CalloutClip(Clip):
-    @property
-    def kind(self) -> str:
-        return "callout"
-
-    def __str__(self) -> str:
-        if self.path is None:
-            return "[callout missing]"
-        rel = _rel_path(self.path)
-        return f"{rel}: {self.clip_id}"
-
-
-@dataclass(frozen=True)
-class SegmentClip(Clip):
-    @property
-    def kind(self) -> str:
-        return "segment"
-
-    def __str__(self) -> str:
-        if self.path is None:
-            return "[segment missing]"
-        rel = _rel_path(self.path)
-        return f"{rel}: {self.clip_id}:{self.role} - {self.text}"
-
-
-@dataclass(frozen=True)
-class Silence(Clip):
-    def __init__(self, length_ms: int, offset_ms: int = 0):
-        object.__setattr__(self, "length_ms", length_ms)
-        object.__setattr__(self, "offset_ms", offset_ms)
-        object.__setattr__(self, "path", None)
-        object.__setattr__(self, "text", None)
-        object.__setattr__(self, "role", None)
-        object.__setattr__(self, "clip_id", None)
-
-    @property
-    def kind(self) -> str:
-        return "silence"
-
-    def __str__(self) -> str:
-        return f"[silence {self.length_ms}ms]"
 
 
 PlanItem = Union[CalloutClip, SegmentClip, Silence, Chapter]

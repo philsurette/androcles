@@ -5,7 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import List
 
-from play_plan_builder import PlanItem, SegmentClip, CalloutClip
+from clip import SegmentClip, CalloutClip
+from play_plan_builder import PlanItem
 
 
 def fmt_ts(ms: int) -> str:

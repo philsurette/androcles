@@ -8,7 +8,8 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_plan_builder import PlanItem, Silence, Chapter, CalloutClip, SegmentClip, load_audio_by_path
+from play_plan_builder import PlanItem, Silence, Chapter, load_audio_by_path
+from clip import CalloutClip, SegmentClip
 
 
 def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path, fmt: str) -> None:
