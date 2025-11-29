@@ -563,9 +563,9 @@ def build_audio_plan(
                     plen = len(AudioSegment.from_file(prologue))
                 except Exception:
                     plen = 0
+                plan.append(Silence(1000, offset_ms=current_offset))
                 plan.append(CalloutClip(path=prologue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_PROLOGUE", length_ms=plen, offset_ms=current_offset))
                 current_offset += plen
-                plan.append(Silence(1000, offset_ms=current_offset))
                 current_offset += 1000
         seg_plan, current_offset = build_part_plan(
             part_filter=part,
