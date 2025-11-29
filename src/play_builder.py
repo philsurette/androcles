@@ -62,8 +62,11 @@ def build_audio(
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             write_plan(plan, plan_path)
             logging.info("Wrote audio plan to %s", plan_path)
-            instantiate_plan(plan, out_path, audio_format="mp3", captions_path=None, prepend_paths=prepend, append_paths=append)
-            logging.info("Wrote %s", out_path)
+            if generate_audio:
+                instantiate_plan(plan, out_path, audio_format="mp3", captions_path=None, prepend_paths=prepend, append_paths=append)
+                logging.info("Wrote %s", out_path)
+            else:
+                logging.info("Skipping audio rendering (generate-audio=false)")
         return out_path
     else:
         out_path = compute_output_path(parts, part, audio_format)
