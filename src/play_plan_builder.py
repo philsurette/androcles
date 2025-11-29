@@ -12,7 +12,7 @@ from pydub import AudioSegment
 
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
-from clip import Clip, CalloutClip, SegmentClip, Silence
+from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
 from paths import (
     AUDIO_OUT_DIR,
@@ -505,7 +505,7 @@ def build_audio_plan(
                 except Exception:
                     plen = 0
                 current_offset = plan.addClip(
-                    CalloutClip(
+                    SegmentClip(
                         path=prologue,
                         text="",
                         role="_NARRATOR",
@@ -578,9 +578,7 @@ def build_audio_plan(
                     )
                     part_of_suffix_inserted = True
             else:
-                plan.append(item)
-                if hasattr(item, "offset_ms"):
-                    plan.duration_ms = max(plan.duration_ms, getattr(item, "offset_ms", 0))
+                raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
         current_offset = part_current
 
