@@ -38,13 +38,7 @@ class AudioPlan(List[T], Generic[T]):
         offset_ms += ms
         self.duration_ms = max(self.duration_ms, offset_ms)
 
-    def addChapter(self, chapter: Chapter, index: int | None = None) -> None:
+    def addChapter(self, chapter: Chapter) -> None:
         """Add a chapter marker (append or insert) and update duration if offset is known."""
-        if chapter.offset_ms is None:
-            chapter.offset_ms = self.duration_ms
-        if index is None:
-            self.append(chapter)
-        else:
-            self.insert(index, chapter)
-        if chapter.offset_ms is not None:
-            self.duration_ms = max(self.duration_ms, chapter.offset_ms)
+        chapter.offset_ms = self.duration_ms
+        self.append(chapter)
