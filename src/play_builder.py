@@ -44,7 +44,7 @@ def build_audio(
             plan, _ = build_audio_plan(
                 parts=[part_id],
                 spacing_ms=spacing_ms,
-                include_callouts=False,
+                include_callouts=include_callouts,
                 callout_spacing_ms=callout_spacing_ms,
                 minimal_callouts=minimal_callouts,
                 include_description_callouts=include_description_callouts,
