@@ -323,16 +323,16 @@ def build_block_plan(
     callout_spacing_ms: int,
     length_cache: Dict[Path, int],
     base_offset_ms: int,
-) -> tuple[AudioPlan[PlanItem], str | None, str | None, int]:
+) -> AudioPlan:
     """Build plan items for a single block, including optional callouts."""
-    block_items: AudioPlan[PlanItem] = AudioPlan()
+    block_plan: AudioPlan = AudioPlan()
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
     current_offset = base_offset_ms
 
     if callout_path:
         callout_id = primary_role or "_NARRATOR"
         length_ms = get_audio_length_ms(callout_path, length_cache)
-        current_offset = block_items.addClip(
+        current_offset = block_plan.addClip(
             CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=callout_spacing_ms,
         )
@@ -353,14 +353,14 @@ def build_block_plan(
         length_ms = get_audio_length_ms(wav_path, length_cache)
         is_last_seg = seg_idx == len(block_segments) - 1
         gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
-        current_offset = block_items.addClip(
+        current_offset = block_plan.addClip(
             SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=gap,
         )
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
-    return block_items, prev_role, prev2_role, current_offset
+    return block_plan, prev_role, prev2_role, current_offset
 
 
 def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
@@ -408,7 +408,7 @@ def build_part_plan(
     prev2_role: str | None = None
     seen_roles: set[str] = set()
     last_callout_type: str | None = None
-    plan_items: AudioPlan[PlanItem] = AudioPlan()
+    audio_plan: AudioPlan = AudioPlan()
     current_offset = base_offset_ms
 
     for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
@@ -443,25 +443,32 @@ def build_part_plan(
             if isinstance(item, (CalloutClip, SegmentClip)) and item.clip_id:
                 block_id = ":".join(item.clip_id.split(":")[:2])
                 if block_id in chapter_map and block_id not in inserted_chapters:
-                    plan_items.append(chapter_map[block_id])
+                    chapter_template = chapter_map[block_id]
+                    audio_plan.append(
+                        Chapter(
+                            block_id=chapter_template.block_id,
+                            title=chapter_template.title,
+                            offset_ms=item.offset_ms,
+                        )
+                    )
                     inserted_chapters.add(block_id)
-            plan_items.append(item)
+            audio_plan.append(item)
 
-    return plan_items, current_offset
+    return audio_plan, current_offset
 
 
 def write_plan(plan: AudioPlan[PlanItem], path: Path) -> None:
     """Persist plan items to a text file for inspection."""
     lines: List[str] = []
     for item in plan:
+        mins = item.offset_ms // 60000
+        secs_ms = item.offset_ms % 60000
+        prefix = f"{mins:02d}:{secs_ms/1000:06.3f} "
         if isinstance(item, (CalloutClip, SegmentClip, Silence)):
-            mins = item.offset_ms // 60000
-            secs_ms = item.offset_ms % 60000
-            prefix = f"{mins:02d}:{secs_ms/1000:06.3f} "
             lines.append(prefix + str(item))
         elif isinstance(item, Chapter):
             suffix = f" {item.title}" if item.title else ""
-            lines.append(f"[chapter]{suffix}")
+            lines.append(f"{prefix}[chapter]{suffix}")
     content = "\n".join(lines)
     if content:
         content += "\n"

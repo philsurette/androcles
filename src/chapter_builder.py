@@ -18,6 +18,7 @@ BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 class Chapter:
     block_id: str
     title: str
+    offset_ms: int | None = None
 
 
 class ChapterBuilder:
