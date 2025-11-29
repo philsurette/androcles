@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import List
-from abc import ABC
+from abc import ABC, abstractmethod
 import re
 from pathlib import Path
 
@@ -71,12 +71,57 @@ class Block(ABC):
     def __str__(self) -> str:
         return self.text
 
+    @classmethod
+    @abstractmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        """Attempt to parse paragraph; return a Block or None."""
+        raise NotImplementedError
+
 
 @dataclass
 class MetaBlock(Block):
     PREFIX = "::"
     SUFFIX = "::"
     REGEX = re.compile(fr"^{re.escape(PREFIX)}(.*){re.escape(SUFFIX)}$")
+
+    @classmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        heading = re.match(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$", paragraph)
+        if heading:
+            new_part = int(heading.group(1))
+            block_id = BlockId(new_part, 0)
+            block = cls(
+                block_id=block_id,
+                text=paragraph,
+                segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=paragraph)],
+            )
+            return block
+
+        meta_match = cls.REGEX.match(paragraph)
+        if meta_match:
+            meta_counters[current_part] = meta_counters.get(current_part, 0) + 1
+            block_id = BlockId(current_part, meta_counters[current_part])
+            text = meta_match.group(1).strip()
+            block = cls(
+                block_id=block_id,
+                text=text,
+                segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=text)],
+            )
+            return block
+
+        return None
 
 
 @dataclass
@@ -85,6 +130,27 @@ class DescriptionBlock(Block):
     SUFFIX = "]]"
     REGEX = re.compile(fr"^{re.escape(PREFIX)}(.*){re.escape(SUFFIX)}$")
 
+    @classmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        match = cls.REGEX.match(paragraph)
+        if not match:
+            return None
+        block_counter += 1
+        block_id = BlockId(current_part, block_counter)
+        text = match.group(1).strip()
+        block = cls(
+            block_id=block_id,
+            text=text,
+            segments=[DescriptionSegment(segment_id=SegmentId(block_id, 1), text=text)],
+        )
+        return block
+
 
 @dataclass
 class DirectionBlock(Block):
@@ -92,19 +158,63 @@ class DirectionBlock(Block):
     SUFFIX = "_"
     REGEX = re.compile(fr"^{re.escape(PREFIX)}+(.*?){re.escape(SUFFIX)}+\s*$")
 
+    @classmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        match = cls.REGEX.match(paragraph)
+        if not match:
+            return None
+        block_counter += 1
+        block_id = BlockId(current_part, block_counter)
+        text = match.group(1).strip()
+        block = cls(
+            block_id=block_id,
+            text=text,
+            segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=text)],
+        )
+        return block
+
 
 @dataclass
 class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
     REGEX = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
-    role: str
+    role: str = ""
     segments: List[Segment] = field(default_factory=list)
 
     def __str__(self) -> str:
         if self.segments:
             return " ".join(str(s) for s in self.segments)
         return f"{self.role}: {self.text}"
+
+    @classmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        role_match = cls.REGEX.match(paragraph)
+        if not role_match:
+            return None
+        role, speech = role_match.groups()
+        block_counter += 1
+        block_id = BlockId(current_part, block_counter)
+        segments = SegmentParser().parse_role_segments(role, block_id, speech.strip())
+        block = cls(
+            block_id=block_id,
+            role=role,
+            text=speech.strip(),
+            segments=segments,
+        )
+        return block
 
 
 class PlayText(List[Block]):
@@ -173,93 +283,28 @@ class PlayTextParser:
             if not paragraph:
                 continue
 
-            part_match = PART_HEADING_RE.match(paragraph)
-            if part_match:
-                current_part = int(part_match.group(1))
-                block_counter = 0
-                block_id = BlockId(current_part, 0)
-                play.append(
-                    MetaBlock(
-                        block_id=block_id,
-                        text=paragraph,
-                        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=paragraph)],
-                    )
-                )
-                continue
+            # Try each block type in order.
+            parsed_block: Block | None = None
+            for cls in (MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock):
+                block = cls.parse(paragraph, current_part, block_counter, meta_counters)
+                if block is not None:
+                    parsed_block = block
+                    break
 
-            # Meta
-            meta_match = MetaBlock.REGEX.match(paragraph)
-            if meta_match:
-                meta_counters[current_part] = meta_counters.get(current_part, 0) + 1
-                block_id = BlockId(current_part, meta_counters[current_part])
-                text = meta_match.group(1).strip()
-                play.append(
-                    MetaBlock(
-                        block_id=block_id,
-                        text=text,
-                        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=text)],
-                    )
-                )
-                continue
-
-            # Description
-            desc_match = DescriptionBlock.REGEX.match(paragraph)
-            if desc_match:
+            if parsed_block is None:
+                # Fallback: treat as a direction block.
                 block_counter += 1
                 block_id = BlockId(current_part, block_counter)
-                text = desc_match.group(1).strip()
-                play.append(
-                    DescriptionBlock(
-                        block_id=block_id,
-                        text=text,
-                        segments=[DescriptionSegment(segment_id=SegmentId(block_id, 1), text=text)],
-                    )
-                )
-                continue
-
-            # Stage direction
-            stage_match = DirectionBlock.REGEX.match(paragraph)
-            if stage_match:
-                block_counter += 1
-                block_id = BlockId(current_part, block_counter)
-                text = stage_match.group(1).strip()
-                play.append(
-                    DirectionBlock(
-                        block_id=block_id,
-                        text=text,
-                        segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=text)],
-                    )
-                )
-                continue
-
-            # Role speech
-            role_match = RoleBlock.REGEX.match(paragraph)
-            if role_match:
-                role, speech = role_match.groups()
-                block_counter += 1
-                block_id = BlockId(current_part, block_counter)
-                segments = self.segment_parser.parse_role_segments(role, block_id, speech.strip())
-                play.append(
-                    RoleBlock(
-                        block_id=block_id,
-                        role=role,
-                        text=speech.strip(),
-                        segments=segments,
-                    )
-                )
-                continue
-
-            # Fallback: treat as description to make unexpected format visible.
-            block_counter += 1
-            block_id = BlockId(current_part, block_counter)
-            text = paragraph.strip()
-            play.append(
-                DescriptionBlock(
+                text = paragraph.strip()
+                parsed_block = DirectionBlock(
                     block_id=block_id,
                     text=text,
-                    segments=[DescriptionSegment(segment_id=SegmentId(block_id, 1), text=text)],
+                    segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=text)],
                 )
-            )
+
+            play.append(parsed_block)
+            current_part = parsed_block.block_id.part_id
+            block_counter = parsed_block.block_id.block_no
 
         return play
 
