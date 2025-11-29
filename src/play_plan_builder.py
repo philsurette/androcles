@@ -57,10 +57,8 @@ def parse_index() -> List[IndexEntry]:
     for raw in INDEX_PATH.read_text(encoding="utf-8").splitlines():
         if not raw.strip():
             continue
-        try:
-            id_part, role = raw.split(maxsplit=1)
-        except ValueError:
-            continue
+        id_part, role = raw.split(maxsplit=1)
+
         if id_part.startswith(":"):
             part = None
             block = int(id_part[1:])
