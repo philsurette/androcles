@@ -334,8 +334,9 @@ def build_block_plan(
         callout_id = primary_role or "_NARRATOR"
         length_ms = get_audio_length_ms(callout_path, length_cache)
         plan_items.addClip(
-            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset),
+            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=0),
             following_silence_ms=callout_spacing_ms,
+            offset_ms=current_offset,
         )
         current_offset += length_ms + callout_spacing_ms
 
@@ -356,8 +357,9 @@ def build_block_plan(
         is_last_seg = seg_idx == len(block_segments) - 1
         gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
         plan_items.addClip(
-            SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset),
+            SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
             following_silence_ms=gap,
+            offset_ms=current_offset,
         )
         current_offset += length_ms + gap
         if role != "_NARRATOR":

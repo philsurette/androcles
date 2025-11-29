@@ -28,7 +28,7 @@ def _rel_path(path: Path) -> Path:
         return Path(os.path.relpath(path, base))
 
 
-@dataclass(frozen=True)
+@dataclass
 class Clip(ABC):
     path: Path | None
     text: str | None
@@ -43,7 +43,7 @@ class Clip(ABC):
         ...
 
 
-@dataclass(frozen=True)
+@dataclass
 class CalloutClip(Clip):
     @property
     def kind(self) -> str:
@@ -56,7 +56,7 @@ class CalloutClip(Clip):
         return f"{rel}: {self.clip_id}"
 
 
-@dataclass(frozen=True)
+@dataclass
 class SegmentClip(Clip):
     @property
     def kind(self) -> str:
@@ -69,7 +69,7 @@ class SegmentClip(Clip):
         return f"{rel}: {self.clip_id}:{self.role} - {self.text}"
 
 
-@dataclass(frozen=True)
+@dataclass
 class Silence(Clip):
     def __init__(self, length_ms: int, offset_ms: int = 0):
         object.__setattr__(self, "length_ms", length_ms)
