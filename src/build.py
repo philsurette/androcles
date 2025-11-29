@@ -163,7 +163,7 @@ def audioplay(
     segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
-    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
+    minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
     callout_descriptions: bool = typer.Option(True, help="Prepend description callouts for narrator blocks"),
     captions: bool = typer.Option(True, help="Generate captions (WebVTT) and mux into mp4 when possible"),
     generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),

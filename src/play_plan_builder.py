@@ -366,7 +366,7 @@ def build_part_plan(
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
-    minimal_callouts: bool = False,
+    minimal_callouts: bool = True,
     include_description_callouts: bool = True,
     base_offset_ms: int = 0,
     chapters: List[Chapter] | None = None,
