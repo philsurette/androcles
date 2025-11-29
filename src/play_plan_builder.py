@@ -552,6 +552,8 @@ def build_audio_plan(
     plan: List[PlanItem] = []
     current_offset = 0
     total_count = total_parts if total_parts is not None else len(parts)
+    plan.append(Silence(1000, offset_ms=current_offset))
+    current_offset += 1000
     for idx, part in enumerate(parts):
         global_idx = part_index_offset + idx
         if librivox and global_idx == 0:
@@ -563,9 +565,9 @@ def build_audio_plan(
                     plen = len(AudioSegment.from_file(prologue))
                 except Exception:
                     plen = 0
-                plan.append(Silence(1000, offset_ms=current_offset))
                 plan.append(CalloutClip(path=prologue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_PROLOGUE", length_ms=plen, offset_ms=current_offset))
                 current_offset += plen
+                plan.append(Silence(1000, offset_ms=current_offset))
                 current_offset += 1000
         seg_plan, current_offset = build_part_plan(
             part_filter=part,
@@ -696,7 +698,8 @@ def build_audio_plan(
                     elen = 0
                 plan.append(CalloutClip(path=epilogue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_EPILOG", length_ms=elen, offset_ms=current_offset))
                 current_offset += elen
-
+    plan.append(Silence(1000, offset_ms=current_offset))
+    current_offset += 1000
     return plan, current_offset
 
 

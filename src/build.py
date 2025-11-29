@@ -206,7 +206,6 @@ def audioplay(
         generate_captions=captions,
         librivox=librivox,
     )
-    logging.info("Generated audioplay at %s", out_path)
     if normalize_output and generate_audio:
         normalizer = Normalizer()
         target_dir = out_path.parent / "normalized"
