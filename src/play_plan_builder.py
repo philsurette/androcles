@@ -36,6 +36,7 @@ DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
 STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
 BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 
+INTER_WORD_PAUSE_MS = 300
 
 def _rel_path(path: Path) -> Path:
     """Return path relative to AUDIO_OUT_DIR when possible."""
@@ -579,18 +580,19 @@ def build_audio_plan(
             base_offset_ms=current_offset,
             chapters=chapters,
         )
+
         if librivox and global_idx > 0:
             from paths import RECORDINGS_DIR
 
-            bumper_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-            if bumper_path.exists() and seg_plan:
+            part_of_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
+            if part_of_path.exists() and seg_plan:
                 try:
                     from pydub import AudioSegment
 
-                    bump_len = len(AudioSegment.from_file(bumper_path))
+                    part_of_len = len(AudioSegment.from_file(part_of_path))
                 except Exception:
-                    bump_len = 0
-                bump_duration = 500 + bump_len + 1000
+                    part_of_len = 0
+                part_of_duration = INTER_WORD_PAUSE_MS + part_of_len
                 first_idx = next(
                     (i for i, item in enumerate(seg_plan) if isinstance(item, (CalloutClip, SegmentClip, Silence))),
                     None,
@@ -598,23 +600,22 @@ def build_audio_plan(
                 if first_idx is not None:
                     first_item = seg_plan[first_idx]
                     insert_offset = first_item.offset_ms + first_item.length_ms
-                    bumper_items: List[PlanItem] = [
-                        Silence(500, offset_ms=insert_offset),
+                    part_of_items: List[PlanItem] = [
+                        Silence(INTER_WORD_PAUSE_MS, offset_ms=insert_offset),
                         CalloutClip(
-                            path=bumper_path,
-                            text="",
+                            path=part_of_path,
+                            text="of [title] by [author]. This is a Librivox recording. All Librivox recordings are in the public domain. For more information, or to volunteer, please visit librivox.org.",
                             role="_NARRATOR",
                             clip_id="_LIBRIVOX_EACH_PART",
-                            length_ms=bump_len,
-                            offset_ms=insert_offset + 500,
+                            length_ms=part_of_len,
+                            offset_ms=insert_offset + INTER_WORD_PAUSE_MS,
                         ),
-                        Silence(1000, offset_ms=insert_offset + 500 + bump_len),
                     ]
                     new_plan: List[PlanItem] = []
                     for idx_item, item in enumerate(seg_plan):
                         if idx_item == first_idx:
                             new_plan.append(item)
-                            new_plan.extend(bumper_items)
+                            new_plan.extend(part_of_items)
                             continue
                         if isinstance(item, CalloutClip):
                             new_plan.append(
@@ -624,7 +625,7 @@ def build_audio_plan(
                                     role=item.role,
                                     clip_id=item.clip_id,
                                     length_ms=item.length_ms,
-                                    offset_ms=item.offset_ms + bump_duration,
+                                    offset_ms=item.offset_ms + part_of_duration,
                                 )
                             )
                         elif isinstance(item, SegmentClip):
@@ -635,15 +636,15 @@ def build_audio_plan(
                                     role=item.role,
                                     clip_id=item.clip_id,
                                     length_ms=item.length_ms,
-                                    offset_ms=item.offset_ms + bump_duration,
+                                    offset_ms=item.offset_ms + part_of_duration,
                                 )
                             )
                         elif isinstance(item, Silence):
-                            new_plan.append(Silence(item.length_ms, offset_ms=item.offset_ms + bump_duration))
+                            new_plan.append(Silence(item.length_ms, offset_ms=item.offset_ms + part_of_duration))
                         else:
                             new_plan.append(item)
                     seg_plan = new_plan
-                    current_offset += bump_duration
+                    current_offset += part_of_duration
         plan.extend(seg_plan)
         if part_gap_ms and idx < len(parts) - 1:
             plan.append(Silence(part_gap_ms, offset_ms=current_offset))
@@ -676,8 +677,8 @@ def build_audio_plan(
                 current_offset += 1000
                 plan.append(CalloutClip(path=endof_path, text="", role="_NARRATOR", clip_id="_LIBRIVOX_ENDOF", length_ms=length_ms, offset_ms=current_offset))
                 current_offset += length_ms
-            plan.append(Silence(500, offset_ms=current_offset))
-            current_offset += 500
+            plan.append(Silence(INTER_WORD_PAUSE_MS, offset_ms=current_offset))
+            current_offset += INTER_WORD_PAUSE_MS
             if title_audio and title_audio.exists():
                 try:
                     from pydub import AudioSegment
@@ -687,15 +688,15 @@ def build_audio_plan(
                 clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
                 plan.append(SegmentClip(path=title_audio, text=title_text, role="_NARRATOR", clip_id=clip_id, length_ms=tlen, offset_ms=current_offset))
                 current_offset += tlen
-            # Post-title gap
-            plan.append(Silence(1000, offset_ms=current_offset))
-            current_offset += 1000
             if epilogue.exists() and part is not None and global_idx == total_count - 1:
                 try:
                     from pydub import AudioSegment
                     elen = len(AudioSegment.from_file(epilogue))
                 except Exception:
                     elen = 0
+                # Post-title gap
+                plan.append(Silence(1000, offset_ms=current_offset))
+                current_offset += 1000
                 plan.append(CalloutClip(path=epilogue, text="", role="_NARRATOR", clip_id="_LIBRIVOX_EPILOG", length_ms=elen, offset_ms=current_offset))
                 current_offset += elen
     plan.append(Silence(1000, offset_ms=current_offset))
