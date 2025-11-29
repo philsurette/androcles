@@ -16,14 +16,17 @@ class AudioPlan(List[T], Generic[T]):
 
     def __init__(self, items: Iterable[T] | None = None) -> None:
         super().__init__(items or [])
+        self.duration_ms: int = 0
 
     def addClip(self, clip: Clip, following_silence_ms: int = 0) -> int:
         """Append a clip and optional trailing silence. Returns resulting offset."""
         self.append(clip)
         offset_ms = clip.offset_ms + clip.length_ms
+        self.duration_ms = max(self.duration_ms, offset_ms)
         if following_silence_ms > 0:
             self.append(Silence(following_silence_ms, offset_ms=offset_ms))
             offset_ms += following_silence_ms
+            self.duration_ms = max(self.duration_ms, offset_ms)
         return offset_ms
 
     def addSilence(self, ms: int, offset_ms: int = 0) -> int:
@@ -31,4 +34,6 @@ class AudioPlan(List[T], Generic[T]):
         if ms <= 0:
             return offset_ms
         self.append(Silence(ms, offset_ms=offset_ms))
-        return offset_ms + ms
+        offset_ms += ms
+        self.duration_ms = max(self.duration_ms, offset_ms)
+        return offset_ms
