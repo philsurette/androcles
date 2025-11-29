@@ -244,14 +244,12 @@ def compute_callout(
     # Role callout.
     if include_callouts and primary_role:
         need_callout = True
-        if minimal_callouts and primary_role in seen_roles:
-            if primary_role == prev_role:
+        if minimal_callouts:
+            if primary_role in seen_roles and primary_role in {prev_role, prev2_role}:
                 need_callout = False
-            elif prev2_role == primary_role and prev_role and prev_role != primary_role:
-                need_callout = False
+        seen_roles = set(seen_roles)
+        seen_roles.add(primary_role)
         if need_callout:
-            seen_roles = set(seen_roles)
-            seen_roles.add(primary_role)
             path = CALLOUTS_DIR / f"{primary_role}_callout.wav"
             if path.exists():
                 return path, "role", seen_roles, "role"
