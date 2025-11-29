@@ -74,6 +74,8 @@ class Normalizer:
         # Preserve/force bitrate for mp3 outputs.
         if output_file.lower().endswith(".mp3"):
             normalize_command.extend(["-b:a", "128k"])
+            # Preserve metadata from input.
+            normalize_command.extend(["-map_metadata", "0"])
         normalize_command.append(output_file)
         logger.info(F"{' '.join(normalize_command)}")
 

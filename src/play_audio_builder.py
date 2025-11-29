@@ -12,12 +12,20 @@ from play_plan_builder import PlanItem, Silence, Chapter, load_audio_by_path
 from clip import CalloutClip, SegmentClip
 
 
-def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path, fmt: str) -> None:
+def export_with_chapters(
+    audio: AudioSegment,
+    chapters: List[Tuple[int, int, str]],
+    out_path: Path,
+    fmt: str,
+    metadata: dict[str, str] | None = None,
+) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    if fmt == "wav" or not chapters:
+    if not chapters:
         export_kwargs = {}
         if fmt == "mp3":
             export_kwargs["bitrate"] = "128k"
+            export_kwargs["tags"] = metadata or {}
+            export_kwargs["id3v2_version"] = "3"
         audio.export(out_path, format=fmt, **export_kwargs)
         return
 
@@ -50,8 +58,12 @@ def export_with_chapters(audio: AudioSegment, chapters: List[Tuple[int, int, str
             "aac" if fmt == "mp4" else "libmp3lame",
             "-b:a",
             "128k" if fmt == "mp3" else "192k",
-            str(out_path),
         ]
+        for key, val in (metadata or {}).items():
+            cmd.extend(["-metadata", f"{key}={val}"])
+        if fmt == "mp3":
+            cmd.extend(["-id3v2_version", "3", "-write_id3v1", "1"])
+        cmd.append(str(out_path))
         subprocess.run(cmd, check=True)
 
 
@@ -62,6 +74,7 @@ def instantiate_plan(
     captions_path: Path | None = None,
     prepend_paths: List[Path] | None = None,
     append_paths: List[Path] | None = None,
+    metadata: dict[str, str] | None = None,
 ) -> None:
     """Render the audio plan into a single audio file, optionally muxing captions and a blank video track."""
     cache: Dict[Path, AudioSegment | None] = {}
@@ -102,7 +115,7 @@ def instantiate_plan(
         if seg:
             audio += seg
 
-    export_with_chapters(audio, chapters if chapters else [], out_path, fmt=audio_format)
+    export_with_chapters(audio, chapters if chapters else [], out_path, fmt=audio_format, metadata=metadata or {})
 
     if audio_format == "mp4":
         tmp_out = out_path.with_suffix(".tmp.mp4")
