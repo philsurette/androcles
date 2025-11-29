@@ -185,6 +185,7 @@ class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
     REGEX = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
+    INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role: str = ""
     segments: List[Segment] = field(default_factory=list)
 
@@ -207,32 +208,11 @@ class RoleBlock(Block):
         role, speech = role_match.groups()
         block_counter += 1
         block_id = BlockId(current_part, block_counter)
-        segments = SegmentParser().parse_role_segments(role, block_id, speech.strip())
-        block = cls(
-            block_id=block_id,
-            role=role,
-            text=speech.strip(),
-            segments=segments,
-        )
-        return block
-
-
-class PlayText(List[Block]):
-    def __init__(self, items: List[Block] | None = None) -> None:
-        super().__init__(items or [])
-
-
-class SegmentParser:
-    """Parse raw speech into typed segments."""
-
-    INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
-
-    def parse_role_segments(self, role: str, block_id: BlockId, speech: str) -> List[Segment]:
+        speech = speech.strip()
         segments: List[Segment] = []
         last_end = 0
         seg_no = 1
-
-        for match in self.INLINE_DIR_RE.finditer(speech):
+        for match in cls.INLINE_DIR_RE.finditer(speech):
             pre = speech[last_end : match.start()]
             if pre.strip():
                 segments.append(SpeechSegment(segment_id=SegmentId(block_id, seg_no), text=pre.strip(), role=role))
@@ -259,8 +239,18 @@ class SegmentParser:
 
         if not segments:
             segments.append(SpeechSegment(segment_id=SegmentId(block_id, 1), text=speech.strip(), role=role))
+        block = cls(
+            block_id=block_id,
+            role=role,
+            text=speech.strip(),
+            segments=segments,
+        )
+        return block
 
-        return segments
+
+class PlayText(List[Block]):
+    def __init__(self, items: List[Block] | None = None) -> None:
+        super().__init__(items or [])
 
 
 class PlayTextParser:
@@ -268,7 +258,6 @@ class PlayTextParser:
 
     def __init__(self, source_path: Path | None = None) -> None:
         self.source_path = source_path or DEFAULT_PLAY
-        self.segment_parser = SegmentParser()
 
     def parse(self) -> PlayText:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
