@@ -241,15 +241,6 @@ def compute_callout(
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
     is_description = part_filter is not None and (part_filter, block_no) in description_blocks
 
-    # Description callout for narrator-only description blocks.
-    if include_description_callouts and primary_role is None and is_description:
-        path = CALLOUTS_DIR / "_DESCRIPTION.wav"
-        if path.exists() and last_callout_type != "description":
-            return path, "description", seen_roles, "description"
-        if not path.exists():
-            logging.warning("Description callout missing: %s", path)
-        return None, last_callout_type, seen_roles, last_callout_type
-
     # Role callout.
     if include_callouts and primary_role:
         need_callout = True
