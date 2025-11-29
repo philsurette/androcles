@@ -324,7 +324,7 @@ def build_block_plan(
     length_cache: Dict[Path, int],
     base_offset_ms: int,
     plan_items: AudioPlan[PlanItem],
-) -> tuple[List[PlanItem], str | None, str | None, int]:
+) -> tuple[List[PlanItem], str | None, str | None]:
     """Build plan items for a single block, including optional callouts."""
     start_idx = len(plan_items)
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
@@ -333,10 +333,11 @@ def build_block_plan(
     if callout_path:
         callout_id = primary_role or "_NARRATOR"
         length_ms = get_audio_length_ms(callout_path, length_cache)
-        current_offset = plan_items.addClip(
+        plan_items.addClip(
             CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=callout_spacing_ms,
         )
+        current_offset += length_ms + callout_spacing_ms
 
     block_segments: List[Tuple[str, str, str]] = []
     source_role = primary_role or roles_in_block[0]
@@ -354,14 +355,15 @@ def build_block_plan(
         length_ms = get_audio_length_ms(wav_path, length_cache)
         is_last_seg = seg_idx == len(block_segments) - 1
         gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
-        current_offset = plan_items.addClip(
+        plan_items.addClip(
             SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset),
             following_silence_ms=gap,
         )
+        current_offset += length_ms + gap
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
-    return list(plan_items[start_idx:]), prev_role, prev2_role, current_offset
+    return list(plan_items[start_idx:]), prev_role, prev2_role
 
 
 def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
@@ -410,7 +412,7 @@ def build_part_plan(
     seen_roles: set[str] = set()
     last_callout_type: str | None = None
     audio_plan: AudioPlan = AudioPlan()
-    current_offset = base_offset_ms
+    # AudioPlan duration tracks offsets; no separate counter needed.
 
     for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
         callout_path, _callout_type, seen_roles, last_callout_type = compute_callout(
@@ -427,7 +429,7 @@ def build_part_plan(
             last_callout_type=last_callout_type,
         )
 
-        block_items, prev_role, prev2_role, current_offset = build_block_plan(
+        block_items, prev_role, prev2_role = build_block_plan(
             part_filter,
             block_no,
             roles_in_block,
@@ -438,7 +440,7 @@ def build_part_plan(
             spacing_ms=spacing_ms,
             callout_spacing_ms=callout_spacing_ms,
             length_cache=length_cache,
-            base_offset_ms=current_offset,
+            base_offset_ms=audio_plan.duration_ms,
             plan_items=audio_plan,
         )
         for item in block_items:
@@ -454,7 +456,7 @@ def build_part_plan(
                     audio_plan.addChapter(chapter_obj)
                     inserted_chapters.add(block_id)
 
-    return audio_plan, current_offset
+    return audio_plan, audio_plan.duration_ms
 
 
 def write_plan(plan: AudioPlan[PlanItem], path: Path) -> None:
@@ -490,9 +492,8 @@ def build_audio_plan(
 ) -> tuple[AudioPlan[PlanItem], int]:
     chapters = ChapterBuilder().build()
     plan: AudioPlan[PlanItem] = AudioPlan()
-    current_offset = 0
     total_count = total_parts if total_parts is not None else len(parts)
-    current_offset = plan.addSilence(1000, offset_ms=current_offset)
+    plan.addSilence(1000, offset_ms=plan.duration_ms)
     for idx, part in enumerate(parts):
         global_idx = part_index_offset + idx
         if librivox and global_idx == 0:
@@ -504,14 +505,14 @@ def build_audio_plan(
                     plen = len(AudioSegment.from_file(prologue))
                 except Exception:
                     plen = 0
-                current_offset = plan.addClip(
-                    SegmentClip(
+                plan.addClip(
+                    CalloutClip(
                         path=prologue,
                         text="",
                         role="_NARRATOR",
                         clip_id="_LIBRIVOX_PROLOGUE",
                         length_ms=plen,
-                        offset_ms=current_offset,
+                        offset_ms=plan.duration_ms,
                     ),
                     following_silence_ms=1000,
                 )
@@ -522,12 +523,11 @@ def build_audio_plan(
             callout_spacing_ms=callout_spacing_ms,
             minimal_callouts=minimal_callouts,
             include_description_callouts=include_description_callouts,
-            base_offset_ms=current_offset,
+            base_offset_ms=plan.duration_ms,
             chapters=chapters,
         )
 
         # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
-        part_current = current_offset
         part_of_suffix_inserted = False
         part_of_suffix_path = None
         part_of_suffix_len = 0
@@ -547,43 +547,41 @@ def build_audio_plan(
 
         for item in seg_plan:
             if isinstance(item, Chapter):
-                item.offset_ms = part_current
+                item.offset_ms = plan.duration_ms
                 plan.addChapter(item)
                 continue
             if isinstance(item, Silence):
-                part_current = plan.addSilence(item.length_ms, offset_ms=part_current)
+                plan.addSilence(item.length_ms, offset_ms=plan.duration_ms)
             elif isinstance(item, (CalloutClip, SegmentClip)):
-                part_current = plan.addClip(
+                plan.addClip(
                     item.__class__(
                         path=item.path,
                         text=item.text,
                         role=item.role,
                         clip_id=item.clip_id,
                         length_ms=item.length_ms,
-                        offset_ms=part_current,
+                        offset_ms=plan.duration_ms,
                     )
                 )
                 if part_of_suffix_path and not part_of_suffix_inserted:
                     # Insert part-of suffix after the first audio item.
-                    part_current = plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=part_current)
-                    part_current = plan.addClip(
+                    plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=plan.duration_ms)
+                    plan.addClip(
                         CalloutClip(
                             path=part_of_suffix_path,
                             text="of [title] by [author]. This is a Librivox recording. All Librivox recordings are in the public domain. For more information, or to volunteer, please visit librivox.org.",
                             role="_NARRATOR",
                             clip_id="_LIBRIVOX_EACH_PART",
                             length_ms=part_of_suffix_len,
-                            offset_ms=part_current,
+                            offset_ms=plan.duration_ms,
                         ),
                     )
                     part_of_suffix_inserted = True
             else:
                 raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
-        current_offset = part_current
-
         if part_gap_ms and idx < len(parts) - 1:
-            current_offset = plan.addSilence(part_gap_ms, offset_ms=current_offset)
+            plan.addSilence(part_gap_ms, offset_ms=plan.duration_ms)
 
         if librivox:
             from paths import RECORDINGS_DIR
@@ -608,18 +606,18 @@ def build_audio_plan(
                     length_ms = len(AudioSegment.from_file(endof_path))
                 except Exception:
                     pass
-                current_offset = plan.addSilence(1000, offset_ms=current_offset)
-                current_offset = plan.addClip(
+                plan.addSilence(1000, offset_ms=plan.duration_ms)
+                plan.addClip(
                     CalloutClip(
                         path=endof_path,
                         text="",
                         role="_NARRATOR",
                         clip_id="_LIBRIVOX_ENDOF",
                         length_ms=length_ms,
-                        offset_ms=current_offset,
+                        offset_ms=plan.duration_ms,
                     )
                 )
-            current_offset = plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=current_offset)
+            plan.addSilence(INTER_WORD_PAUSE_MS, offset_ms=plan.duration_ms)
             if title_audio and title_audio.exists():
                 try:
                     from pydub import AudioSegment
@@ -627,14 +625,14 @@ def build_audio_plan(
                 except Exception:
                     tlen = 0
                 clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
-                current_offset = plan.addClip(
+                plan.addClip(
                     SegmentClip(
                         path=title_audio,
                         text=title_text,
                         role="_NARRATOR",
                         clip_id=clip_id,
                         length_ms=tlen,
-                        offset_ms=current_offset,
+                        offset_ms=plan.duration_ms,
                     )
                 )
             if epilogue.exists() and part is not None and global_idx == total_count - 1:
@@ -644,19 +642,19 @@ def build_audio_plan(
                 except Exception:
                     elen = 0
                 # Post-title gap
-                current_offset = plan.addSilence(1000, offset_ms=current_offset)
-                current_offset = plan.addClip(
+                plan.addSilence(1000, offset_ms=plan.duration_ms)
+                plan.addClip(
                     CalloutClip(
                         path=epilogue,
                         text="",
                         role="_NARRATOR",
                         clip_id="_LIBRIVOX_EPILOG",
                         length_ms=elen,
-                        offset_ms=current_offset,
+                        offset_ms=plan.duration_ms,
                     )
                 )
-    current_offset = plan.addSilence(1000, offset_ms=current_offset)
-    return plan, current_offset
+    plan.addSilence(1000, offset_ms=plan.duration_ms)
+    return plan, plan.duration_ms
 
 
 def list_parts() -> List[int | None]:

@@ -18,8 +18,8 @@ class AudioPlan(List[T], Generic[T]):
         super().__init__(items or [])
         self.duration_ms: int = 0
 
-    def addClip(self, clip: Clip, following_silence_ms: int = 0) -> int:
-        """Append a clip and optional trailing silence. Returns resulting offset."""
+    def addClip(self, clip: Clip, following_silence_ms: int = 0) -> None:
+        """Append a clip and optional trailing silence."""
         self.append(clip)
         offset_ms = clip.offset_ms + clip.length_ms
         self.duration_ms = max(self.duration_ms, offset_ms)
@@ -27,18 +27,20 @@ class AudioPlan(List[T], Generic[T]):
             self.append(Silence(following_silence_ms, offset_ms=offset_ms))
             offset_ms += following_silence_ms
             self.duration_ms = max(self.duration_ms, offset_ms)
-        return offset_ms
 
-    def addSilence(self, ms: int, offset_ms: int = 0) -> int:
-        """Append silence if duration > 0. Returns resulting offset."""
+    def addSilence(self, ms: int, offset_ms: int = 0) -> None:
+        """Append silence if duration > 0."""
         if ms <= 0:
-            return offset_ms
+            return
         self.append(Silence(ms, offset_ms=offset_ms))
         offset_ms += ms
         self.duration_ms = max(self.duration_ms, offset_ms)
-        return offset_ms
 
-    def addChapter(self, chapter: Chapter) -> None:
+    def addChapter(self, chapter: Chapter, index: int | None = None) -> None:
         """Add a chapter marker (append or insert) and update duration if offset is known."""
-        chapter.offset_ms = self.duration_ms
-        self.append(chapter)
+        if index is None:
+            self.append(chapter)
+        else:
+            self.insert(index, chapter)
+        if chapter.offset_ms is not None:
+            self.duration_ms = max(self.duration_ms, chapter.offset_ms)
