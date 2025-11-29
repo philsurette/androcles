@@ -66,6 +66,8 @@ class Normalizer:
             EXECUTABLE,
             "-y", #answer yes to all questions
             "-i", input_file,
+            "-map_metadata",
+            "0",
             "-af", #audio format
             filter_spec,
         ]
