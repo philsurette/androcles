@@ -332,13 +332,11 @@ def build_block_plan(
     if callout_path:
         callout_id = primary_role or "_NARRATOR"
         length_ms = get_audio_length_ms(callout_path, length_cache)
-        block_items.append(
-            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset)
+        block_items.addClip(
+            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=current_offset),
+            following_silence_ms=callout_spacing_ms,
         )
-        current_offset += length_ms
-        if callout_spacing_ms > 0:
-            block_items.append(Silence(callout_spacing_ms, offset_ms=current_offset))
-            current_offset += callout_spacing_ms
+        current_offset += length_ms + callout_spacing_ms
 
     block_segments: List[Tuple[str, str, str]] = []
     source_role = primary_role or roles_in_block[0]
@@ -354,14 +352,13 @@ def build_block_plan(
             logging.error("Missing snippet %s for role %s", seg_id, role)
             continue
         length_ms = get_audio_length_ms(wav_path, length_cache)
-        block_items.append(
-            SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset)
-        )
-        current_offset += length_ms
         is_last_seg = seg_idx == len(block_segments) - 1
-        if spacing_ms > 0 and not (is_last_block and is_last_seg):
-            block_items.append(Silence(spacing_ms, offset_ms=current_offset))
-            current_offset += spacing_ms
+        gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
+        block_items.addClip(
+            SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=current_offset),
+            following_silence_ms=gap,
+        )
+        current_offset += length_ms + gap
         if role != "_NARRATOR":
             prev2_role, prev_role = prev_role, role
 
