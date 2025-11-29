@@ -7,21 +7,25 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import os
 
-from paths import AUDIO_OUT_DIR
+from paths import AUDIO_OUT_DIR, ROOT
+
+
+PROJECT_ROOT = ROOT.parent
 
 
 def _rel_path(path: Path) -> Path:
-    """Return path relative to AUDIO_OUT_DIR when possible."""
+    """Return path relative to project root when possible."""
+    base = PROJECT_ROOT
     if hasattr(Path, "is_relative_to"):
         try:
-            if path.is_relative_to(AUDIO_OUT_DIR):
-                return path.relative_to(AUDIO_OUT_DIR)
+            if path.is_relative_to(base):
+                return path.relative_to(base)
         except Exception:
             pass
     try:
-        return path.relative_to(AUDIO_OUT_DIR)
+        return path.relative_to(base)
     except ValueError:
-        return Path(os.path.relpath(path, AUDIO_OUT_DIR))
+        return Path(os.path.relpath(path, base))
 
 
 @dataclass(frozen=True)
