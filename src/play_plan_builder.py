@@ -243,9 +243,15 @@ def compute_callout(
 
     # Role callout.
     if include_callouts and primary_role:
+        # Detect if the primary role's block starts with an inline direction or narrator lead-in.
+        role_bullets = read_block_bullets(primary_role, part_filter, block_no)
+        role_starts_with_direction = bool(role_bullets and role_bullets[0].startswith("(_"))
+        # If the first role listed for this block is narrator, treat as direction lead-in.
+        if roles_in_block and roles_in_block[0] == "_NARRATOR":
+            role_starts_with_direction = True
         need_callout = True
         if minimal_callouts:
-            if primary_role in seen_roles and primary_role in {prev_role, prev2_role}:
+            if primary_role in seen_roles and primary_role in {prev_role, prev2_role} and not role_starts_with_direction:
                 need_callout = False
         seen_roles = set(seen_roles)
         seen_roles.add(primary_role)
