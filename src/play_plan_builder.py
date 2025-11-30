@@ -566,9 +566,9 @@ def build_audio_plan(
                 # Lookup text from narrator block if available.
                 first_texts = read_block_bullets("_NARRATOR", part, 0)
                 title_text = first_texts[0]
-            if endof_path.exists():
+            if endof_path.exists() and global_idx < total_count - 1:
                 length_ms = len(AudioSegment.from_file(endof_path))
-                plan.addSilence(1000)
+                plan.addSilence(2000)
                 plan.addClip(
                     CalloutClip(
                         path=endof_path,
@@ -579,24 +579,24 @@ def build_audio_plan(
                         offset_ms=plan.duration_ms,
                     )
                 )
-            plan.addSilence(INTER_WORD_PAUSE_MS)
-            if title_audio and title_audio.exists():
-                tlen = len(AudioSegment.from_file(title_audio))
-                clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
-                plan.addClip(
-                    SegmentClip(
-                        path=title_audio,
-                        text=title_text,
-                        role="_NARRATOR",
-                        clip_id=clip_id,
-                        length_ms=tlen,
-                        offset_ms=plan.duration_ms,
+                plan.addSilence(INTER_WORD_PAUSE_MS)
+                if title_audio and title_audio.exists():
+                    tlen = len(AudioSegment.from_file(title_audio))
+                    clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
+                    plan.addClip(
+                        SegmentClip(
+                            path=title_audio,
+                            text=title_text,
+                            role="_NARRATOR",
+                            clip_id=clip_id,
+                            length_ms=tlen,
+                            offset_ms=plan.duration_ms,
+                        )
                     )
-                )
             if epilogue.exists() and part is not None and global_idx == total_count - 1:
                 elen = len(AudioSegment.from_file(epilogue))
                 # Post-title gap
-                plan.addSilence(1000)
+                plan.addSilence(2000)
                 plan.addClip(
                     CalloutClip(
                         path=epilogue,
