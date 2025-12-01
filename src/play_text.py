@@ -300,16 +300,39 @@ class PlayText(List[Block]):
         """Return the Block for the given id, or None if not present."""
         return self._by_id.get(block_id)
 
+    def to_index_entries(self) -> List[tuple[int | None, int, str]]:
+        """
+        Return ordered (part, block, role) tuples mirroring the legacy INDEX file.
+        Inline directions in role blocks emit a preceding _NARRATOR entry.
+        """
+        entries: List[tuple[int | None, int, str]] = []
+        for block in self:
+            part = block.block_id.part_id
+            block_no = block.block_id.block_no
+            if isinstance(block, RoleBlock):
+                has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in block.segments)
+                if has_inline_dirs:
+                    entries.append((part, block_no, "_NARRATOR"))
+                entries.append((part, block_no, block.role))
+            else:
+                entries.append((part, block_no, "_NARRATOR"))
+        return entries
+
 
 class PlayTextParser:
     """Parse a source play text file into a PlayText of Blocks."""
 
     def __init__(self, source_path: Path | None = None) -> None:
-        self.source_path = source_path or DEFAULT_PLAY
+        # Prefer the normalized paragraphs file when available to align numbering
+        self.source_path = source_path or (PARAGRAPHS_PATH if PARAGRAPHS_PATH.exists() else DEFAULT_PLAY)
 
     def parse(self) -> PlayText:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
-        paragraphs = collapse_to_paragraphs(raw_text)
+        if self.source_path == PARAGRAPHS_PATH:
+            # paragraphs.txt is already normalized to one paragraph per line
+            paragraphs = [line.strip() for line in raw_text.splitlines() if line.strip()]
+        else:
+            paragraphs = collapse_to_paragraphs(raw_text)
 
         play = PlayText()
         current_part: int | None = None
@@ -320,6 +343,7 @@ class PlayTextParser:
             if not paragraph:
                 continue
 
+            previous_block_counter = block_counter
             # Try each block type in order.
             parsed_block: Block | None = None
             for cls in (MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock):
@@ -329,20 +353,17 @@ class PlayTextParser:
                     break
 
             if parsed_block is None:
-                # Fallback: treat as a direction block.
-                block_counter += 1
-                block_id = BlockId(current_part, block_counter)
-                text = paragraph.strip()
-                parsed_block = DirectionBlock(
-                    block_id=block_id,
-                    text=text,
-                    segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=text)],
-                )
+                # Ignore unrecognized paragraphs to stay aligned with existing block numbering.
+                continue
 
             play.append(parsed_block)
             play._by_id[parsed_block.block_id] = parsed_block
             current_part = parsed_block.block_id.part_id
-            block_counter = parsed_block.block_id.block_no
+            if isinstance(parsed_block, MetaBlock) and not parsed_block.text.startswith("##"):
+                # Inline meta paragraphs should not advance the speech block counter.
+                block_counter = previous_block_counter
+            else:
+                block_counter = parsed_block.block_id.block_no
 
         return play
 

@@ -15,7 +15,7 @@ from callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
 )
-from play_text import BlockId, PlayTextParser
+from play_text import BlockId, PlayText, PlayTextParser
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
@@ -23,7 +23,6 @@ from audio_plan import AudioPlan, PlanItem
 from paths import (
     BLOCKS_DIR,
     BLOCKS_EXT,
-    INDEX_PATH,
     AUDIO_PLAY_DIR,
     PARAGRAPHS_PATH,
     SEGMENTS_DIR
@@ -35,23 +34,10 @@ BlockMap = Dict[Tuple[int | None, int], List[str]]
 
 INTER_WORD_PAUSE_MS = 300
 
-def parse_index() -> List[IndexEntry]:
-    """Read INDEX.files and return ordered (part, block, role) tuples."""
-    entries: List[IndexEntry] = []
-    for raw in INDEX_PATH.read_text(encoding="utf-8").splitlines():
-        if not raw.strip():
-            continue
-        id_part, role = raw.split(maxsplit=1)
-
-        if id_part.startswith(":"):
-            part = None
-            block = int(id_part[1:])
-        else:
-            p_str, b_str = id_part.split(":", 1)
-            part = int(p_str)
-            block = int(b_str)
-        entries.append((part, block, role))
-    return entries
+def parse_index(play_text: PlayText | None = None) -> List[IndexEntry]:
+    """Return ordered (part, block, role) tuples derived from PlayText, mirroring INDEX.files."""
+    play = play_text or PlayTextParser().parse()
+    return play.to_index_entries()
 
 
 def parse_block_file(path: Path) -> Dict[Tuple[str, str], List[str]]:
@@ -147,10 +133,11 @@ def parse_narrator_map() -> BlockMap:
     return mapping
 
 
-def load_segment_maps() -> Dict[str, BlockMap]:
-    """Build segment-id maps for all roles present in the index."""
+def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
+    """Build segment-id maps for all roles present in the play."""
+    play = play_text or PlayTextParser().parse()
     maps: Dict[str, BlockMap] = {}
-    for _, _, role in parse_index():
+    for _, _, role in parse_index(play):
         if role in maps:
             continue
         if role == "_NARRATOR":
@@ -281,13 +268,15 @@ def build_part_plan(
     callout_spacing_ms: int = 300,
     chapters: List[Chapter] | None = None,
     director: CalloutDirector | None = None,
+    play_text: PlayText | None = None,
 ) -> tuple[AudioPlan[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
-    entries = parse_index()
+    play = play_text or PlayTextParser().parse()
+    entries = parse_index(play)
     chapter_map = {c.block_id: c for c in (chapters or [])}
     inserted_chapters: set[str] = set()
     length_cache: Dict[Path, int] = {}
-    director = director or NoCalloutDirector(PlayTextParser().parse())
+    director = director or NoCalloutDirector(play)
 
     block_entries = extract_blocks(entries, part_filter)
 
@@ -390,6 +379,7 @@ def build_audio_plan(
             callout_spacing_ms=callout_spacing_ms,
             chapters=chapters,
             director=director,
+            play_text=play_text,
         )
 
         # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
@@ -501,9 +491,10 @@ def build_audio_plan(
     return plan, plan.duration_ms
 
 
-def list_parts() -> List[int | None]:
+def list_parts(play_text: PlayText | None = None) -> List[int | None]:
+    play = play_text or PlayTextParser().parse()
     parts: List[int | None] = []
-    for p, _, _ in parse_index():
+    for p, _, _ in parse_index(play):
         if p not in parts:
             parts.append(p)
     parts_sorted = sorted([x for x in parts if x is not None])

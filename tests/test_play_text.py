@@ -1,6 +1,18 @@
+
 import pytest
 
-from play_text import PlayText, BlockId, RoleBlock
+from play_text import (
+    BlockId,
+    DescriptionBlock,
+    DescriptionSegment,
+    DirectionSegment,
+    MetaBlock,
+    MetaSegment,
+    PlayText,
+    RoleBlock,
+    SegmentId,
+    SpeechSegment,
+)
 
 
 def build_play_text(sequence):
@@ -78,3 +90,48 @@ def test_block_lookup_by_id():
     pt = build_play_text([(0, 1, "A"), (0, 2, "B")])
     assert pt.block_for_id(BlockId(0, 1)).role == "A"
     assert pt.block_for_id(BlockId(0, 99)) is None
+
+
+def test_to_index_entries_matches_block_order_and_inline_dirs():
+    meta_id = BlockId(None, 1)
+    meta_block = MetaBlock(
+        block_id=meta_id,
+        text="::intro::",
+        segments=[MetaSegment(segment_id=SegmentId(meta_id, 1), text="intro")],
+    )
+
+    role_id = BlockId(0, 1)
+    role_block = RoleBlock(
+        block_id=role_id,
+        role="A",
+        text="Hello",
+        segments=[SpeechSegment(segment_id=SegmentId(role_id, 1), text="Hello", role="A")],
+    )
+
+    role_with_dir_id = BlockId(0, 2)
+    role_with_dir_block = RoleBlock(
+        block_id=role_with_dir_id,
+        role="B",
+        text="(_wave_) Hi",
+        segments=[
+            DirectionSegment(segment_id=SegmentId(role_with_dir_id, 1), text="(_wave_)"),
+            SpeechSegment(segment_id=SegmentId(role_with_dir_id, 2), text="Hi", role="B"),
+        ],
+    )
+
+    desc_id = BlockId(0, 3)
+    desc_block = DescriptionBlock(
+        block_id=desc_id,
+        text="[[desc]]",
+        segments=[DescriptionSegment(segment_id=SegmentId(desc_id, 1), text="desc")],
+    )
+
+    play = PlayText([meta_block, role_block, role_with_dir_block, desc_block])
+
+    assert play.to_index_entries() == [
+        (None, 1, "_NARRATOR"),  # meta block
+        (0, 1, "A"),  # plain role block
+        (0, 2, "_NARRATOR"),  # inline direction emitted as narrator first
+        (0, 2, "B"),
+        (0, 3, "_NARRATOR"),  # description block
+    ]
