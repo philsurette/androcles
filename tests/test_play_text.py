@@ -24,6 +24,18 @@ def test_preceding_roles_distinct():
     assert pt.getPrecedingRoles(BlockId(0, 4), num_preceding=2) == ["A", "B"]
     assert pt.getPrecedingRoles(BlockId(0, 4), num_preceding=3) == ["A", "B"]
 
+def test_preceding_roles_ignores_meta_by_default():
+    pt = build_play_text([(0, 1, "A"), (0, 2, "_NARRATOR"), (0, 3, "B")])
+    assert pt.getPrecedingRoles(BlockId(0, 3), num_preceding=2) == ["A"]
+
+def test_preceding_roles_includes_meta_when_requested():
+    pt = build_play_text([(0, 1, "A"), (0, 2, "_NARRATOR"), (0, 3, "B"), (0, 4, "_DIRECTOR")])
+    assert pt.getPrecedingRoles(BlockId(0, 4), num_preceding=3, include_meta_roles=True) == [
+        "A",
+        "_NARRATOR",
+        "B",
+    ]
+
 def test_preceding_roles_limit_part():
     pt = build_play_text([(0, 1, "A"), (1, 1, "B"), (1, 2, "C")])
     # Should ignore part 0 when limit_to_current_part is True

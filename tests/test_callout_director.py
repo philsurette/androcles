@@ -80,8 +80,8 @@ class TestConversationAwareCalloutDirector:
         ])
         director = ConversationAwareCalloutDirector(pt)
         director._load_length_ms = lambda path: 0
-        assert director.calloutForBlock(BlockId(0, 1)).role is 'A'
-        assert director.calloutForBlock(BlockId(1, 1)).role is 'A'
-        assert director.calloutForBlock(BlockId(1, 2)).role is 'B'
-        assert director.calloutForBlock(BlockId(1, 3)).role is None
-        assert director.calloutForBlock(BlockId(1, 4)).role is 'C'
+        assert director.calloutForBlock(BlockId(0, 1)).role == 'A'
+        assert director.calloutForBlock(BlockId(1, 1)).role == 'A'
+        assert director.calloutForBlock(BlockId(1, 2)).role == 'B'
+        assert director.calloutForBlock(BlockId(1, 3)).role == None
+        assert director.calloutForBlock(BlockId(1, 4)).role == 'C'
