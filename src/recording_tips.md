@@ -7,6 +7,20 @@
 - Use clear, firm vowel sounds (avoid breathy starts).  
 - Keep the tone grounded and confident.
 
+### audacity
+High-pass filter
+- freq: 80hz
+- roll-off: 24db
+
+Compressor
+- Threshold: -16
+- Makeu-up gain: 0
+- knee width: 20db
+- ratio: 2
+- lookahead: 1ms
+- attack: 5ms
+- release: 75ms
+
 ## Female Voice
 - Relax your belly completely; no abdominal engagement.  
 - Shift vibration forward into the face/mask area.  
@@ -15,3 +29,21 @@
 - Keep the tone lighter and smoother.  
 - For shrewish characters: quicker pace, sharper consonants.  
 - For dreamy characters: longer vowels, gentler rhythm.
+
+### audacity
+High-pass filter
+- freq: 110hz
+- roll-off: 24db
+
+Filter Curve EQ:
+- -3db at 300 Hz
+- +3db at 6000 Hz
+
+Compressor
+- Threshold: -12
+- Makeu-up gain: 0
+- knee width: 30db
+- ratio: 2
+- lookahead: 1ms
+- attack: 5ms
+- release: 75ms
