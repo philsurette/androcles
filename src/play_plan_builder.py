@@ -21,11 +21,9 @@ from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
 from paths import (
-    AUDIO_OUT_DIR,
     BLOCKS_DIR,
     BLOCKS_EXT,
     INDEX_PATH,
-    CALLOUTS_DIR,
     AUDIO_PLAY_DIR,
     PARAGRAPHS_PATH,
     SEGMENTS_DIR

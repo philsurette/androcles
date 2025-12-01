@@ -1,4 +1,9 @@
+import sys
+from pathlib import Path
+from pathlib import Path
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from play_text import PlayText, BlockId, RoleBlock, DescriptionBlock, DirectionSegment
 from callout_director import (
@@ -37,7 +42,9 @@ class TestRoleCalloutDirector:
     def test_calloutForBlock_role(self):
         pt = build_play_text([("role", 0, 1, "A")])
         director = RoleCalloutDirector(pt)
-        director._load_length_ms = lambda path: 0  # avoid filesystem
+        director._build_callout_clip = lambda role: CalloutClip(
+            path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
+        )
         clip = director.calloutForBlock(BlockId(0, 1))
         assert isinstance(clip, CalloutClip)
         assert clip.clip_id == "A"
@@ -55,7 +62,9 @@ class TestConversationAwareCalloutDirector:
             ("role", 0, 3, "A"),
         ])
         director = ConversationAwareCalloutDirector(pt)
-        director._load_length_ms = lambda path: 0
+        director._build_callout_clip = lambda role: CalloutClip(
+            path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
+        )
         assert director.calloutForBlock(BlockId(0, 1)) is not None
         assert director.calloutForBlock(BlockId(0, 2)) is not None
         assert director.calloutForBlock(BlockId(0, 3)) is None
@@ -64,7 +73,9 @@ class TestConversationAwareCalloutDirector:
         segs = [DirectionSegment(segment_id=None, text="(_dir_)")]
         pt = build_play_text([("role", 0, 1, "A", segs)])
         director = ConversationAwareCalloutDirector(pt)
-        director._load_length_ms = lambda path: 0
+        director._build_callout_clip = lambda role: CalloutClip(
+            path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
+        )
         clip = director.calloutForBlock(BlockId(0, 1))
         assert clip is not None
 
@@ -79,7 +90,9 @@ class TestConversationAwareCalloutDirector:
             ("role", 1, 4, "C"),
         ])
         director = ConversationAwareCalloutDirector(pt)
-        director._load_length_ms = lambda path: 0
+        director._build_callout_clip = lambda role: CalloutClip(
+            path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
+        )
         assert director.calloutForBlock(BlockId(0, 1)).clip_id == 'A'
         assert director.calloutForBlock(BlockId(1, 1)).clip_id == 'A'
         assert director.calloutForBlock(BlockId(1, 2)).clip_id == 'B'

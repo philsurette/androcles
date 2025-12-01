@@ -53,3 +53,28 @@ def test_preceding_roles_fewer_than_requested():
 def test_preceding_roles_exact():
     pt = build_play_text([(0, 1, "A"), (0, 2, "B")])
     assert pt.getPrecedingRoles(BlockId(0, 2), num_preceding=1) == ["A"]
+
+
+def test_block_id_next_previous():
+    bid = BlockId(1, 5)
+    assert bid.nextId() == BlockId(1, 6)
+    assert bid.previousId() == BlockId(1, 4)
+
+
+def test_block_id_previous_none_for_zero():
+    assert BlockId(2, 0).previousId() is None
+
+
+def test_block_id_equality_and_hash():
+    a = BlockId(1, 2)
+    b = BlockId(1, 2)
+    c = BlockId(1, 3)
+    assert a == b
+    assert hash(a) == hash(b)
+    assert a != c
+
+
+def test_block_lookup_by_id():
+    pt = build_play_text([(0, 1, "A"), (0, 2, "B")])
+    assert pt.block_for_id(BlockId(0, 1)).role == "A"
+    assert pt.block_for_id(BlockId(0, 99)) is None

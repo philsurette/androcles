@@ -23,6 +23,19 @@ class BlockId:
     part_id: int | None
     block_no: int
 
+    def nextId(self) -> "BlockId":
+        """Return the next BlockId within the same part."""
+        return BlockId(self.part_id, self.block_no + 1)
+
+    def previousId(self) -> "BlockId | None":
+        """Return the previous BlockId within the same part, or None if this is the first."""
+        if self.block_no <= 0:
+            return None
+        return BlockId(self.part_id, self.block_no - 1)
+
+    def __hash__(self) -> int:  # Ensure hashability for dict/set usage.
+        return hash((self.part_id, self.block_no))
+
 
 @dataclass
 class SegmentId:
@@ -251,6 +264,9 @@ class RoleBlock(Block):
 class PlayText(List[Block]):
     def __init__(self, items: List[Block] | None = None) -> None:
         super().__init__(items or [])
+        self._by_id: dict[BlockId, Block] = {}
+        for block in self:
+            self._by_id[block.block_id] = block
 
     def getPrecedingRoles(
         self,
@@ -279,6 +295,10 @@ class PlayText(List[Block]):
             if len(distinct) >= num_preceding:
                 break
         return list(reversed(distinct))
+
+    def block_for_id(self, block_id: BlockId) -> Block | None:
+        """Return the Block for the given id, or None if not present."""
+        return self._by_id.get(block_id)
 
 
 class PlayTextParser:
@@ -320,6 +340,7 @@ class PlayTextParser:
                 )
 
             play.append(parsed_block)
+            play._by_id[parsed_block.block_id] = parsed_block
             current_part = parsed_block.block_id.part_id
             block_counter = parsed_block.block_id.block_no
 
