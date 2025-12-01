@@ -1,0 +1,16 @@
+{
+    // Enable pytest and specify the location of tests
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+        "tests" // Tells pytest to look for tests in the 'tests' folder
+    ],
+    
+    // Add the 'src' directory to the Python path for successful imports
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/src"
+    ],
+    // The CWD might need to be set depending on how your tests access files
+    "python.testing.cwd": "${workspaceFolder}",
+    "python.envFile": "${workspaceFolder}/.env"
+}
