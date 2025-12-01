@@ -252,6 +252,28 @@ class PlayText(List[Block]):
     def __init__(self, items: List[Block] | None = None) -> None:
         super().__init__(items or [])
 
+    def getPrecedingRoles(
+        self, block_id: BlockId, num_preceding: int = 2, limit_to_current_part: bool = True
+    ) -> List[str]:
+        """
+        Return the last `num_preceding` distinct roles (by appearance) prior to block_id.
+        """
+        roles: List[str] = []
+        for blk in self:
+            if blk.block_id.part_id == block_id.part_id and blk.block_id.block_no == block_id.block_no:
+                break
+            if limit_to_current_part and blk.block_id.part_id != block_id.part_id:
+                continue
+            if isinstance(blk, RoleBlock):
+                roles.append(blk.role)
+        distinct: List[str] = []
+        for role in reversed(roles):
+            if role not in distinct:
+                distinct.append(role)
+            if len(distinct) >= num_preceding:
+                break
+        return list(reversed(distinct))
+
 
 class PlayTextParser:
     """Parse a source play text file into a PlayText of Blocks."""

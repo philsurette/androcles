@@ -2,3 +2,5 @@ cmudict
 pydub
 openpyxl
 typer
+# test deps
+pytest
