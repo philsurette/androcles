@@ -2,7 +2,6 @@
 """Build audio plans for the play."""
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 import logging
 import re
@@ -10,6 +9,13 @@ from typing import Dict, List, Tuple, Union
 
 from pydub import AudioSegment
 
+from callout_director import (
+    CalloutDirector,
+    ConversationAwareCalloutDirector,
+    NoCalloutDirector,
+    RoleCalloutDirector,
+)
+from play_text import BlockId, PlayTextParser
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
@@ -28,12 +34,6 @@ from paths import (
 
 IndexEntry = Tuple[int | None, int, str]
 BlockMap = Dict[Tuple[int | None, int], List[str]]
-
-PART_HEADING_RE = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
-META_RE = re.compile(r"^::(.*)::$")
-DESCRIPTION_RE = re.compile(r"^\[\[(.*)\]\]$")
-STAGE_RE = re.compile(r"^_+(.*?)_+\s*$")
-BLOCK_RE = re.compile(r"^[A-Z][A-Z '()-]*?\.\s*.*$")
 
 INTER_WORD_PAUSE_MS = 300
 
@@ -162,38 +162,6 @@ def load_segment_maps() -> Dict[str, BlockMap]:
     return maps
 
 
-@lru_cache(maxsize=1)
-def description_block_keys() -> set[Tuple[int, int]]:
-    """
-    Return (part, block) pairs that correspond to description paragraphs ([[...]])
-    so we can limit description callouts to true descriptions (not titles or meta).
-    """
-    keys: set[Tuple[int, int]] = set()
-    current_part: int | None = None
-    block_counter = 0
-    for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
-        stripped = line.strip()
-        if not stripped:
-            continue
-        heading = PART_HEADING_RE.match(stripped)
-        if heading:
-            current_part = int(heading.group(1))
-            block_counter = 0
-            continue
-        if META_RE.match(stripped):
-            continue  # meta lines do not advance block numbering
-        if current_part is None:
-            continue
-        if DESCRIPTION_RE.match(stripped):
-            block_counter += 1
-            keys.add((current_part, block_counter))
-            continue
-        if STAGE_RE.match(stripped) or BLOCK_RE.match(stripped):
-            block_counter += 1
-            continue
-    return keys
-
-
 def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
     """Load audio by path with caching."""
     if path in cache:
@@ -218,50 +186,6 @@ def get_audio_length_ms(path: Path, cache: Dict[Path, int]) -> int:
     length = len(AudioSegment.from_file(path))
     cache[path] = length
     return length
-
-
-def compute_callout(
-    part_filter: int | None,
-    block_no: int,
-    roles_in_block: List[str],
-    *,
-    include_callouts: bool,
-    minimal_callouts: bool,
-    include_description_callouts: bool,
-    description_blocks: set[Tuple[int, int]],
-    seen_roles: set[str],
-    prev_role: str | None,
-    prev2_role: str | None,
-    last_callout_type: str | None,
-) -> tuple[Path | None, str | None, set[str], str | None]:
-    """
-    Decide which callout (if any) to play for this block.
-    Returns (path, callout_type, updated_seen_roles, updated_last_callout_type).
-    """
-    primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
-    is_description = part_filter is not None and (part_filter, block_no) in description_blocks
-
-    # Role callout.
-    if include_callouts and primary_role:
-        # Detect if the primary role's block starts with an inline direction or narrator lead-in.
-        role_bullets = read_block_bullets(primary_role, part_filter, block_no)
-        role_starts_with_direction = bool(role_bullets and role_bullets[0].startswith("(_"))
-        # If the first role listed for this block is narrator, treat as direction lead-in.
-        if roles_in_block and roles_in_block[0] == "_NARRATOR":
-            role_starts_with_direction = True
-        need_callout = True
-        if minimal_callouts:
-            if primary_role in seen_roles and primary_role in {prev_role, prev2_role} and not role_starts_with_direction:
-                need_callout = False
-        seen_roles = set(seen_roles)
-        seen_roles.add(primary_role)
-        if need_callout:
-            path = CALLOUTS_DIR / f"{primary_role}_callout.wav"
-            if path.exists():
-                return path, "role", seen_roles, "role"
-            logging.warning("Callout missing for role %s: %s", primary_role, path)
-            return None, last_callout_type, seen_roles, last_callout_type
-    return None, last_callout_type, seen_roles, last_callout_type
 
 
 def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
@@ -294,29 +218,18 @@ def build_block_plan(
     block_no: int,
     roles_in_block: List[str],
     *,
-    callout_path: Path | None,
-    prev_role: str | None,
-    prev2_role: str | None,
+    callout_clip: CalloutClip | None,
     is_last_block: bool,
     spacing_ms: int,
     callout_spacing_ms: int,
     length_cache: Dict[Path, int],
-    base_offset_ms: int,
     plan_items: AudioPlan[PlanItem],
-) -> tuple[List[PlanItem], str | None, str | None]:
+) -> List[PlanItem]:
     """Build plan items for a single block, including optional callouts."""
     start_idx = len(plan_items)
     primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
-    current_offset = base_offset_ms
-
-    if callout_path:
-        callout_id = primary_role or "_NARRATOR"
-        length_ms = get_audio_length_ms(callout_path, length_cache)
-        plan_items.addClip(
-            CalloutClip(path=callout_path, text="", role="_NARRATOR", clip_id=callout_id, length_ms=length_ms, offset_ms=0),
-            following_silence_ms=callout_spacing_ms,
-        )
-        current_offset += length_ms + callout_spacing_ms
+    if callout_clip:
+        plan_items.addClip(callout_clip, following_silence_ms=callout_spacing_ms)
 
     block_segments: List[Tuple[str, str, str]] = []
     source_role = primary_role or roles_in_block[0]
@@ -338,11 +251,7 @@ def build_block_plan(
             SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
             following_silence_ms=gap,
         )
-        current_offset += length_ms + gap
-        if role != "_NARRATOR":
-            prev2_role, prev_role = prev_role, role
-
-    return list(plan_items[start_idx:]), prev_role, prev2_role
+    return list(plan_items[start_idx:])
 
 
 def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
@@ -372,54 +281,33 @@ def build_part_plan(
     spacing_ms: int = 0,
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
-    minimal_callouts: bool = True,
-    include_description_callouts: bool = True,
-    base_offset_ms: int = 0,
     chapters: List[Chapter] | None = None,
+    director: CalloutDirector | None = None,
 ) -> tuple[AudioPlan[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     entries = parse_index()
-    description_blocks = description_block_keys()
     chapter_map = {c.block_id: c for c in (chapters or [])}
     inserted_chapters: set[str] = set()
     length_cache: Dict[Path, int] = {}
+    director = director or NoCalloutDirector(PlayTextParser().parse())
 
     block_entries = extract_blocks(entries, part_filter)
 
-    prev_role: str | None = None
-    prev2_role: str | None = None
-    seen_roles: set[str] = set()
-    last_callout_type: str | None = None
     audio_plan: AudioPlan = AudioPlan()
-    # AudioPlan duration tracks offsets; no separate counter needed.
 
     for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
-        callout_path, _callout_type, seen_roles, last_callout_type = compute_callout(
-            part_filter,
-            block_no,
-            roles_in_block,
-            include_callouts=include_callouts,
-            minimal_callouts=minimal_callouts,
-            include_description_callouts=include_description_callouts,
-            description_blocks=description_blocks,
-            seen_roles=seen_roles,
-            prev_role=prev_role,
-            prev2_role=prev2_role,
-            last_callout_type=last_callout_type,
-        )
+        block_id = BlockId(part_filter, block_no)
+        callout_clip = director.calloutForBlock(block_id) if include_callouts else None
 
-        block_items, prev_role, prev2_role = build_block_plan(
+        block_items = build_block_plan(
             part_filter,
             block_no,
             roles_in_block,
-            callout_path=callout_path,
-            prev_role=prev_role,
-            prev2_role=prev2_role,
+            callout_clip=callout_clip,
             is_last_block=b_idx == len(block_entries) - 1,
             spacing_ms=spacing_ms,
             callout_spacing_ms=callout_spacing_ms,
             length_cache=length_cache,
-            base_offset_ms=audio_plan.duration_ms,
             plan_items=audio_plan,
         )
         for item in block_items:
@@ -462,7 +350,6 @@ def build_audio_plan(
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
-    include_description_callouts: bool = True,
     part_chapters: bool = False,
     part_gap_ms: int = 0,
     librivox: bool = False,
@@ -470,6 +357,13 @@ def build_audio_plan(
     total_parts: int | None = None,
 ) -> tuple[AudioPlan[PlanItem], int]:
     chapters = ChapterBuilder().build()
+    play_text = PlayTextParser().parse()
+    if include_callouts:
+        director: CalloutDirector = (
+            ConversationAwareCalloutDirector(play_text) if minimal_callouts else RoleCalloutDirector(play_text)
+        )
+    else:
+        director = NoCalloutDirector(play_text)
     plan: AudioPlan[PlanItem] = AudioPlan()
     total_count = total_parts if total_parts is not None else len(parts)
     plan.addSilence(1000)
@@ -496,10 +390,8 @@ def build_audio_plan(
             spacing_ms=spacing_ms,
             include_callouts=include_callouts,
             callout_spacing_ms=callout_spacing_ms,
-            minimal_callouts=minimal_callouts,
-            include_description_callouts=include_description_callouts,
-            base_offset_ms=plan.duration_ms,
             chapters=chapters,
+            director=director,
         )
 
         # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Callout director strategies."""
+"""Callout director strategies. Callouts are audio clips that announce the speaker's role."""
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -28,6 +29,20 @@ class CalloutDirector(ABC):
     def _load_length_ms(self, path: Path) -> int:
         return len(AudioSegment.from_file(path))
 
+    def _build_callout_clip(self, role: str) -> Optional[CalloutClip]:
+        path = CALLOUTS_DIR / f"{role}_callout.wav"
+        if not path.exists():
+            logging.warning("Callout missing for role %s: %s", role, path)
+            return None
+        length_ms = self._load_length_ms(path)
+        return CalloutClip(
+            path=path,
+            text="",
+            role="_NARRATOR",
+            clip_id=role,
+            length_ms=length_ms,
+            offset_ms=0,
+        )
 
     def _find_block(self, block_id: BlockId) -> Optional[RoleBlock]:
         for blk in self.play_text:
@@ -51,16 +66,7 @@ class RoleCalloutDirector(CalloutDirector):
         block = self._find_block(block_id)
         if block is None:
             return None
-        path = CALLOUTS_DIR / f"{block.role}_callout.wav"
-        length_ms = self._load_length_ms(path)
-        return CalloutClip(
-            path=path,
-            text="",
-            role="_NARRATOR",
-            clip_id=block.role,
-            length_ms=length_ms,
-            offset_ms=0,
-        )
+        return self._build_callout_clip(block.role)
 
 
 class ConversationAwareCalloutDirector(CalloutDirector):
@@ -89,13 +95,4 @@ class ConversationAwareCalloutDirector(CalloutDirector):
         if not need_callout:
             return None
 
-        path = CALLOUTS_DIR / f"{block.role}_callout.wav"
-        length_ms = self._load_length_ms(path)
-        return CalloutClip(
-            path=path,
-            text="",
-            role="_NARRATOR",
-            clip_id=block.role,
-            length_ms=length_ms,
-            offset_ms=0,
-        )
+        return self._build_callout_clip(block.role)
