@@ -75,13 +75,13 @@ class TestConversationAwareCalloutDirector:
             ("role", 1, 0, "_NARRATOR"),
             ("role", 1, 1, "A"),
             ("role", 1, 2, "B"),
-            ("role", 1, 2, "B"),
-            ("role", 1, 3, "C"),
+            ("role", 1, 3, "B"),
+            ("role", 1, 4, "C"),
         ])
         director = ConversationAwareCalloutDirector(pt)
         director._load_length_ms = lambda path: 0
-        assert director.calloutForBlock(BlockId(0, 1)).role == 'A'
-        assert director.calloutForBlock(BlockId(1, 1)).role == 'A'
-        assert director.calloutForBlock(BlockId(1, 2)).role == 'B'
-        assert director.calloutForBlock(BlockId(1, 3)).role == None
-        assert director.calloutForBlock(BlockId(1, 4)).role == 'C'
+        assert director.calloutForBlock(BlockId(0, 1)).clip_id == 'A'
+        assert director.calloutForBlock(BlockId(1, 1)).clip_id == 'A'
+        assert director.calloutForBlock(BlockId(1, 2)).clip_id == 'B'
+        assert director.calloutForBlock(BlockId(1, 3)) is None
+        assert director.calloutForBlock(BlockId(1, 4)).clip_id == 'C'
