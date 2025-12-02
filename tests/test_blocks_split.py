@@ -32,6 +32,12 @@ def test_split_block_segments_trivial_punctuation_stays_with_direction_comma() -
         "(_sneers derisively_),",
     ]
 
+def test_split_block_segments_trivial_punctuation_stays_with_direction_colon() -> None:
+    text = "(_sneers derisively_):"
+    segments = blocks.split_block_segments(text)
+    assert segments == [
+        "(_sneers derisively_):",
+    ]
 
 def test_split_block_segments_exclamations_and_questions_become_segment() -> None:
     text = "(_sneers derisively_)!?!"

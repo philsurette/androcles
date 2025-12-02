@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Split the narrator recording into per-line WAV snippets based on _NARRATOR.blocks.
+Split the narrator recording into per-line WAV snippets using PlayText.
 
 Naming:
-- For entries with a part id: <part>_<block>_<elem>.wav
-- For entries without a part id (e.g., pre-heading meta): _<block>_<elem>.wav
+- With part id: <part>_<block>_<elem>.wav
+- Without part id (preamble/meta): _<block>_<elem>.wav
 
 Only inline directions are kept from mixed speech blocks; pure description/meta/direction
 entries keep all bullet lines.
@@ -12,99 +12,96 @@ entries keep all bullet lines.
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
-from pathlib import Path
-from typing import List, Tuple
+from dataclasses import dataclass
 import logging
+from typing import List
 
 from audio_splitter import AudioSplitter
-from paths import BLOCKS_DIR, BLOCKS_EXT, RECORDINGS_DIR, SEGMENTS_DIR
+from play_text import (
+    DirectionBlock,
+    DescriptionBlock,
+    DescriptionSegment,
+    DirectionSegment,
+    MetaBlock,
+    MetaSegment,
+    PlayText,
+    PlayTextParser,
+    RoleBlock,
+    Segment,
+    SpeechSegment,
+)
+from paths import RECORDINGS_DIR, SEGMENTS_DIR
 
 
-def parse_narrator_blocks(part_filter: str | None = None) -> List[Tuple[str, str]]:
-    """Return ordered (id, text) tuples for narrator lines."""
-    path = BLOCKS_DIR / f"_NARRATOR{BLOCKS_EXT}"
-    if not path.exists():
-        raise FileNotFoundError(f"Narrator blocks not found: {path}")
+@dataclass
+class NarratorSplitter:
+    play_text: PlayText
+    min_silence_ms: int = 1700
+    silence_thresh: int = -45
+    pad_end_ms: int = 200
+    chunk_size: int = 50
 
-    expected: List[Tuple[str, str]] = []
-    current_part: str | None = None
-    current_block: str | None = None
-    segments: List[str] = []
+    def assemble_segments(self, part_filter: str | None = None) -> List[Segment]:
+        """Return ordered narrator/meta segments from the PlayText."""
+        segments: List[Segment] = []
 
-    def flush() -> None:
-        nonlocal segments, current_part, current_block
-        if current_block is None:
-            segments = []
-            return
-        if not segments:
-            return
-        include_dirs_only = any(seg.startswith("(_") for seg in segments) and any(
-            not seg.startswith("(_") for seg in segments
+        part_no: int | None | str
+        if part_filter in (None, "", "_"):
+            part_no = None if part_filter != "_" else "_"
+        else:
+            try:
+                part_no = int(part_filter)
+            except ValueError:
+                part_no = None
+
+        for blk in self.play_text:
+            if part_no == "_":
+                if blk.block_id.part_id is not None:
+                    continue
+            elif isinstance(part_no, int):
+                if blk.block_id.part_id != part_no:
+                    continue
+
+            if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
+                segments.extend(blk.segments)
+            elif isinstance(blk, RoleBlock):
+                for seg in blk.segments:
+                    if isinstance(seg, SpeechSegment) and seg.role == "_NARRATOR":
+                        segments.append(seg)
+                    elif isinstance(seg, DirectionSegment):
+                        segments.append(seg)
+        return segments
+
+    @staticmethod
+    def _segment_id_str(seg: Segment) -> str:
+        block = seg.segment_id.block_id
+        return f"{'' if block.part_id is None else block.part_id}_{block.block_no}_{seg.segment_id.segment_no}"
+
+    def split(self, part_filter: str | None = None) -> None:
+        src_path = RECORDINGS_DIR / "_NARRATOR.wav"
+        if not src_path.exists():
+            print(f"Narrator recording not found: {src_path}", file=sys.stderr)
+            sys.exit(1)
+
+        logging.info("Processing narrator from %s", src_path)
+        pf = "" if part_filter == "_" else part_filter
+        expected_segments = self.assemble_segments(part_filter=pf)
+        splitter = AudioSplitter(
+            min_silence_ms=self.min_silence_ms,
+            silence_thresh=self.silence_thresh,
+            pad_end_ms=self.pad_end_ms,
+            chunk_size=self.chunk_size,
         )
-        elem_idx = 0
-        for seg in segments:
-            elem_idx += 1
-            if include_dirs_only and not seg.startswith("(_"):
-                continue
-            if current_part:
-                eid = f"{current_part}_{current_block}_{elem_idx}"
-            else:
-                eid = f"_{current_block}_{elem_idx}"
-            expected.append((eid, seg))
-        segments = []
+        spans = splitter.detect_spans(src_path)
+        splitter.export_spans(
+            src_path, spans, [self._segment_id_str(seg) for seg in expected_segments], SEGMENTS_DIR / "_NARRATOR"
+        )
 
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        stripped = raw.strip()
-        if not stripped:
-            continue
-        if stripped[0].isdigit() or stripped.startswith(":"):
-            flush()
-            head = stripped.split()[0]
-            if ":" in head:
-                part, block = head.split(":", 1)
-                current_part = part if part else None
-                current_block = block
-            else:
-                current_part = None
-                current_block = None
-            continue
-        if stripped.startswith("-"):
-            segments.append(stripped[1:].strip())
-
-    flush()
-    return expected
-
-
-def split_narration(
-    part_filter: str | None = None,
-    min_silence_ms: int = 1700,
-    silence_thresh: int = -45,
-    pad_end_ms: int = 200,
-    chunk_size: int = 50,
-) -> None:
-    src_path = RECORDINGS_DIR / "_NARRATOR.wav"
-    if not src_path.exists():
-        print(f"Narrator recording not found: {src_path}", file=sys.stderr)
-        sys.exit(1)
-
-    logging.info("Processing narrator from %s", src_path)
-    pf = "" if part_filter == "_" else part_filter
-    expected = parse_narrator_blocks(part_filter=pf)
-    splitter = AudioSplitter(
-        min_silence_ms=min_silence_ms,
-        silence_thresh=silence_thresh,
-        pad_end_ms=pad_end_ms,
-        chunk_size=chunk_size,
-    )
-    spans = splitter.detect_spans(src_path)
-    splitter.export_spans(src_path, spans, [eid for eid, _ in expected], SEGMENTS_DIR / "_NARRATOR")
-
-    if len(spans) != len(expected):
-        print(f"WARNING: expected {len(expected)} snippets, got {len(spans)}")
-    else:
-        print(f"Split narrator into {len(spans)} snippets OK")
+        if len(spans) != len(expected_segments):
+            print(f"WARNING: expected {len(expected_segments)} snippets, got {len(spans)}")
+        else:
+            print(f"Split narrator into {len(spans)} snippets OK")
 
 
 def main() -> None:
@@ -115,13 +112,14 @@ def main() -> None:
     parser.add_argument("--part", help="Limit to a specific part id, or '_' for no-part entries")
     parser.add_argument("--chunk-size", type=int, default=50, help="Chunk size (ms) for silence detection")
     args = parser.parse_args()
-    split_narration(
-        part_filter=args.part,
+    play_text = PlayTextParser().parse()
+    NarratorSplitter(
+        play_text=play_text,
         min_silence_ms=args.min_silence_ms,
         silence_thresh=args.silence_thresh,
         pad_end_ms=args.pad_end_ms,
         chunk_size=args.chunk_size,
-    )
+    ).split(part_filter=args.part)
 
 
 if __name__ == "__main__":

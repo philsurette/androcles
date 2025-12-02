@@ -82,11 +82,9 @@ class PlayPlanBuilder:
             plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
 
         block_segments: List[Tuple[str, str, str]] = []
-        source_role = primary_role or block.roles[0]
-        bullets = self.read_block_bullets(source_role, block_id.part_id, block_id.block_no)
-        for idx, text in enumerate(bullets, start=1):
-            owner = block.owner_for_text(text) or "_NARRATOR"
-            sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{idx}"
+        bullets = self.read_block_bullets(block)
+        for seg_no, owner, text in bullets:
+            sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{seg_no}"
             block_segments.append((owner, sid, text))
 
         for seg_idx, (role, seg_id, text) in enumerate(block_segments):
@@ -239,8 +237,9 @@ class PlayPlanBuilder:
                     first_seg = f"{'' if part is None else part}_0_1.wav"
                     title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
                     # Lookup text from narrator block if available.
-                    first_texts = self.read_block_bullets("_NARRATOR", part, 0)
-                    title_text = first_texts[0] if first_texts else ""
+                    first_block = self.play_text.block_for_id(BlockId(part, 0))
+                    first_texts = self.read_block_bullets(first_block) if first_block else []
+                    title_text = first_texts[0][2] if first_texts else ""
                 if endof_path.exists() and global_idx < total_count - 1:
                     length_ms = len(AudioSegment.from_file(endof_path))
                     plan.addSilence(2000)
@@ -311,29 +310,32 @@ class PlayPlanBuilder:
         cache[path] = length
         return length
 
-    @staticmethod
-    def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
-        """Return bullet texts for the given role/part/block in source order (legacy blocks files)."""
-        path = BLOCKS_DIR / f"{role}{BLOCKS_EXT}"
-        if not path.exists():
-            logging.warning("Block file missing for %s: %s", role, path)
+    def read_block_bullets(self, block_obj: Block) -> List[Tuple[int, str, str]]:
+        """
+        Return tuples of (segment_no, owner, text) for the given block from in-memory PlayText.
+        Owner is derived from the segment role or block owner for directions/meta.
+        """
+        blk = block_obj
+        if not blk or not hasattr(blk, "segments"):
+            logging.warning("Block %s not found in play text", getattr(blk, "block_id", None))
             return []
-
-        target_head = f"{'' if part is None else part}:{block}"
-        in_block = False
-        bullets: List[str] = []
-        for raw in path.read_text(encoding="utf-8").splitlines():
-            stripped = raw.strip()
-            if not stripped:
+        bullets: List[Tuple[int, str, str]] = []
+        for seg in getattr(blk, "segments", []):
+            text = getattr(seg, "text", "").strip()
+            if not text:
                 continue
-            if stripped[0].isdigit() or stripped.startswith(":"):
-                head = stripped.split()[0]
-                if in_block and head != target_head:
-                    break  # left the block
-                in_block = head == target_head
+            # Strip heading markers from meta headings for friendlier titles.
+            if isinstance(blk, MetaBlock) and text.startswith("##") and text.endswith("##"):
+                cleaned = text.strip("# ").strip()
+                m = re.match(r"^\s*\d+\s*[:.]\s*(.*)$", cleaned)
+                text = m.group(1).strip() if m else cleaned
+            # Merge standalone trivial punctuation into previous text.
+            if text in {".", ",", ":", ";"} and bullets:
+                prev_no, prev_owner, prev_text = bullets[-1]
+                bullets[-1] = (prev_no, prev_owner, prev_text + text)
                 continue
-            if in_block and stripped.startswith("-"):
-                bullets.append(stripped[1:].strip())
+            owner = blk.owner_for_text(text) if hasattr(blk, "owner_for_text") else (getattr(seg, "role", None) or getattr(blk, "owner", "_NARRATOR"))
+            bullets.append((seg.segment_id.segment_no, owner or "_NARRATOR", text))
         return bullets
 
 

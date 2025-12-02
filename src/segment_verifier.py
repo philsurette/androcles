@@ -10,15 +10,29 @@ from typing import List, Dict
 
 from pydub import AudioSegment
 
-from narrator_splitter import parse_narrator_blocks
-from role_split_checker import load_expected as load_role_expected, expected_duration_seconds
 from paths import RECORDINGS_DIR, SEGMENTS_DIR, AUDIO_OUT_DIR
 from play_plan_builder import PlayPlanBuilder
-from play_text import PlayTextParser
-import re
+from play_text import (
+    PlayTextParser,
+    PlayText,
+    RoleBlock,
+    SpeechSegment,
+    MetaSegment,
+    DescriptionSegment,
+    DirectionSegment,
+    MetaBlock,
+    DescriptionBlock,
+    DirectionBlock,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
+def expected_duration_seconds(text: str, wpm: int = 150, pad: float = 0.2) -> float:
+    """Estimate speech duration in seconds based on word count and padding."""
+    words = [w for w in text.split() if w]
+    words_per_sec = wpm / 60.0
+    base = len(words) / words_per_sec if words else 0.3
+    return base + pad
 
 def parse_id(eid: str):
     """
@@ -44,20 +58,77 @@ class SegmentVerifier:
     plan: List
     tol_low: float = 0.5
     tol_high: float = 2.0
+    play_text: PlayText | None = None
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
+        if self.play_text is None:
+            self.play_text = PlayTextParser().parse()
         self._build_plan_start_map()
 
     def gather_expected(self) -> List[Dict]:
         rows: List[Dict] = []
-        # Roles
-        for role in [p.stem for p in RECORDINGS_DIR.glob("*.wav") if not p.name.startswith("_") and p.stem != "offsets"]:
-            for eid, text in load_role_expected(role):
-                rows.append({"id": eid, "role": role, "text": text})
-        # Narrator
-        for eid, text in parse_narrator_blocks():
-            rows.append({"id": eid, "role": "", "text": text})
+        if self.play_text is None:
+            return rows
+        # Narrator/meta content
+        rows.extend(self._gather_narrator_segments())
+
+        # Roles (skip narrator to avoid double counting)
+        for role_obj in self.play_text.getRoles():
+            role = role_obj.name
+            if role == "_NARRATOR":
+                continue
+            for blk in role_obj.blocks:
+                # Skip block if part filter logic is needed; here we include all.
+                seq = 0
+                for seg in blk.segments:
+                    text = getattr(seg, "text", "").strip()
+                    if not text or text in {".", ",", ":", ";"}:
+                        continue
+                    seq += 1
+                    if isinstance(seg, SpeechSegment) and seg.role == role:
+                        rows.append(
+                            {
+                                "id": f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seq}",
+                                "role": role,
+                                "text": text,
+                            }
+                        )
+        return rows
+
+    def _gather_narrator_segments(self) -> List[Dict]:
+        """Collect narrator/meta segments directly from PlayText."""
+        rows: List[Dict] = []
+        if self.play_text is None:
+            return rows
+
+        for blk in self.play_text:
+            if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
+                relevant = blk.segments
+            elif isinstance(blk, RoleBlock):
+                relevant = []
+                for seg in blk.segments:
+                    if isinstance(seg, SpeechSegment) and getattr(seg, "role", "") == "_NARRATOR":
+                        relevant.append(seg)
+                    elif isinstance(seg, DirectionSegment):
+                        relevant.append(seg)
+            else:
+                continue
+
+            for seg in relevant:
+                text = getattr(seg, "text", "").strip()
+                if not text or text in {".", ",", ":", ";"}:
+                    continue
+                if isinstance(seg, (MetaSegment, DescriptionSegment, DirectionSegment)) or (
+                    isinstance(seg, SpeechSegment) and getattr(seg, "role", "") == "_NARRATOR"
+                ):
+                    rows.append(
+                        {
+                            "id": f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seg.segment_id.segment_no}",
+                            "role": "",
+                            "text": text,
+                        }
+                    )
         return rows
 
     def verify_segments(self) -> List[Dict]:
@@ -149,7 +220,7 @@ def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play_text=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high)
+    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high, play_text=play)
     return verifier.verify_segments()
 
 
@@ -158,5 +229,5 @@ def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play_text=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high)
+    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high, play_text=play)
     return verifier.compute_rows()

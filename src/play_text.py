@@ -42,6 +42,9 @@ class SegmentId:
     block_id: BlockId
     segment_no: int
 
+    def __str__(self) -> str:
+        part_str = "" if self.block_id.part_id is None else str(self.block_id.part_id)
+        return f"{part_str}_{self.block_id.block_no}_{self.segment_no}"
 
 @dataclass
 class Segment(ABC):
@@ -272,8 +275,13 @@ class RoleBlock(Block):
                 segments.append(DirectionSegment(segment_id=SegmentId(block_id, seg_no), text=direction))
                 seg_no += 1
                 if trailing_punct:
-                    segments.append(DirectionSegment(segment_id=SegmentId(block_id, seg_no), text=trailing_punct))
-                    seg_no += 1
+                    # Keep trailing punctuation with the direction unless it's an expressive mix of !/?.
+                    if set(trailing_punct) <= set("?!") and "!" in trailing_punct:
+                        segments.append(SpeechSegment(segment_id=SegmentId(block_id, seg_no), text=trailing_punct, role=role))
+                        seg_no += 1
+                    else:
+                        # Append punctuation to the previous direction text.
+                        segments[-1].text = segments[-1].text + trailing_punct
             last_end = punct_end
 
         tail = speech[last_end:]

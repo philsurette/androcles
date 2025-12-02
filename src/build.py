@@ -13,7 +13,7 @@ import blocks
 import roles
 import narration
 from role_splitter import process_role
-from narrator_splitter import split_narration
+from narrator_splitter import NarratorSplitter
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
@@ -91,7 +91,10 @@ def split_roles(
 def split_narrator(
     part_filter: str | None = None, min_silence_ms: int = 1700, silence_thresh: int = -45, chunk_size: int = 50
 ) -> None:
-    split_narration(part_filter=part_filter, min_silence_ms=min_silence_ms, silence_thresh=silence_thresh, chunk_size=chunk_size)
+    play_text = PlayTextParser().parse()
+    NarratorSplitter(
+        play_text=play_text, min_silence_ms=min_silence_ms, silence_thresh=silence_thresh, chunk_size=chunk_size
+    ).split(part_filter=part_filter)
 
 
 @app.callback(invoke_without_command=True)
