@@ -15,46 +15,6 @@ from pydub import AudioSegment
 from play_text import PlayTextParser, PlayText, RoleBlock
 from paths import SEGMENTS_DIR, AUDIO_OUT_DIR, CALLOUTS_DIR
 
-def concat_segments(role: str, seg_ids: List[str]) -> AudioSegment:
-    audio = AudioSegment.empty()
-    for sid in seg_ids:
-        path = SEGMENTS_DIR / role / f"{sid}.wav"
-        if not path.exists():
-            logging.warning("Missing snippet %s for role %s", sid, role)
-            continue
-        audio += AudioSegment.from_file(path)
-    return audio
-
-
-def load_callout(role: str) -> AudioSegment | None:
-    """Return the callout clip for a role if it exists."""
-    path = CALLOUTS_DIR / f"{role}_callout.wav"
-    if not path.exists():
-        logging.warning("Missing callout for role %s at %s", role, path)
-        return None
-    return AudioSegment.from_file(path)
-
-
-def crop_cue(
-    audio: AudioSegment,
-    tail_ms: int = 5000,
-    extend_ms: int = 2000,
-    head_ms: int = 2000,
-    gap_ms: int = 500,
-) -> AudioSegment:
-    """
-    Keep the last `tail_ms` (configurable). If the total cue is shorter than
-    tail_ms + extend_ms, keep it whole. Otherwise keep the first `head_ms`,
-    a gap, then the last `tail_ms`.
-    """
-    total = len(audio)
-    if total <= tail_ms + extend_ms:
-        return audio
-    head = audio[: min(head_ms, total)]
-    tail = audio[-tail_ms:] if tail_ms < total else audio
-    gap = AudioSegment.silent(duration=gap_ms) if gap_ms > 0 else AudioSegment.empty()
-    return head + gap + tail
-
 
 @dataclass
 class CueBuilder:
@@ -69,6 +29,46 @@ class CueBuilder:
 
     def __post_init__(self) -> None:
         self.segment_maps = self.play.build_segment_maps()
+
+    def _concat_segments(self, role: str, seg_ids: List[str]) -> AudioSegment:
+        """Concatenate audio segments for a role."""
+        audio = AudioSegment.empty()
+        for sid in seg_ids:
+            path = SEGMENTS_DIR / role / f"{sid}.wav"
+            if not path.exists():
+                logging.warning("Missing snippet %s for role %s", sid, role)
+                continue
+            audio += AudioSegment.from_file(path)
+        return audio
+
+    def _load_callout(self, role: str) -> AudioSegment | None:
+        """Return the callout clip for a role if it exists."""
+        path = CALLOUTS_DIR / f"{role}_callout.wav"
+        if not path.exists():
+            logging.warning("Missing callout for role %s at %s", role, path)
+            return None
+        return AudioSegment.from_file(path)
+
+    @staticmethod
+    def _crop_cue(
+        audio: AudioSegment,
+        tail_ms: int = 5000,
+        extend_ms: int = 2000,
+        head_ms: int = 2000,
+        gap_ms: int = 500,
+    ) -> AudioSegment:
+        """
+        Keep the last `tail_ms` (configurable). If the total cue is shorter than
+        tail_ms + extend_ms, keep it whole. Otherwise keep the first `head_ms`,
+        a gap, then the last `tail_ms`.
+        """
+        total = len(audio)
+        if total <= tail_ms + extend_ms:
+            return audio
+        head = audio[: min(head_ms, total)]
+        tail = audio[-tail_ms:] if tail_ms < total else audio
+        gap = AudioSegment.silent(duration=gap_ms) if gap_ms > 0 else AudioSegment.empty()
+        return head + gap + tail
 
     def _previous_speech_block(self, part_blocks: List[RoleBlock], idx: int) -> RoleBlock | None:
         for j in range(idx - 1, -1, -1):
@@ -106,15 +106,15 @@ class CueBuilder:
                     cue_ids = self.segment_maps.get(cue_role, {}).get(key, [])
                     if cue_ids:
                         if cue_role not in callout_cache:
-                            callout_cache[cue_role] = load_callout(cue_role)
+                            callout_cache[cue_role] = self._load_callout(cue_role)
                         call = callout_cache[cue_role]
                         if call:
                             combined += call
                             if callout_gap:
                                 combined += callout_gap
 
-                        cue_audio = concat_segments(cue_role, cue_ids)
-                        cue_audio = crop_cue(cue_audio, tail_ms=self.max_cue_size_ms)
+                        cue_audio = self._concat_segments(cue_role, cue_ids)
+                        cue_audio = self._crop_cue(cue_audio, tail_ms=self.max_cue_size_ms)
 
                         cue_start = len(combined)
                         combined += cue_audio
@@ -128,7 +128,7 @@ class CueBuilder:
                 if not resp_ids:
                     logging.warning("No response segment ids for %s %s:%s", role, blk.block_id.part_id, blk.block_id.block_no)
                     continue
-                resp_audio = concat_segments(role, resp_ids)
+                resp_audio = self._concat_segments(role, resp_ids)
                 resp_start = len(combined)
                 combined += resp_audio
                 resp_end = len(combined)
@@ -146,43 +146,43 @@ class CueBuilder:
             total = chapters[-1][1]
             audio = audio[:total]
         out_path = AUDIO_OUT_DIR / "cues" / f"{role}_cue.mp4"
-        export_mp4(audio, chapters, out_path)
+        self._export_mp4(audio, chapters, out_path)
         logging.info("Wrote cue file %s with %d chapters", out_path, len(chapters))
         return out_path
 
 
-def write_ffmetadata(chapters: List[Tuple[int, int, str]], path: Path) -> None:
-    lines = [";FFMETADATA1"]
-    for start, end, title in chapters:
-        lines.append("[CHAPTER]")
-        lines.append("TIMEBASE=1/1000")
-        lines.append(f"START={start}")
-        lines.append(f"END={end}")
-        lines.append(f"title={title}")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    @staticmethod
+    def _write_ffmetadata(chapters: List[Tuple[int, int, str]], path: Path) -> None:
+        lines = [";FFMETADATA1"]
+        for start, end, title in chapters:
+            lines.append("[CHAPTER]")
+            lines.append("TIMEBASE=1/1000")
+            lines.append(f"START={start}")
+            lines.append(f"END={end}")
+            lines.append(f"title={title}")
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
-
-def export_mp4(audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path) -> None:
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory() as tmpdir:
-        wav_path = Path(tmpdir) / "tmp.wav"
-        meta_path = Path(tmpdir) / "chapters.txt"
-        audio.export(wav_path, format="wav")
-        write_ffmetadata(chapters, meta_path)
-        cmd = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(wav_path),
-            "-i",
-            str(meta_path),
-            "-map_metadata",
-            "1",
-            "-c:a",
-            "aac",
-            str(out_path),
-        ]
-        subprocess.run(cmd, check=True)
+    def _export_mp4(self, audio: AudioSegment, chapters: List[Tuple[int, int, str]], out_path: Path) -> None:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            wav_path = Path(tmpdir) / "tmp.wav"
+            meta_path = Path(tmpdir) / "chapters.txt"
+            audio.export(wav_path, format="wav")
+            self._write_ffmetadata(chapters, meta_path)
+            cmd = [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(wav_path),
+                "-i",
+                str(meta_path),
+                "-map_metadata",
+                "1",
+                "-c:a",
+                "aac",
+                str(out_path),
+            ]
+            subprocess.run(cmd, check=True)
 
 
 def main() -> None:
