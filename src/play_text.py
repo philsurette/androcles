@@ -12,44 +12,13 @@ from paragraphs import collapse_to_paragraphs
 from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
 from segment_id import SegmentId
 from block_id import BlockId
+from segment import Segment, MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
 
 
 @dataclass
 class Title:
     part_no: int
     title: str
-
-
-@dataclass
-class Segment(ABC):
-    segment_id: SegmentId
-    text: str
-
-    def __str__(self) -> str:
-        return self.text
-
-
-@dataclass
-class MetaSegment(Segment):
-    pass
-
-
-@dataclass
-class DescriptionSegment(Segment):
-    pass
-
-
-@dataclass
-class DirectionSegment(Segment):
-    pass
-
-
-@dataclass
-class SpeechSegment(Segment):
-    role: str
-
-    def __str__(self) -> str:
-        return f"{self.role}: {self.text}"
 
 
 @dataclass
