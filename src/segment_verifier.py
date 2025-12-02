@@ -12,18 +12,9 @@ from pydub import AudioSegment
 
 from paths import RECORDINGS_DIR, SEGMENTS_DIR, AUDIO_OUT_DIR
 from play_plan_builder import PlayPlanBuilder
-from play_text import (
-    PlayTextParser,
-    PlayText,
-    RoleBlock,
-    SpeechSegment,
-    MetaSegment,
-    DescriptionSegment,
-    DirectionSegment,
-    MetaBlock,
-    DescriptionBlock,
-    DirectionBlock,
-)
+from play_text import PlayTextParser, PlayText
+from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
+from block import RoleBlock, MetaBlock, DescriptionBlock, DirectionBlock
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 

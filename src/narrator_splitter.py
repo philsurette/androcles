@@ -19,18 +19,12 @@ from typing import List
 
 from audio_splitter import AudioSplitter
 from play_text import (
-    DirectionBlock,
-    DescriptionBlock,
-    DescriptionSegment,
-    DirectionSegment,
-    MetaBlock,
-    MetaSegment,
     PlayText,
     PlayTextParser,
-    RoleBlock,
-    Segment,
     SpeechSegment,
 )
+from segment import Segment, DirectionSegment, SpeechSegment
+from block import MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
 from paths import RECORDINGS_DIR, SEGMENTS_DIR
 
 
