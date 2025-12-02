@@ -137,7 +137,7 @@ def parse_narrator_map() -> BlockMap:
 def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
     """Build segment-id maps for all roles present in the play."""
     play = play_text or PlayTextParser().parse()
-    return PlayPlanBuilder(play_text=play).load_segment_maps()
+    return play.build_segment_maps()
 
 
 @dataclass
@@ -175,15 +175,7 @@ class PlayPlanBuilder:
         return parts_sorted
 
     def load_segment_maps(self) -> Dict[str, BlockMap]:
-        maps: Dict[str, BlockMap] = {}
-        for _, _, role in self.parse_index():
-            if role in maps:
-                continue
-            if role == "_NARRATOR":
-                maps[role] = parse_narrator_map()
-            else:
-                maps[role] = parse_role_blocks(role)
-        return maps
+        return self.play_text.build_segment_maps()
 
     def build_block_plan(
         self,

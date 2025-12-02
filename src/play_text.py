@@ -393,6 +393,25 @@ class PlayText(List[Block]):
                 entries.append((part, block_no, "_NARRATOR"))
         return entries
 
+    def build_segment_maps(self) -> dict[str, dict[tuple[int | None, int], list[str]]]:
+        """
+        Build mapping role -> {(part, block): [segment_ids]} from in-memory blocks.
+        Segment ids follow the underscore format used in audio filenames.
+        """
+        maps: dict[str, dict[tuple[int | None, int], list[str]]] = {}
+        for blk in self:
+            part = blk.block_id.part_id
+            block_no = blk.block_id.block_no
+            key = (part, block_no)
+            for seg in blk.segments:
+                if isinstance(seg, SpeechSegment):
+                    role = seg.role
+                else:
+                    role = "_NARRATOR"
+                seg_id = f"{'' if part is None else part}_{block_no}_{seg.segment_id.segment_no}"
+                maps.setdefault(role, {}).setdefault(key, []).append(seg_id)
+        return maps
+
 
 class PlayTextParser:
     """Parse a source play text file into a PlayText of Blocks."""
