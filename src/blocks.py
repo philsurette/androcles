@@ -154,13 +154,6 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
     return parts, blocks, index
 
 
-def main() -> None:
-    prepare_output_dirs()
-    _, blocks, index = parse()
-    write_blocks(blocks)
-    write_index(index)
-
-
 def split_block_segments(text: str) -> List[str]:
     """
     Split a block of speech into direction and spoken segments.
@@ -179,7 +172,7 @@ def split_block_segments(text: str) -> List[str]:
             segments.append(pre.strip())
 
         direction = match.group(0)
-        # Attach immediate trailing punctuation (e.g., ".") to the direction.
+        # Attach immediate trailing punctuation (e.g., ".") to the direction, but split expressive cries.
         punct_end = match.end()
         trailing_punct = ""
         while punct_end < len(text) and text[punct_end] in ".,;:!?":
@@ -189,12 +182,14 @@ def split_block_segments(text: str) -> List[str]:
         direction = direction.strip()
         if direction:
             segments.append(direction)
-            if trailing_punct and punct_end == len(text):
-                # If punctuation trails the final direction at end of string, keep it separate.
-                segments.append(trailing_punct)
-            elif trailing_punct:
-                # Otherwise append to previous direction segment.
-                segments[-1] = segments[-1] + trailing_punct
+            if trailing_punct:
+                # If trailing punctuation is an expressive mix of !/? keep it separate as speech.
+                if set(trailing_punct) <= set("?!") and "!" in trailing_punct:
+                    segments.append(trailing_punct)
+                elif punct_end == len(text):
+                    segments.append(trailing_punct)
+                else:
+                    segments[-1] = segments[-1] + trailing_punct
         last_end = punct_end
 
     tail = text[last_end:]

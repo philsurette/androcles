@@ -2252,9 +2252,9 @@ Tommy. Whilst we stand together, no cage for you: no slavery for me.
 (_He goes out with the lion, everybody crowding away to give him as
 wide a berth as possible._)
 
-{{Unnamed appendix - Shaw's commentary on the play}}
+## 3: Appendix ##
 
-{{In this play I have represented one of the Roman persecutions of the
+[[In this play I have represented one of the Roman persecutions of the
 early Christians, not as the conflict of a false theology with a true,
 but as what all such persecutions essentially are: an attempt to
 suppress a propaganda that seemed to threaten the interests involved in
@@ -2273,9 +2273,9 @@ as other people do. The second is by leading the herd to war, which
 immediately and infallibly makes them forget everything, even their
 most cherished and hardwon public liberties and private interests, in
 the irresistible surge of their pugnacity and the tense pre-occupation
-of their terror.}}
+of their terror.]]
 
-{{There is no reason to believe that there was anything more in the Roman
+[[There is no reason to believe that there was anything more in the Roman
 persecutions than this. The attitude of the Roman Emperor and the
 officers of his staff towards the opinions at issue were much the same
 as those of a modern British Home Secretary towards members of the
@@ -2290,9 +2290,9 @@ religious sensibility; but the thing is done because the governing
 classes, provided only the law against blasphemy is not applied to
 themselves, strongly approve of such persecution because it enables
 them to represent their own privileges as part of the religion of the
-country.}}
+country.]]
 
-{{Therefore my martyrs are the martyrs of all time, and my persecutors
+[[Therefore my martyrs are the martyrs of all time, and my persecutors
 the persecutors of all time. My Emperor, who has no sense of the value
 of common people’s lives, and amuses himself with killing as carelessly
 as with sparing, is the sort of monster you can make of any
@@ -2301,9 +2301,9 @@ on by such idols that one of the leading pastors of the Free Churches
 in London denounced my play on the ground that my persecuting Emperor
 is a very fine fellow, and the persecuted Christians ridiculous. From
 which I conclude that a popular pulpit may be as perilous to a man’s
-soul as an imperial throne.}}
+soul as an imperial throne.]]
 
-{{All my articulate Christians, the reader will notice, have different
+[[All my articulate Christians, the reader will notice, have different
 enthusiasms, which they accept as the same religion only because it
 involves them in a common opposition to the official religion and
 consequently in a common doom. Androcles is a humanitarian naturalist,
@@ -2316,9 +2316,9 @@ one period of his development that most Christians were what we call
 wrong uns. No doubt he was to some extent right: I have had occasion
 often to point out that revolutionary movements attract those who are
 not good enough for established institutions as well as those who are
-too good for them.}}
+too good for them.]]
 
-{{But the most striking aspect of the play at this moment is the terrible
+[[But the most striking aspect of the play at this moment is the terrible
 topicality given it by the war. We were at peace when I pointed out, by
 the mouth of Ferrovius, the path of an honest man who finds out, when
 the trumpet sounds, that he cannot follow Jesus. Many years earlier, in
@@ -2382,7 +2382,7 @@ Son are an expression of the fact that our functions and aspects are
 manifold, and that we are all sons and all either potential or actual
 parents, in which case he is strongly suspected by the straiter
 Salvationists of being little better than an Atheist. All these
-varieties, you see, excite remark. They may be very popular with their
+varieties, you see, ex cite remark. They may be very popular with their
 congregations; but they are regarded by the average man as the freaks
 of the Church. The Church, like the society of which it is an organ, is
 balanced and steadied by the great central Philistine mass above whom
@@ -2393,9 +2393,9 @@ home to lunch or dinner, having in fact, for all practical purposes, no
 reasoned convictions at all, and being equally ready to persecute a
 poor Freethinker for saying that St. James was not infallible, and to
 send one of the Peculiar People to prison for being so very peculiar as
-to take St. James seriously.}}
+to take St. James seriously.]]
 
-{{In short, a Christian martyr was thrown to the lions not because he was
+[[In short, a Christian martyr was thrown to the lions not because he was
 a Christian, but because he was a crank: that is, an unusual sort of
 person. And multitudes of people, quite as civilized and amiable as we,
 crowded to see the lions eat him just as they now crowd the lion-house
@@ -2406,7 +2406,7 @@ another for, but simply because they wanted to see a curious and
 exciting spectacle. You, dear reader, have probably run to see a fire;
 and if somebody came in now and told you that a lion was chasing a man
 down the street you would rush to the window. And if anyone were to say
-that you were as cruel as the people who let the lion loose on the man,
+that you were as cruel as the people who let  the lion loose on the man,
 you would be justly indignant. Now that we may no longer see a man
 hanged, we assemble outside the jail to see the black flag run up. That
 is our duller method of enjoying ourselves in the old Roman spirit. And
@@ -2421,9 +2421,9 @@ Anti-Vivisectionists, Flat-Earth men, scoffers at the laboratories, or
 infidels who refuse to kneel down when a procession of doctors goes by.
 But the lions will hurt them just as much, and the spectators will
 enjoy themselves just as much, as the Roman lions and spectators used
-to do.}}
+to do.]]
 
-{{It was currently reported in the Berlin newspapers that when Androcles
+[[It was currently reported in the Berlin newspapers that when Androcles
 was first performed in Berlin, the Crown Prince rose and left the
 house, unable to endure the (_I hope_) very clear and fair exposition
 of autocratic Imperialism given by the Roman captain to his Christian
@@ -2432,4 +2432,4 @@ do the same in London. If the report is correct, I confirm the logic of
 the Crown Prince, and am glad to find myself so well understood. But I
 can assure him that the Empire which served for my model when I wrote
 Androcles was, as he is now finding to his cost, much nearer my home
-than the German one.}}
+than the German one.]]

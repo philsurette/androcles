@@ -16,7 +16,7 @@ from callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
 )
-from play_text import PlayText, PlayTextParser, Block
+from play_text import PlayText, PlayTextParser, Block, BlockId, MetaBlock
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
@@ -93,8 +93,9 @@ class PlayPlanBuilder:
             wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
             if not wav_path.exists():
                 logging.error("Missing snippet %s for role %s", seg_id, role)
-                continue
-            length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
+                length_ms = 0
+            else:
+                length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
             is_last_seg = seg_idx == len(block_segments) - 1
             gap = self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
             plan_items.addClip(
@@ -239,7 +240,7 @@ class PlayPlanBuilder:
                     title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
                     # Lookup text from narrator block if available.
                     first_texts = self.read_block_bullets("_NARRATOR", part, 0)
-                    title_text = first_texts[0]
+                    title_text = first_texts[0] if first_texts else ""
                 if endof_path.exists() and global_idx < total_count - 1:
                     length_ms = len(AudioSegment.from_file(endof_path))
                     plan.addSilence(2000)
@@ -312,7 +313,7 @@ class PlayPlanBuilder:
 
     @staticmethod
     def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
-        """Return bullet texts for the given role/part/block in source order."""
+        """Return bullet texts for the given role/part/block in source order (legacy blocks files)."""
         path = BLOCKS_DIR / f"{role}{BLOCKS_EXT}"
         if not path.exists():
             logging.warning("Block file missing for %s: %s", role, path)

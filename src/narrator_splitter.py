@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import List, Tuple
 import logging
 
-from audio_splitter import detect_spans_ms, export_spans_ffmpeg
+from audio_splitter import AudioSplitter
 from paths import BLOCKS_DIR, BLOCKS_EXT, RECORDINGS_DIR, SEGMENTS_DIR
 
 
@@ -92,8 +92,14 @@ def split_narration(
     logging.info("Processing narrator from %s", src_path)
     pf = "" if part_filter == "_" else part_filter
     expected = parse_narrator_blocks(part_filter=pf)
-    spans = detect_spans_ms(src_path, min_silence_ms, silence_thresh, pad_end_ms=pad_end_ms, chunk_size=chunk_size)
-    export_spans_ffmpeg(src_path, spans, [eid for eid, _ in expected], SEGMENTS_DIR / "_NARRATOR")
+    splitter = AudioSplitter(
+        min_silence_ms=min_silence_ms,
+        silence_thresh=silence_thresh,
+        pad_end_ms=pad_end_ms,
+        chunk_size=chunk_size,
+    )
+    spans = splitter.detect_spans(src_path)
+    splitter.export_spans(src_path, spans, [eid for eid, _ in expected], SEGMENTS_DIR / "_NARRATOR")
 
     if len(spans) != len(expected):
         print(f"WARNING: expected {len(expected)} snippets, got {len(spans)}")

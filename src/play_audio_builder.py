@@ -84,7 +84,7 @@ def instantiate_plan(
     current_chapter_start: int | None = None
 
     for extra in prepend_paths or []:
-            seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
+        seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
         if seg:
             audio += seg
 
@@ -104,14 +104,14 @@ def instantiate_plan(
             if item.path is None:
                 continue
         seg = PlayPlanBuilder.load_audio_by_path(item.path, cache)
-            if seg:
-                audio += seg
+        if seg:
+            audio += seg
 
     if current_chapter_start is not None:
         chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
 
     for extra in append_paths or []:
-            seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
+        seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
         if seg:
             audio += seg
 

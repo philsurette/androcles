@@ -14,7 +14,7 @@ from paths import RECORDINGS_DIR, AUDIO_OUT_DIR
 @dataclass
 class AudioSplitter:
     min_silence_ms: int = 1700
-    silence_thresh: int = -35
+    silence_thresh: int = -45
     pad_end_ms: int | None = None
     chunk_size: int = 50
     pad_start_ms: int | None = None

@@ -142,3 +142,21 @@ if __name__ == "__main__":
     builder = PlayPlanBuilder(play_text=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
     SegmentVerifier(plan=plan).verify_segments()
+
+
+# Backwards-compatible helper for callers expecting a function.
+def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
+    play = PlayTextParser().parse()
+    builder = PlayPlanBuilder(play_text=play)
+    plan, _ = builder.build_audio_plan(parts=builder.list_parts())
+    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high)
+    return verifier.verify_segments()
+
+
+# Backwards-compatible helper to compute rows directly.
+def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
+    play = PlayTextParser().parse()
+    builder = PlayPlanBuilder(play_text=play)
+    plan, _ = builder.build_audio_plan(parts=builder.list_parts())
+    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high)
+    return verifier.compute_rows()
