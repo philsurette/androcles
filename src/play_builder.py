@@ -11,7 +11,7 @@ from play_text import PlayTextParser
 from chapter_builder import ChapterBuilder
 from callout_director import CalloutDirector, ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
 from play_audio_builder import instantiate_plan
-from caption_builder import build_captions
+from caption_builder import CaptionBuilder
 from paths import BUILD_DIR, RECORDINGS_DIR, AUDIO_PLAY_DIR
 
 
@@ -107,7 +107,7 @@ def build_audio(
     captions_path: Path | None = None
     if generate_captions:
         captions_path = BUILD_DIR / "captions.vtt"
-        build_captions(plan, captions_path, include_callouts=include_callouts)
+        CaptionBuilder(plan, include_callouts=include_callouts).build(captions_path)
         logging.info("Wrote captions to %s", captions_path)
     if generate_audio:
         logging.info("Generating audioplay to %s", out_path)
