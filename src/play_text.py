@@ -304,6 +304,17 @@ class Role:
             return list(self.blocks)
         return [blk for blk in self.blocks if blk.block_id.part_id == part_no]
 
+    def segments(self, part_no: int | None = None) -> dict[tuple[int | None, int], list[str]]:
+        """Return mapping (part, block) -> ordered segment ids for this role."""
+        mapping: dict[tuple[int | None, int], list[str]] = {}
+        for blk in self.getBlocks(part_no):
+            key = (blk.block_id.part_id, blk.block_id.block_no)
+            for seg in blk.segments:
+                if isinstance(seg, SpeechSegment) and seg.role == self.name:
+                    seg_id = f"{'' if key[0] is None else key[0]}_{key[1]}_{seg.segment_id.segment_no}"
+                    mapping.setdefault(key, []).append(seg_id)
+        return mapping
+
 
 @dataclass
 class Part:
@@ -434,17 +445,21 @@ class PlayText(List[Block]):
         Segment ids follow the underscore format used in audio filenames.
         """
         maps: dict[str, dict[tuple[int | None, int], list[str]]] = {}
+        # Build from role blocks.
+        for role in self.getRoles():
+            maps[role.name] = role.segments()
+
+        # Add narrator segments from non-role blocks (directions, descriptions, meta).
         for blk in self:
+            if isinstance(blk, RoleBlock):
+                continue
             part = blk.block_id.part_id
             block_no = blk.block_id.block_no
             key = (part, block_no)
             for seg in blk.segments:
-                if isinstance(seg, SpeechSegment):
-                    role = seg.role
-                else:
-                    role = "_NARRATOR"
                 seg_id = f"{'' if part is None else part}_{block_no}_{seg.segment_id.segment_no}"
-                maps.setdefault(role, {}).setdefault(key, []).append(seg_id)
+                maps.setdefault("_NARRATOR", {}).setdefault(key, []).append(seg_id)
+
         return maps
 
 
