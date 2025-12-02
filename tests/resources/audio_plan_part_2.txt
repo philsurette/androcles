@@ -1,0 +1,1093 @@
+00:00.000 [silence 1000ms]
+00:01.000 build/audio/segments/_NARRATOR/2_0_1.wav: 2:0:1:_NARRATOR - ACT II
+00:02.200 [silence 300ms]
+00:02.500 plays/androcles/recordings/_LIBRIVOX_EACH_PART.wav: _LIBRIVOX_EACH_PART
+00:15.008 [silence 1000ms]
+00:16.008 build/audio/segments/_NARRATOR/2_1_1.wav: 2:1:1:_NARRATOR - Behind the Emperor’s box at the Coliseum, where the performers assemble before entering the arena. In the middle a wide passage leading to the arena descends from the floor level under the imperial box. On both sides of this passage steps ascend to a landing at the back entrance to the box. The landing forms a bridge across the passage. At the entrance to the passage are two bronze mirrors, one on each side.
+00:38.108 [silence 1000ms]
+00:39.108 build/audio/segments/_NARRATOR/2_2_1.wav: 2:2:1:_NARRATOR - On the west side of this passage, on the right hand of any one coming from the box and standing on the bridge, the martyrs are sitting on the steps. Lavinia is seated half-way up, thoughtful, trying to look death in the face. On her left Androcles consoles himself by nursing a cat. Ferrovius stands behind them, his eyes blazing, his figure stiff with intense resolution. At the foot of the steps crouches Spintho, with his head clutched in his hands, full of horror at the approach of martyrdom.
+01:04.958 [silence 1000ms]
+01:05.958 build/audio/segments/_NARRATOR/2_3_1.wav: 2:3:1:_NARRATOR - On the east side of the passage the gladiators are standing and sitting at ease, waiting, like the Christians, for their turn in the arena. One (_Retiarius_) is a nearly naked man with a net and a trident. Another (_Secutor_) is in armor with a sword. He carries a helmet with a barred visor. The editor of the gladiators sits on a chair a little apart from them.
+01:27.358 [silence 1000ms]
+01:28.358 build/audio/segments/_NARRATOR/2_4_1.wav: 2:4:1:_NARRATOR - The Call Boy enters from the passage.
+01:30.708 [silence 1000ms]
+01:31.708 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+01:32.220 [silence 300ms]
+01:32.520 build/audio/segments/CALL BOY/2_5_1.wav: 2:5:1:CALL BOY - Number six. Retiarius versus Secutor.
+01:35.870 [silence 1000ms]
+01:36.870 build/audio/segments/_NARRATOR/2_6_1.wav: 2:6:1:_NARRATOR - The gladiator with the net picks it up. The gladiator with the helmet puts it on; and the two go into the arena, the net thrower taking out a little brush and arranging his hair as he goes, the other tightening his straps and shaking his shoulders loose. Both look at themselves in the mirrors before they enter the passage.
+01:51.970 [silence 1000ms]
+01:52.970 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+01:53.482 [silence 300ms]
+01:53.782 build/audio/segments/LAVINIA/2_7_1.wav: 2:7:1:LAVINIA - Will they really kill one another?
+01:55.332 [silence 1000ms]
+01:56.332 plays/androcles/callouts/SPINTHO_callout.wav: SPINTHO
+01:56.889 [silence 300ms]
+01:57.189 build/audio/segments/SPINTHO/2_8_1.wav: 2:8:1:SPINTHO - Yes, if the people turn down their thumbs.
+02:00.039 [silence 1000ms]
+02:01.039 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+02:01.551 [silence 300ms]
+02:01.851 build/audio/segments/EDITOR/2_9_1.wav: 2:9:1:EDITOR - You know nothing about it. The people indeed! Do you suppose we would kill a man worth perhaps fifty talents to please the riffraff? I should like to catch any of my men at it.
+02:16.401 [silence 1000ms]
+02:17.401 build/audio/segments/SPINTHO/2_10_1.wav: 2:10:1:SPINTHO - I thought—
+02:18.201 [silence 1000ms]
+02:19.201 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+02:19.713 [silence 300ms]
+02:20.013 build/audio/segments/_NARRATOR/2_11_1.wav: 2:11:1:_NARRATOR - (_contemptuously_)
+02:21.313 [silence 1000ms]
+02:22.313 build/audio/segments/EDITOR/2_11_2.wav: 2:11:2:EDITOR - You thought! Who cares what you think? You’ll be killed all right enough.
+02:27.963 [silence 1000ms]
+02:28.963 plays/androcles/callouts/SPINTHO_callout.wav: SPINTHO
+02:29.520 [silence 300ms]
+02:29.820 build/audio/segments/_NARRATOR/2_12_1.wav: 2:12:1:_NARRATOR - (_groans and again hides his face_)!!!
+02:31.820 [silence 1000ms]
+02:32.820 build/audio/segments/SPINTHO/2_12_2.wav: 2:12:2:SPINTHO - Then is nobody ever killed except us poor—
+02:35.320 [silence 1000ms]
+02:36.320 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+02:36.832 [silence 300ms]
+02:37.132 build/audio/segments/LAVINIA/2_13_1.wav: 2:13:1:LAVINIA - Christians?
+02:38.032 [silence 1000ms]
+02:39.032 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+02:39.544 [silence 300ms]
+02:39.844 build/audio/segments/EDITOR/2_14_1.wav: 2:14:1:EDITOR - If the vestal virgins turn down their thumbs, that’s another matter. They’re ladies of rank.
+02:46.244 [silence 1000ms]
+02:47.244 build/audio/segments/LAVINIA/2_15_1.wav: 2:15:1:LAVINIA - Does the Emperor ever interfere?
+02:49.044 [silence 1000ms]
+02:50.044 build/audio/segments/EDITOR/2_16_1.wav: 2:16:1:EDITOR - Oh, yes: he turns his thumbs up fast enough if the vestal virgins want to have one of his pet fighting men killed.
+02:57.644 [silence 1000ms]
+02:58.644 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+02:59.346 [silence 300ms]
+02:59.646 build/audio/segments/ANDROCLES/2_17_1.wav: 2:17:1:ANDROCLES - But don’t they ever just only pretend to kill one another? Why shouldn’t you pretend to die, and get dragged out as if you were dead; and then get up and go home, like an actor?
+03:10.296 [silence 1000ms]
+03:11.296 build/audio/segments/EDITOR/2_18_1.wav: 2:18:1:EDITOR - See here: you want to know too much. There will be no pretending about the new lion: let that be enough for you. He’s hungry.
+03:20.846 [silence 1000ms]
+03:21.846 plays/androcles/callouts/SPINTHO_callout.wav: SPINTHO
+03:22.403 [silence 300ms]
+03:22.703 build/audio/segments/_NARRATOR/2_19_1.wav: 2:19:1:_NARRATOR - (_groaning with horror_)
+03:24.053 [silence 1000ms]
+03:25.053 build/audio/segments/SPINTHO/2_19_2.wav: 2:19:2:SPINTHO - Oh, Lord! Can’t you stop talking about it? Isn’t it bad enough for us without that?
+03:29.853 [silence 1000ms]
+03:30.853 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+03:31.555 [silence 300ms]
+03:31.855 build/audio/segments/ANDROCLES/2_20_1.wav: 2:20:1:ANDROCLES - I’m glad he’s hungry. Not that I want him to suffer, poor chap! but then he’ll enjoy eating me so much more. There’s a cheerful side to everything.
+03:40.455 [silence 1000ms]
+03:41.455 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+03:41.967 [silence 300ms]
+03:42.267 build/audio/segments/_NARRATOR/2_21_1.wav: 2:21:1:_NARRATOR - (_rising and striding over to Androcles_)
+03:44.717 [silence 1000ms]
+03:45.717 build/audio/segments/EDITOR/2_21_2.wav: 2:21:2:EDITOR - Here: don’t you be obstinate. Come with me and drop the pinch of incense on the altar. That’s all you need do to be let off.
+03:57.117 [silence 1000ms]
+03:58.117 build/audio/segments/ANDROCLES/2_22_1.wav: 2:22:1:ANDROCLES - No: thank you very much indeed; but I really mustn’t.
+04:01.617 [silence 1000ms]
+04:02.617 build/audio/segments/EDITOR/2_23_1.wav: 2:23:1:EDITOR - What! Not to save your life?
+04:05.617 [silence 1000ms]
+04:06.617 build/audio/segments/ANDROCLES/2_24_1.wav: 2:24:1:ANDROCLES - I’d rather not. I couldn’t sacrifice to Diana: she’s a huntress, you know, and kills things.
+04:12.317 [silence 1000ms]
+04:13.317 build/audio/segments/EDITOR/2_25_1.wav: 2:25:1:EDITOR - That don’t matter. You can choose your own altar. Sacrifice to Jupiter: he likes animals: he turns himself into an animal when he goes off duty.
+04:25.767 [silence 1000ms]
+04:26.767 build/audio/segments/ANDROCLES/2_26_1.wav: 2:26:1:ANDROCLES - No: it’s very kind of you; but I feel I can’t save myself that way.
+04:31.617 [silence 1000ms]
+04:32.617 build/audio/segments/EDITOR/2_27_1.wav: 2:27:1:EDITOR - But I don’t ask you to do it to save yourself: I ask you to do it to oblige me personally.
+04:40.367 [silence 1000ms]
+04:41.367 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+04:42.069 [silence 300ms]
+04:42.369 build/audio/segments/_NARRATOR/2_28_1.wav: 2:28:1:_NARRATOR - (_scrambling up in the greatest agitation_)
+04:44.769 [silence 1000ms]
+04:45.769 build/audio/segments/ANDROCLES/2_28_2.wav: 2:28:2:ANDROCLES - Oh, please don’t say that. That is dreadful. You mean so kindly by me that it seems quite horrible to disoblige you. If you could arrange for me to sacrifice when there’s nobody looking, I shouldn’t mind. But I must go into the arena with the rest. My honor, you know.
+05:01.869 [silence 1000ms]
+05:02.869 build/audio/segments/EDITOR/2_29_1.wav: 2:29:1:EDITOR - Honor! The honor of a tailor?
+05:06.569 [silence 1000ms]
+05:07.569 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+05:08.271 [silence 300ms]
+05:08.571 build/audio/segments/_NARRATOR/2_30_1.wav: 2:30:1:_NARRATOR - (_apologetically_)
+05:09.771 [silence 1000ms]
+05:10.771 build/audio/segments/ANDROCLES/2_30_2.wav: 2:30:2:ANDROCLES - Well, perhaps honor is too strong an expression. Still, you know, I couldn’t allow the tailors to get a bad name through me.
+05:17.821 [silence 1000ms]
+05:18.821 build/audio/segments/EDITOR/2_31_1.wav: 2:31:1:EDITOR - How much will you remember of all that when you smell the beast’s breath and see his jaws opening to tear out your throat?
+05:27.721 [silence 1000ms]
+05:28.721 plays/androcles/callouts/SPINTHO_callout.wav: SPINTHO
+05:29.278 [silence 300ms]
+05:29.578 build/audio/segments/_NARRATOR/2_32_1.wav: 2:32:1:_NARRATOR - (_rising with a yell of terror_)
+05:31.228 [silence 1000ms]
+05:32.228 build/audio/segments/SPINTHO/2_32_2.wav: 2:32:2:SPINTHO - I can’t bear it. Where’s the altar? I’ll sacrifice.
+05:35.728 [silence 1000ms]
+05:36.728 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+05:37.419 [silence 300ms]
+05:37.719 build/audio/segments/FERROVIUS/2_33_1.wav: 2:33:1:FERROVIUS - Dog of an apostate. Iscariot!
+05:40.719 [silence 1000ms]
+05:41.719 build/audio/segments/SPINTHO/2_34_1.wav: 2:34:1:SPINTHO - I’ll repent afterwards. I fully mean to die in the arena I’ll die a martyr and go to heaven; but not this time, not now, not until my nerves are better. Besides, I’m too young: I want to have just one more good time.
+05:54.769 [silence 1000ms]
+05:55.769 build/audio/segments/_NARRATOR/2_34_2.wav: 2:34:2:_NARRATOR - (_The gladiators laugh at him._)
+05:57.319 [silence 1000ms]
+05:58.319 build/audio/segments/SPINTHO/2_34_3.wav: 2:34:3:SPINTHO - Oh, will no one tell me where the altar is?
+06:01.907 [silence 1000ms]
+06:02.907 build/audio/segments/_NARRATOR/2_34_4.wav: 2:34:4:_NARRATOR - (_He dashes into the passage and vanishes._)
+06:05.257 [silence 1000ms]
+06:06.257 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+06:06.959 [silence 300ms]
+06:07.259 build/audio/segments/_NARRATOR/2_35_1.wav: 2:35:1:_NARRATOR - (_to the Editor, pointing after Spintho_)
+06:09.709 [silence 1000ms]
+06:10.709 build/audio/segments/ANDROCLES/2_35_2.wav: 2:35:2:ANDROCLES - Brother: I can’t do that, not even to oblige you. Don’t ask me.
+06:16.009 [silence 1000ms]
+06:17.009 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+06:17.521 [silence 300ms]
+06:17.821 build/audio/segments/EDITOR/2_36_1.wav: 2:36:1:EDITOR - Well, if you’re determined to die, I can’t help you. But I wouldn’t be put off by a swine like that.
+06:25.171 [silence 1000ms]
+06:26.171 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+06:26.862 [silence 300ms]
+06:27.162 build/audio/segments/FERROVIUS/2_37_1.wav: 2:37:1:FERROVIUS - Peace, peace: tempt him not. Get thee behind him, Satan.
+06:32.712 [silence 1000ms]
+06:33.712 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+06:34.224 [silence 300ms]
+06:34.524 build/audio/segments/_NARRATOR/2_38_1.wav: 2:38:1:_NARRATOR - (_flushing with rage_)
+06:35.924 [silence 1000ms]
+06:36.924 build/audio/segments/EDITOR/2_38_2.wav: 2:38:2:EDITOR - For two pins I’d take a turn in the arena myself to-day, and pay you out for daring to talk to me like that.
+06:45.324 [silence 1000ms]
+06:46.324 build/audio/segments/_NARRATOR/2_39_1.wav: 2:39:1:_NARRATOR - Ferrovius springs forward.
+06:48.174 [silence 1000ms]
+06:49.174 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+06:49.686 [silence 300ms]
+06:49.986 build/audio/segments/_NARRATOR/2_40_1.wav: 2:40:1:_NARRATOR - (_rising quickly and interposing_)
+06:51.836 [silence 1000ms]
+06:52.836 build/audio/segments/LAVINIA/2_40_2.wav: 2:40:2:LAVINIA - Brother, brother: you forget.
+06:54.736 [silence 1000ms]
+06:55.736 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+06:56.427 [silence 300ms]
+06:56.727 build/audio/segments/_NARRATOR/2_41_1.wav: 2:41:1:_NARRATOR - (_curbing himself by a mighty effort_)
+06:58.677 [silence 1000ms]
+06:59.677 build/audio/segments/FERROVIUS/2_41_2.wav: 2:41:2:FERROVIUS - Oh, my temper, my wicked temper!
+07:03.627 [silence 1000ms]
+07:04.627 build/audio/segments/_NARRATOR/2_41_3.wav: 2:41:3:_NARRATOR - (_To the Editor, as Lavinia sits down again, reassured._)
+07:07.977 [silence 1000ms]
+07:08.977 build/audio/segments/FERROVIUS/2_41_4.wav: 2:41:4:FERROVIUS - Forgive me, brother. My heart was full of wrath: I should have been thinking of your dear precious soul.
+07:17.027 [silence 1000ms]
+07:18.027 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+07:18.539 [silence 300ms]
+07:18.839 build/audio/segments/EDITOR/2_42_1.wav: 2:42:1:EDITOR - Yah!
+07:19.789 [silence 1000ms]
+07:20.789 build/audio/segments/_NARRATOR/2_42_2.wav: 2:42:2:_NARRATOR - (_He turns his back on Ferrovius contemptuously, and goes back to his seat._)
+07:24.389 [silence 1000ms]
+07:25.389 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+07:26.080 [silence 300ms]
+07:26.380 build/audio/segments/_NARRATOR/2_43_1.wav: 2:43:1:_NARRATOR - (_continuing_)
+07:27.330 [silence 1000ms]
+07:28.330 build/audio/segments/FERROVIUS/2_43_2.wav: 2:43:2:FERROVIUS - And I forgot it all: I thought of nothing but offering to fight you with one hand tied behind me.
+07:35.580 [silence 1000ms]
+07:36.580 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+07:37.092 [silence 300ms]
+07:37.392 build/audio/segments/_NARRATOR/2_44_1.wav: 2:44:1:_NARRATOR - (_turning pugnaciously_)
+07:38.892 [silence 1000ms]
+07:39.892 build/audio/segments/EDITOR/2_44_2.wav: 2:44:2:EDITOR - What!
+07:40.942 [silence 1000ms]
+07:41.942 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+07:42.633 [silence 300ms]
+07:42.933 build/audio/segments/_NARRATOR/2_45_1.wav: 2:45:1:_NARRATOR - (_on the border line between zeal and ferocity_)
+07:45.383 [silence 1000ms]
+07:46.383 build/audio/segments/FERROVIUS/2_45_2.wav: 2:45:2:FERROVIUS - Oh, don’t give way to pride and wrath, brother. I could do it so easily. I could—
+07:53.033 [silence 1000ms]
+07:54.033 build/audio/segments/_NARRATOR/2_46_1.wav: 2:46:1:_NARRATOR - They are separated by the Menagerie Keeper, who rushes in from the passage, furious.
+07:58.383 [silence 1000ms]
+07:59.383 plays/androcles/callouts/KEEPER_callout.wav: KEEPER
+07:59.795 [silence 300ms]
+08:00.095 build/audio/segments/KEEPER/2_47_1.wav: 2:47:1:KEEPER - Here’s a nice business! Who let that Christian out of here down to the dens when we were changing the lion into the cage next the arena?
+08:08.895 [silence 1000ms]
+08:09.895 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+08:10.407 [silence 300ms]
+08:10.707 build/audio/segments/EDITOR/2_48_1.wav: 2:48:1:EDITOR - Nobody let him. He let himself.
+08:14.057 [silence 1000ms]
+08:15.057 build/audio/segments/KEEPER/2_49_1.wav: 2:49:1:KEEPER - Well, the lion’s ate him.
+08:17.507 [silence 1000ms]
+08:18.507 build/audio/segments/_NARRATOR/2_50_1.wav: 2:50:1:_NARRATOR - Consternation. The Christians rise, greatly agitated. The gladiators sit callously, but are highly amused. All speak or cry out or laugh at once. Tumult.
+08:27.757 [silence 1000ms]
+08:28.757 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+08:29.269 [silence 300ms]
+08:29.569 build/audio/segments/LAVINIA/2_51_1.wav: 2:51:1:LAVINIA - Oh, poor wretch!
+08:30.919 [silence 1000ms]
+08:31.919 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+08:32.610 [silence 300ms]
+08:32.910 build/audio/segments/FERROVIUS/2_52_1.wav: 2:52:1:FERROVIUS - The apostate has perished. Praise be to God’s justice!
+08:37.560 [silence 1000ms]
+08:38.560 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+08:39.262 [silence 300ms]
+08:39.562 build/audio/segments/ANDROCLES/2_53_1.wav: 2:53:1:ANDROCLES - The poor beast was starving. It couldn’t help itself.
+08:43.412 [silence 1000ms]
+08:44.412 plays/androcles/callouts/CHRISTIANS_callout.wav: CHRISTIANS
+08:45.002 [silence 300ms]
+08:45.302 build/audio/segments/CHRISTIANS/2_54_1.wav: 2:54:1:CHRISTIANS - What! Ate him! How frightful! How terrible! Without a moment to repent! God be merciful to him, a sinner! Oh, I can’t bear to think of it! In the midst of his sin! Horrible, horrible!
+08:59.352 [silence 1000ms]
+09:00.352 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+09:00.864 [silence 300ms]
+09:01.164 build/audio/segments/EDITOR/2_55_1.wav: 2:55:1:EDITOR - Serve the rotter right!
+09:03.314 [silence 1000ms]
+09:04.314 plays/androcles/callouts/GLADIATORS_callout.wav: GLADIATORS
+09:05.155 [silence 300ms]
+09:05.455 build/audio/segments/GLADIATORS/2_56_1.wav: 2:56:1:GLADIATORS - Just walked into it, he did. He’s martyred all right enough. Good old lion! Old Jock doesn’t like that: look at his face. Devil a better! The Emperor will laugh when he hears of it. I can’t help smiling. Ha ha ha!!!!!
+09:24.005 [silence 1000ms]
+09:25.005 plays/androcles/callouts/KEEPER_callout.wav: KEEPER
+09:25.417 [silence 300ms]
+09:25.717 build/audio/segments/KEEPER/2_57_1.wav: 2:57:1:KEEPER - Now his appetite’s taken off, he won’t as much as look at another Christian for a week.
+09:30.367 [silence 1000ms]
+09:31.367 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+09:32.069 [silence 300ms]
+09:32.369 build/audio/segments/ANDROCLES/2_58_1.wav: 2:58:1:ANDROCLES - Couldn’t you have saved him brother?
+09:34.269 [silence 1000ms]
+09:35.269 build/audio/segments/KEEPER/2_59_1.wav: 2:59:1:KEEPER - Saved him! Saved him from a lion that I’d just got mad with hunger! a wild one that came out of the forest not four weeks ago! He bolted him before you could say Balbus.
+09:45.669 [silence 1000ms]
+09:46.669 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+09:47.181 [silence 300ms]
+09:47.481 build/audio/segments/_NARRATOR/2_60_1.wav: 2:60:1:_NARRATOR - (_sitting down again_)
+09:48.531 [silence 1000ms]
+09:49.531 build/audio/segments/LAVINIA/2_60_2.wav: 2:60:2:LAVINIA - Poor Spintho! And it won’t even count as martyrdom!
+09:52.431 [silence 1000ms]
+09:53.431 build/audio/segments/KEEPER/2_61_1.wav: 2:61:1:KEEPER - Serve him right! What call had he to walk down the throat of one of my lions before he was asked?
+10:00.181 [silence 1000ms]
+10:01.181 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+10:01.883 [silence 300ms]
+10:02.183 build/audio/segments/ANDROCLES/2_62_1.wav: 2:62:1:ANDROCLES - Perhaps the lion won’t eat me now.
+10:04.533 [silence 1000ms]
+10:05.533 build/audio/segments/KEEPER/2_63_1.wav: 2:63:1:KEEPER - Yes: that’s just like a Christian: think only of yourself! What am I to do? What am I to say to the Emperor when he sees one of my lions coming into the arena half asleep?
+10:15.383 [silence 1000ms]
+10:16.383 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+10:16.895 [silence 300ms]
+10:17.195 build/audio/segments/EDITOR/2_64_1.wav: 2:64:1:EDITOR - Say nothing. Give your old lion some bitters and a morsel of fried fish to wake up his appetite.
+10:25.395 [silence 1000ms]
+10:26.395 build/audio/segments/_NARRATOR/2_64_2.wav: 2:64:2:_NARRATOR - (_Laughter._)
+10:27.195 [silence 1000ms]
+10:28.195 build/audio/segments/KEEPER/2_65_1.wav: 2:65:1:KEEPER - Yes: it’s easy for you to talk; but—
+10:30.195 [silence 1000ms]
+10:31.195 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+10:31.707 [silence 300ms]
+10:32.007 build/audio/segments/_NARRATOR/2_66_1.wav: 2:66:1:_NARRATOR - (_scrambling to his feet_)
+10:33.357 [silence 1000ms]
+10:34.357 build/audio/segments/EDITOR/2_66_2.wav: 2:66:2:EDITOR - Sh! Attention there! The Emperor.
+10:38.607 [silence 1000ms]
+10:39.607 build/audio/segments/_NARRATOR/2_66_3.wav: 2:66:3:_NARRATOR - (_The Keeper bolts precipitately into the passage. The gladiators rise smartly and form into line._)
+10:45.457 [silence 1000ms]
+10:46.457 plays/androcles/callouts/GLADIATORS_callout.wav: GLADIATORS
+10:47.298 [silence 300ms]
+10:47.598 build/audio/segments/GLADIATORS/2_67_1.wav: 2:67:1:GLADIATORS - Hail, Caesar! those about to die salute thee.
+10:51.886 [silence 1000ms]
+10:52.886 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+10:53.315 [silence 300ms]
+10:53.615 build/audio/segments/CAESAR/2_68_1.wav: 2:68:1:CAESAR - Good morrow, friends.
+10:55.815 [silence 1000ms]
+10:56.815 build/audio/segments/_NARRATOR/2_69_1.wav: 2:69:1:_NARRATOR - Metellus shakes hands with the Editor, who accepts his condescension with bluff respect.
+11:01.215 [silence 1000ms]
+11:02.215 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+11:02.727 [silence 300ms]
+11:03.027 build/audio/segments/LAVINIA/2_70_1.wav: 2:70:1:LAVINIA - Blessing, Caesar, and forgiveness!
+11:04.977 [silence 1000ms]
+11:05.977 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+11:06.406 [silence 300ms]
+11:06.706 build/audio/segments/_NARRATOR/2_71_1.wav: 2:71:1:_NARRATOR - (_turning in some surprise at the salutation_)
+11:08.956 [silence 1000ms]
+11:09.956 build/audio/segments/CAESAR/2_71_2.wav: 2:71:2:CAESAR - There is no forgiveness for Christianity.
+11:12.306 [silence 1000ms]
+11:13.306 build/audio/segments/LAVINIA/2_72_1.wav: 2:72:1:LAVINIA - I did not mean that, Caesar. I mean that we forgive you.
+11:17.006 [silence 1000ms]
+11:18.006 plays/androcles/callouts/METELLUS_callout.wav: METELLUS
+11:18.585 [silence 300ms]
+11:18.885 build/audio/segments/METELLUS/2_73_1.wav: 2:73:1:METELLUS - An inconceivable liberty! Do you not know, woman, that the Emperor can do no wrong and therefore cannot be forgiven?
+11:24.885 [silence 1000ms]
+11:25.885 build/audio/segments/LAVINIA/2_74_1.wav: 2:74:1:LAVINIA - I expect the Emperor knows better. Anyhow, we forgive him.
+11:29.635 [silence 1000ms]
+11:30.635 plays/androcles/callouts/CHRISTIANS_callout.wav: CHRISTIANS
+11:31.225 [silence 300ms]
+11:31.525 build/audio/segments/CHRISTIANS/2_75_1.wav: 2:75:1:CHRISTIANS - Amen!
+11:34.265 [silence 1000ms]
+11:35.265 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+11:35.694 [silence 300ms]
+11:35.994 build/audio/segments/CAESAR/2_76_1.wav: 2:76:1:CAESAR - Metellus: you see now the disadvantage of too much severity. These people have no hope; therefore they have nothing to restrain them from saying what they like to me. They are almost as impertinent as the gladiators. Which is the Greek sorcerer?
+11:48.994 [silence 1000ms]
+11:49.994 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+11:50.696 [silence 300ms]
+11:50.996 build/audio/segments/_NARRATOR/2_77_1.wav: 2:77:1:_NARRATOR - (_humbly touching his forelock_)
+11:52.596 [silence 1000ms]
+11:53.596 build/audio/segments/ANDROCLES/2_77_2.wav: 2:77:2:ANDROCLES - Me, your Worship.
+11:54.696 [silence 1000ms]
+11:55.696 build/audio/segments/CAESAR/2_78_1.wav: 2:78:1:CAESAR - My Worship! Good! A new title. Well, what miracles can you perform?
+12:00.546 [silence 1000ms]
+12:01.546 build/audio/segments/ANDROCLES/2_79_1.wav: 2:79:1:ANDROCLES - I can cure warts by rubbing them with my tailor’s chalk; and I can live with my wife without beating her.
+12:07.946 [silence 1000ms]
+12:08.946 build/audio/segments/CAESAR/2_80_1.wav: 2:80:1:CAESAR - Is that all?
+12:09.746 [silence 1000ms]
+12:10.746 build/audio/segments/ANDROCLES/2_81_1.wav: 2:81:1:ANDROCLES - You don’t know her, Caesar, or you wouldn’t say that.
+12:13.646 [silence 1000ms]
+12:14.646 build/audio/segments/CAESAR/2_82_1.wav: 2:82:1:CAESAR - Ah, well, my friend, we shall no doubt contrive a happy release for you. Which is Ferrovius?
+12:19.896 [silence 1000ms]
+12:20.896 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+12:21.587 [silence 300ms]
+12:21.887 build/audio/segments/FERROVIUS/2_83_1.wav: 2:83:1:FERROVIUS - I am he.
+12:23.287 [silence 1000ms]
+12:24.287 build/audio/segments/CAESAR/2_84_1.wav: 2:84:1:CAESAR - They tell me you can fight.
+12:26.337 [silence 1000ms]
+12:27.337 build/audio/segments/FERROVIUS/2_85_1.wav: 2:85:1:FERROVIUS - It is easy to fight. I can die, Caesar.
+12:31.487 [silence 1000ms]
+12:32.487 build/audio/segments/CAESAR/2_86_1.wav: 2:86:1:CAESAR - That is still easier, is it not?
+12:34.537 [silence 1000ms]
+12:35.537 build/audio/segments/FERROVIUS/2_87_1.wav: 2:87:1:FERROVIUS - Not to me, Caesar. Death comes hard to my flesh; and fighting comes very easily to my spirit
+12:42.987 [silence 1000ms]
+12:43.987 build/audio/segments/_NARRATOR/2_87_2.wav: 2:87:2:_NARRATOR - (_beating his breast and lamenting_)
+12:45.837 [silence 1000ms]
+12:46.837 build/audio/segments/FERROVIUS/2_87_3.wav: 2:87:3:FERROVIUS - O sinner that I am!
+12:49.187 [silence 1000ms]
+12:50.187 build/audio/segments/_NARRATOR/2_87_4.wav: 2:87:4:_NARRATOR - (_He throws himself down on the steps, deeply discouraged._)
+12:53.437 [silence 1000ms]
+12:54.437 build/audio/segments/CAESAR/2_88_1.wav: 2:88:1:CAESAR - Metellus: I should like to have this man in the Pretorian Guard.
+12:57.987 [silence 1000ms]
+12:58.987 plays/androcles/callouts/METELLUS_callout.wav: METELLUS
+12:59.566 [silence 300ms]
+12:59.866 build/audio/segments/METELLUS/2_89_1.wav: 2:89:1:METELLUS - I should not, Caesar. He looks a spoilsport. There are men in whose presence it is impossible to have any fun: men who are a sort of walking conscience. He would make us all uncomfortable.
+13:10.864 [silence 1000ms]
+13:11.864 build/audio/segments/CAESAR/2_90_1.wav: 2:90:1:CAESAR - For that reason, perhaps, it might be well to have him. An Emperor can hardly have too many consciences.
+13:17.564 [silence 1000ms]
+13:18.564 build/audio/segments/_NARRATOR/2_90_2.wav: 2:90:2:_NARRATOR - (_To Ferrovius_)
+13:19.814 [silence 1000ms]
+13:20.814 build/audio/segments/CAESAR/2_90_3.wav: 2:90:3:CAESAR - Listen, Ferrovius.
+13:22.464 [silence 1000ms]
+13:23.464 build/audio/segments/_NARRATOR/2_90_4.wav: 2:90:4:_NARRATOR - (_Ferrovius shakes his head and will not look up._)
+13:26.464 [silence 1000ms]
+13:27.464 build/audio/segments/CAESAR/2_90_5.wav: 2:90:5:CAESAR - You and your friends shall not be outnumbered to-day in the arena. You shall have arms; and there will be no more than one gladiator to each Christian. If you come out of the arena alive, I will consider favorably any request of yours, and give you a place in the Pretorian Guard. Even if the request be that no questions be asked about your faith I shall perhaps not refuse it.
+13:46.614 [silence 1000ms]
+13:47.614 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+13:48.305 [silence 300ms]
+13:48.605 build/audio/segments/FERROVIUS/2_91_1.wav: 2:91:1:FERROVIUS - I will not fight. I will die. Better stand with the archangels than with the Pretorian Guard.
+13:55.605 [silence 1000ms]
+13:56.605 build/audio/segments/CAESAR/2_92_1.wav: 2:92:1:CAESAR - I cannot believe that the archangels—whoever they may be—would not prefer to be recruited from the Pretorian Guard. However, as you please. Come: let us see the show.
+14:06.505 [silence 1000ms]
+14:07.505 build/audio/segments/_NARRATOR/2_93_1.wav: 2:93:1:_NARRATOR - As the Court ascends the steps, Secutor and the Retiarius return from the arena through the passage; Secutor covered with dust and very angry: Retiarius grinning.
+14:17.305 [silence 1000ms]
+14:18.305 plays/androcles/callouts/SECUTOR_callout.wav: SECUTOR
+14:18.940 [silence 300ms]
+14:19.240 build/audio/segments/SECUTOR/2_94_1.wav: 2:94:1:SECUTOR - Ha, the Emperor. Now we shall see. Caesar: I ask you whether it is fair for the Retiarius, instead of making a fair throw of his net at me, to swish it along the ground and throw the dust in my eyes, and then catch me when I’m blinded. If the vestals had not turned up their thumbs I should have been a dead man.
+14:37.990 [silence 1000ms]
+14:38.990 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+14:39.419 [silence 300ms]
+14:39.719 build/audio/segments/_NARRATOR/2_95_1.wav: 2:95:1:_NARRATOR - (_halting on the stair_)
+14:41.069 [silence 1000ms]
+14:42.069 build/audio/segments/CAESAR/2_95_2.wav: 2:95:2:CAESAR - There is nothing in the rules against it.
+14:44.019 [silence 1000ms]
+14:45.019 plays/androcles/callouts/SECUTOR_callout.wav: SECUTOR
+14:45.654 [silence 300ms]
+14:45.954 build/audio/segments/_NARRATOR/2_96_1.wav: 2:96:1:_NARRATOR - (_indignantly_)
+14:47.054 [silence 1000ms]
+14:48.054 build/audio/segments/SECUTOR/2_96_2.wav: 2:96:2:SECUTOR - Caesar: is it a dirty trick or is it not?
+14:51.404 [silence 1000ms]
+14:52.404 build/audio/segments/CAESAR/2_97_1.wav: 2:97:1:CAESAR - It is a dusty one, my friend.
+14:54.604 [silence 1000ms]
+14:55.604 build/audio/segments/_NARRATOR/2_97_2.wav: 2:97:2:_NARRATOR - (_Obsequious laughter._)
+14:57.154 [silence 1000ms]
+14:58.154 build/audio/segments/CAESAR/2_97_3.wav: 2:97:3:CAESAR - Be on your guard next time.
+15:00.004 [silence 1000ms]
+15:01.004 build/audio/segments/SECUTOR/2_98_1.wav: 2:98:1:SECUTOR - Let HIM be on his guard. Next time I’ll throw my sword at his heels and strangle him with his own net before he can hop off.
+15:08.804 [silence 1000ms]
+15:09.804 build/audio/segments/_NARRATOR/2_98_2.wav: 2:98:2:_NARRATOR - (_To Retiarius_)
+15:10.854 [silence 1000ms]
+15:11.854 build/audio/segments/SECUTOR/2_98_3.wav: 2:98:3:SECUTOR - You see if I don’t.
+15:15.281 [silence 1000ms]
+15:16.281 build/audio/segments/_NARRATOR/2_98_4.wav: 2:98:4:_NARRATOR - (_He goes out past the gladiators, sulky and furious._)
+15:19.581 [silence 1000ms]
+15:20.581 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+15:21.010 [silence 300ms]
+15:21.310 build/audio/segments/_NARRATOR/2_99_1.wav: 2:99:1:_NARRATOR - (_to the chuckling Retiarius._)
+15:23.210 [silence 1000ms]
+15:24.210 build/audio/segments/CAESAR/2_99_2.wav: 2:99:2:CAESAR - These tricks are not wise, my friend. The audience likes to see a dead man in all his beauty and splendor. If you smudge his face and spoil his armor they will show their displeasure by not letting you kill him. And when your turn comes, they will remember it against you and turn their thumbs down.
+15:40.810 [silence 1000ms]
+15:41.810 plays/androcles/callouts/RETIARIUS_callout.wav: RETIARIUS
+15:42.629 [silence 300ms]
+15:42.929 build/audio/segments/RETIARIUS/2_100_1.wav: 2:100:1:RETIARIUS - Perhaps that is why I did it, Caesar. He bet me ten sesterces that he would vanquish me. If I had had to kill him I should not have had the money.
+15:52.479 [silence 1000ms]
+15:53.479 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+15:53.908 [silence 300ms]
+15:54.208 build/audio/segments/_NARRATOR/2_101_1.wav: 2:101:1:_NARRATOR - (_indulgent, laughing_)
+15:56.008 [silence 1000ms]
+15:57.008 build/audio/segments/CAESAR/2_101_2.wav: 2:101:2:CAESAR - You rogues: there is no end to your tricks. I’ll dismiss you all and have elephants to fight. They fight fairly.
+16:03.558 [silence 1000ms]
+16:04.558 build/audio/segments/_NARRATOR/2_101_3.wav: 2:101:3:_NARRATOR - (_He goes up to his box, and knocks at it. It is opened from within by the Captain, who stands as on parade to let him pass. The Call Boy comes from the passage, followed by three attendants carrying respectively a bundle of swords, some helmets, and some breastplates and pieces of armor which they throw down in a heap._)
+16:20.608 [silence 1000ms]
+16:21.608 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+16:22.120 [silence 300ms]
+16:22.420 build/audio/segments/CALL BOY/2_102_1.wav: 2:102:1:CALL BOY - By your leave, Caesar. Number eleven! Gladiators and Christians!
+16:25.870 [silence 1000ms]
+16:26.870 build/audio/segments/_NARRATOR/2_103_1.wav: 2:103:1:_NARRATOR - Ferrovius springs up, ready for martyrdom. The other Christians take the summons as best they can, some joyful and brave, some patient and dignified, some tearful and helpless, some embracing one another with emotion. The Call Boy goes back into the passage.
+16:40.720 [silence 1000ms]
+16:41.720 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+16:42.149 [silence 300ms]
+16:42.449 build/audio/segments/_NARRATOR/2_104_1.wav: 2:104:1:_NARRATOR - (_turning at the door of the box_)
+16:44.299 [silence 1000ms]
+16:45.299 build/audio/segments/CAESAR/2_104_2.wav: 2:104:2:CAESAR - The hour has come, Ferrovius. I shall go into my box and see you killed, since you scorn the Pretorian Guard.
+16:52.399 [silence 1000ms]
+16:53.399 build/audio/segments/_NARRATOR/2_104_3.wav: 2:104:3:_NARRATOR - (_He goes into the box. The Captain shuts the door, remaining inside with the Emperor. Metellus and the rest of the suite disperse to their seats. The Christians, led by Ferrovius, move towards the passage._)
+17:04.799 [silence 1000ms]
+17:05.799 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+17:06.311 [silence 300ms]
+17:06.611 build/audio/segments/_NARRATOR/2_105_1.wav: 2:105:1:_NARRATOR - (_to Ferrovius_)
+17:07.761 [silence 1000ms]
+17:08.761 build/audio/segments/LAVINIA/2_105_2.wav: 2:105:2:LAVINIA - Farewell.
+17:09.511 [silence 1000ms]
+17:10.511 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+17:11.023 [silence 300ms]
+17:11.323 build/audio/segments/EDITOR/2_106_1.wav: 2:106:1:EDITOR - Steady there. You Christians have got to fight. Here! arm yourselves.
+17:17.323 [silence 1000ms]
+17:18.323 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+17:19.014 [silence 300ms]
+17:19.314 build/audio/segments/_NARRATOR/2_107_1.wav: 2:107:1:_NARRATOR - (_picking up a sword_)
+17:20.764 [silence 1000ms]
+17:21.764 build/audio/segments/FERROVIUS/2_107_2.wav: 2:107:2:FERROVIUS - I’ll die sword in hand to show people that I could fight if it were my Master’s will, and that I could kill the man who kills me if I chose.
+17:32.114 [silence 1000ms]
+17:33.114 build/audio/segments/EDITOR/2_108_1.wav: 2:108:1:EDITOR - Put on that armor.
+17:34.814 [silence 1000ms]
+17:35.814 build/audio/segments/FERROVIUS/2_109_1.wav: 2:109:1:FERROVIUS - No armor.
+17:37.364 [silence 1000ms]
+17:38.364 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+17:38.876 [silence 300ms]
+17:39.176 build/audio/segments/_NARRATOR/2_110_1.wav: 2:110:1:_NARRATOR - (_bullying him_)
+17:40.226 [silence 1000ms]
+17:41.226 build/audio/segments/EDITOR/2_110_2.wav: 2:110:2:EDITOR - Do what you’re told. Put on that armor.
+17:44.626 [silence 1000ms]
+17:45.626 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+17:46.317 [silence 300ms]
+17:46.617 build/audio/segments/_NARRATOR/2_111_1.wav: 2:111:1:_NARRATOR - (_gripping the sword and looking dangerous_)
+17:48.767 [silence 1000ms]
+17:49.767 build/audio/segments/FERROVIUS/2_111_2.wav: 2:111:2:FERROVIUS - I said, No armor.
+17:52.467 [silence 1000ms]
+17:53.467 build/audio/segments/EDITOR/2_112_1.wav: 2:112:1:EDITOR - And what am I to say when I am accused of sending a naked man in to fight my men in armor?
+17:59.467 [silence 1000ms]
+18:00.467 build/audio/segments/FERROVIUS/2_113_1.wav: 2:113:1:FERROVIUS - Say your prayers, brother; and have no fear of the princes of this world.
+18:06.167 [silence 1000ms]
+18:07.167 build/audio/segments/EDITOR/2_114_1.wav: 2:114:1:EDITOR - Tsha! You obstinate fool!
+18:10.367 [silence 1000ms]
+18:11.367 build/audio/segments/_NARRATOR/2_114_2.wav: 2:114:2:_NARRATOR - (_He bites his lips irresolutely, not knowing exactly what to do._)
+18:15.617 [silence 1000ms]
+18:16.617 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+18:17.319 [silence 300ms]
+18:17.619 build/audio/segments/_NARRATOR/2_115_1.wav: 2:115:1:_NARRATOR - (_to Ferrovius_)
+18:18.919 [silence 1000ms]
+18:19.919 build/audio/segments/ANDROCLES/2_115_2.wav: 2:115:2:ANDROCLES - Farewell, brother, till we meet in the sweet by-and-by.
+18:23.869 [silence 1000ms]
+18:24.869 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+18:25.381 [silence 300ms]
+18:25.681 build/audio/segments/_NARRATOR/2_116_1.wav: 2:116:1:_NARRATOR - (_to Androcles_)
+18:27.231 [silence 1000ms]
+18:28.231 build/audio/segments/EDITOR/2_116_2.wav: 2:116:2:EDITOR - You are going too. Take a sword there; and put on any armor you can find to fit you.
+18:34.431 [silence 1000ms]
+18:35.431 build/audio/segments/ANDROCLES/2_117_1.wav: 2:117:1:ANDROCLES - No, really: I can’t fight: I never could. I can’t bring myself to dislike anyone enough. I’m to be thrown to the lions with the lady.
+18:44.481 [silence 1000ms]
+18:45.481 build/audio/segments/EDITOR/2_118_1.wav: 2:118:1:EDITOR - Then get out of the way and hold your noise.
+18:48.531 [silence 1000ms]
+18:49.531 build/audio/segments/_NARRATOR/2_118_2.wav: 2:118:2:_NARRATOR - (_Androcles steps aside with cheerful docility._)
+18:52.231 [silence 1000ms]
+18:53.231 build/audio/segments/EDITOR/2_118_3.wav: 2:118:3:EDITOR - Now then! Are you all ready there?
+18:55.381 [silence 1000ms]
+18:56.381 build/audio/segments/_NARRATOR/2_119_1.wav: 2:119:1:_NARRATOR - A trumpet is heard from the arena.
+18:58.131 [silence 1000ms]
+18:59.131 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+18:59.822 [silence 300ms]
+19:00.122 build/audio/segments/_NARRATOR/2_120_1.wav: 2:120:1:_NARRATOR - (_starting convulsively_)
+19:01.822 [silence 1000ms]
+19:02.822 build/audio/segments/FERROVIUS/2_120_2.wav: 2:120:2:FERROVIUS - Heaven give me strength!
+19:04.872 [silence 1000ms]
+19:05.872 build/audio/segments/EDITOR/2_121_1.wav: 2:121:1:EDITOR - Aha! That frightens you, does it?
+19:09.322 [silence 1000ms]
+19:10.322 build/audio/segments/FERROVIUS/2_122_1.wav: 2:122:1:FERROVIUS - Man: there is no terror like the terror of that sound to me. When I hear a trumpet or a drum or the clash of steel or the hum of the catapult as the great stone flies, fire runs through my veins: I feel my blood surge up hot behind my eyes: I must charge: I must strike: I must conquer: Caesar himself will not be safe in his imperial seat if once that spirit gets loose in me. Oh, brothers, pray! exhort me! remind me that if I raise my sword my honor falls and my Master is crucified afresh.
+19:51.422 [silence 1000ms]
+19:52.422 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+19:53.124 [silence 300ms]
+19:53.424 build/audio/segments/ANDROCLES/2_123_1.wav: 2:123:1:ANDROCLES - Just keep thinking how cruelly you might hurt the poor gladiators.
+19:57.324 [silence 1000ms]
+19:58.324 build/audio/segments/FERROVIUS/2_124_1.wav: 2:124:1:FERROVIUS - It does not hurt a man to kill him.
+20:00.924 [silence 1000ms]
+20:01.924 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+20:02.436 [silence 300ms]
+20:02.736 build/audio/segments/LAVINIA/2_125_1.wav: 2:125:1:LAVINIA - Nothing but faith can save you.
+20:04.486 [silence 1000ms]
+20:05.486 build/audio/segments/FERROVIUS/2_126_1.wav: 2:126:1:FERROVIUS - Faith! Which faith? There are two faiths. There is our faith. And there is the warrior’s faith, the faith in fighting, the faith that sees God in the sword. How if that faith should overwhelm me?
+20:21.436 [silence 1000ms]
+20:22.436 build/audio/segments/LAVINIA/2_127_1.wav: 2:127:1:LAVINIA - You will find your real faith in the hour of trial.
+20:24.786 [silence 1000ms]
+20:25.786 build/audio/segments/FERROVIUS/2_128_1.wav: 2:128:1:FERROVIUS - That is what I fear. I know that I am a fighter. How can I feel sure that I am a Christian?
+20:33.636 [silence 1000ms]
+20:34.636 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+20:35.338 [silence 300ms]
+20:35.638 build/audio/segments/ANDROCLES/2_129_1.wav: 2:129:1:ANDROCLES - Throw away the sword, brother.
+20:37.838 [silence 1000ms]
+20:38.838 build/audio/segments/FERROVIUS/2_130_1.wav: 2:130:1:FERROVIUS - I cannot. It cleaves to my hand. I could as easily throw a woman I loved from my arms.
+20:46.588 [silence 1000ms]
+20:47.588 build/audio/segments/_NARRATOR/2_130_2.wav: 2:130:2:_NARRATOR - (_Starting_)
+20:48.338 [silence 1000ms]
+20:49.338 build/audio/segments/FERROVIUS/2_130_3.wav: 2:130:3:FERROVIUS - Who spoke that blasphemy? Not I.
+20:52.688 [silence 1000ms]
+20:53.688 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+20:54.200 [silence 300ms]
+20:54.500 build/audio/segments/LAVINIA/2_131_1.wav: 2:131:1:LAVINIA - I can’t help you, friend. I can’t tell you not to save your own life. Something wilful in me wants to see you fight your way into heaven.
+21:01.450 [silence 1000ms]
+21:02.450 build/audio/segments/FERROVIUS/2_132_1.wav: 2:132:1:FERROVIUS - Ha!
+21:02.950 [silence 1000ms]
+21:03.950 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+21:04.652 [silence 300ms]
+21:04.952 build/audio/segments/ANDROCLES/2_133_1.wav: 2:133:1:ANDROCLES - But if you are going to give up our faith, brother, why not do it without hurting anybody? Don’t fight them. Burn the incense.
+21:13.052 [silence 1000ms]
+21:14.052 build/audio/segments/FERROVIUS/2_134_1.wav: 2:134:1:FERROVIUS - Burn the incense! Never.
+21:16.652 [silence 1000ms]
+21:17.652 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+21:18.164 [silence 300ms]
+21:18.464 build/audio/segments/LAVINIA/2_135_1.wav: 2:135:1:LAVINIA - That is only pride, Ferrovius.
+21:20.314 [silence 1000ms]
+21:21.314 build/audio/segments/FERROVIUS/2_136_1.wav: 2:136:1:FERROVIUS - ONLY pride! What is nobler than pride?
+21:25.414 [silence 1000ms]
+21:26.414 build/audio/segments/_NARRATOR/2_136_2.wav: 2:136:2:_NARRATOR - (_Conscience stricken_)
+21:27.714 [silence 1000ms]
+21:28.714 build/audio/segments/FERROVIUS/2_136_3.wav: 2:136:3:FERROVIUS - Oh, I’m steeped in sin. I’m proud of my pride.
+21:33.814 [silence 1000ms]
+21:34.814 build/audio/segments/LAVINIA/2_137_1.wav: 2:137:1:LAVINIA - They say we Christians are the proudest devils on earth—that only the weak are meek. Oh, I am worse than you. I ought to send you to death; and I am tempting you.
+21:43.864 [silence 1000ms]
+21:44.864 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+21:45.566 [silence 300ms]
+21:45.866 build/audio/segments/ANDROCLES/2_138_1.wav: 2:138:1:ANDROCLES - Brother, brother: let them rage and kill: let us be brave and suffer. You must go as a lamb to the slaughter.
+21:54.566 [silence 1000ms]
+21:55.566 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+21:56.257 [silence 300ms]
+21:56.557 build/audio/segments/FERROVIUS/2_139_1.wav: 2:139:1:FERROVIUS - Aye, aye: that is right. Not as a lamb is slain by the butcher; but as a butcher might let himself be slain by a
+22:06.307 [silence 1000ms]
+22:07.307 build/audio/segments/_NARRATOR/2_139_2.wav: 2:139:2:_NARRATOR - (_looking at the Editor_)
+22:08.957 [silence 1000ms]
+22:09.957 build/audio/segments/FERROVIUS/2_139_3.wav: 2:139:3:FERROVIUS - by a silly ram whose head he could fetch off in one twist.
+22:14.807 [silence 1000ms]
+22:15.807 build/audio/segments/_NARRATOR/2_140_1.wav: 2:140:1:_NARRATOR - Before the Editor can retort, the Call Boy rushes up through the passage; and the Captain comes from the Emperor’s box and descends the steps.
+22:23.157 [silence 1000ms]
+22:24.157 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+22:24.669 [silence 300ms]
+22:24.969 build/audio/segments/CALL BOY/2_141_1.wav: 2:141:1:CALL BOY - In with you: into the arena. The stage is waiting.
+22:27.469 [silence 1000ms]
+22:28.469 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+22:28.831 [silence 300ms]
+22:29.131 build/audio/segments/CAPTAIN/2_142_1.wav: 2:142:1:CAPTAIN - The Emperor is waiting.
+22:30.881 [silence 1000ms]
+22:31.881 build/audio/segments/_NARRATOR/2_142_2.wav: 2:142:2:_NARRATOR - (_To the Editor_)
+22:33.181 [silence 1000ms]
+22:34.181 build/audio/segments/CAPTAIN/2_142_3.wav: 2:142:3:CAPTAIN - What are you dreaming of, man? Send your men in at once.
+22:37.731 [silence 1000ms]
+22:38.731 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+22:39.243 [silence 300ms]
+22:39.543 build/audio/segments/EDITOR/2_143_1.wav: 2:143:1:EDITOR - Yes, Sir: it’s these Christians hanging back.
+22:43.443 [silence 1000ms]
+22:44.443 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+22:45.134 [silence 300ms]
+22:45.434 build/audio/segments/_NARRATOR/2_144_1.wav: 2:144:1:_NARRATOR - (_in a voice of thunder_)
+22:47.184 [silence 1000ms]
+22:48.184 build/audio/segments/FERROVIUS/2_144_2.wav: 2:144:2:FERROVIUS - Liar!
+22:49.734 [silence 1000ms]
+22:50.734 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+22:51.246 [silence 300ms]
+22:51.546 build/audio/segments/_NARRATOR/2_145_1.wav: 2:145:1:_NARRATOR - (_not heeding him_)
+22:52.796 [silence 1000ms]
+22:53.796 build/audio/segments/EDITOR/2_145_2.wav: 2:145:2:EDITOR - March.
+22:55.096 [silence 1000ms]
+22:56.096 build/audio/segments/_NARRATOR/2_145_3.wav: 2:145:3:_NARRATOR - (_The gladiators told off to fight with the Christians march down the passage_)
+23:00.096 [silence 1000ms]
+23:01.096 build/audio/segments/EDITOR/2_145_4.wav: 2:145:4:EDITOR - Follow up there, you.
+23:03.046 [silence 1000ms]
+23:04.046 plays/androcles/callouts/CHRISTIAN MEN AND WOMEN_callout.wav: CHRISTIAN MEN AND WOMEN
+23:05.065 [silence 300ms]
+23:05.365 build/audio/segments/_NARRATOR/2_146_1.wav: 2:146:1:_NARRATOR - (_as they part_)
+23:06.465 [silence 1000ms]
+23:07.465 build/audio/segments/CHRISTIAN MEN AND WOMEN/2_146_2.wav: 2:146:2:CHRISTIAN MEN AND WOMEN - Be steadfast, brother. Farewell. Hold up the faith, brother. Farewell. Go to glory, dearest. Farewell. Remember: we are praying for you. Farewell. Be strong, brother. Farewell. Don’t forget that the divine love and our love surround you. Farewell. Nothing can hurt you: remember that, brother. Farewell. Eternal glory, dearest. Farewell.
+23:31.593 [silence 1000ms]
+23:32.593 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+23:33.105 [silence 300ms]
+23:33.405 build/audio/segments/_NARRATOR/2_147_1.wav: 2:147:1:_NARRATOR - (_out of patience_)
+23:34.605 [silence 1000ms]
+23:35.605 build/audio/segments/EDITOR/2_147_2.wav: 2:147:2:EDITOR - Shove them in, there.
+23:37.405 [silence 1000ms]
+23:38.405 build/audio/segments/_NARRATOR/2_148_1.wav: 2:148:1:_NARRATOR - The remaining gladiators and the Call Boy make a movement towards them.
+23:41.805 [silence 1000ms]
+23:42.805 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+23:43.496 [silence 300ms]
+23:43.796 build/audio/segments/_NARRATOR/2_149_1.wav: 2:149:1:_NARRATOR - (_interposing_)
+23:44.696 [silence 1000ms]
+23:45.696 build/audio/segments/FERROVIUS/2_149_2.wav: 2:149:2:FERROVIUS - Touch them, dogs; and we die here, and cheat the heathen of their spectacle.
+23:51.496 [silence 1000ms]
+23:52.496 build/audio/segments/_NARRATOR/2_149_3.wav: 2:149:3:_NARRATOR - (_To his fellow Christians_)
+23:54.146 [silence 1000ms]
+23:55.146 build/audio/segments/FERROVIUS/2_149_4.wav: 2:149:4:FERROVIUS - Brothers: the great moment has come. That passage is your hill to Calvary. Mount it bravely, but meekly; and remember! not a word of reproach, not a blow nor a struggle. Go.
+24:11.396 [silence 1000ms]
+24:12.396 build/audio/segments/_NARRATOR/2_149_5.wav: 2:149:5:_NARRATOR - (_They go out through the passage. He turns to Lavinia_)
+24:15.446 [silence 1000ms]
+24:16.446 build/audio/segments/FERROVIUS/2_149_6.wav: 2:149:6:FERROVIUS - Farewell.
+24:17.446 [silence 1000ms]
+24:18.446 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+24:18.958 [silence 300ms]
+24:19.258 build/audio/segments/LAVINIA/2_150_1.wav: 2:150:1:LAVINIA - You forget: I must follow before you are cold.
+24:21.958 [silence 1000ms]
+24:22.958 build/audio/segments/FERROVIUS/2_151_1.wav: 2:151:1:FERROVIUS - It is true. Do not envy me because I pass before you to glory.
+24:27.758 [silence 1000ms]
+24:28.758 build/audio/segments/_NARRATOR/2_151_2.wav: 2:151:2:_NARRATOR - (_He goes through the passage._)
+24:30.208 [silence 1000ms]
+24:31.208 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+24:31.720 [silence 300ms]
+24:32.020 build/audio/segments/_NARRATOR/2_152_1.wav: 2:152:1:_NARRATOR - (_to the Call Boy_)
+24:33.120 [silence 1000ms]
+24:34.120 build/audio/segments/EDITOR/2_152_2.wav: 2:152:2:EDITOR - Sickening work, this. Why can’t they all be thrown to the lions? It’s not a man’s job.
+24:41.570 [silence 1000ms]
+24:42.570 build/audio/segments/_NARRATOR/2_152_3.wav: 2:152:3:_NARRATOR - (_He throws himself moodily into his chair._)
+24:45.320 [silence 1000ms]
+24:46.320 build/audio/segments/_NARRATOR/2_153_1.wav: 2:153:1:_NARRATOR - The remaining gladiators go back to their former places indifferently. The Call Boy shrugs his shoulders and squats down at the entrance to the passage, near the Editor.
+24:54.720 [silence 1000ms]
+24:55.720 build/audio/segments/_NARRATOR/2_154_1.wav: 2:154:1:_NARRATOR - Lavinia and the Christian women sit down again, wrung with grief, some weeping silently, some praying, some calm and steadfast. Androcles sits down at Lavinia’s feet. The Captain stands on the stairs, watching her curiously.
+25:08.620 [silence 1000ms]
+25:09.620 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+25:10.322 [silence 300ms]
+25:10.622 build/audio/segments/ANDROCLES/2_155_1.wav: 2:155:1:ANDROCLES - I’m glad I haven’t to fight. That would really be an awful martyrdom. I am lucky.
+25:17.372 [silence 1000ms]
+25:18.372 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+25:18.884 [silence 300ms]
+25:19.184 build/audio/segments/_NARRATOR/2_156_1.wav: 2:156:1:_NARRATOR - (_looking at him with a pang of remorse._)
+25:21.284 [silence 1000ms]
+25:22.284 build/audio/segments/LAVINIA/2_156_2.wav: 2:156:2:LAVINIA - Androcles: burn the incense: you’ll be forgiven. Let my death atone for both. I feel as if I were killing you.
+25:28.834 [silence 1000ms]
+25:29.834 build/audio/segments/ANDROCLES/2_157_1.wav: 2:157:1:ANDROCLES - Don’t think of me, sister. Think of yourself. That will keep your heart up.
+25:34.734 [silence 1000ms]
+25:35.734 build/audio/segments/_NARRATOR/2_158_1.wav: 2:158:1:_NARRATOR - The Captain laughs sardonically.
+25:37.834 [silence 1000ms]
+25:38.834 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+25:39.346 [silence 300ms]
+25:39.646 build/audio/segments/_NARRATOR/2_159_1.wav: 2:159:1:_NARRATOR - (_startled: she had forgotten his presence_)
+25:42.146 [silence 1000ms]
+25:43.146 build/audio/segments/LAVINIA/2_159_2.wav: 2:159:2:LAVINIA - Are you there, handsome Captain? Have you come to see me die?
+25:46.646 [silence 1000ms]
+25:47.646 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+25:48.008 [silence 300ms]
+25:48.308 build/audio/segments/_NARRATOR/2_160_1.wav: 2:160:1:_NARRATOR - (_coming to her side_)
+25:49.558 [silence 1000ms]
+25:50.558 build/audio/segments/CAPTAIN/2_160_2.wav: 2:160:2:CAPTAIN - I am on duty with the Emperor, Lavinia.
+25:53.008 [silence 1000ms]
+25:54.008 build/audio/segments/LAVINIA/2_161_1.wav: 2:161:1:LAVINIA - Is it part of your duty to laugh at us?
+25:56.408 [silence 1000ms]
+25:57.408 build/audio/segments/CAPTAIN/2_162_1.wav: 2:162:1:CAPTAIN - No: that is part of my private pleasure. Your friend here is a humorist. I laughed at his telling you to think of yourself to keep up your heart. I say, think of yourself and burn the incense.
+26:09.108 [silence 1000ms]
+26:10.108 build/audio/segments/LAVINIA/2_163_1.wav: 2:163:1:LAVINIA - He is not a humorist: he was right. You ought to know that, Captain: you have been face to face with death.
+26:15.458 [silence 1000ms]
+26:16.458 build/audio/segments/CAPTAIN/2_164_1.wav: 2:164:1:CAPTAIN - Not with certain death, Lavinia. Only death in battle, which spares more men than death in bed. What you are facing is certain death. You have nothing left now but your faith in this craze of yours: this Christianity. Are your Christian fairy stories any truer than our stories about Jupiter and Diana, in which, I may tell you, I believe no more than the Emperor does, or any educated man in Rome?
+26:38.408 [silence 1000ms]
+26:39.408 build/audio/segments/LAVINIA/2_165_1.wav: 2:165:1:LAVINIA - Captain: all that seems nothing to me now. I’ll not say that death is a terrible thing; but I will say that it is so real a thing that when it comes close, all the imaginary things—all the stories, as you call them—fade into mere dreams beside that inexorable reality. I know now that I am not dying for stories or dreams. Did you hear of the dreadful thing that happened here while we were waiting?
+27:01.008 [silence 1000ms]
+27:02.008 build/audio/segments/CAPTAIN/2_166_1.wav: 2:166:1:CAPTAIN - I heard that one of your fellows bolted, and ran right into the jaws of the lion. I laughed. I still laugh.
+27:08.558 [silence 1000ms]
+27:09.558 build/audio/segments/LAVINIA/2_167_1.wav: 2:167:1:LAVINIA - Then you don’t understand what that meant?
+27:11.508 [silence 1000ms]
+27:12.508 build/audio/segments/CAPTAIN/2_168_1.wav: 2:168:1:CAPTAIN - It meant that the lion had a cur for his breakfast.
+27:15.158 [silence 1000ms]
+27:16.158 build/audio/segments/LAVINIA/2_169_1.wav: 2:169:1:LAVINIA - It meant more than that, Captain. It meant that a man cannot die for a story and a dream. None of us believed the stories and the dreams more devoutly than poor Spintho; but he could not face the great reality. What he would have called my faith has been oozing away minute by minute whilst I’ve been sitting here, with death coming nearer and nearer, with reality becoming realler and realler, with stories and dreams fading away into nothing.
+27:39.408 [silence 1000ms]
+27:40.408 build/audio/segments/CAPTAIN/2_170_1.wav: 2:170:1:CAPTAIN - Are you then going to die for nothing?
+27:42.108 [silence 1000ms]
+27:43.108 build/audio/segments/LAVINIA/2_171_1.wav: 2:171:1:LAVINIA - Yes: that is the wonderful thing. It is since all the stories and dreams have gone that I have now no doubt at all that I must die for something greater than dreams or stories.
+27:52.358 [silence 1000ms]
+27:53.358 build/audio/segments/CAPTAIN/2_172_1.wav: 2:172:1:CAPTAIN - But for what?
+27:54.208 [silence 1000ms]
+27:55.208 build/audio/segments/LAVINIA/2_173_1.wav: 2:173:1:LAVINIA - I don’t know. If it were for anything small enough to know, it would be too small to die for. I think I’m going to die for God. Nothing else is real enough to die for.
+28:04.358 [silence 1000ms]
+28:05.358 build/audio/segments/CAPTAIN/2_174_1.wav: 2:174:1:CAPTAIN - What is God?
+28:06.658 [silence 1000ms]
+28:07.658 build/audio/segments/LAVINIA/2_175_1.wav: 2:175:1:LAVINIA - When we know that, Captain, we shall be gods ourselves.
+28:10.408 [silence 1000ms]
+28:11.408 build/audio/segments/CAPTAIN/2_176_1.wav: 2:176:1:CAPTAIN - Lavinia; come down to earth. Burn the incense and marry me.
+28:15.858 [silence 1000ms]
+28:16.858 build/audio/segments/LAVINIA/2_177_1.wav: 2:177:1:LAVINIA - Handsome Captain: would you marry me if I hauled down the flag in the day of battle and burnt the incense? Sons take after their mothers, you know. Do you want your son to be a coward?
+28:26.108 [silence 1000ms]
+28:27.108 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+28:27.470 [silence 300ms]
+28:27.770 build/audio/segments/_NARRATOR/2_178_1.wav: 2:178:1:_NARRATOR - (_strongly moved._)
+28:29.020 [silence 1000ms]
+28:30.020 build/audio/segments/CAPTAIN/2_178_2.wav: 2:178:2:CAPTAIN - By great Diana, I think I would strangle you if you gave in now.
+28:33.520 [silence 1000ms]
+28:34.520 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+28:35.032 [silence 300ms]
+28:35.332 build/audio/segments/_NARRATOR/2_179_1.wav: 2:179:1:_NARRATOR - (_putting her hand on the head of Androcles_)
+28:37.482 [silence 1000ms]
+28:38.482 build/audio/segments/LAVINIA/2_179_2.wav: 2:179:2:LAVINIA - The hand of God is on us three, Captain.
+28:40.632 [silence 1000ms]
+28:41.632 build/audio/segments/CAPTAIN/2_180_1.wav: 2:180:1:CAPTAIN - What nonsense it all is! And what a monstrous thing that you should die for such nonsense, and that I should look on helplessly when my whole soul cries out against it! Die then if you must; but at least I can cut the Emperor’s throat and then my own when I see your blood.
+28:58.982 [silence 1000ms]
+28:59.982 build/audio/segments/_NARRATOR/2_181_1.wav: 2:181:1:_NARRATOR - The Emperor throws open the door of his box angrily, and appears in wrath on the threshold. The Editor, the Call Boy, and the gladiators spring to their feet.
+29:09.082 [silence 1000ms]
+29:10.082 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+29:10.511 [silence 300ms]
+29:10.811 build/audio/segments/CAESAR/2_182_1.wav: 2:182:1:CAESAR - The Christians will not fight; and your curs cannot get their blood up to attack them. It’s all that fellow with the blazing eyes. Send for the whip.
+29:18.711 [silence 1000ms]
+29:19.711 build/audio/segments/_NARRATOR/2_182_2.wav: 2:182:2:_NARRATOR - (_The Call Boy rushes out on the east side for the whip._)
+29:22.761 [silence 1000ms]
+29:23.761 build/audio/segments/CAESAR/2_182_3.wav: 2:182:3:CAESAR - If that will not move them, bring the hot irons. The man is like a mountain.
+29:27.861 [silence 1000ms]
+29:28.861 build/audio/segments/_NARRATOR/2_182_4.wav: 2:182:4:_NARRATOR - (_He returns angrily into the box and slams the door._)
+29:32.111 [silence 1000ms]
+29:33.111 build/audio/segments/_NARRATOR/2_183_1.wav: 2:183:1:_NARRATOR - The Call Boy returns with a man in a hideous Etruscan mask, carrying a whip. They both rush down the passage into the arena.
+29:40.111 [silence 1000ms]
+29:41.111 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+29:41.623 [silence 300ms]
+29:41.923 build/audio/segments/_NARRATOR/2_184_1.wav: 2:184:1:_NARRATOR - (_rising_)
+29:42.723 [silence 1000ms]
+29:43.723 build/audio/segments/LAVINIA/2_184_2.wav: 2:184:2:LAVINIA - Oh, that is unworthy. Can they not kill him without dishonoring him?
+29:47.923 [silence 1000ms]
+29:48.923 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+29:49.625 [silence 300ms]
+29:49.925 build/audio/segments/_NARRATOR/2_185_1.wav: 2:185:1:_NARRATOR - (_scrambling to his feet and running into the middle of the space between the staircases_)
+29:54.175 [silence 1000ms]
+29:55.175 build/audio/segments/ANDROCLES/2_185_2.wav: 2:185:2:ANDROCLES - It’s dreadful. Now I want to fight. I can’t bear the sight of a whip. The only time I ever hit a man was when he lashed an old horse with a whip. It was terrible: I danced on his face when he was on the ground. He mustn’t strike Ferrovius: I’ll go into the arena and kill him first.
+30:14.075 [silence 1000ms]
+30:15.075 build/audio/segments/_NARRATOR/2_185_3.wav: 2:185:3:_NARRATOR - (_He makes a wild dash into the passage. As he does so a great clamor is heard from the arena, ending in wild applause. The gladiators listen and look inquiringly at one another._)
+30:24.575 [silence 1000ms]
+30:25.575 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+30:26.087 [silence 300ms]
+30:26.387 build/audio/segments/EDITOR/2_186_1.wav: 2:186:1:EDITOR - What’s up now?
+30:28.487 [silence 1000ms]
+30:29.487 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+30:29.999 [silence 300ms]
+30:30.299 build/audio/segments/_NARRATOR/2_187_1.wav: 2:187:1:_NARRATOR - (_to the Captain_)
+30:31.199 [silence 1000ms]
+30:32.199 build/audio/segments/LAVINIA/2_187_2.wav: 2:187:2:LAVINIA - What has happened, do you think?
+30:33.699 [silence 1000ms]
+30:34.699 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+30:35.061 [silence 300ms]
+30:35.361 build/audio/segments/CAPTAIN/2_188_1.wav: 2:188:1:CAPTAIN - What CAN happen? They are killing them, I suppose.
+30:38.861 [silence 1000ms]
+30:39.861 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+30:40.563 [silence 300ms]
+30:40.863 build/audio/segments/_NARRATOR/2_189_1.wav: 2:189:1:_NARRATOR - (_running in through the passage, screaming with horror and hiding his eyes_)
+30:44.563 [silence 1000ms]
+30:45.563 build/audio/segments/ANDROCLES/2_189_2.wav: 2:189:2:ANDROCLES - !!!
+30:46.463 [silence 1000ms]
+30:47.463 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+30:47.975 [silence 300ms]
+30:48.275 build/audio/segments/LAVINIA/2_190_1.wav: 2:190:1:LAVINIA - Androcles, Androcles: what’s the matter?
+30:50.425 [silence 1000ms]
+30:51.425 build/audio/segments/ANDROCLES/2_191_1.wav: 2:191:1:ANDROCLES - Oh, don’t ask me, don’t ask me. Something too dreadful. Oh!
+30:57.275 [silence 1000ms]
+30:58.275 build/audio/segments/_NARRATOR/2_191_2.wav: 2:191:2:_NARRATOR - (_He crouches by her and hides his face in her robe, sobbing._)
+31:01.925 [silence 1000ms]
+31:02.925 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+31:03.437 [silence 300ms]
+31:03.737 build/audio/segments/_NARRATOR/2_192_1.wav: 2:192:1:_NARRATOR - (_rushing through from the passage as before_)
+31:06.037 [silence 1000ms]
+31:07.037 build/audio/segments/CALL BOY/2_192_2.wav: 2:192:2:CALL BOY - Ropes and hooks there! Ropes and hooks.
+31:08.887 [silence 1000ms]
+31:09.887 plays/androcles/callouts/EDITOR_callout.wav: EDITOR
+31:10.399 [silence 300ms]
+31:10.699 build/audio/segments/EDITOR/2_193_1.wav: 2:193:1:EDITOR - Well, need you excite yourself about it?
+31:15.337 [silence 1000ms]
+31:16.337 build/audio/segments/_NARRATOR/2_193_2.wav: 2:193:2:_NARRATOR - (_Another burst of applause._)
+31:17.887 [silence 1000ms]
+31:18.887 build/audio/segments/_NARRATOR/2_194_1.wav: 2:194:1:_NARRATOR - Two slaves in Etruscan masks, with ropes and drag hooks, hurry in.
+31:23.187 [silence 1000ms]
+31:24.187 plays/androcles/callouts/ONE OF THE SLAVES_callout.wav: ONE OF THE SLAVES
+31:25.112 [silence 300ms]
+31:25.412 build/audio/segments/ONE OF THE SLAVES/2_195_1.wav: 2:195:1:ONE OF THE SLAVES - How many dead?
+31:27.050 [silence 1000ms]
+31:28.050 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+31:28.562 [silence 300ms]
+31:28.862 build/audio/segments/CALL BOY/2_196_1.wav: 2:196:1:CALL BOY - Six.
+31:29.462 [silence 1000ms]
+31:30.462 build/audio/segments/_NARRATOR/2_196_2.wav: 2:196:2:_NARRATOR - (_The slave blows a whistle twice; and four more masked slaves rush through into the arena with the same apparatus_)
+31:37.262 [silence 1000ms]
+31:38.262 build/audio/segments/CALL BOY/2_196_3.wav: 2:196:3:CALL BOY - And the basket. Bring the baskets.
+31:40.212 [silence 1000ms]
+31:41.212 build/audio/segments/_NARRATOR/2_196_4.wav: 2:196:4:_NARRATOR - (_The slave whistles three times, and runs through the passage with his companion._)
+31:45.062 [silence 1000ms]
+31:46.062 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+31:46.424 [silence 300ms]
+31:46.724 build/audio/segments/CAPTAIN/2_197_1.wav: 2:197:1:CAPTAIN - Who are the baskets for?
+31:48.374 [silence 1000ms]
+31:49.374 build/audio/segments/CALL BOY/2_198_1.wav: 2:198:1:CALL BOY - For the whip. He’s in pieces. They’re all in pieces, more or less.
+31:52.624 [silence 1000ms]
+31:53.624 build/audio/segments/_NARRATOR/2_198_2.wav: 2:198:2:_NARRATOR - (_Lavinia hides her face._)
+31:55.274 [silence 1000ms]
+31:56.274 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+31:56.703 [silence 300ms]
+31:57.003 build/audio/segments/_NARRATOR/2_199_1.wav: 2:199:1:_NARRATOR - (_again bursting from his box, this time in an ecstasy of delight_)
+32:01.253 [silence 1000ms]
+32:02.253 build/audio/segments/CAESAR/2_199_2.wav: 2:199:2:CAESAR - Where is he? Magnificent! He shall have a laurel crown.
+32:06.603 [silence 1000ms]
+32:07.603 build/audio/segments/_NARRATOR/2_200_1.wav: 2:200:1:_NARRATOR - Ferrovius, madly waving his bloodstained sword, rushes through the passage in despair, followed by his co-religionists, and by the menagerie keeper, who goes to the gladiators. The gladiators draw their swords nervously.
+32:19.703 [silence 1000ms]
+32:20.703 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+32:21.394 [silence 300ms]
+32:21.694 build/audio/segments/FERROVIUS/2_201_1.wav: 2:201:1:FERROVIUS - Lost! lost forever! I have betrayed my Master. Cut off this right hand: it has offended. Ye have swords, my brethren: strike.
+32:32.844 [silence 1000ms]
+32:33.844 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+32:34.356 [silence 300ms]
+32:34.656 build/audio/segments/LAVINIA/2_202_1.wav: 2:202:1:LAVINIA - No, no. What have you done, Ferrovius?
+32:37.006 [silence 1000ms]
+32:38.006 build/audio/segments/FERROVIUS/2_203_1.wav: 2:203:1:FERROVIUS - I know not; but there was blood behind my eyes; and there’s blood on my sword. What does that mean?
+32:45.206 [silence 1000ms]
+32:46.206 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+32:46.635 [silence 300ms]
+32:46.935 build/audio/segments/_NARRATOR/2_204_1.wav: 2:204:1:_NARRATOR - (_enthusiastically, on the landing outside his box_)
+32:49.685 [silence 1000ms]
+32:50.685 build/audio/segments/CAESAR/2_204_2.wav: 2:204:2:CAESAR - What does it mean? It means that you are the greatest man in Rome. It means that you shall have a laurel crown of gold. Superb fighter, I could almost yield you my throne. It is a record for my reign: I shall live in history. Once, in Domitian’s time, a Gaul slew three men in the arena and gained his freedom. But when before has one naked man slain six armed men of the bravest and best? The persecution shall cease: if Christians can fight like this, I shall have none but Christians to fight for me.
+33:18.385 [silence 1000ms]
+33:19.385 build/audio/segments/_NARRATOR/2_204_3.wav: 2:204:3:_NARRATOR - (_To the Gladiators_)
+33:20.935 [silence 1000ms]
+33:21.935 build/audio/segments/CAESAR/2_204_4.wav: 2:204:4:CAESAR - You are ordered to become Christians, you there: do you hear?
+33:24.635 [silence 1000ms]
+33:25.635 plays/androcles/callouts/RETIARIUS_callout.wav: RETIARIUS
+33:26.454 [silence 300ms]
+33:26.754 build/audio/segments/RETIARIUS/2_205_1.wav: 2:205:1:RETIARIUS - It is all one to us, Caesar. Had I been there with my net, the story would have been different.
+33:32.370 [silence 1000ms]
+33:33.370 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+33:33.732 [silence 300ms]
+33:34.032 build/audio/segments/_NARRATOR/2_206_1.wav: 2:206:1:_NARRATOR - (_suddenly seizing Lavinia by the wrist and dragging her up the steps to the Emperor_)
+33:38.432 [silence 1000ms]
+33:39.432 build/audio/segments/CAPTAIN/2_206_2.wav: 2:206:2:CAPTAIN - Caesar this woman is the sister of Ferrovius. If she is thrown to the lions he will fret. He will lose weight; get out of condition.
+33:48.182 [silence 1000ms]
+33:49.182 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+33:49.611 [silence 300ms]
+33:49.911 build/audio/segments/CAESAR/2_207_1.wav: 2:207:1:CAESAR - The lions? Nonsense!
+33:51.911 [silence 1000ms]
+33:52.911 build/audio/segments/_NARRATOR/2_207_2.wav: 2:207:2:_NARRATOR - (_To Lavinia_)
+33:54.061 [silence 1000ms]
+33:55.061 build/audio/segments/CAESAR/2_207_3.wav: 2:207:3:CAESAR - Madam: I am proud to have the honor of making your acquaintance. Your brother is the glory of Rome.
+34:00.911 [silence 1000ms]
+34:01.911 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+34:02.423 [silence 300ms]
+34:02.723 build/audio/segments/LAVINIA/2_208_1.wav: 2:208:1:LAVINIA - But my friends here. Must they die?
+34:05.323 [silence 1000ms]
+34:06.323 build/audio/segments/CAESAR/2_209_1.wav: 2:209:1:CAESAR - Die! Certainly not. There has never been the slightest idea of harming them. Ladies and gentlemen: you are all free. Pray go into the front of the house and enjoy the spectacle to which your brother has so splendidly contributed. Captain: oblige me by conducting them to the seats reserved for my personal friends.
+34:21.923 [silence 1000ms]
+34:22.923 plays/androcles/callouts/KEEPER_callout.wav: KEEPER
+34:23.335 [silence 300ms]
+34:23.635 build/audio/segments/KEEPER/2_210_1.wav: 2:210:1:KEEPER - Caesar: I must have one Christian for the lion. The people have been promised it; and they will tear the decorations to bits if they are disappointed.
+34:32.635 [silence 1000ms]
+34:33.635 build/audio/segments/CAESAR/2_211_1.wav: 2:211:1:CAESAR - True, true: we must have somebody for the new lion.
+34:37.035 [silence 1000ms]
+34:38.035 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+34:38.726 [silence 300ms]
+34:39.026 build/audio/segments/FERROVIUS/2_212_1.wav: 2:212:1:FERROVIUS - Throw me to him. Let the apostate perish.
+34:42.926 [silence 1000ms]
+34:43.926 build/audio/segments/CAESAR/2_213_1.wav: 2:213:1:CAESAR - No, no: you would tear him in pieces, my friend; and we cannot afford to throw away lions as if they were mere slaves. But we must have somebody. This is really extremely awkward.
+34:54.426 [silence 1000ms]
+34:55.426 plays/androcles/callouts/KEEPER_callout.wav: KEEPER
+34:55.838 [silence 300ms]
+34:56.138 build/audio/segments/KEEPER/2_214_1.wav: 2:214:1:KEEPER - Why not that little Greek chap? He’s not a Christian: he’s a sorcerer.
+35:00.488 [silence 1000ms]
+35:01.488 build/audio/segments/CAESAR/2_215_1.wav: 2:215:1:CAESAR - The very thing: he will do very well.
+35:03.388 [silence 1000ms]
+35:04.388 plays/androcles/callouts/CALL BOY_callout.wav: CALL BOY
+35:04.900 [silence 300ms]
+35:05.200 build/audio/segments/_NARRATOR/2_216_1.wav: 2:216:1:_NARRATOR - (_issuing from the passage_)
+35:06.800 [silence 1000ms]
+35:07.800 build/audio/segments/CALL BOY/2_216_2.wav: 2:216:2:CALL BOY - Number twelve. The Christian for the new lion.
+35:10.983 [silence 1000ms]
+35:11.983 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+35:12.685 [silence 300ms]
+35:12.985 build/audio/segments/_NARRATOR/2_217_1.wav: 2:217:1:_NARRATOR - (_rising, and pulling himself sadly together_)
+35:15.535 [silence 1000ms]
+35:16.535 build/audio/segments/ANDROCLES/2_217_2.wav: 2:217:2:ANDROCLES - Well, it was to be, after all.
+35:19.335 [silence 1000ms]
+35:20.335 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+35:20.847 [silence 300ms]
+35:21.147 build/audio/segments/LAVINIA/2_218_1.wav: 2:218:1:LAVINIA - I’ll go in his place, Caesar. Ask the Captain whether they do not like best to see a woman torn to pieces. He told me so yesterday.
+35:27.647 [silence 1000ms]
+35:28.647 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+35:29.076 [silence 300ms]
+35:29.376 build/audio/segments/CAESAR/2_219_1.wav: 2:219:1:CAESAR - There is something in that: there is certainly something in that—if only I could feel sure that your brother would not fret.
+35:36.126 [silence 1000ms]
+35:37.126 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+35:37.828 [silence 300ms]
+35:38.128 build/audio/segments/ANDROCLES/2_220_1.wav: 2:220:1:ANDROCLES - No: I should never have another happy hour. No: on the faith of a Christian and the honor of a tailor, I accept the lot that has fallen on me. If my wife turns up, give her my love and say that my wish was that she should be happy with her next, poor fellow! Caesar: go to your box and see how a tailor can die. Make way for number twelve there.
+36:04.828 [silence 1000ms]
+36:05.828 build/audio/segments/_NARRATOR/2_220_2.wav: 2:220:2:_NARRATOR - (_He marches out along the passage._)
+36:07.778 [silence 1000ms]
+36:08.778 build/audio/segments/_NARRATOR/2_221_1.wav: 2:221:1:_NARRATOR - The vast audience in the amphitheatre now sees the Emperor re-enter his box and take his place as Androcles, desperately frightened, but still marching with piteous devotion, emerges from the other end of the passage, and finds himself at the focus of thousands of eager eyes. The lion’s cage, with a heavy portcullis grating, is on his left. The Emperor gives a signal. A gong sounds. Androcles shivers at the sound; then falls on his knees and prays.
+36:33.828 [silence 1000ms]
+36:34.828 build/audio/segments/_NARRATOR/2_222_1.wav: 2:222:1:_NARRATOR - The grating rises with a clash. The lion bounds into the arena. He rushes round frisking in his freedom. He sees Androcles. He stops; rises stiffly by straightening his legs; stretches out his nose forward and his tail in a horizontal line behind, like a pointer, and utters an appalling roar. Androcles crouches and hides his face in his hands. The lion gathers himself for a spring, swishing his tail to and fro through the dust in an ecstasy of anticipation. Androcles throws up his hands in supplication to heaven. The lion checks at the sight of Androcles’s face. He then steals towards him; smells him; arches his back; purrs like a motor car; finally rubs himself against Androcles, knocking him over. Androcles, supporting himself on his wrist, looks affrightedly at the lion. The lion limps on three paws, holding up the other as if it was wounded. A flash of recognition lights up the face of Androcles. He flaps his hand as if it had a thorn in it, and pretends to pull the thorn out and to hurt himself. The lion nods repeatedly. Androcles holds out his hands to the lion, who gives him both paws, which he shakes with enthusiasm. They embrace rapturously, finally waltz round the arena amid a sudden burst of deafening applause, and out through the passage, the Emperor watching them in breathless astonishment until they disappear, when he rushes from his box and descends the steps in frantic excitement.
+38:00.278 [silence 1000ms]
+38:01.278 build/audio/segments/CAESAR/2_223_1.wav: 2:223:1:CAESAR - My friends, an incredible! an amazing thing! has happened. I can no longer doubt the truth of Christianity.
+38:07.628 [silence 1000ms]
+38:08.628 build/audio/segments/_NARRATOR/2_223_2.wav: 2:223:2:_NARRATOR - (_The Christians press to him joyfully_)
+38:10.728 [silence 1000ms]
+38:11.728 build/audio/segments/CAESAR/2_223_3.wav: 2:223:3:CAESAR - This Christian sorcerer—
+38:13.428 [silence 1000ms]
+38:14.428 build/audio/segments/_NARRATOR/2_223_4.wav: 2:223:4:_NARRATOR - (_with a yell, he breaks off as he sees Androcles and the lion emerge from the passage, waltzing. He bolts wildly up the steps into his box, and slams the door. All, Christians and gladiators’ alike, fly for their lives, the gladiators bolting into the arena, the others in all directions. The place is emptied with magical suddenness._)
+38:34.278 [silence 1000ms]
+38:35.278 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+38:35.980 [silence 300ms]
+38:36.280 build/audio/segments/_NARRATOR/2_224_1.wav: 2:224:1:_NARRATOR - (_naively_)
+38:37.230 [silence 1000ms]
+38:38.230 build/audio/segments/ANDROCLES/2_224_2.wav: 2:224:2:ANDROCLES - Now I wonder why they all run away from us like that.
+38:41.230 [silence 1000ms]
+38:42.230 build/audio/segments/_NARRATOR/2_224_3.wav: 2:224:3:_NARRATOR - (_The lion combining a series of yawns, purrs, and roars, achieves something very like a laugh._)
+38:48.030 [silence 1000ms]
+38:49.030 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+38:49.459 [silence 300ms]
+38:49.759 build/audio/segments/_NARRATOR/2_225_1.wav: 2:225:1:_NARRATOR - (_standing on a chair inside his box and looking over the wall_)
+38:52.959 [silence 1000ms]
+38:53.959 build/audio/segments/CAESAR/2_225_2.wav: 2:225:2:CAESAR - Sorcerer: I command you to put that lion to death instantly. It is guilty of high treason. Your conduct is most disgra—
+39:00.409 [silence 1000ms]
+39:01.409 build/audio/segments/_NARRATOR/2_225_3.wav: 2:225:3:_NARRATOR - (_the lion charges at him up the stairs_)
+39:03.709 [silence 1000ms]
+39:04.709 build/audio/segments/CAESAR/2_225_4.wav: 2:225:4:CAESAR - help!
+39:05.309 [silence 1000ms]
+39:06.309 build/audio/segments/_NARRATOR/2_225_5.wav: 2:225:5:_NARRATOR - (_He disappears. The lion rears against the box; looks over the partition at him, and roars. The Emperor darts out through the door and down to Androcles, pursued by the lion._)
+39:16.709 [silence 1000ms]
+39:17.709 build/audio/segments/ANDROCLES/2_226_1.wav: 2:226:1:ANDROCLES - Don’t run away, sir: he can’t help springing if you run.
+39:21.359 [silence 1000ms]
+39:22.359 build/audio/segments/_NARRATOR/2_226_2.wav: 2:226:2:_NARRATOR - (_He seizes the Emperor and gets between him and the lion, who stops at once._)
+39:26.459 [silence 1000ms]
+39:27.459 build/audio/segments/ANDROCLES/2_226_3.wav: 2:226:3:ANDROCLES - Don’t be afraid of him.
+39:28.909 [silence 1000ms]
+39:29.909 build/audio/segments/CAESAR/2_227_1.wav: 2:227:1:CAESAR - I am NOT afraid of him.
+39:31.509 [silence 1000ms]
+39:32.509 build/audio/segments/_NARRATOR/2_227_2.wav: 2:227:2:_NARRATOR - (_The lion crouches, growling. The Emperor clutches Androcles_)
+39:36.659 [silence 1000ms]
+39:37.659 build/audio/segments/CAESAR/2_227_3.wav: 2:227:3:CAESAR - Keep between us.
+39:38.609 [silence 1000ms]
+39:39.609 build/audio/segments/ANDROCLES/2_228_1.wav: 2:228:1:ANDROCLES - Never be afraid of animals, your Worship: that’s the great secret. He’ll be as gentle as a lamb when he knows that you are his friend. Stand quite still; and smile; and let him smell you all over just to reassure him; for, you see, he’s afraid of you; and he must examine you thoroughly before he gives you his confidence.
+39:58.259 [silence 1000ms]
+39:59.259 build/audio/segments/_NARRATOR/2_228_2.wav: 2:228:2:_NARRATOR - (_To the lion_)
+40:00.159 [silence 1000ms]
+40:01.159 build/audio/segments/ANDROCLES/2_228_3.wav: 2:228:3:ANDROCLES - Come now, Tommy; and speak nicely to the Emperor, the great, good Emperor who has power to have all our heads cut off if we don’t behave very, VERY respectfully to him.
+40:12.709 [silence 1000ms]
+40:13.709 build/audio/segments/_NARRATOR/2_229_1.wav: 2:229:1:_NARRATOR - The lion utters a fearful roar. The Emperor dashes madly up the steps, across the landing, and down again on the other side, with the lion in hot pursuit. Androcles rushes after the lion; overtakes him as he is descending; and throws himself on his back, trying to use his toes as a brake. Before he can stop him the lion gets hold of the trailing end of the Emperor’s robe.
+40:35.959 [silence 1000ms]
+40:36.959 build/audio/segments/ANDROCLES/2_230_1.wav: 2:230:1:ANDROCLES - Oh bad wicked Tommy, to chase the Emperor like that! Let go the Emperor’s robe at once, sir: where’s your manners?
+40:44.509 [silence 1000ms]
+40:45.509 build/audio/segments/_NARRATOR/2_230_2.wav: 2:230:2:_NARRATOR - (_The lion growls and worries the robe._)
+40:47.809 [silence 1000ms]
+40:48.809 build/audio/segments/ANDROCLES/2_230_3.wav: 2:230:3:ANDROCLES - Don’t pull it away from him, your worship. He’s only playing. Now I shall be really angry with you, Tommy, if you don’t let go.
+40:56.059 [silence 1000ms]
+40:57.059 build/audio/segments/_NARRATOR/2_230_4.wav: 2:230:4:_NARRATOR - (_The lion growls again_)
+40:58.609 [silence 1000ms]
+40:59.609 build/audio/segments/ANDROCLES/2_230_5.wav: 2:230:5:ANDROCLES - I’ll tell you what it is, sir: he thinks you and I are not friends.
+41:03.759 [silence 1000ms]
+41:04.759 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+41:05.188 [silence 300ms]
+41:05.488 build/audio/segments/_NARRATOR/2_231_1.wav: 2:231:1:_NARRATOR - (_trying to undo the clasp of his brooch_)
+41:07.888 [silence 1000ms]
+41:08.888 build/audio/segments/CAESAR/2_231_2.wav: 2:231:2:CAESAR - Friends! You infernal scoundrel
+41:11.138 [silence 1000ms]
+41:12.138 build/audio/segments/_NARRATOR/2_231_3.wav: 2:231:3:_NARRATOR - (_the lion growls_)
+41:13.538 [silence 1000ms]
+41:14.538 build/audio/segments/CAESAR/2_231_4.wav: 2:231:4:CAESAR - don’t let him go. Curse this brooch! I can’t get it loose.
+41:18.188 [silence 1000ms]
+41:19.188 build/audio/segments/ANDROCLES/2_232_1.wav: 2:232:1:ANDROCLES - We mustn’t let him lash himself into a rage. You must show him that you are my particular friend—if you will have the condescension.
+41:26.588 [silence 1000ms]
+41:27.588 build/audio/segments/_NARRATOR/2_232_2.wav: 2:232:2:_NARRATOR - (_He seizes the Emperor’s hands, and shakes them cordially_),
+41:30.888 [silence 1000ms]
+41:31.888 build/audio/segments/ANDROCLES/2_232_3.wav: 2:232:3:ANDROCLES - Look, Tommy: the nice Emperor is the dearest friend Andy Wandy has in the whole world: he loves him like a brother.
+41:39.488 [silence 1000ms]
+41:40.488 build/audio/segments/CAESAR/2_233_1.wav: 2:233:1:CAESAR - You little brute, you damned filthy little dog of a Greek tailor: I’ll have you burnt alive for daring to touch the divine person of the Emperor.
+41:47.538 [silence 1000ms]
+41:48.538 build/audio/segments/_NARRATOR/2_233_2.wav: 2:233:2:_NARRATOR - (_The lion roars._)
+41:49.888 [silence 1000ms]
+41:50.888 build/audio/segments/ANDROCLES/2_234_1.wav: 2:234:1:ANDROCLES - Oh don’t talk like that, sir. He understands every word you say: all animals do: they take it from the tone of your voice.
+41:58.588 [silence 1000ms]
+41:59.588 build/audio/segments/_NARRATOR/2_234_2.wav: 2:234:2:_NARRATOR - (_The lion growls and lashes his tail._)
+42:01.838 [silence 1000ms]
+42:02.838 build/audio/segments/ANDROCLES/2_234_3.wav: 2:234:3:ANDROCLES - I think he’s going to spring at your worship. If you wouldn’t mind saying something affectionate.
+42:08.038 [silence 1000ms]
+42:09.038 build/audio/segments/_NARRATOR/2_234_4.wav: 2:234:4:_NARRATOR - (_The lion roars._)
+42:10.288 [silence 1000ms]
+42:11.288 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+42:11.717 [silence 300ms]
+42:12.017 build/audio/segments/_NARRATOR/2_235_1.wav: 2:235:1:_NARRATOR - (_shaking Androcles’ hands frantically_)
+42:14.517 [silence 1000ms]
+42:15.517 build/audio/segments/CAESAR/2_235_2.wav: 2:235:2:CAESAR - My dearest Mr. Androcles, my sweetest friend, my long lost brother, come to my arms.
+42:19.767 [silence 1000ms]
+42:20.767 build/audio/segments/_NARRATOR/2_235_3.wav: 2:235:3:_NARRATOR - (_He embraces Androcles._)
+42:22.417 [silence 1000ms]
+42:23.417 build/audio/segments/CAESAR/2_235_4.wav: 2:235:4:CAESAR - Oh, what an abominable smell of garlic!
+42:26.017 [silence 1000ms]
+42:27.017 build/audio/segments/_NARRATOR/2_236_1.wav: 2:236:1:_NARRATOR - The lion lets go the robe and rolls over on his back, clasping his forepaws over one another coquettishly above his nose.
+42:34.117 [silence 1000ms]
+42:35.117 build/audio/segments/ANDROCLES/2_237_1.wav: 2:237:1:ANDROCLES - There! You see, your worship, a child might play with him now. See!
+42:39.367 [silence 1000ms]
+42:40.367 build/audio/segments/_NARRATOR/2_237_2.wav: 2:237:2:_NARRATOR - (_He tickles the lion’s belly. The lion wriggles ecstatically._)
+42:44.367 [silence 1000ms]
+42:45.367 build/audio/segments/ANDROCLES/2_237_3.wav: 2:237:3:ANDROCLES - Come and pet him.
+42:46.417 [silence 1000ms]
+42:47.417 build/audio/segments/CAESAR/2_238_1.wav: 2:238:1:CAESAR - I must conquer these unkingly terrors. Mind you don’t go away from him, though.
+42:51.317 [silence 1000ms]
+42:52.317 build/audio/segments/_NARRATOR/2_238_2.wav: 2:238:2:_NARRATOR - (_He pats the lion’s chest._)
+42:54.067 [silence 1000ms]
+42:55.067 build/audio/segments/ANDROCLES/2_239_1.wav: 2:239:1:ANDROCLES - Oh, sir, how few men would have the courage to do that—
+42:59.217 [silence 1000ms]
+43:00.217 build/audio/segments/CAESAR/2_240_1.wav: 2:240:1:CAESAR - Yes: it takes a bit of nerve. Let us invite the Court in and frighten them. Is he safe, do you think?
+43:05.517 [silence 1000ms]
+43:06.517 build/audio/segments/ANDROCLES/2_241_1.wav: 2:241:1:ANDROCLES - Quite safe now, sir.
+43:08.217 [silence 1000ms]
+43:09.217 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+43:09.646 [silence 300ms]
+43:09.946 build/audio/segments/_NARRATOR/2_242_1.wav: 2:242:1:_NARRATOR - (_majestically_)
+43:10.996 [silence 1000ms]
+43:11.996 build/audio/segments/CAESAR/2_242_2.wav: 2:242:2:CAESAR - What ho, there! All who are within hearing, return without fear. Caesar has tamed the lion.
+43:17.996 [silence 1000ms]
+43:18.996 build/audio/segments/_NARRATOR/2_242_3.wav: 2:242:3:_NARRATOR - (_All the fugitives steal cautiously in. The menagerie keeper comes from the passage with other keepers armed with iron bars and tridents._)
+43:26.996 [silence 1000ms]
+43:27.996 build/audio/segments/CAESAR/2_242_4.wav: 2:242:4:CAESAR - Take those things away. I have subdued the beast.
+43:30.696 [silence 1000ms]
+43:31.696 build/audio/segments/_NARRATOR/2_242_5.wav: 2:242:5:_NARRATOR - (_He places his foot on it._)
+43:33.296 [silence 1000ms]
+43:34.296 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+43:34.987 [silence 300ms]
+43:35.287 build/audio/segments/_NARRATOR/2_243_1.wav: 2:243:1:_NARRATOR - (_timidly approaching the Emperor and looking down with awe on the lion_)
+43:39.087 [silence 1000ms]
+43:40.087 build/audio/segments/FERROVIUS/2_243_2.wav: 2:243:2:FERROVIUS - It is strange that I, who fear no man, should fear a lion.
+43:45.037 [silence 1000ms]
+43:46.037 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+43:46.399 [silence 300ms]
+43:46.699 build/audio/segments/CAPTAIN/2_244_1.wav: 2:244:1:CAPTAIN - Every man fears something, Ferrovius.
+43:48.999 [silence 1000ms]
+43:49.999 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+43:50.428 [silence 300ms]
+43:50.728 build/audio/segments/CAESAR/2_245_1.wav: 2:245:1:CAESAR - How about the Pretorian Guard now?
+43:52.678 [silence 1000ms]
+43:53.678 plays/androcles/callouts/FERROVIUS_callout.wav: FERROVIUS
+43:54.369 [silence 300ms]
+43:54.669 build/audio/segments/FERROVIUS/2_246_1.wav: 2:246:1:FERROVIUS - In my youth I worshipped Mars, the God of War. I turned from him to serve the Christian god; but today the Christian god forsook me; and Mars overcame me and took back his own. The Christian god is not yet. He will come when Mars and I are dust; but meanwhile I must serve the gods that are, not the God that will be. Until then I accept service in the Guard, Caesar.
+44:24.262 [silence 1000ms]
+44:25.262 build/audio/segments/CAESAR/2_247_1.wav: 2:247:1:CAESAR - Very wisely said. All really sensible men agree that the prudent course is to be neither bigoted in our attachment to the old nor rash and unpractical in keeping an open mind for the new, but to make the best of both dispensations.
+44:37.912 [silence 1000ms]
+44:38.912 plays/androcles/callouts/CAPTAIN_callout.wav: CAPTAIN
+44:39.274 [silence 300ms]
+44:39.574 build/audio/segments/CAPTAIN/2_248_1.wav: 2:248:1:CAPTAIN - What do you say, Lavinia? Will you too be prudent?
+44:43.024 [silence 1000ms]
+44:44.024 plays/androcles/callouts/LAVINIA_callout.wav: LAVINIA
+44:44.536 [silence 300ms]
+44:44.836 build/audio/segments/_NARRATOR/2_249_1.wav: 2:249:1:_NARRATOR - (_on the stair_)
+44:45.936 [silence 1000ms]
+44:46.936 build/audio/segments/LAVINIA/2_249_2.wav: 2:249:2:LAVINIA - No: I’ll strive for the coming of the God who is not yet.
+44:50.386 [silence 1000ms]
+44:51.386 build/audio/segments/CAPTAIN/2_250_1.wav: 2:250:1:CAPTAIN - May I come and argue with you occasionally?
+44:54.630 [silence 1000ms]
+44:55.630 build/audio/segments/LAVINIA/2_251_1.wav: 2:251:1:LAVINIA - Yes, handsome Captain: you may.
+44:58.781 [silence 1000ms]
+44:59.781 build/audio/segments/_NARRATOR/2_251_2.wav: 2:251:2:_NARRATOR - (_He kisses her hands._)
+45:01.231 [silence 1000ms]
+45:02.231 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+45:02.660 [silence 300ms]
+45:02.960 build/audio/segments/CAESAR/2_252_1.wav: 2:252:1:CAESAR - And now, my friends, though I do not, as you see, fear this lion, yet the strain of his presence is considerable; for none of us can feel quite sure what he will do next.
+45:11.310 [silence 1000ms]
+45:12.310 plays/androcles/callouts/KEEPER_callout.wav: KEEPER
+45:12.722 [silence 300ms]
+45:13.022 build/audio/segments/KEEPER/2_253_1.wav: 2:253:1:KEEPER - Caesar: give us this Greek sorcerer to be a slave in the menagerie. He has a way with the beasts.
+45:20.264 [silence 1000ms]
+45:21.264 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+45:21.966 [silence 300ms]
+45:22.266 build/audio/segments/_NARRATOR/2_254_1.wav: 2:254:1:_NARRATOR - (_distressed._)
+45:23.116 [silence 1000ms]
+45:24.116 build/audio/segments/ANDROCLES/2_254_2.wav: 2:254:2:ANDROCLES - Not if they are in cages. They should not be kept in cages. They must all be let out.
+45:30.016 [silence 1000ms]
+45:31.016 plays/androcles/callouts/CAESAR_callout.wav: CAESAR
+45:31.445 [silence 300ms]
+45:31.745 build/audio/segments/CAESAR/2_255_1.wav: 2:255:1:CAESAR - I give this sorcerer to be a slave to the first man who lays hands on him.
+45:35.695 [silence 1000ms]
+45:36.695 build/audio/segments/_NARRATOR/2_255_2.wav: 2:255:2:_NARRATOR - (_The menagerie keepers and the gladiators rush for Androcles. The lion starts up and faces them. They surge back._)
+45:43.295 [silence 1000ms]
+45:44.295 build/audio/segments/CAESAR/2_255_3.wav: 2:255:3:CAESAR - You see how magnanimous we Romans are, Androcles. We suffer you to go in peace.
+45:49.940 [silence 1000ms]
+45:50.940 build/audio/segments/ANDROCLES/2_256_1.wav: 2:256:1:ANDROCLES - I thank your worship. I thank you all, ladies and gentlemen. Come, Tommy. Whilst we stand together, no cage for you: no slavery for me.
+46:02.388 [silence 1000ms]
+46:03.388 build/audio/segments/_NARRATOR/2_256_2.wav: 2:256:2:_NARRATOR - (_He goes out with the lion, everybody crowding away to give him as wide a berth as possible._)
+46:10.177 [silence 2000ms]
+46:12.177 plays/androcles/recordings/_LIBRIVOX_EPILOG.wav: _LIBRIVOX_EPILOG
+46:15.764 [silence 1000ms]

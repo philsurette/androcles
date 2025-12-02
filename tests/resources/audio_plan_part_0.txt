@@ -1,0 +1,243 @@
+00:00.000 [silence 1000ms]
+00:01.000 plays/androcles/recordings/_LIBRIVOX_PROLOGUE.wav: _LIBRIVOX_PROLOGUE
+00:17.698 [silence 1000ms]
+00:18.698 build/audio/segments/_NARRATOR/0_0_1.wav: 0:0:1:_NARRATOR - PROLOGUE
+00:19.748 [silence 1000ms]
+00:20.748 build/audio/segments/_NARRATOR/0_1_1.wav: 0:1:1:_NARRATOR - Overture; forest sounds, roaring of lions, Christian hymn faintly.
+00:27.398 [silence 1000ms]
+00:28.398 build/audio/segments/_NARRATOR/0_2_1.wav: 0:2:1:_NARRATOR - A jungle path. A lion’s roar, a melancholy suffering roar, comes from the jungle. It is repeated nearer. The lion limps from the jungle on three legs, holding up his right forepaw, in which a huge thorn sticks. He sits down and contemplates it. He licks it. He shakes it. He tries to extract it by scraping it along the ground, and hurts himself worse. He roars piteously. He licks it again. Tears drop from his eyes. He limps painfully off the path and lies down under the trees, exhausted with pain. Heaving a long sigh, like wind in a trombone, he goes to sleep.
+01:08.398 [silence 1000ms]
+01:09.398 build/audio/segments/_NARRATOR/0_3_1.wav: 0:3:1:_NARRATOR - Androcles and his wife Megæra come along the path. He is a small, thin, ridiculous little man who might be any age from thirty to fifty-five. He has sandy hair, watery compassionate blue eyes, sensitive nostrils, and a very presentable forehead; but his good points go no further; his arms and legs and back, though wiry of their kind, look shrivelled and starved. He carries a big bundle, is very poorly clad, and seems tired and hungry.
+01:38.098 [silence 1000ms]
+01:39.098 build/audio/segments/_NARRATOR/0_4_1.wav: 0:4:1:_NARRATOR - His wife is a rather handsome pampered slattern, well fed and in the prime of life. She has nothing to carry, and has a stout stick to help her along.
+01:48.548 [silence 1000ms]
+01:49.548 plays/androcles/callouts/MEGAERA_callout.wav: MEGAERA
+01:50.111 [silence 300ms]
+01:50.411 build/audio/segments/_NARRATOR/0_5_1.wav: 0:5:1:_NARRATOR - (_suddenly throwing down her stick_)
+01:52.111 [silence 1000ms]
+01:53.111 build/audio/segments/MEGAERA/0_5_2.wav: 0:5:2:MEGAERA - I won’t go another step.
+01:55.161 [silence 1000ms]
+01:56.161 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+01:56.863 [silence 300ms]
+01:57.163 build/audio/segments/_NARRATOR/0_6_1.wav: 0:6:1:_NARRATOR - (_pleading wearily_)
+01:58.213 [silence 1000ms]
+01:59.213 build/audio/segments/ANDROCLES/0_6_2.wav: 0:6:2:ANDROCLES - Oh, not again, dear. What’s the good of stopping every two miles and saying you won’t go another step? We must get on to the next village before night. There are wild beasts in this wood: lions, they say.
+02:14.913 [silence 1000ms]
+02:15.913 build/audio/segments/MEGAERA/0_7_1.wav: 0:7:1:MEGAERA - I don’t believe a word of it. You are always threatening me with wild beasts to make me walk the very soul out of my body when I can hardly drag one foot before another. We haven’t seen a single lion yet.
+02:28.063 [silence 1000ms]
+02:29.063 build/audio/segments/ANDROCLES/0_8_1.wav: 0:8:1:ANDROCLES - Well, dear, do you want to see one?
+02:32.113 [silence 1000ms]
+02:33.113 plays/androcles/callouts/MEGAERA_callout.wav: MEGAERA
+02:33.676 [silence 300ms]
+02:33.976 build/audio/segments/_NARRATOR/0_9_1.wav: 0:9:1:_NARRATOR - (_tearing the bundle from his back_)
+02:35.526 [silence 1000ms]
+02:36.526 build/audio/segments/MEGAERA/0_9_2.wav: 0:9:2:MEGAERA - You cruel beast, you don’t care how tired I am, or what becomes of me
+02:41.126 [silence 1000ms]
+02:42.126 build/audio/segments/_NARRATOR/0_9_3.wav: 0:9:3:_NARRATOR - (_she throws the bundle on the ground_):
+02:43.876 [silence 1000ms]
+02:44.876 build/audio/segments/MEGAERA/0_9_4.wav: 0:9:4:MEGAERA - always thinking of yourself. Self! self! self! always yourself!
+02:49.426 [silence 1000ms]
+02:50.426 build/audio/segments/_NARRATOR/0_9_5.wav: 0:9:5:_NARRATOR - (_She sits down on the bundle._)
+02:52.026 [silence 1000ms]
+02:53.026 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+02:53.728 [silence 300ms]
+02:54.028 build/audio/segments/_NARRATOR/0_10_1.wav: 0:10:1:_NARRATOR - (_sitting down sadly on the ground with his elbows on his knees and his head in his hands_)
+02:58.278 [silence 1000ms]
+02:59.278 build/audio/segments/ANDROCLES/0_10_2.wav: 0:10:2:ANDROCLES - We all have to think of ourselves occasionally, dear.
+03:02.428 [silence 1000ms]
+03:03.428 build/audio/segments/MEGAERA/0_11_1.wav: 0:11:1:MEGAERA - A man ought to think of his wife sometimes.
+03:06.078 [silence 1000ms]
+03:07.078 build/audio/segments/ANDROCLES/0_12_1.wav: 0:12:1:ANDROCLES - He can’t always help it, dear. You make me think of you a good deal. Not that I blame you.
+03:13.978 [silence 1000ms]
+03:14.978 build/audio/segments/MEGAERA/0_13_1.wav: 0:13:1:MEGAERA - Blame me! I should think not indeed. Is it my fault that I’m married to you?
+03:19.578 [silence 1000ms]
+03:20.578 build/audio/segments/ANDROCLES/0_14_1.wav: 0:14:1:ANDROCLES - No, dear: that is my fault.
+03:23.978 [silence 1000ms]
+03:24.978 build/audio/segments/MEGAERA/0_15_1.wav: 0:15:1:MEGAERA - That’s a nice thing to say to me. Aren’t you happy with me?
+03:28.128 [silence 1000ms]
+03:29.128 build/audio/segments/ANDROCLES/0_16_1.wav: 0:16:1:ANDROCLES - I don’t complain, my love.
+03:31.078 [silence 1000ms]
+03:32.078 build/audio/segments/MEGAERA/0_17_1.wav: 0:17:1:MEGAERA - You ought to be ashamed of yourself.
+03:34.078 [silence 1000ms]
+03:35.078 build/audio/segments/ANDROCLES/0_18_1.wav: 0:18:1:ANDROCLES - I am, my dear.
+03:36.828 [silence 1000ms]
+03:37.828 build/audio/segments/MEGAERA/0_19_1.wav: 0:19:1:MEGAERA - You’re not: you glory in it.
+03:39.878 [silence 1000ms]
+03:40.878 build/audio/segments/ANDROCLES/0_20_1.wav: 0:20:1:ANDROCLES - In what, darling?
+03:42.428 [silence 1000ms]
+03:43.428 build/audio/segments/MEGAERA/0_21_1.wav: 0:21:1:MEGAERA - In everything. In making me a slave, and making yourself a laughing-stock. Its not fair. You get me the name of being a shrew with your meek ways, always talking as if butter wouldn’t melt in your mouth. And just because I look a big strong woman, and because I’m good-hearted and a bit hasty, and because you’re always driving me to do things I’m sorry for afterwards, people say “Poor man: what a life his wife leads him!” Oh, if they only knew! And you think I don’t know. But I do, I do,
+04:12.478 [silence 1000ms]
+04:13.478 build/audio/segments/_NARRATOR/0_21_2.wav: 0:21:2:_NARRATOR - (_screaming_)
+04:14.128 [silence 1000ms]
+04:15.128 build/audio/segments/MEGAERA/0_21_3.wav: 0:21:3:MEGAERA - I do.
+04:16.378 [silence 1000ms]
+04:17.378 build/audio/segments/ANDROCLES/0_22_1.wav: 0:22:1:ANDROCLES - Yes, my dear: I know you do.
+04:20.728 [silence 1000ms]
+04:21.728 build/audio/segments/MEGAERA/0_23_1.wav: 0:23:1:MEGAERA - Then why don’t you treat me properly and be a good husband to me?
+04:25.028 [silence 1000ms]
+04:26.028 build/audio/segments/ANDROCLES/0_24_1.wav: 0:24:1:ANDROCLES - What can I do, my dear?
+04:27.678 [silence 1000ms]
+04:28.678 build/audio/segments/MEGAERA/0_25_1.wav: 0:25:1:MEGAERA - What can you do! You can return to your duty, and come back to your home and your friends, and sacrifice to the gods as all respectable people do, instead of having us hunted out of house and home for being dirty, disreputable, blaspheming atheists.
+04:42.928 [silence 1000ms]
+04:43.928 build/audio/segments/ANDROCLES/0_26_1.wav: 0:26:1:ANDROCLES - I’m not an atheist, dear: I am a Christian.
+04:47.728 [silence 1000ms]
+04:48.728 build/audio/segments/MEGAERA/0_27_1.wav: 0:27:1:MEGAERA - Well, isn’t that the same thing, only ten times worse? Everybody knows that the Christians are the very lowest of the low.
+04:56.278 [silence 1000ms]
+04:57.278 build/audio/segments/ANDROCLES/0_28_1.wav: 0:28:1:ANDROCLES - Just like us, dear.
+04:59.028 [silence 1000ms]
+05:00.028 build/audio/segments/MEGAERA/0_29_1.wav: 0:29:1:MEGAERA - Speak for yourself. Don’t you dare to compare me to common people. My father owned his own public-house; and sorrowful was the day for me when you first came drinking in our bar.
+05:10.228 [silence 1000ms]
+05:11.228 build/audio/segments/ANDROCLES/0_30_1.wav: 0:30:1:ANDROCLES - I confess I was addicted to it, dear. But I gave it up when I became a Christian.
+05:17.128 [silence 1000ms]
+05:18.128 build/audio/segments/MEGAERA/0_31_1.wav: 0:31:1:MEGAERA - You’d much better have remained a drunkard. I can forgive a man being addicted to drink: its only natural; and I don’t deny I like a drop myself sometimes. What I can’t stand is your being addicted to Christianity. And what’s worse again, your being addicted to animals. How is any woman to keep her house clean when you bring in every stray cat and lost cur and lame duck in the whole countryside? You took the bread out of my mouth to feed them: you know you did: don’t attempt to deny it.
+05:45.828 [silence 1000ms]
+05:46.828 build/audio/segments/ANDROCLES/0_32_1.wav: 0:32:1:ANDROCLES - Only when they were hungry and you were getting too stout, dearie.
+05:50.878 [silence 1000ms]
+05:51.878 build/audio/segments/MEGAERA/0_33_1.wav: 0:33:1:MEGAERA - Yes, insult me, do.
+05:53.978 [silence 1000ms]
+05:54.978 build/audio/segments/_NARRATOR/0_33_2.wav: 0:33:2:_NARRATOR - (_Rising_)
+05:55.678 [silence 1000ms]
+05:56.678 build/audio/segments/MEGAERA/0_33_3.wav: 0:33:3:MEGAERA - Oh! I won’t bear it another moment. You used to sit and talk to those dumb brute beasts for hours, when you hadn’t a word for me.
+06:03.728 [silence 1000ms]
+06:04.728 build/audio/segments/ANDROCLES/0_34_1.wav: 0:34:1:ANDROCLES - They never answered back, darling.
+06:07.378 [silence 1000ms]
+06:08.378 build/audio/segments/_NARRATOR/0_34_2.wav: 0:34:2:_NARRATOR - (_He rises and again shoulders the bundle._)
+06:10.678 [silence 1000ms]
+06:11.678 build/audio/segments/MEGAERA/0_35_1.wav: 0:35:1:MEGAERA - Well, if you’re fonder of animals than of your own wife, you can live with them here in the jungle. I’ve had enough of them and enough of you. I’m going back. I’m going home.
+06:20.678 [silence 1000ms]
+06:21.678 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+06:22.380 [silence 300ms]
+06:22.680 build/audio/segments/_NARRATOR/0_36_1.wav: 0:36:1:_NARRATOR - (_barring the way back_)
+06:23.980 [silence 1000ms]
+06:24.980 build/audio/segments/ANDROCLES/0_36_2.wav: 0:36:2:ANDROCLES - No, dearie: don’t take on like that. We can’t go back. We’ve sold everything: we should starve; and I should be sent to Rome and thrown to the lions—
+06:35.480 [silence 1000ms]
+06:36.480 build/audio/segments/MEGAERA/0_37_1.wav: 0:37:1:MEGAERA - Serve you right! I wish the lions joy of you.
+06:39.330 [silence 1000ms]
+06:40.330 build/audio/segments/_NARRATOR/0_37_2.wav: 0:37:2:_NARRATOR - (_Screaming_)
+06:41.030 [silence 1000ms]
+06:42.030 build/audio/segments/MEGAERA/0_37_3.wav: 0:37:3:MEGAERA - Are you going to get out of my way and let me go home?
+06:44.480 [silence 1000ms]
+06:45.480 build/audio/segments/ANDROCLES/0_38_1.wav: 0:38:1:ANDROCLES - No, dear—
+06:46.580 [silence 1000ms]
+06:47.580 build/audio/segments/MEGAERA/0_39_1.wav: 0:39:1:MEGAERA - Then I’ll make my way through the forest; and when I’m eaten by the wild beasts you’ll know what a wife you’ve lost.
+06:52.980 [silence 1000ms]
+06:53.980 build/audio/segments/_NARRATOR/0_39_2.wav: 0:39:2:_NARRATOR - (_She dashes into the jungle and nearly falls over the sleeping lion._)
+06:57.630 [silence 1000ms]
+06:58.630 build/audio/segments/MEGAERA/0_39_3.wav: 0:39:3:MEGAERA - Oh! Oh! Andy! Andy!
+07:01.230 [silence 1000ms]
+07:02.230 build/audio/segments/_NARRATOR/0_39_4.wav: 0:39:4:_NARRATOR - (_She totters back and collapses into the arms of Androcles, who, crushed by her weight, falls on his bundle._)
+07:08.330 [silence 1000ms]
+07:09.330 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+07:10.032 [silence 300ms]
+07:10.332 build/audio/segments/_NARRATOR/0_40_1.wav: 0:40:1:_NARRATOR - (_extracting himself from beneath her and slapping her hands in great anxiety_)
+07:14.182 [silence 1000ms]
+07:15.182 build/audio/segments/ANDROCLES/0_40_2.wav: 0:40:2:ANDROCLES - What is it, my precious, my pet? What’s the matter?
+07:18.482 [silence 1000ms]
+07:19.482 build/audio/segments/_NARRATOR/0_40_3.wav: 0:40:3:_NARRATOR - (_He raises her head. Speechless with terror, she points in the direction of the sleeping lion. He steals cautiously towards the spot indicated by Megæra. She rises with an effort and totters after him._)
+07:31.782 [silence 1000ms]
+07:32.782 build/audio/segments/MEGAERA/0_41_1.wav: 0:41:1:MEGAERA - No, Andy: you’ll be killed. Come back.
+07:35.732 [silence 1000ms]
+07:36.732 build/audio/segments/_NARRATOR/0_42_1.wav: 0:42:1:_NARRATOR - The lion utters a long snoring sigh. Androcles sees the lion and recoils fainting into the arms of Megæra, who falls back on the bundle. They roll apart and lie staring in terror at one another. The lion is heard groaning heavily in the jungle.
+07:51.482 [silence 1000ms]
+07:52.482 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+07:53.184 [silence 300ms]
+07:53.484 build/audio/segments/_NARRATOR/0_43_1.wav: 0:43:1:_NARRATOR - (_whispering_)
+07:54.184 [silence 1000ms]
+07:55.184 build/audio/segments/ANDROCLES/0_43_2.wav: 0:43:2:ANDROCLES - Did you see? A lion.
+07:57.834 [silence 1000ms]
+07:58.834 plays/androcles/callouts/MEGAERA_callout.wav: MEGAERA
+07:59.397 [silence 300ms]
+07:59.697 build/audio/segments/_NARRATOR/0_44_1.wav: 0:44:1:_NARRATOR - (_despairing_)
+08:00.547 [silence 1000ms]
+08:01.547 build/audio/segments/MEGAERA/0_44_2.wav: 0:44:2:MEGAERA - The gods have sent him to punish us because you’re a Christian. Take me away, Andy. Save me.
+08:07.647 [silence 1000ms]
+08:08.647 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+08:09.349 [silence 300ms]
+08:09.649 build/audio/segments/_NARRATOR/0_45_1.wav: 0:45:1:_NARRATOR - (_rising_)
+08:10.349 [silence 1000ms]
+08:11.349 build/audio/segments/ANDROCLES/0_45_2.wav: 0:45:2:ANDROCLES - Meggy: there’s one chance for you. It’ll take him pretty nigh twenty minutes to eat me (I’m rather stringy and tough) and you can escape in less time than that.
+08:22.249 [silence 1000ms]
+08:23.249 build/audio/segments/MEGAERA/0_46_1.wav: 0:46:1:MEGAERA - Oh, don’t talk about eating.
+08:25.349 [silence 1000ms]
+08:26.349 build/audio/segments/_NARRATOR/0_46_2.wav: 0:46:2:_NARRATOR - (_The lion rises with a great groan and limps towards them._)
+08:29.949 [silence 1000ms]
+08:30.949 build/audio/segments/MEGAERA/0_46_3.wav: 0:46:3:MEGAERA - Oh!
+08:31.449 [silence 1000ms]
+08:32.449 build/audio/segments/_NARRATOR/0_46_4.wav: 0:46:4:_NARRATOR - (_She faints._)
+08:33.349 [silence 1000ms]
+08:34.349 plays/androcles/callouts/ANDROCLES_callout.wav: ANDROCLES
+08:35.051 [silence 300ms]
+08:35.351 build/audio/segments/_NARRATOR/0_47_1.wav: 0:47:1:_NARRATOR - (_quaking, but keeping between the lion and Megæra_)
+08:38.151 [silence 1000ms]
+08:39.151 build/audio/segments/ANDROCLES/0_47_2.wav: 0:47:2:ANDROCLES - Don’t you come near my wife, do you hear?
+08:41.651 [silence 1000ms]
+08:42.651 build/audio/segments/_NARRATOR/0_47_3.wav: 0:47:3:_NARRATOR - (_The lion groans. Androcles can hardly stand for trembling._)
+08:46.251 [silence 1000ms]
+08:47.251 build/audio/segments/ANDROCLES/0_47_4.wav: 0:47:4:ANDROCLES - Meggy: run. Run for your life. If I take my eye off him, its all up.
+08:52.801 [silence 1000ms]
+08:53.801 build/audio/segments/_NARRATOR/0_47_5.wav: 0:47:5:_NARRATOR - (_The lion holds up his wounded paw and flaps it piteously before Androcles._)
+08:58.051 [silence 1000ms]
+08:59.051 build/audio/segments/ANDROCLES/0_47_6.wav: 0:47:6:ANDROCLES - Oh, he’s lame, poor old chap! He’s got a thorn in his paw. A frightfully big thorn.
+09:06.851 [silence 1000ms]
+09:07.851 build/audio/segments/_NARRATOR/0_47_7.wav: 0:47:7:_NARRATOR - (_Full of sympathy_)
+09:09.101 [silence 1000ms]
+09:10.101 build/audio/segments/ANDROCLES/0_47_8.wav: 0:47:8:ANDROCLES - Oh, poor old man! Did um get an awful thorn into um’s tootsums wootsums? Has it made um too sick to eat a nice little Christian man for um’s breakfast? Oh, a nice little Christian man will get um’s thorn out for um; and then um shall eat the nice Christian man and the nice Christian man’s nice big tender wifey pifey.
+09:31.151 [silence 1000ms]
+09:32.151 build/audio/segments/_NARRATOR/0_47_9.wav: 0:47:9:_NARRATOR - (_The lion responds by moans of self-pity._)
+09:34.851 [silence 1000ms]
+09:35.851 build/audio/segments/ANDROCLES/0_47_10.wav: 0:47:10:ANDROCLES - Yes, yes, yes, yes, yes. Now, now
+09:39.701 [silence 1000ms]
+09:40.701 build/audio/segments/_NARRATOR/0_47_11.wav: 0:47:11:_NARRATOR - (_taking the paw in his hand_)
+09:42.551 [silence 1000ms]
+09:43.551 build/audio/segments/ANDROCLES/0_47_12.wav: 0:47:12:ANDROCLES - um is not to bite and not to scratch, not even if it hurts a very, very little. Now make velvet paws. That’s right.
+09:53.051 [silence 1000ms]
+09:54.051 build/audio/segments/_NARRATOR/0_47_13.wav: 0:47:13:_NARRATOR - (_He pulls gingerly at the thorn. The lion, with an angry yell of pain, jerks back his paw so abruptly that Androcles is thrown on his back._)
+10:03.001 [silence 1000ms]
+10:04.001 build/audio/segments/ANDROCLES/0_47_14.wav: 0:47:14:ANDROCLES - Steadeee! Oh, did the nasty cruel little Christian man hurt the sore paw?
+10:10.201 [silence 1000ms]
+10:11.201 build/audio/segments/_NARRATOR/0_47_15.wav: 0:47:15:_NARRATOR - (_The lion moans assentingly but apologetically._)
+10:14.201 [silence 1000ms]
+10:15.201 build/audio/segments/ANDROCLES/0_47_16.wav: 0:47:16:ANDROCLES - Well, one more little pull and it will be all over. Just one little, little, leetle pull; and then um will live happily ever after.
+10:26.201 [silence 1000ms]
+10:27.201 build/audio/segments/_NARRATOR/0_47_17.wav: 0:47:17:_NARRATOR - (_He gives the thorn another pull. The lion roars and snaps his jaws with a terrifying clash._)
+10:32.951 [silence 1000ms]
+10:33.951 build/audio/segments/ANDROCLES/0_47_18.wav: 0:47:18:ANDROCLES - Oh, mustn’t frighten um’s good kind doctor, um’s affectionate nursey. That didn’t hurt at all: not a bit. Just one more. Just to show how the brave big lion can bear pain, not like the little crybaby Christian man. Oopsh!
+10:51.451 [silence 1000ms]
+10:52.451 build/audio/segments/_NARRATOR/0_47_19.wav: 0:47:19:_NARRATOR - (_The thorn comes out. The lion yells with pain, and shakes his paw wildly._)
+10:57.451 [silence 1000ms]
+10:58.451 build/audio/segments/ANDROCLES/0_47_20.wav: 0:47:20:ANDROCLES - That’s it!
+10:59.501 [silence 1000ms]
+11:00.501 build/audio/segments/_NARRATOR/0_47_21.wav: 0:47:21:_NARRATOR - (_Holding up the thorn._)
+11:01.701 [silence 1000ms]
+11:02.701 build/audio/segments/ANDROCLES/0_47_22.wav: 0:47:22:ANDROCLES - Now it’s out. Now lick um’s paw to take away the nasty inflammation. See?
+11:08.301 [silence 1000ms]
+11:09.301 build/audio/segments/_NARRATOR/0_47_23.wav: 0:47:23:_NARRATOR - (_He licks his own hand. The lion nods intelligently and licks his paw industriously._)
+11:14.001 [silence 1000ms]
+11:15.001 build/audio/segments/ANDROCLES/0_47_24.wav: 0:47:24:ANDROCLES - Clever little liony-piony! Understands um’s dear old friend Andy Wandy.
+11:21.351 [silence 1000ms]
+11:22.351 build/audio/segments/_NARRATOR/0_47_25.wav: 0:47:25:_NARRATOR - (_The lion licks his face._)
+11:23.801 [silence 1000ms]
+11:24.801 build/audio/segments/ANDROCLES/0_47_26.wav: 0:47:26:ANDROCLES - Yes, kissums Andy Wandy.
+11:27.201 [silence 1000ms]
+11:28.201 build/audio/segments/_NARRATOR/0_47_27.wav: 0:47:27:_NARRATOR - (_The lion, wagging his tail violently, rises on his hind legs and embraces Androcles, who makes a wry face and cries_)
+11:35.501 [silence 1000ms]
+11:36.501 build/audio/segments/ANDROCLES/0_47_28.wav: 0:47:28:ANDROCLES - Velvet paws! Velvet paws!
+11:39.001 [silence 1000ms]
+11:40.001 build/audio/segments/_NARRATOR/0_47_29.wav: 0:47:29:_NARRATOR - (_The lion draws in his claws._)
+11:41.901 [silence 1000ms]
+11:42.901 build/audio/segments/ANDROCLES/0_47_30.wav: 0:47:30:ANDROCLES - That’s right.
+11:44.201 [silence 1000ms]
+11:45.201 build/audio/segments/_NARRATOR/0_47_31.wav: 0:47:31:_NARRATOR - (_He embraces the lion, who finally takes the end of his tail in one paw, places that tight around Androcles’ waist, resting it on his hip. Androcles takes the other paw in his hand, stretches out his arm, and the two waltz rapturously round and round and finally away through the jungle._)
+12:01.151 [silence 1000ms]
+12:02.151 plays/androcles/callouts/MEGAERA_callout.wav: MEGAERA
+12:02.714 [silence 300ms]
+12:03.014 build/audio/segments/_NARRATOR/0_48_1.wav: 0:48:1:_NARRATOR - (_who has revived during the waltz_)
+12:05.114 [silence 1000ms]
+12:06.114 build/audio/segments/MEGAERA/0_48_2.wav: 0:48:2:MEGAERA - Oh, you coward, you haven’t danced with me for years; and now you go off dancing with a great brute beast that you haven’t known for ten minutes and that wants to eat your own wife. Coward! Coward! Coward!
+12:20.442 [silence 1000ms]
+12:21.442 build/audio/segments/_NARRATOR/0_48_3.wav: 0:48:3:_NARRATOR - (_She rushes off after them into the jungle._)
+12:23.492 [silence 2000ms]
+12:25.492 plays/androcles/recordings/_LIBRIVOX_ENDOF.wav: _LIBRIVOX_ENDOF
+12:26.212 [silence 300ms]
+12:26.512 build/audio/segments/_NARRATOR/0_0_1.wav: 0:0:1:_NARRATOR - PROLOGUE
+12:27.562 [silence 1000ms]
