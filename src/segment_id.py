@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from block_id import BlockId
+
 
 @dataclass
 class SegmentId:
-    block_id: "BlockId"  # BlockId is defined in play_text; forward-declared to avoid circular import.
+    block_id: BlockId
     segment_no: int
 
     def __str__(self) -> str:

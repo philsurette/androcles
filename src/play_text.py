@@ -11,31 +11,13 @@ from pathlib import Path
 from paragraphs import collapse_to_paragraphs
 from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
 from segment_id import SegmentId
+from block_id import BlockId
 
 
 @dataclass
 class Title:
     part_no: int
     title: str
-
-
-@dataclass
-class BlockId:
-    part_id: int | None
-    block_no: int
-
-    def nextId(self) -> "BlockId":
-        """Return the next BlockId within the same part."""
-        return BlockId(self.part_id, self.block_no + 1)
-
-    def previousId(self) -> "BlockId | None":
-        """Return the previous BlockId within the same part, or None if this is the first."""
-        if self.block_no <= 0:
-            return None
-        return BlockId(self.part_id, self.block_no - 1)
-
-    def __hash__(self) -> int:  # Ensure hashability for dict/set usage.
-        return hash((self.part_id, self.block_no))
 
 
 @dataclass
