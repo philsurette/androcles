@@ -2,7 +2,6 @@
 """Build role cue MP4s with chapter markers for cues and responses."""
 from __future__ import annotations
 
-import argparse
 import logging
 import tempfile
 import subprocess
@@ -12,7 +11,7 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_text import PlayTextParser, PlayText, RoleBlock
+from play_text import PlayText, RoleBlock
 from paths import SEGMENTS_DIR, AUDIO_OUT_DIR, CALLOUTS_DIR
 
 
@@ -90,53 +89,89 @@ class CueBuilder:
         """
         combined = AudioSegment.empty()
         chapters: List[Tuple[int, int, str]] = []
+
+        for part in self.play.getParts():
+            self._build_cues_for_role_and_part(role, part, combined, chapters)
+
+        return combined, chapters
+
+    def _build_cues_for_role_and_part(
+        self,
+        role: str,
+        part: "Part",
+        combined: AudioSegment,
+        chapters: List[Tuple[int, int, str]],
+    ) -> None:
+        """Append cues for a role within a part to combined audio and chapters."""
         callout_cache: Dict[str, AudioSegment | None] = {}
         callout_gap = AudioSegment.silent(duration=self.callout_spacing_ms) if self.callout_spacing_ms > 0 else None
 
-        for part in self.play.getParts():
-            speech_blocks = [b for b in part.blocks if isinstance(b, RoleBlock)]
-            for idx, blk in enumerate(speech_blocks):
-                if blk.role != role:
-                    continue
-                prev_block = self._previous_speech_block(speech_blocks, idx)
+        speech_blocks = [b for b in part.blocks if isinstance(b, RoleBlock)]
+        for idx, blk in enumerate(speech_blocks):
+            self._append_block_cues(
+                role=role,
+                block=blk,
+                speech_blocks=speech_blocks,
+                idx=idx,
+                combined=combined,
+                chapters=chapters,
+                callout_cache=callout_cache,
+                callout_gap=callout_gap,
+            )
 
-                if prev_block and self.include_prompts:
-                    cue_role = prev_block.role
-                    key = (prev_block.block_id.part_id, prev_block.block_id.block_no)
-                    cue_ids = self.segment_maps.get(cue_role, {}).get(key, [])
-                    if cue_ids:
-                        if cue_role not in callout_cache:
-                            callout_cache[cue_role] = self._load_callout(cue_role)
-                        call = callout_cache[cue_role]
-                        if call:
-                            combined += call
-                            if callout_gap:
-                                combined += callout_gap
+    def _append_block_cues(
+        self,
+        role: str,
+        block: RoleBlock,
+        speech_blocks: List[RoleBlock],
+        idx: int,
+        combined: AudioSegment,
+        chapters: List[Tuple[int, int, str]],
+        callout_cache: Dict[str, AudioSegment | None],
+        callout_gap: AudioSegment | None,
+    ) -> None:
+        """Append cues for a single block to the combined audio and chapters."""
+        if block.role != role:
+            return
 
-                        cue_audio = self._concat_segments(cue_role, cue_ids)
-                        cue_audio = self._crop_cue(cue_audio, tail_ms=self.max_cue_size_ms)
+        prev_block = self._previous_speech_block(speech_blocks, idx)
 
-                        cue_start = len(combined)
-                        combined += cue_audio
-                        cue_end = len(combined)
-                        chapters.append((cue_start, cue_end, f"CUE {cue_role} {cue_ids[0]}"))
+        if prev_block and self.include_prompts:
+            cue_role = prev_block.role
+            key = (prev_block.block_id.part_id, prev_block.block_id.block_no)
+            cue_ids = self.segment_maps.get(cue_role, {}).get(key, [])
+            if cue_ids:
+                if cue_role not in callout_cache:
+                    callout_cache[cue_role] = self._load_callout(cue_role)
+                call = callout_cache[cue_role]
+                if call:
+                    combined += call
+                    if callout_gap:
+                        combined += callout_gap
 
-                        combined += AudioSegment.silent(duration=self.response_delay_ms)
+                cue_audio = self._concat_segments(cue_role, cue_ids)
+                cue_audio = self._crop_cue(cue_audio, tail_ms=self.max_cue_size_ms)
 
-                key = (blk.block_id.part_id, blk.block_id.block_no)
-                resp_ids = self.segment_maps.get(role, {}).get(key, [])
-                if not resp_ids:
-                    logging.warning("No response segment ids for %s %s:%s", role, blk.block_id.part_id, blk.block_id.block_no)
-                    continue
-                resp_audio = self._concat_segments(role, resp_ids)
-                resp_start = len(combined)
-                combined += resp_audio
-                resp_end = len(combined)
-                chapters.append((resp_start, resp_end, f"LINE {role} {resp_ids[0]}"))
+                cue_start = len(combined)
+                combined += cue_audio
+                cue_end = len(combined)
+                chapters.append((cue_start, cue_end, f"CUE {cue_role} {cue_ids[0]}"))
 
                 combined += AudioSegment.silent(duration=self.response_delay_ms)
 
-        return combined, chapters
+        key = (block.block_id.part_id, block.block_id.block_no)
+        resp_ids = self.segment_maps.get(role, {}).get(key, [])
+        if not resp_ids:
+            logging.warning("No response segment ids for %s %s:%s", role, block.block_id.part_id, block.block_id.block_no)
+            return
+
+        resp_audio = self._concat_segments(role, resp_ids)
+        resp_start = len(combined)
+        combined += resp_audio
+        resp_end = len(combined)
+        chapters.append((resp_start, resp_end, f"LINE {role} {resp_ids[0]}"))
+
+        combined += AudioSegment.silent(duration=self.response_delay_ms)
 
     def build_cues(self, role: str) -> Path:
         """Build cue MP4 for a role using builder configuration."""
@@ -183,31 +218,3 @@ class CueBuilder:
                 str(out_path),
             ]
             subprocess.run(cmd, check=True)
-
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Build a chapterized cue MP4 for a role.")
-    parser.add_argument("role", help="Role name (e.g., ANDROCLES)")
-    parser.add_argument("--response-delay-ms", type=int, default=2000, help="Silence between cue and response (ms)")
-    parser.add_argument(
-        "--max-cue-size-ms",
-        type=int,
-        default=5000,
-        help="Max length of a cue; longer cues are cropped with head+tail (ms)",
-    )
-    parser.add_argument("--include-prompts", action=argparse.BooleanOptionalAction, default=True, help="Include preceding prompts")
-    parser.add_argument("--callout-spacing-ms", type=int, default=300, help="Silence between callout and prompt (ms)")
-    args = parser.parse_args()
-    play = PlayTextParser().parse()
-    builder = CueBuilder(
-        play,
-        response_delay_ms=args.response_delay_ms,
-        max_cue_size_ms=args.max_cue_size_ms,
-        include_prompts=args.include_prompts,
-        callout_spacing_ms=args.callout_spacing_ms,
-    )
-    builder.build_cues(args.role)
-
-
-if __name__ == "__main__":
-    main()
