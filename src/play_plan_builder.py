@@ -187,9 +187,7 @@ class PlayPlanBuilder:
 
     def build_block_plan(
         self,
-        part_filter: int | None,
-        block_no: int,
-        roles_in_block: List[str],
+        block: Block,
         *,
         callout_clip: CalloutClip | None,
         is_last_block: bool,
@@ -197,17 +195,17 @@ class PlayPlanBuilder:
     ) -> List[PlanItem]:
         """Build plan items for a single block, including optional callouts."""
         start_idx = len(plan_items)
+        block_id = block.block_id
         if callout_clip:
-            # Honor the director's decision; place the callout up front with configured spacing.
             plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
-        primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
+        primary_role = block.owner if block.owner != "_NARRATOR" else None
 
         block_segments: List[Tuple[str, str, str]] = []
-        source_role = primary_role or roles_in_block[0]
-        bullets = read_block_bullets(source_role, part_filter, block_no)
+        source_role = primary_role or block.roles[0]
+        bullets = read_block_bullets(source_role, block_id.part_id, block_id.block_no)
         for idx, text in enumerate(bullets, start=1):
-            owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
-            sid = f"{'' if part_filter is None else part_filter}:{block_no}:{idx}"
+            owner = block.owner_for_text(text) or "_NARRATOR"
+            sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{idx}"
             block_segments.append((owner, sid, text))
 
         for seg_idx, (role, seg_id, text) in enumerate(block_segments):
@@ -240,20 +238,17 @@ class PlayPlanBuilder:
         part_blocks = self.play_text.getPart(part_filter)
         if not part_blocks:
             raise RuntimeError(f"No segments found for part {part_filter!r}")
-        block_entries = [(blk.block_id.block_no, blk.roles) for blk in part_blocks]
 
         audio_plan: AudioPlan = AudioPlan()
 
-        for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
-            block_id = BlockId(part_filter, block_no)
+        for b_idx, block in enumerate(part_blocks):
+            block_id = block.block_id
             callout_clip = director_obj.calloutForBlock(block_id) if self.include_callouts else None
 
             block_items = self.build_block_plan(
-                part_filter,
-                block_no,
-                roles_in_block,
+                block,
                 callout_clip=callout_clip,
-                is_last_block=b_idx == len(block_entries) - 1,
+                is_last_block=b_idx == len(part_blocks) - 1,
                 plan_items=audio_plan,
             )
             for item in block_items:

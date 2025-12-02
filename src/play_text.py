@@ -89,6 +89,15 @@ class Block(ABC):
         """Return roles associated with this block (default narrator)."""
         return ["_NARRATOR"]
 
+    @property
+    def owner(self) -> str:
+        """Primary owner for this block (default narrator)."""
+        return "_NARRATOR"
+
+    def owner_for_text(self, text: str) -> str:
+        """Owner for a given segment of text within this block."""
+        return self.owner
+
     @classmethod
     @abstractmethod
     def parse(
@@ -218,6 +227,15 @@ class RoleBlock(Block):
         roles: List[str] = ["_NARRATOR"] if has_inline_dirs else []
         roles.append(self.role)
         return roles
+
+    @property
+    def owner(self) -> str:
+        return self.role
+
+    def owner_for_text(self, text: str) -> str:
+        if text.startswith("(_"):
+            return "_NARRATOR"
+        return self.role
 
     @classmethod
     def parse(
