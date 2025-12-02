@@ -2,7 +2,7 @@
 """Generate per-character block files from the normalized paragraphs."""
 from __future__ import annotations
 
-import re
+import regex as re
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -155,6 +155,11 @@ def parse() -> Tuple[Dict[str, List[str]], Dict[str, List[str]], List[Tuple[str,
 
 
 def split_block_segments(text: str) -> List[str]:
+    narration_pat = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
+    parts = narration_pat.split(text)
+    return [s for s in parts if s]
+
+def oldsplit_block_segments(text: str) -> List[str]:
     """
     Split a block of speech into direction and spoken segments.
 
@@ -163,34 +168,44 @@ def split_block_segments(text: str) -> List[str]:
     - Whitespace around segments is stripped.
     """
     segments: List[str] = []
-    pattern = re.compile(r"\(_.*?_\)")
-    last_end = 0
+    pattern = re.compile(r"(\(_.*?_\))")
+    pos = 0
 
-    for match in pattern.finditer(text):
-        pre = text[last_end : match.start()]
+    while True:
+        match = pattern.search(text, pos)
+        if not match:
+            break
+
+        pre = text[pos : match.start()]
         if pre.strip():
             segments.append(pre.strip())
 
-        direction = match.group(0)
-        # Attach immediate trailing punctuation (e.g., ".") to the direction, but split expressive cries.
+        direction = match.group(0).strip()
+        if direction:
+            segments.append(direction)
+
         punct_end = match.end()
         trailing_punct = ""
         while punct_end < len(text) and text[punct_end] in ".,;:!?":
             trailing_punct += text[punct_end]
             punct_end += 1
 
-        direction = direction.strip()
-        if direction:
-            segments.append(direction)
-            if trailing_punct:
-                # If trailing punctuation is an expressive mix of !/? keep it separate as speech.
-                if set(trailing_punct) <= set("?!") and "!" in trailing_punct:
-                    segments.append(trailing_punct)
-                else:
-                    segments[-1] = segments[-1] + trailing_punct
-        last_end = punct_end
+        next_dir = pattern.search(text, punct_end)
+        next_start = next_dir.start() if next_dir else len(text)
+        between = text[punct_end:next_start]
 
-    tail = text[last_end:]
+        if trailing_punct:
+            expressive = set(trailing_punct) <= set("?!") and "!" in trailing_punct
+            if expressive and between.strip():
+                segments.append((trailing_punct + between).strip())
+            elif expressive:
+                segments.append(trailing_punct)
+            else:
+                if segments:
+                    segments[-1] = segments[-1] + trailing_punct
+        pos = next_start
+
+    tail = text[pos:]
     if tail.strip():
         segments.append(tail.strip())
 

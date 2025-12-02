@@ -34,6 +34,8 @@ pygments==2.19.2
     #   rich
 pytest==9.0.1
     # via -r requirements.in
+regex==2025.11.3
+    # via -r requirements.in
 rich==14.2.0
     # via typer
 shellingham==1.5.4

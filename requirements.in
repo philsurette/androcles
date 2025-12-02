@@ -2,5 +2,6 @@ cmudict
 pydub
 openpyxl
 typer
+regex
 # test deps
 pytest
