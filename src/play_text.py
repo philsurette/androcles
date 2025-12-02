@@ -10,6 +10,7 @@ from pathlib import Path
 
 from paragraphs import collapse_to_paragraphs
 from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
+from segment_id import SegmentId
 
 
 @dataclass
@@ -36,15 +37,6 @@ class BlockId:
     def __hash__(self) -> int:  # Ensure hashability for dict/set usage.
         return hash((self.part_id, self.block_no))
 
-
-@dataclass
-class SegmentId:
-    block_id: BlockId
-    segment_no: int
-
-    def __str__(self) -> str:
-        part_str = "" if self.block_id.part_id is None else str(self.block_id.part_id)
-        return f"{part_str}_{self.block_id.block_no}_{self.segment_no}"
 
 @dataclass
 class Segment(ABC):
