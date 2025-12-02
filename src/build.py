@@ -71,7 +71,7 @@ def split_roles(
     part_filter: str | None = None,
     min_silence_ms: int = 1700,
     silence_thresh: int = -45,
-    chunk_size: int = 1,
+    chunk_size: int = 50,
 ) -> None:
     for rec in RECORDINGS_DIR.glob("*.wav"):
         if rec.name.startswith("_"):
@@ -89,7 +89,7 @@ def split_roles(
 
 
 def split_narrator(
-    part_filter: str | None = None, min_silence_ms: int = 1700, silence_thresh: int = -45, chunk_size: int = 1
+    part_filter: str | None = None, min_silence_ms: int = 1700, silence_thresh: int = -45, chunk_size: int = 50
 ) -> None:
     split_narration(part_filter=part_filter, min_silence_ms=min_silence_ms, silence_thresh=silence_thresh, chunk_size=chunk_size)
 

@@ -186,8 +186,6 @@ def split_block_segments(text: str) -> List[str]:
                 # If trailing punctuation is an expressive mix of !/? keep it separate as speech.
                 if set(trailing_punct) <= set("?!") and "!" in trailing_punct:
                     segments.append(trailing_punct)
-                elif punct_end == len(text):
-                    segments.append(trailing_punct)
                 else:
                     segments[-1] = segments[-1] + trailing_punct
         last_end = punct_end

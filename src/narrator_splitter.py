@@ -82,7 +82,7 @@ def split_narration(
     min_silence_ms: int = 1700,
     silence_thresh: int = -45,
     pad_end_ms: int = 200,
-    chunk_size: int = 1,
+    chunk_size: int = 50,
 ) -> None:
     src_path = RECORDINGS_DIR / "_NARRATOR.wav"
     if not src_path.exists():
@@ -113,7 +113,7 @@ def main() -> None:
     parser.add_argument("--silence-thresh", type=int, default=-45, help="Silence threshold dBFS (default -45)")
     parser.add_argument("--pad-end-ms", type=int, default=200, help="Pad each segment end by this many ms (default 200)")
     parser.add_argument("--part", help="Limit to a specific part id, or '_' for no-part entries")
-    parser.add_argument("--chunk-size", type=int, default=1, help="Chunk size (ms) for silence detection")
+    parser.add_argument("--chunk-size", type=int, default=50, help="Chunk size (ms) for silence detection")
     args = parser.parse_args()
     split_narration(
         part_filter=args.part,

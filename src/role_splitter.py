@@ -28,7 +28,7 @@ class RoleSplitter:
     play_text: PlayText
     min_silence_ms: int = 1700
     silence_thresh: int = -45
-    chunk_size: int = 1
+    chunk_size: int = 50
     pad_end_ms: int = 200
     splitter: AudioSplitter = field(default_factory=AudioSplitter)
 
