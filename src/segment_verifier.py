@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-"""Verify split audio segments and emit a timing CSV."""
+"""Verify split audio segments."""
 from __future__ import annotations
 
-import csv
 import logging
 import string
 from pathlib import Path
@@ -49,19 +48,11 @@ def gather_expected() -> List[Dict]:
     return rows
 
 
-def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> Path:
+def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
+    """Compute timing verification rows."""
     rows = compute_rows(tol_low, tol_high)
-    timings_path = AUDIO_OUT_DIR / "timings.csv"
-    AUDIO_OUT_DIR.mkdir(parents=True, exist_ok=True)
-    with timings_path.open("w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "role", "text"]
-        )
-        writer.writeheader()
-        for row in rows:
-            writer.writerow(row)
-    logging.info("Wrote timing report to %s", timings_path)
-    return timings_path
+    logging.info("Computed %d timing rows", len(rows))
+    return rows
 
 
 def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
