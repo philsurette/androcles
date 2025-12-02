@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_plan_builder import PlanItem, Silence, Chapter, load_audio_by_path
+from play_plan_builder import PlanItem, Silence, Chapter, PlayPlanBuilder
 from clip import CalloutClip, SegmentClip
 
 
@@ -84,7 +84,7 @@ def instantiate_plan(
     current_chapter_start: int | None = None
 
     for extra in prepend_paths or []:
-        seg = load_audio_by_path(extra, cache)
+            seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
         if seg:
             audio += seg
 
@@ -103,7 +103,7 @@ def instantiate_plan(
         if isinstance(item, (CalloutClip, SegmentClip)):
             if item.path is None:
                 continue
-            seg = load_audio_by_path(item.path, cache)
+        seg = PlayPlanBuilder.load_audio_by_path(item.path, cache)
             if seg:
                 audio += seg
 
@@ -111,7 +111,7 @@ def instantiate_plan(
         chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
 
     for extra in append_paths or []:
-        seg = load_audio_by_path(extra, cache)
+            seg = PlayPlanBuilder.load_audio_by_path(extra, cache)
         if seg:
             audio += seg
 

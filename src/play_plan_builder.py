@@ -83,7 +83,7 @@ class PlayPlanBuilder:
 
         block_segments: List[Tuple[str, str, str]] = []
         source_role = primary_role or block.roles[0]
-        bullets = read_block_bullets(source_role, block_id.part_id, block_id.block_no)
+        bullets = self.read_block_bullets(source_role, block_id.part_id, block_id.block_no)
         for idx, text in enumerate(bullets, start=1):
             owner = block.owner_for_text(text) or "_NARRATOR"
             sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{idx}"
@@ -94,7 +94,7 @@ class PlayPlanBuilder:
             if not wav_path.exists():
                 logging.error("Missing snippet %s for role %s", seg_id, role)
                 continue
-            length_ms = get_audio_length_ms(wav_path, self.length_cache)
+            length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
             is_last_seg = seg_idx == len(block_segments) - 1
             gap = self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
             plan_items.addClip(
@@ -238,7 +238,7 @@ class PlayPlanBuilder:
                     first_seg = f"{'' if part is None else part}_0_1.wav"
                     title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
                     # Lookup text from narrator block if available.
-                    first_texts = read_block_bullets("_NARRATOR", part, 0)
+                    first_texts = self.read_block_bullets("_NARRATOR", part, 0)
                     title_text = first_texts[0]
                 if endof_path.exists() and global_idx < total_count - 1:
                     length_ms = len(AudioSegment.from_file(endof_path))
@@ -284,56 +284,56 @@ class PlayPlanBuilder:
         plan.addSilence(1000)
         return plan, plan.duration_ms
 
+    @staticmethod
+    def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
+        """Load audio by path with caching."""
+        if path in cache:
+            return cache[path]
+        if not path.exists():
+            logging.warning("Audio file missing: %s", path)
+            cache[path] = None
+            return None
+        audio = AudioSegment.from_file(path)
+        cache[path] = audio
+        return audio
 
-def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
-    """Load audio by path with caching."""
-    if path in cache:
-        return cache[path]
-    if not path.exists():
-        logging.warning("Audio file missing: %s", path)
-        cache[path] = None
-        return None
-    audio = AudioSegment.from_file(path)
-    cache[path] = audio
-    return audio
+    @staticmethod
+    def get_audio_length_ms(path: Path, cache: Dict[Path, int]) -> int:
+        """Return audio length in ms, caching results (0 if missing)."""
+        if path in cache:
+            return cache[path]
+        if not path.exists():
+            logging.warning("Audio file missing: %s", path)
+            cache[path] = 0
+            return 0
+        length = len(AudioSegment.from_file(path))
+        cache[path] = length
+        return length
 
+    @staticmethod
+    def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
+        """Return bullet texts for the given role/part/block in source order."""
+        path = BLOCKS_DIR / f"{role}{BLOCKS_EXT}"
+        if not path.exists():
+            logging.warning("Block file missing for %s: %s", role, path)
+            return []
 
-def get_audio_length_ms(path: Path, cache: Dict[Path, int]) -> int:
-    """Return audio length in ms, caching results (0 if missing)."""
-    if path in cache:
-        return cache[path]
-    if not path.exists():
-        logging.warning("Audio file missing: %s", path)
-        cache[path] = 0
-        return 0
-    length = len(AudioSegment.from_file(path))
-    cache[path] = length
-    return length
-
-
-def read_block_bullets(role: str, part: int | None, block: int) -> List[str]:
-    """Return bullet texts for the given role/part/block in source order."""
-    path = BLOCKS_DIR / f"{role}{BLOCKS_EXT}"
-    if not path.exists():
-        logging.warning("Block file missing for %s: %s", role, path)
-        return []
-
-    target_head = f"{'' if part is None else part}:{block}"
-    in_block = False
-    bullets: List[str] = []
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        stripped = raw.strip()
-        if not stripped:
-            continue
-        if stripped[0].isdigit() or stripped.startswith(":"):
-            head = stripped.split()[0]
-            if in_block and head != target_head:
-                break  # left the block
-            in_block = head == target_head
-            continue
-        if in_block and stripped.startswith("-"):
-            bullets.append(stripped[1:].strip())
-    return bullets
+        target_head = f"{'' if part is None else part}:{block}"
+        in_block = False
+        bullets: List[str] = []
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            stripped = raw.strip()
+            if not stripped:
+                continue
+            if stripped[0].isdigit() or stripped.startswith(":"):
+                head = stripped.split()[0]
+                if in_block and head != target_head:
+                    break  # left the block
+                in_block = head == target_head
+                continue
+            if in_block and stripped.startswith("-"):
+                bullets.append(stripped[1:].strip())
+        return bullets
 
 
 def build_block_plan(
@@ -356,7 +356,7 @@ def build_block_plan(
 
     block_segments: List[Tuple[str, str, str]] = []
     source_role = primary_role or roles_in_block[0]
-    bullets = read_block_bullets(source_role, part_filter, block_no)
+    bullets = PlayPlanBuilder.read_block_bullets(source_role, part_filter, block_no)
     for idx, text in enumerate(bullets, start=1):
         owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
         sid = f"{'' if part_filter is None else part_filter}:{block_no}:{idx}"
@@ -367,7 +367,7 @@ def build_block_plan(
         if not wav_path.exists():
             logging.error("Missing snippet %s for role %s", seg_id, role)
             continue
-        length_ms = get_audio_length_ms(wav_path, length_cache)
+        length_ms = PlayPlanBuilder.get_audio_length_ms(wav_path, length_cache)
         is_last_seg = seg_idx == len(block_segments) - 1
         gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
         plan_items.addClip(
