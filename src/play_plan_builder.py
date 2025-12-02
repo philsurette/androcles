@@ -235,9 +235,10 @@ class PlayPlanBuilder:
         inserted_chapters: set[str] = set()
         director_obj = director or self.director or NoCalloutDirector(self.play_text)
 
-        part_blocks = self.play_text.getPart(part_filter)
-        if not part_blocks:
+        part_obj = self.play_text.getPart(part_filter)
+        if part_obj is None or not part_obj.blocks:
             raise RuntimeError(f"No segments found for part {part_filter!r}")
+        part_blocks = part_obj.blocks
 
         audio_plan: AudioPlan = AudioPlan()
 

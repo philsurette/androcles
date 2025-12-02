@@ -291,12 +291,25 @@ class RoleBlock(Block):
         return block
 
 
+@dataclass
+class Part:
+    """A collection of blocks belonging to a part."""
+
+    part_no: int | None
+    title: str | None
+    blocks: List[Block] = field(default_factory=list)
+
+
 class PlayText(List[Block]):
     def __init__(self, items: List[Block] | None = None) -> None:
         super().__init__(items or [])
         self._by_id: dict[BlockId, Block] = {}
         for block in self:
             self._by_id[block.block_id] = block
+        self._parts: dict[int | None, Part] = {}
+        self._part_order: List[int | None] = []
+        if items:
+            self._build_parts_index()
 
     def getPrecedingRoles(
         self,
@@ -330,9 +343,37 @@ class PlayText(List[Block]):
         """Return the Block for the given id, or None if not present."""
         return self._by_id.get(block_id)
 
-    def getPart(self, part_id: int | None) -> List[Block]:
-        """Return blocks belonging to the given part in order."""
-        return [blk for blk in self if blk.block_id.part_id == part_id]
+    def _build_parts_index(self) -> None:
+        heading_re = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
+        self._parts.clear()
+        self._part_order.clear()
+        for blk in self:
+            pid = blk.block_id.part_id
+            if pid not in self._parts:
+                title: str | None = None
+                if isinstance(blk, MetaBlock) and blk.text.startswith("##"):
+                    m = heading_re.match(blk.text.strip())
+                    if m:
+                        title = m.group(2).strip()
+                self._parts[pid] = Part(part_no=pid, title=title, blocks=[])
+                self._part_order.append(pid)
+            self._parts[pid].blocks.append(blk)
+
+    def getPart(self, part_id: int | None) -> Part | None:
+        """Return the Part object for the given id."""
+        if not self._parts:
+            self._build_parts_index()
+        return self._parts.get(part_id)
+
+    def getParts(self) -> List[Part]:
+        """Return all Part objects in play order."""
+        if not self._parts:
+            self._build_parts_index()
+        return [self._parts[pid] for pid in self._part_order]
+
+    def rebuild_parts_index(self) -> None:
+        """Recompute part mapping from current blocks."""
+        self._build_parts_index()
 
     def to_index_entries(self) -> List[tuple[int | None, int, str]]:
         """
@@ -399,6 +440,7 @@ class PlayTextParser:
             else:
                 block_counter = parsed_block.block_id.block_no
 
+        play.rebuild_parts_index()
         return play
 
 
