@@ -26,7 +26,6 @@ def build_audio(
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
     audio_format: str = "mp4",
-    part_chapters: bool = False,
     part_gap_ms: int = 0,
     generate_audio: bool = True,
     generate_captions: bool = True,
@@ -54,7 +53,6 @@ def build_audio(
                 include_callouts=include_callouts,
                 callout_spacing_ms=callout_spacing_ms,
                 minimal_callouts=minimal_callouts,
-                part_chapters=False,
                 part_gap_ms=0,
                 part_index_offset=idx,
                 total_parts=len(parts_numeric),
@@ -87,7 +85,6 @@ def build_audio(
         include_callouts=include_callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
-        part_chapters=len(parts) > 1 if part_chapters is None else part_chapters,
         part_gap_ms=part_gap_ms,
         librivox=librivox,
     )

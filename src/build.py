@@ -198,7 +198,6 @@ def audioplay(
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
         audio_format=audio_format,
-        part_chapters=len(parts) > 1,
         part_gap_ms=2000 if len(parts) > 1 else 0,
         generate_audio=generate_audio,
         generate_captions=captions,

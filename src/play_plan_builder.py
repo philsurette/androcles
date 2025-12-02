@@ -28,12 +28,9 @@ from paths import (
     SEGMENTS_DIR
 )
 
-
 IndexEntry = Tuple[int | None, int, str]
 
-
 INTER_WORD_PAUSE_MS = 300
-
 
 @dataclass
 class PlayPlanBuilder:
@@ -65,9 +62,6 @@ class PlayPlanBuilder:
         if None in parts:
             return [None] + parts_sorted
         return parts_sorted
-
-    def load_segment_maps(self) -> Dict[str, BlockMap]:
-        return self.play_text.build_segment_maps()
 
     def build_block_plan(
         self,
@@ -446,7 +440,6 @@ def build_audio_plan(
     include_callouts: bool = False,
     callout_spacing_ms: int = 300,
     minimal_callouts: bool = False,
-    part_chapters: bool = False,
     part_gap_ms: int = 0,
     librivox: bool = False,
     part_index_offset: int = 0,
