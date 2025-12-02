@@ -17,7 +17,7 @@ from narrator_splitter import split_narration
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
-from play_builder import build_audio, list_parts, compute_output_path
+from play_builder import PlayBuilder, list_parts, compute_output_path
 from play_text import PlayTextParser
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
@@ -191,9 +191,7 @@ def audioplay(
                 raise typer.BadParameter("Part must be an integer or '_'")
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
-    out_paths = build_audio(
-        parts=parts,
-        part=part,
+    builder = PlayBuilder(
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
@@ -204,6 +202,7 @@ def audioplay(
         generate_captions=captions,
         librivox=librivox,
     )
+    out_paths = builder.build_audio(parts=parts, part=part)
     if normalize_output and generate_audio:
         normalizer = Normalizer()
         for out_path in out_paths:
