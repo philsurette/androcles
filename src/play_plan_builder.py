@@ -42,6 +42,7 @@ class PlayPlanBuilder:
     spacing_ms: int = 0
     include_callouts: bool = False
     callout_spacing_ms: int = 300
+    minimal_callouts: bool = False
     part_gap_ms: int = 0
     librivox: bool = False
     length_cache: Dict[Path, int] = field(default_factory=dict)
@@ -460,6 +461,7 @@ def build_audio_plan(
         spacing_ms=spacing_ms,
         include_callouts=include_callouts,
         callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
         part_gap_ms=part_gap_ms,
         librivox=librivox,
     )

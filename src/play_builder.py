@@ -6,13 +6,10 @@ import logging
 from pathlib import Path
 from typing import List
 
-from play_plan_builder import (
-    build_audio_plan,
-    compute_output_path,
-    list_parts,
-    write_plan,
-    PlanItem,
-)
+from play_plan_builder import PlayPlanBuilder, compute_output_path, list_parts, write_plan, PlanItem
+from play_text import PlayTextParser
+from chapter_builder import ChapterBuilder
+from callout_director import CalloutDirector, ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
 from play_audio_builder import instantiate_plan
 from caption_builder import build_captions
 from paths import BUILD_DIR, RECORDINGS_DIR, AUDIO_PLAY_DIR
@@ -36,6 +33,12 @@ def build_audio(
         if not parts_numeric:
             raise ValueError("No numbered parts available for librivox output.")
         outputs: List[Path] = []
+        base_play = PlayTextParser().parse()
+        chapters = ChapterBuilder().build()
+        base_director: CalloutDirector = (
+            ConversationAwareCalloutDirector(base_play) if minimal_callouts else RoleCalloutDirector(base_play)
+        )
+        base_director = base_director if include_callouts else NoCalloutDirector(base_play)
         for idx, part_id in enumerate(parts_numeric):
             out_path = AUDIO_PLAY_DIR / f"androclesandthelion_{part_id}_shaw_128kb.mp3"
             outputs.append(out_path)
@@ -47,17 +50,17 @@ def build_audio(
                 "track": f"{idx:02d}",
                 "genre": "Speech",
             }
-            plan, _ = build_audio_plan(
-                parts=[part_id],
+            builder = PlayPlanBuilder(
+                play_text=base_play,
+                director=base_director,
+                chapters=chapters,
                 spacing_ms=spacing_ms,
                 include_callouts=include_callouts,
                 callout_spacing_ms=callout_spacing_ms,
-                minimal_callouts=minimal_callouts,
                 part_gap_ms=0,
-                part_index_offset=idx,
-                total_parts=len(parts_numeric),
                 librivox=True,
             )
+            plan, _ = builder.build_audio_plan(parts=[part_id], part_index_offset=idx, total_parts=len(parts_numeric))
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
             plan_path = BUILD_DIR / f"audio_plan_part_{part_id}.txt"
             plan_path.parent.mkdir(parents=True, exist_ok=True)
@@ -79,8 +82,16 @@ def build_audio(
         return outputs
 
     out_path = compute_output_path(parts, part, audio_format)
-    plan, _ = build_audio_plan(
-        parts=parts,
+    play = PlayTextParser().parse()
+    chapters = ChapterBuilder().build()
+    director: CalloutDirector = (
+        ConversationAwareCalloutDirector(play) if minimal_callouts else RoleCalloutDirector(play)
+    )
+    director = director if include_callouts else NoCalloutDirector(play)
+    builder = PlayPlanBuilder(
+        play_text=play,
+        director=director,
+        chapters=chapters,
         spacing_ms=spacing_ms,
         include_callouts=include_callouts,
         callout_spacing_ms=callout_spacing_ms,
@@ -88,6 +99,7 @@ def build_audio(
         part_gap_ms=part_gap_ms,
         librivox=librivox,
     )
+    plan, _ = builder.build_audio_plan(parts=parts)
     plan_path = BUILD_DIR / "audio_plan.txt"
     plan_path.parent.mkdir(parents=True, exist_ok=True)
     write_plan(plan, plan_path)
