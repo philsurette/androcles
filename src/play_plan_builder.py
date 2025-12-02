@@ -2,6 +2,7 @@
 """Build audio plans for the play."""
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from pathlib import Path
 import logging
 import re
@@ -147,6 +148,305 @@ def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
     return maps
 
 
+@dataclass
+class PlayPlanBuilder:
+    """Encapsulates play context and helpers for building audio plans."""
+
+    play_text: PlayText
+    director: CalloutDirector | None = None
+    chapters: List[Chapter] | None = None
+    length_cache: Dict[Path, int] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self.director is None:
+            self.director = NoCalloutDirector(self.play_text)
+        if self.chapters is None:
+            self.chapters = []
+
+    def parse_index(self) -> List[IndexEntry]:
+        return parse_index(self.play_text)
+
+    def list_parts(self) -> List[int | None]:
+        parts: List[int | None] = []
+        for p, _, _ in self.parse_index():
+            if p not in parts:
+                parts.append(p)
+        parts_sorted = sorted([x for x in parts if x is not None])
+        if None in parts:
+            return [None] + parts_sorted
+        return parts_sorted
+
+    def load_segment_maps(self) -> Dict[str, BlockMap]:
+        maps: Dict[str, BlockMap] = {}
+        for _, _, role in self.parse_index():
+            if role in maps:
+                continue
+            if role == "_NARRATOR":
+                maps[role] = parse_narrator_map()
+            else:
+                maps[role] = parse_role_blocks(role)
+        return maps
+
+    @staticmethod
+    def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
+        block_entries: List[Tuple[int, List[str]]] = []
+        current_block: int | None = None
+        current_roles: List[str] = []
+        for part, block, role in entries:
+            if part != part_filter:
+                continue
+            if current_block is None or block != current_block:
+                if current_block is not None:
+                    block_entries.append((current_block, current_roles))
+                current_block = block
+                current_roles = []
+            current_roles.append(role)
+        if current_block is not None:
+            block_entries.append((current_block, current_roles))
+
+        if not block_entries:
+            raise RuntimeError(f"No segments found for part {part_filter!r}")
+
+        return block_entries
+
+    def build_block_plan(
+        self,
+        part_filter: int | None,
+        block_no: int,
+        roles_in_block: List[str],
+        *,
+        callout_clip: CalloutClip | None,
+        is_last_block: bool,
+        spacing_ms: int,
+        callout_spacing_ms: int,
+        plan_items: AudioPlan[PlanItem],
+    ) -> List[PlanItem]:
+        """Build plan items for a single block, including optional callouts."""
+        start_idx = len(plan_items)
+        primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
+        if callout_clip:
+            plan_items.addClip(callout_clip, following_silence_ms=callout_spacing_ms)
+
+        block_segments: List[Tuple[str, str, str]] = []
+        source_role = primary_role or roles_in_block[0]
+        bullets = read_block_bullets(source_role, part_filter, block_no)
+        for idx, text in enumerate(bullets, start=1):
+            owner = "_NARRATOR" if primary_role is not None and text.startswith("(_") else (primary_role or "_NARRATOR")
+            sid = f"{'' if part_filter is None else part_filter}:{block_no}:{idx}"
+            block_segments.append((owner, sid, text))
+
+        for seg_idx, (role, seg_id, text) in enumerate(block_segments):
+            wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+            if not wav_path.exists():
+                logging.error("Missing snippet %s for role %s", seg_id, role)
+                continue
+            length_ms = get_audio_length_ms(wav_path, self.length_cache)
+            is_last_seg = seg_idx == len(block_segments) - 1
+            gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
+            plan_items.addClip(
+                SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
+                following_silence_ms=gap,
+            )
+        return list(plan_items[start_idx:])
+
+    def build_part_plan(
+        self,
+        part_filter: int | None,
+        spacing_ms: int = 0,
+        include_callouts: bool = False,
+        callout_spacing_ms: int = 300,
+        chapters: List[Chapter] | None = None,
+        director: CalloutDirector | None = None,
+    ) -> tuple[AudioPlan[PlanItem], int]:
+        """Build plan items for a given part (or None for preamble)."""
+        entries = self.parse_index()
+        chapter_map = {c.block_id: c for c in (chapters if chapters is not None else self.chapters or [])}
+        inserted_chapters: set[str] = set()
+        director_obj = director or self.director or NoCalloutDirector(self.play_text)
+
+        block_entries = self.extract_blocks(entries, part_filter)
+
+        audio_plan: AudioPlan = AudioPlan()
+
+        for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
+            block_id = BlockId(part_filter, block_no)
+            callout_clip = director_obj.calloutForBlock(block_id) if include_callouts else None
+
+            block_items = self.build_block_plan(
+                part_filter,
+                block_no,
+                roles_in_block,
+                callout_clip=callout_clip,
+                is_last_block=b_idx == len(block_entries) - 1,
+                spacing_ms=spacing_ms,
+                callout_spacing_ms=callout_spacing_ms,
+                plan_items=audio_plan,
+            )
+            for item in block_items:
+                if isinstance(item, (CalloutClip, SegmentClip)) and item.clip_id:
+                    block_id = ":".join(item.clip_id.split(":")[:2])
+                    if block_id in chapter_map and block_id not in inserted_chapters:
+                        chapter_template = chapter_map[block_id]
+                        chapter_obj = Chapter(
+                            block_id=chapter_template.block_id,
+                            title=chapter_template.title,
+                            offset_ms=item.offset_ms,
+                        )
+                        audio_plan.addChapter(chapter_obj)
+                        inserted_chapters.add(block_id)
+
+        return audio_plan, audio_plan.duration_ms
+
+    def build_audio_plan(
+        self,
+        parts: List[int | None],
+        spacing_ms: int = 0,
+        include_callouts: bool = False,
+        callout_spacing_ms: int = 300,
+        part_gap_ms: int = 0,
+        librivox: bool = False,
+        part_index_offset: int = 0,
+        total_parts: int | None = None,
+    ) -> tuple[AudioPlan[PlanItem], int]:
+        plan: AudioPlan[PlanItem] = AudioPlan()
+        total_count = total_parts if total_parts is not None else len(parts)
+        plan.addSilence(1000)
+        for idx, part in enumerate(parts):
+            global_idx = part_index_offset + idx
+            if librivox and global_idx == 0:
+                from paths import RECORDINGS_DIR
+                prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
+                if prologue.exists():
+                    plen = len(AudioSegment.from_file(prologue))
+                    plan.addClip(
+                        CalloutClip(
+                            path=prologue,
+                            text="",
+                            role="_NARRATOR",
+                            clip_id="_LIBRIVOX_PROLOGUE",
+                            length_ms=plen,
+                            offset_ms=plan.duration_ms,
+                        ),
+                        following_silence_ms=1000,
+                    )
+            seg_plan, _ = self.build_part_plan(
+                part_filter=part,
+                spacing_ms=spacing_ms,
+                include_callouts=include_callouts,
+                callout_spacing_ms=callout_spacing_ms,
+                chapters=self.chapters,
+                director=self.director,
+            )
+
+            # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
+            part_of_suffix_inserted = False
+            part_of_suffix_path = None
+            part_of_suffix_len = 0
+            if librivox and global_idx > 0:
+                from paths import RECORDINGS_DIR
+
+                part_of_suffix_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
+                part_of_suffix_len = len(AudioSegment.from_file(part_of_suffix_path))
+
+            for item in seg_plan:
+                if isinstance(item, Chapter):
+                    item.offset_ms = plan.duration_ms
+                    plan.addChapter(item)
+                    continue
+                if isinstance(item, Silence):
+                    plan.addSilence(item.length_ms)
+                elif isinstance(item, (CalloutClip, SegmentClip)):
+                    plan.addClip(
+                        item.__class__(
+                            path=item.path,
+                            text=item.text,
+                            role=item.role,
+                            clip_id=item.clip_id,
+                            length_ms=item.length_ms,
+                            offset_ms=plan.duration_ms,
+                        )
+                    )
+                    if part_of_suffix_path and not part_of_suffix_inserted:
+                        # Insert part-of suffix after the first audio item.
+                        plan.addSilence(INTER_WORD_PAUSE_MS)
+                        plan.addClip(
+                            CalloutClip(
+                                path=part_of_suffix_path,
+                                text="of [title] by [author]. This is a Librivox recording. All Librivox recordings are in the public domain. For more information, or to volunteer, please visit librivox.org.",
+                                role="_NARRATOR",
+                                clip_id="_LIBRIVOX_EACH_PART",
+                                length_ms=part_of_suffix_len,
+                                offset_ms=plan.duration_ms,
+                            ),
+                        )
+                        part_of_suffix_inserted = True
+                else:
+                    raise RuntimeError(f"Unexpected plan item type: {type(item)}")
+
+            if part_gap_ms and idx < len(parts) - 1:
+                plan.addSilence(part_gap_ms)
+
+            if librivox:
+                from paths import RECORDINGS_DIR
+                endof_path = RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
+                epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
+                # Use the first clip of the part as the title if no dedicated title clip.
+                title_audio = RECORDINGS_DIR / f"_TITLE_PART_{part}.wav" if part is not None else None
+                title_text = ""
+                if title_audio and title_audio.exists():
+                    pass
+                else:
+                    # Derive from first segment of the part.
+                    first_seg = f"{'' if part is None else part}_0_1.wav"
+                    title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
+                    # Lookup text from narrator block if available.
+                    first_texts = read_block_bullets("_NARRATOR", part, 0)
+                    title_text = first_texts[0]
+                if endof_path.exists() and global_idx < total_count - 1:
+                    length_ms = len(AudioSegment.from_file(endof_path))
+                    plan.addSilence(2000)
+                    plan.addClip(
+                        CalloutClip(
+                            path=endof_path,
+                            text="",
+                            role="_NARRATOR",
+                            clip_id="_LIBRIVOX_ENDOF",
+                            length_ms=length_ms,
+                            offset_ms=plan.duration_ms,
+                        )
+                    )
+                    plan.addSilence(INTER_WORD_PAUSE_MS)
+                    if title_audio and title_audio.exists():
+                        tlen = len(AudioSegment.from_file(title_audio))
+                        clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
+                        plan.addClip(
+                            SegmentClip(
+                                path=title_audio,
+                                text=title_text,
+                                role="_NARRATOR",
+                                clip_id=clip_id,
+                                length_ms=tlen,
+                                offset_ms=plan.duration_ms,
+                            )
+                        )
+                if epilogue.exists() and part is not None and global_idx == total_count - 1:
+                    elen = len(AudioSegment.from_file(epilogue))
+                    # Post-title gap
+                    plan.addSilence(2000)
+                    plan.addClip(
+                        CalloutClip(
+                            path=epilogue,
+                            text="",
+                            role="_NARRATOR",
+                            clip_id="_LIBRIVOX_EPILOG",
+                            length_ms=elen,
+                            offset_ms=plan.duration_ms,
+                        )
+                    )
+        plan.addSilence(1000)
+        return plan, plan.duration_ms
+
+
 def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
     """Load audio by path with caching."""
     if path in cache:
@@ -272,45 +572,15 @@ def build_part_plan(
 ) -> tuple[AudioPlan[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     play = play_text or PlayTextParser().parse()
-    entries = parse_index(play)
-    chapter_map = {c.block_id: c for c in (chapters or [])}
-    inserted_chapters: set[str] = set()
-    length_cache: Dict[Path, int] = {}
-    director = director or NoCalloutDirector(play)
-
-    block_entries = extract_blocks(entries, part_filter)
-
-    audio_plan: AudioPlan = AudioPlan()
-
-    for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
-        block_id = BlockId(part_filter, block_no)
-        callout_clip = director.calloutForBlock(block_id) if include_callouts else None
-
-        block_items = build_block_plan(
-            part_filter,
-            block_no,
-            roles_in_block,
-            callout_clip=callout_clip,
-            is_last_block=b_idx == len(block_entries) - 1,
-            spacing_ms=spacing_ms,
-            callout_spacing_ms=callout_spacing_ms,
-            length_cache=length_cache,
-            plan_items=audio_plan,
-        )
-        for item in block_items:
-            if isinstance(item, (CalloutClip, SegmentClip)) and item.clip_id:
-                block_id = ":".join(item.clip_id.split(":")[:2])
-                if block_id in chapter_map and block_id not in inserted_chapters:
-                    chapter_template = chapter_map[block_id]
-                    chapter_obj = Chapter(
-                        block_id=chapter_template.block_id,
-                        title=chapter_template.title,
-                        offset_ms=item.offset_ms,
-                    )
-                    audio_plan.addChapter(chapter_obj)
-                    inserted_chapters.add(block_id)
-
-    return audio_plan, audio_plan.duration_ms
+    builder = PlayPlanBuilder(play_text=play, director=director or NoCalloutDirector(play), chapters=chapters or [])
+    return builder.build_part_plan(
+        part_filter=part_filter,
+        spacing_ms=spacing_ms,
+        include_callouts=include_callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        chapters=chapters,
+        director=director,
+    )
 
 
 def write_plan(plan: AudioPlan[PlanItem], path: Path) -> None:
@@ -343,164 +613,30 @@ def build_audio_plan(
     part_index_offset: int = 0,
     total_parts: int | None = None,
 ) -> tuple[AudioPlan[PlanItem], int]:
+    play = PlayTextParser().parse()
     chapters = ChapterBuilder().build()
-    play_text = PlayTextParser().parse()
     if include_callouts:
         director: CalloutDirector = (
-            ConversationAwareCalloutDirector(play_text) if minimal_callouts else RoleCalloutDirector(play_text)
+            ConversationAwareCalloutDirector(play) if minimal_callouts else RoleCalloutDirector(play)
         )
     else:
-        director = NoCalloutDirector(play_text)
-    plan: AudioPlan[PlanItem] = AudioPlan()
-    total_count = total_parts if total_parts is not None else len(parts)
-    plan.addSilence(1000)
-    for idx, part in enumerate(parts):
-        global_idx = part_index_offset + idx
-        if librivox and global_idx == 0:
-            from paths import RECORDINGS_DIR
-            prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
-            if prologue.exists():
-                plen = len(AudioSegment.from_file(prologue))
-                plan.addClip(
-                    CalloutClip(
-                        path=prologue,
-                        text="",
-                        role="_NARRATOR",
-                        clip_id="_LIBRIVOX_PROLOGUE",
-                        length_ms=plen,
-                        offset_ms=plan.duration_ms,
-                    ),
-                    following_silence_ms=1000,
-                )
-        seg_plan, _ = build_part_plan(
-            part_filter=part,
-            spacing_ms=spacing_ms,
-            include_callouts=include_callouts,
-            callout_spacing_ms=callout_spacing_ms,
-            chapters=chapters,
-            director=director,
-            play_text=play_text,
-        )
-
-        # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
-        part_of_suffix_inserted = False
-        part_of_suffix_path = None
-        part_of_suffix_len = 0
-        if librivox and global_idx > 0:
-            from paths import RECORDINGS_DIR
-
-            part_of_suffix_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-            part_of_suffix_len = len(AudioSegment.from_file(part_of_suffix_path))
-
-        for item in seg_plan:
-            if isinstance(item, Chapter):
-                item.offset_ms = plan.duration_ms
-                plan.addChapter(item)
-                continue
-            if isinstance(item, Silence):
-                plan.addSilence(item.length_ms)
-            elif isinstance(item, (CalloutClip, SegmentClip)):
-                plan.addClip(
-                    item.__class__(
-                        path=item.path,
-                        text=item.text,
-                        role=item.role,
-                        clip_id=item.clip_id,
-                        length_ms=item.length_ms,
-                        offset_ms=plan.duration_ms,
-                    )
-                )
-                if part_of_suffix_path and not part_of_suffix_inserted:
-                    # Insert part-of suffix after the first audio item.
-                    plan.addSilence(INTER_WORD_PAUSE_MS)
-                    plan.addClip(
-                        CalloutClip(
-                            path=part_of_suffix_path,
-                            text="of [title] by [author]. This is a Librivox recording. All Librivox recordings are in the public domain. For more information, or to volunteer, please visit librivox.org.",
-                            role="_NARRATOR",
-                            clip_id="_LIBRIVOX_EACH_PART",
-                            length_ms=part_of_suffix_len,
-                            offset_ms=plan.duration_ms,
-                        ),
-                    )
-                    part_of_suffix_inserted = True
-            else:
-                raise RuntimeError(f"Unexpected plan item type: {type(item)}")
-
-        if part_gap_ms and idx < len(parts) - 1:
-            plan.addSilence(part_gap_ms)
-
-        if librivox:
-            from paths import RECORDINGS_DIR
-            endof_path = RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
-            epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
-            # Use the first clip of the part as the title if no dedicated title clip.
-            title_audio = RECORDINGS_DIR / f"_TITLE_PART_{part}.wav" if part is not None else None
-            title_text = ""
-            if title_audio and title_audio.exists():
-                pass
-            else:
-                # Derive from first segment of the part.
-                first_seg = f"{'' if part is None else part}_0_1.wav"
-                title_audio = SEGMENTS_DIR / "_NARRATOR" / first_seg
-                # Lookup text from narrator block if available.
-                first_texts = read_block_bullets("_NARRATOR", part, 0)
-                title_text = first_texts[0]
-            if endof_path.exists() and global_idx < total_count - 1:
-                length_ms = len(AudioSegment.from_file(endof_path))
-                plan.addSilence(2000)
-                plan.addClip(
-                    CalloutClip(
-                        path=endof_path,
-                        text="",
-                        role="_NARRATOR",
-                        clip_id="_LIBRIVOX_ENDOF",
-                        length_ms=length_ms,
-                        offset_ms=plan.duration_ms,
-                    )
-                )
-                plan.addSilence(INTER_WORD_PAUSE_MS)
-                if title_audio and title_audio.exists():
-                    tlen = len(AudioSegment.from_file(title_audio))
-                    clip_id = f"_TITLE_PART_{part}" if title_text == "" else f"{part}:0:1"
-                    plan.addClip(
-                        SegmentClip(
-                            path=title_audio,
-                            text=title_text,
-                            role="_NARRATOR",
-                            clip_id=clip_id,
-                            length_ms=tlen,
-                            offset_ms=plan.duration_ms,
-                        )
-                    )
-            if epilogue.exists() and part is not None and global_idx == total_count - 1:
-                elen = len(AudioSegment.from_file(epilogue))
-                # Post-title gap
-                plan.addSilence(2000)
-                plan.addClip(
-                    CalloutClip(
-                        path=epilogue,
-                        text="",
-                        role="_NARRATOR",
-                        clip_id="_LIBRIVOX_EPILOG",
-                        length_ms=elen,
-                        offset_ms=plan.duration_ms,
-                    )
-                )
-    plan.addSilence(1000)
-    return plan, plan.duration_ms
+        director = NoCalloutDirector(play)
+    builder = PlayPlanBuilder(play_text=play, director=director, chapters=chapters)
+    return builder.build_audio_plan(
+        parts=parts,
+        spacing_ms=spacing_ms,
+        include_callouts=include_callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        part_gap_ms=part_gap_ms,
+        librivox=librivox,
+        part_index_offset=part_index_offset,
+        total_parts=total_parts,
+    )
 
 
 def list_parts(play_text: PlayText | None = None) -> List[int | None]:
     play = play_text or PlayTextParser().parse()
-    parts: List[int | None] = []
-    for p, _, _ in parse_index(play):
-        if p not in parts:
-            parts.append(p)
-    parts_sorted = sorted([x for x in parts if x is not None])
-    if None in parts:
-        return [None] + parts_sorted
-    return parts_sorted
+    return PlayPlanBuilder(play_text=play).list_parts()
 
 
 def load_part_titles() -> Dict[int, str]:
