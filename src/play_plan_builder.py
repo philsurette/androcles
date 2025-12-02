@@ -155,6 +155,11 @@ class PlayPlanBuilder:
     play_text: PlayText
     director: CalloutDirector | None = None
     chapters: List[Chapter] | None = None
+    spacing_ms: int = 0
+    include_callouts: bool = False
+    callout_spacing_ms: int = 300
+    part_gap_ms: int = 0
+    librivox: bool = False
     length_cache: Dict[Path, int] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
@@ -217,15 +222,14 @@ class PlayPlanBuilder:
         *,
         callout_clip: CalloutClip | None,
         is_last_block: bool,
-        spacing_ms: int,
-        callout_spacing_ms: int,
         plan_items: AudioPlan[PlanItem],
     ) -> List[PlanItem]:
         """Build plan items for a single block, including optional callouts."""
         start_idx = len(plan_items)
-        primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
         if callout_clip:
-            plan_items.addClip(callout_clip, following_silence_ms=callout_spacing_ms)
+            # Honor the director's decision; place the callout up front with configured spacing.
+            plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
+        primary_role = next((r for r in roles_in_block if r != "_NARRATOR"), None)
 
         block_segments: List[Tuple[str, str, str]] = []
         source_role = primary_role or roles_in_block[0]
@@ -242,19 +246,17 @@ class PlayPlanBuilder:
                 continue
             length_ms = get_audio_length_ms(wav_path, self.length_cache)
             is_last_seg = seg_idx == len(block_segments) - 1
-            gap = spacing_ms if spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
+            gap = self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
             plan_items.addClip(
                 SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
                 following_silence_ms=gap,
             )
+
         return list(plan_items[start_idx:])
 
     def build_part_plan(
         self,
         part_filter: int | None,
-        spacing_ms: int = 0,
-        include_callouts: bool = False,
-        callout_spacing_ms: int = 300,
         chapters: List[Chapter] | None = None,
         director: CalloutDirector | None = None,
     ) -> tuple[AudioPlan[PlanItem], int]:
@@ -270,7 +272,7 @@ class PlayPlanBuilder:
 
         for b_idx, (block_no, roles_in_block) in enumerate(block_entries):
             block_id = BlockId(part_filter, block_no)
-            callout_clip = director_obj.calloutForBlock(block_id) if include_callouts else None
+            callout_clip = director_obj.calloutForBlock(block_id) if self.include_callouts else None
 
             block_items = self.build_block_plan(
                 part_filter,
@@ -278,8 +280,6 @@ class PlayPlanBuilder:
                 roles_in_block,
                 callout_clip=callout_clip,
                 is_last_block=b_idx == len(block_entries) - 1,
-                spacing_ms=spacing_ms,
-                callout_spacing_ms=callout_spacing_ms,
                 plan_items=audio_plan,
             )
             for item in block_items:
@@ -300,11 +300,6 @@ class PlayPlanBuilder:
     def build_audio_plan(
         self,
         parts: List[int | None],
-        spacing_ms: int = 0,
-        include_callouts: bool = False,
-        callout_spacing_ms: int = 300,
-        part_gap_ms: int = 0,
-        librivox: bool = False,
         part_index_offset: int = 0,
         total_parts: int | None = None,
     ) -> tuple[AudioPlan[PlanItem], int]:
@@ -313,7 +308,7 @@ class PlayPlanBuilder:
         plan.addSilence(1000)
         for idx, part in enumerate(parts):
             global_idx = part_index_offset + idx
-            if librivox and global_idx == 0:
+            if self.librivox and global_idx == 0:
                 from paths import RECORDINGS_DIR
                 prologue = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
                 if prologue.exists():
@@ -329,20 +324,13 @@ class PlayPlanBuilder:
                         ),
                         following_silence_ms=1000,
                     )
-            seg_plan, _ = self.build_part_plan(
-                part_filter=part,
-                spacing_ms=spacing_ms,
-                include_callouts=include_callouts,
-                callout_spacing_ms=callout_spacing_ms,
-                chapters=self.chapters,
-                director=self.director,
-            )
+            seg_plan, _ = self.build_part_plan(part_filter=part, chapters=self.chapters, director=self.director)
 
             # Append part items sequentially to the main plan, optionally inserting Librivox "part of" suffix.
             part_of_suffix_inserted = False
             part_of_suffix_path = None
             part_of_suffix_len = 0
-            if librivox and global_idx > 0:
+            if self.librivox and global_idx > 0:
                 from paths import RECORDINGS_DIR
 
                 part_of_suffix_path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
@@ -383,10 +371,10 @@ class PlayPlanBuilder:
                 else:
                     raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
-            if part_gap_ms and idx < len(parts) - 1:
-                plan.addSilence(part_gap_ms)
+            if self.part_gap_ms and idx < len(parts) - 1:
+                plan.addSilence(self.part_gap_ms)
 
-            if librivox:
+            if self.librivox:
                 from paths import RECORDINGS_DIR
                 endof_path = RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
                 epilogue = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
@@ -563,21 +551,19 @@ def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[T
 
 def build_part_plan(
     part_filter: int | None,
-    spacing_ms: int = 0,
-    include_callouts: bool = False,
-    callout_spacing_ms: int = 300,
     chapters: List[Chapter] | None = None,
     director: CalloutDirector | None = None,
     play_text: PlayText | None = None,
 ) -> tuple[AudioPlan[PlanItem], int]:
     """Build plan items for a given part (or None for preamble)."""
     play = play_text or PlayTextParser().parse()
-    builder = PlayPlanBuilder(play_text=play, director=director or NoCalloutDirector(play), chapters=chapters or [])
+    builder = PlayPlanBuilder(
+        play_text=play,
+        director=director or NoCalloutDirector(play),
+        chapters=chapters or [],
+    )
     return builder.build_part_plan(
         part_filter=part_filter,
-        spacing_ms=spacing_ms,
-        include_callouts=include_callouts,
-        callout_spacing_ms=callout_spacing_ms,
         chapters=chapters,
         director=director,
     )
@@ -621,14 +607,18 @@ def build_audio_plan(
         )
     else:
         director = NoCalloutDirector(play)
-    builder = PlayPlanBuilder(play_text=play, director=director, chapters=chapters)
-    return builder.build_audio_plan(
-        parts=parts,
+    builder = PlayPlanBuilder(
+        play_text=play,
+        director=director,
+        chapters=chapters,
         spacing_ms=spacing_ms,
         include_callouts=include_callouts,
         callout_spacing_ms=callout_spacing_ms,
         part_gap_ms=part_gap_ms,
         librivox=librivox,
+    )
+    return builder.build_audio_plan(
+        parts=parts,
         part_index_offset=part_index_offset,
         total_parts=total_parts,
     )
