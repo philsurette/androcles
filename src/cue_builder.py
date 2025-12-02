@@ -11,7 +11,8 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_plan_builder import parse_index, load_segment_maps
+from play_text import PlayTextParser
+from play_plan_builder import load_segment_maps
 from paths import SEGMENTS_DIR, AUDIO_OUT_DIR
 
 
@@ -58,8 +59,9 @@ def build_cues_for_role(
     Return combined audio and chapter tuples (start_ms, end_ms, title)
     for the given role.
     """
-    entries = parse_index()
-    seg_maps = load_segment_maps()
+    play = PlayTextParser().parse()
+    entries = play.to_index_entries()
+    seg_maps = load_segment_maps(play)
 
     combined = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
