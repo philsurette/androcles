@@ -84,6 +84,11 @@ class Block(ABC):
     def __str__(self) -> str:
         return self.text
 
+    @property
+    def roles(self) -> List[str]:
+        """Return roles associated with this block (default narrator)."""
+        return ["_NARRATOR"]
+
     @classmethod
     @abstractmethod
     def parse(
@@ -207,6 +212,13 @@ class RoleBlock(Block):
             return " ".join(str(s) for s in self.segments)
         return f"{self.role}: {self.text}"
 
+    @property
+    def roles(self) -> List[str]:
+        has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in self.segments)
+        roles: List[str] = ["_NARRATOR"] if has_inline_dirs else []
+        roles.append(self.role)
+        return roles
+
     @classmethod
     def parse(
         cls,
@@ -299,6 +311,10 @@ class PlayText(List[Block]):
     def block_for_id(self, block_id: BlockId) -> Block | None:
         """Return the Block for the given id, or None if not present."""
         return self._by_id.get(block_id)
+
+    def getPart(self, part_id: int | None) -> List[Block]:
+        """Return blocks belonging to the given part in order."""
+        return [blk for blk in self if blk.block_id.part_id == part_id]
 
     def to_index_entries(self) -> List[tuple[int | None, int, str]]:
         """

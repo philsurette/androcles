@@ -16,7 +16,7 @@ from callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
 )
-from play_text import BlockId, PlayText, PlayTextParser
+from play_text import BlockId, PlayText, PlayTextParser, RoleBlock, Block
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
@@ -137,15 +137,7 @@ def parse_narrator_map() -> BlockMap:
 def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
     """Build segment-id maps for all roles present in the play."""
     play = play_text or PlayTextParser().parse()
-    maps: Dict[str, BlockMap] = {}
-    for _, _, role in parse_index(play):
-        if role in maps:
-            continue
-        if role == "_NARRATOR":
-            maps[role] = parse_narrator_map()
-        else:
-            maps[role] = parse_role_blocks(role)
-    return maps
+    return PlayPlanBuilder(play_text=play).load_segment_maps()
 
 
 @dataclass
@@ -173,9 +165,10 @@ class PlayPlanBuilder:
 
     def list_parts(self) -> List[int | None]:
         parts: List[int | None] = []
-        for p, _, _ in self.parse_index():
-            if p not in parts:
-                parts.append(p)
+        for blk in self.play_text:
+            pid = blk.block_id.part_id
+            if pid not in parts:
+                parts.append(pid)
         parts_sorted = sorted([x for x in parts if x is not None])
         if None in parts:
             return [None] + parts_sorted
@@ -191,28 +184,6 @@ class PlayPlanBuilder:
             else:
                 maps[role] = parse_role_blocks(role)
         return maps
-
-    @staticmethod
-    def extract_blocks(entries: List[IndexEntry], part_filter: int | None) -> List[Tuple[int, List[str]]]:
-        block_entries: List[Tuple[int, List[str]]] = []
-        current_block: int | None = None
-        current_roles: List[str] = []
-        for part, block, role in entries:
-            if part != part_filter:
-                continue
-            if current_block is None or block != current_block:
-                if current_block is not None:
-                    block_entries.append((current_block, current_roles))
-                current_block = block
-                current_roles = []
-            current_roles.append(role)
-        if current_block is not None:
-            block_entries.append((current_block, current_roles))
-
-        if not block_entries:
-            raise RuntimeError(f"No segments found for part {part_filter!r}")
-
-        return block_entries
 
     def build_block_plan(
         self,
@@ -266,7 +237,10 @@ class PlayPlanBuilder:
         inserted_chapters: set[str] = set()
         director_obj = director or self.director or NoCalloutDirector(self.play_text)
 
-        block_entries = self.extract_blocks(entries, part_filter)
+        part_blocks = self.play_text.getPart(part_filter)
+        if not part_blocks:
+            raise RuntimeError(f"No segments found for part {part_filter!r}")
+        block_entries = [(blk.block_id.block_no, blk.roles) for blk in part_blocks]
 
         audio_plan: AudioPlan = AudioPlan()
 
