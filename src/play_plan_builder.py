@@ -17,7 +17,6 @@ from callout_director import (
     RoleCalloutDirector,
 )
 from play_text import PlayText, PlayTextParser, Block
-from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
@@ -31,19 +30,9 @@ from paths import (
 
 
 IndexEntry = Tuple[int | None, int, str]
-BlockMap = Dict[Tuple[int | None, int], List[str]]
+
 
 INTER_WORD_PAUSE_MS = 300
-
-def parse_index(play_text: PlayText | None = None) -> List[IndexEntry]:
-    """Return ordered (part, block, role) tuples derived from PlayText, mirroring INDEX.files."""
-    play = play_text or PlayTextParser().parse()
-    return play.to_index_entries()
-
-def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
-    """Build segment-id maps for all roles present in the play."""
-    play = play_text or PlayTextParser().parse()
-    return play.build_segment_maps()
 
 
 @dataclass
@@ -65,9 +54,6 @@ class PlayPlanBuilder:
             self.director = NoCalloutDirector(self.play_text)
         if self.chapters is None:
             self.chapters = []
-
-    def parse_index(self) -> List[IndexEntry]:
-        return parse_index(self.play_text)
 
     def list_parts(self) -> List[int | None]:
         parts: List[int | None] = []
@@ -128,7 +114,6 @@ class PlayPlanBuilder:
         director: CalloutDirector | None = None,
     ) -> tuple[AudioPlan[PlanItem], int]:
         """Build plan items for a given part (or None for preamble)."""
-        entries = self.parse_index()
         chapter_map = {c.block_id: c for c in (chapters if chapters is not None else self.chapters or [])}
         inserted_chapters: set[str] = set()
         director_obj = director or self.director or NoCalloutDirector(self.play_text)

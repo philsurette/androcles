@@ -11,10 +11,15 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_text import PlayTextParser
-from play_plan_builder import load_segment_maps
+from play_text import PlayTextParser, PlayText
 from paths import SEGMENTS_DIR, AUDIO_OUT_DIR
 
+BlockMap = Dict[Tuple[int | None, int], List[str]]
+
+def load_segment_maps(play_text: PlayText | None = None) -> Dict[str, BlockMap]:
+    """Build segment-id maps for all roles present in the play."""
+    play = play_text or PlayTextParser().parse()
+    return play.build_segment_maps()
 
 def concat_segments(role: str, seg_ids: List[str]) -> AudioSegment:
     audio = AudioSegment.empty()
