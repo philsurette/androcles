@@ -75,9 +75,11 @@ class PlayPlanBuilder:
         """Build plan items for a single block, including optional callouts."""
         start_idx = len(plan_items)
         block_id = block.block_id
-        if callout_clip:
-            plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
         primary_role = block.owner if block.owner != "_NARRATOR" else None
+
+        if callout_clip:
+            # Place callout before the block with a short gap into the first line.
+            plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
 
         block_segments: List[Tuple[str, str, str]] = []
         source_role = primary_role or block.roles[0]
@@ -87,8 +89,6 @@ class PlayPlanBuilder:
             sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{idx}"
             block_segments.append((owner, sid, text))
 
-        has_callout = callout_clip is not None
-
         for seg_idx, (role, seg_id, text) in enumerate(block_segments):
             wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
             if not wav_path.exists():
@@ -96,17 +96,11 @@ class PlayPlanBuilder:
                 continue
             length_ms = get_audio_length_ms(wav_path, self.length_cache)
             is_last_seg = seg_idx == len(block_segments) - 1
-            # If a callout follows the block, defer spacing to after the callout.
-            gap = 0 if (has_callout and is_last_seg) else (self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0)
+            gap = self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
             plan_items.addClip(
                 SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
                 following_silence_ms=gap,
             )
-        if has_callout and callout_clip:
-            if self.callout_spacing_ms:
-                plan_items.addSilence(self.callout_spacing_ms)
-            trailing_gap = self.spacing_ms if self.spacing_ms > 0 and not is_last_block else 0
-            plan_items.addClip(callout_clip, following_silence_ms=trailing_gap)
 
         return list(plan_items[start_idx:])
 

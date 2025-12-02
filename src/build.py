@@ -18,8 +18,9 @@ from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import build_audio, list_parts, compute_output_path
+from play_text import PlayTextParser
 from loudnorm.normalizer import Normalizer
-from cue_builder import build_cues
+from cue_builder import CueBuilder
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
 
 
@@ -243,19 +244,21 @@ def cues(
     setup_logging()
     build_paragraphs()
     build_blocks()
+    play_text = PlayTextParser().parse()
+    builder = CueBuilder(
+        play_text,
+        response_delay_ms=response_delay_ms,
+        max_cue_size_ms=max_cue_size_ms,
+        include_prompts=include_prompts,
+        callout_spacing_ms=callout_spacing_ms,
+    )
     roles = []
     if role:
         roles = [role]
     else:
         roles = [p.name for p in SEGMENTS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
     for r in roles:
-        build_cues(
-            r,
-            response_delay_ms=response_delay_ms,
-            max_cue_size_ms=max_cue_size_ms,
-            include_prompts=include_prompts,
-            callout_spacing_ms=callout_spacing_ms,
-        )
+        builder.build_cues(r)
 
 
 # if __name__ == "__main__":

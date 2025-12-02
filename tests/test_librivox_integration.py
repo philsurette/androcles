@@ -1,8 +1,14 @@
 import pathlib
+import sys
 
 import pytest
 
 pytest.importorskip("pydub", reason="pydub required for integration test")
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
 
 from chapter_builder import ChapterBuilder
 from play_plan_builder import PlayPlanBuilder, write_plan
@@ -13,12 +19,6 @@ from callout_director import ConversationAwareCalloutDirector, RoleCalloutDirect
 def _normalize_plan_text(text: str) -> str:
     lines = []
     for line in text.splitlines():
-        if "callouts/" in line:
-            continue
-        if "[chapter]" in line:
-            continue
-        if "[silence" in line:
-            continue
         # Strip timestamp prefix for comparison.
         parts = line.split(" ", 1)
         lines.append(parts[1] if len(parts) > 1 else line)
@@ -32,7 +32,7 @@ def test_librivox_audio_plans_match_expected(tmp_path: pathlib.Path) -> None:
 
     parts = [0, 1, 2]
     include_callouts = True
-    minimal_callouts = False
+    minimal_callouts = True
 
     for idx, part_id in enumerate(parts):
         director = (
