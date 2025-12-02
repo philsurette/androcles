@@ -8,13 +8,12 @@ from clip import Clip, Silence
 from chapter_builder import Chapter
 
 PlanItem = Clip | Chapter
-T = TypeVar("T", bound=PlanItem)
+PI = TypeVar("PI", bound=PlanItem)
 
-
-class AudioPlan(List[T], Generic[T]):
+class AudioPlan(List[PI], Generic[PI]):
     """Simple list subclass to represent an ordered audio plan."""
 
-    def __init__(self, items: Iterable[T] | None = None) -> None:
+    def __init__(self, items: Iterable[PI] | None = None) -> None:
         super().__init__(items or [])
         self.duration_ms: int = 0
 
