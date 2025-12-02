@@ -292,6 +292,20 @@ class RoleBlock(Block):
 
 
 @dataclass
+class Role:
+    """A collection of blocks belonging to a role."""
+
+    name: str
+    blocks: List[RoleBlock] = field(default_factory=list)
+
+    def getBlocks(self, part_no: int | None = None) -> List[RoleBlock]:
+        """Return role blocks, optionally filtered by part number."""
+        if part_no is None:
+            return list(self.blocks)
+        return [blk for blk in self.blocks if blk.block_id.part_id == part_no]
+
+
+@dataclass
 class Part:
     """A collection of blocks belonging to a part."""
 
@@ -308,6 +322,8 @@ class PlayText(List[Block]):
             self._by_id[block.block_id] = block
         self._parts: dict[int | None, Part] = {}
         self._part_order: List[int | None] = []
+        self._roles: dict[str, Role] = {}
+        self._role_order: List[str] = []
         if items:
             self._build_parts_index()
 
@@ -347,6 +363,8 @@ class PlayText(List[Block]):
         heading_re = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
         self._parts.clear()
         self._part_order.clear()
+        self._roles.clear()
+        self._role_order.clear()
         for blk in self:
             pid = blk.block_id.part_id
             if pid not in self._parts:
@@ -358,6 +376,11 @@ class PlayText(List[Block]):
                 self._parts[pid] = Part(part_no=pid, title=title, blocks=[])
                 self._part_order.append(pid)
             self._parts[pid].blocks.append(blk)
+            if isinstance(blk, RoleBlock):
+                if blk.role not in self._roles:
+                    self._roles[blk.role] = Role(name=blk.role, blocks=[])
+                    self._role_order.append(blk.role)
+                self._roles[blk.role].blocks.append(blk)
 
     def getPart(self, part_id: int | None) -> Part | None:
         """Return the Part object for the given id."""
@@ -370,6 +393,18 @@ class PlayText(List[Block]):
         if not self._parts:
             self._build_parts_index()
         return [self._parts[pid] for pid in self._part_order]
+
+    def getRole(self, role_name: str) -> Role | None:
+        """Return Role object for the given name."""
+        if not self._roles:
+            self._build_parts_index()
+        return self._roles.get(role_name)
+
+    def getRoles(self) -> List[Role]:
+        """Return all roles in play order of first appearance."""
+        if not self._roles:
+            self._build_parts_index()
+        return [self._roles[name] for name in self._role_order]
 
     def rebuild_parts_index(self) -> None:
         """Recompute part mapping from current blocks."""

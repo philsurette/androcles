@@ -19,7 +19,14 @@ def build_play_text(sequence):
     """Helper to build a PlayText from a list of (part, block_no, role)."""
     items = []
     for part, block_no, role in sequence:
-        items.append(RoleBlock(block_id=BlockId(part, block_no), role=role, text="", segments=[]))
+        items.append(
+            RoleBlock(
+                block_id=BlockId(part, block_no),
+                role=role,
+                text="",
+                segments=[SpeechSegment(segment_id=SegmentId(BlockId(part, block_no), 1), text="", role=role)],
+            )
+        )
     return PlayText(items)
 
 
