@@ -297,6 +297,7 @@ class Role:
 
     name: str
     blocks: List[RoleBlock] = field(default_factory=list)
+    meta: bool = False
 
     def getBlocks(self, part_no: int | None = None) -> List[RoleBlock]:
         """Return role blocks, optionally filtered by part number."""
@@ -313,6 +314,22 @@ class Role:
                 if isinstance(seg, SpeechSegment) and seg.role == self.name:
                     seg_id = f"{'' if key[0] is None else key[0]}_{key[1]}_{seg.segment_id.segment_no}"
                     mapping.setdefault(key, []).append(seg_id)
+        return mapping
+
+
+@dataclass
+class NarratorRole(Role):
+    """Special role for narrator/meta segments."""
+
+    meta: bool = True
+
+    def segments(self, part_no: int | None = None) -> dict[tuple[int | None, int], list[str]]:
+        mapping: dict[tuple[int | None, int], list[str]] = {}
+        for blk in self.blocks if part_no is None else [b for b in self.blocks if b.block_id.part_id == part_no]:
+            key = (blk.block_id.part_id, blk.block_id.block_no)
+            for seg in blk.segments:
+                seg_id = f"{'' if key[0] is None else key[0]}_{key[1]}_{seg.segment_id.segment_no}"
+                mapping.setdefault(key, []).append(seg_id)
         return mapping
 
 
@@ -389,7 +406,10 @@ class PlayText(List[Block]):
             self._parts[pid].blocks.append(blk)
             if isinstance(blk, RoleBlock):
                 if blk.role not in self._roles:
-                    self._roles[blk.role] = Role(name=blk.role, blocks=[])
+                    if blk.role == "_NARRATOR":
+                        self._roles[blk.role] = NarratorRole(name=blk.role, blocks=[], meta=True)
+                    else:
+                        self._roles[blk.role] = Role(name=blk.role, blocks=[])
                     self._role_order.append(blk.role)
                 self._roles[blk.role].blocks.append(blk)
 
@@ -448,17 +468,6 @@ class PlayText(List[Block]):
         # Build from role blocks.
         for role in self.getRoles():
             maps[role.name] = role.segments()
-
-        # Add narrator segments from non-role blocks (directions, descriptions, meta).
-        for blk in self:
-            if isinstance(blk, RoleBlock):
-                continue
-            part = blk.block_id.part_id
-            block_no = blk.block_id.block_no
-            key = (part, block_no)
-            for seg in blk.segments:
-                seg_id = f"{'' if part is None else part}_{block_no}_{seg.segment_id.segment_no}"
-                maps.setdefault("_NARRATOR", {}).setdefault(key, []).append(seg_id)
 
         return maps
 

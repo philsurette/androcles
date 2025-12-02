@@ -16,7 +16,7 @@ from callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
 )
-from play_text import BlockId, PlayText, PlayTextParser, RoleBlock, Block
+from play_text import PlayText, PlayTextParser, Block
 from narrator_splitter import parse_narrator_blocks
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
