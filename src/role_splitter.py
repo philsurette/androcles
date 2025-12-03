@@ -11,10 +11,11 @@ Assumptions:
 """
 from __future__ import annotations
 
-import argparse
+
 import sys
+import os
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import List
 import logging
 from dataclasses import dataclass, field
 
@@ -81,7 +82,7 @@ class RoleSplitter:
             print(f"Recording not found for role {role}", file=sys.stderr)
             return None
 
-        logging.info("Processing role %s from %s", role, src_path)
+        #logging.info("Processing role %s from %s", role, src_path)
         expected_ids = self.expected_ids(role, part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
         self.splitter.export_spans(
@@ -96,61 +97,22 @@ class RoleSplitter:
         total_time = self.splitter.last_detect_seconds + self.splitter.last_export_seconds
         if len(spans) != len(expected_ids):
             logging.warning(
-                "⚠️  %s: split %d/%d snippets in %.1fs (silence detect %.3fs, export %.3fs)",
-                role,
+                "⚠️  split %3d/%-3d in %4.1fs %s",
                 len(spans),
                 len(expected_ids),
                 total_time,
-                self.splitter.last_detect_seconds,
-                self.splitter.last_export_seconds,
+                os.path.relpath(str(src_path), str(Path.cwd())),
             )
         else:
             logging.info(
-                "✅  %s: split %d/%d snippets in %.1fs (silence detect %.3fs, export %.3fs)",
-                role,
+                "✅ split %3d/%-3d in %4.1fs %s",
                 len(spans),
                 len(expected_ids),
                 total_time,
-                self.splitter.last_detect_seconds,
-                self.splitter.last_export_seconds,
+                os.path.relpath(str(src_path), str(Path.cwd())),
             )
         return total_time
 
-
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Split role recordings into per-line mp3 snippets.")
-    parser.add_argument(
-        "--role",
-        help="Role name to process (default: all recordings in plays/.../recordings excluding leading underscore).",
-    )
-    parser.add_argument("--min-silence-ms", type=int, default=1700, help="Silence length (ms) to split on (default 1700)")
-    parser.add_argument("--silence-thresh", type=int, default=-45, help="Silence threshold dBFS (default -45)")
-    parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
-    parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
-    parser.add_argument("--chunk-export-size", type=int, default=25, help="Batch size when chunking exports")
-    args = parser.parse_args()
-
-    SEGMENTS_DIR.mkdir(parents=True, exist_ok=True)
-
-    splitter = RoleSplitter(
-        play_text=PlayTextParser().parse(),
-        min_silence_ms=args.min_silence_ms,
-        silence_thresh=args.silence_thresh,
-        verbose=args.verbose,
-        chunk_exports=args.chunk_exports,
-        chunk_export_size=args.chunk_export_size,
-    )
-    if args.role:
-        roles = [args.role]
-    else:
-        roles = [p.stem for p in RECORDINGS_DIR.glob("*.wav") if not p.name.startswith("_")]
-
-    for role in roles:
-        splitter.process_role(role)
-
-
-if __name__ == "__main__":
-    main()
 
 # Backwards-compatible helper for build.py callers expecting a function.
 def process_role(

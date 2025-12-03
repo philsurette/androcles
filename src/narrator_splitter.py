@@ -11,7 +11,8 @@ entries keep all bullet lines.
 """
 from __future__ import annotations
 
-import argparse
+import os
+from pathlib import Path
 import sys
 from dataclasses import dataclass
 import logging
@@ -20,7 +21,6 @@ from typing import List
 from audio_splitter import AudioSplitter
 from play_text import (
     PlayText,
-    PlayTextParser,
     SpeechSegment,
 )
 from segment import Segment, DirectionSegment, SpeechSegment
@@ -77,13 +77,13 @@ class NarratorSplitter:
         block = seg.segment_id.block_id
         return f"{'' if block.part_id is None else block.part_id}_{block.block_no}_{seg.segment_id.segment_no}"
 
-    def split(self, part_filter: str | None = None) -> float | None:
+    def split(self, part_filter: str | None = None) -> None:
         src_path = RECORDINGS_DIR / "_NARRATOR.wav"
         if not src_path.exists():
             print(f"Narrator recording not found: {src_path}", file=sys.stderr)
             sys.exit(1)
 
-        logging.info("Processing narrator from %s", src_path)
+        #logging.info("Processing narrator from %s", src_path)
         pf = "" if part_filter == "_" else part_filter
         expected_segments = self.assemble_segments(part_filter=pf)
         splitter = AudioSplitter(
@@ -111,67 +111,20 @@ class NarratorSplitter:
         total_time = splitter.last_detect_seconds + splitter.last_export_seconds
         if len(spans) != len(expected_segments):
             logger.warning(
-                "⚠️  Narrator split mismatch: expected %d snippets, got %d (silence detect %.3fs, export %.3fs)",
-                len(expected_segments),
+                "⚠️ split %3d/%-3d in %4.1fs %s",
                 len(spans),
-                splitter.last_detect_seconds,
-                splitter.last_export_seconds,
+                len(expected_segments),
+                total_time,
+                os.path.relpath(str(src_path), str(Path.cwd())),
             )
         else:
             logger.info(
-                "✅  Split narrator into %d snippets in %.0fs (silence detect %.3fs, export %.3fs)",
+                "✅ split %3d/%-3d in %4.1fs %s",
                 len(spans),
+                len(expected_segments),
                 total_time,
-                splitter.last_detect_seconds,
-                splitter.last_export_seconds,
+                os.path.relpath(str(src_path), str(Path.cwd())),
             )
         return total_time
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Split narrator recording into per-line WAV snippets.")
-    parser.add_argument("--min-silence-ms", type=int, default=1700, help="Silence length (ms) to split on (default 1700)")
-    parser.add_argument("--silence-thresh", type=int, default=-45, help="Silence threshold dBFS (default -45)")
-    parser.add_argument("--pad-end-ms", type=int, default=200, help="Pad each segment end by this many ms (default 200)")
-    parser.add_argument("--part", help="Limit to a specific part id, or '_' for no-part entries")
-    parser.add_argument("--chunk-size", type=int, default=50, help="Chunk size (ms) for silence detection")
-    parser.add_argument(
-        "--detect-chunk-ms",
-        type=int,
-        default=0,
-        help="Process silence detection in windows of this size (ms). Use 0 to scan whole file.",
-    )
-    parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
-    parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
-    parser.add_argument("--chunk-export-size", type=int, default=25, help="Batch size when chunking exports")
-    parser.add_argument(
-        "--use-silence-window",
-        action="store_true",
-        help="Enable windowed silence detection; when off, scans the whole file at once",
-    )
-    parser.add_argument(
-        "--silence-window-size-seconds",
-        type=int,
-        default=300,
-        help="Window size in seconds for silence detection when windowing is enabled",
-    )
-    args = parser.parse_args()
-    play_text = PlayTextParser().parse()
-    NarratorSplitter(
-        play_text=play_text,
-        min_silence_ms=args.min_silence_ms,
-        silence_thresh=args.silence_thresh,
-        pad_end_ms=args.pad_end_ms,
-        chunk_size=args.chunk_size,
-        detection_chunk_ms=(
-            args.silence_window_size_seconds * 1000 if args.use_silence_window else (args.detect_chunk_ms or None)
-        ),
-        verbose=args.verbose,
-        chunk_exports=args.chunk_exports,
-        chunk_export_size=args.chunk_export_size,
-        use_silence_window=args.use_silence_window,
-    ).split(part_filter=args.part)
-
-
-if __name__ == "__main__":
-    main()
