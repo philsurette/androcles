@@ -20,6 +20,8 @@ AUDIO_PLAY_DIR = AUDIO_OUT_DIR / "play"
 SEGMENTS_DIR = AUDIO_OUT_DIR / "segments"
 RECORDINGS_DIR = DEFAULT_PLAY.parent / "recordings"
 CALLOUTS_DIR = DEFAULT_PLAY.parent / "callouts"
+MARKDOWN_DIR = BUILD_DIR / "markdown"
+MARKDOWN_ROLES_DIR = MARKDOWN_DIR / "roles"
 
 # Clean targets
 TARGET_DIRS = [BLOCKS_DIR, ROLES_DIR]

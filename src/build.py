@@ -76,6 +76,13 @@ def write_roles(
     setup_logging()
     run_write_roles(line_no_prefix)
 
+
+@app.command("write-cues")
+def write_cues() -> None:
+    """Generate role cue text files into build/roles."""
+    setup_logging()
+    run_write_cues()
+
 @app.command()
 def segments(
     role: str = typer.Option(None, help="Limit to a specific role"),
@@ -212,6 +219,13 @@ def run_write_roles(line_no_prefix: bool = True):
     if paths:
         logging.info("✅ created .md files in %s for %s", paths[0].parent, ",".join([r.name for r in play.roles]))
     return paths
+
+
+def run_write_cues():
+    from role_cues import RoleCues
+
+    play = PlayTextParser().parse()
+    RoleCues(play).write()
 
 
 def run_segments(

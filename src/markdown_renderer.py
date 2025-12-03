@@ -7,7 +7,7 @@ from pathlib import Path
 
 from play_text import PlayText, Role
 from block import *
-from paths import BUILD_DIR
+from paths import MARKDOWN_DIR
 
 
 @dataclass
@@ -17,7 +17,7 @@ class PlayMarkdownWriter:
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""
-        target = out_path or (BUILD_DIR / "text" / f"{self.play.title}.md")
+        target = out_path or (MARKDOWN_DIR / f"{self.play.title}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.play.blocks]
