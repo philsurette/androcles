@@ -2,9 +2,7 @@
 """Generate a multi-sheet XLSX timing report from build/audio/timings.csv."""
 from __future__ import annotations
 
-import csv
 from collections import defaultdict
-from pathlib import Path
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter

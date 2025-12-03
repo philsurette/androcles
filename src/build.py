@@ -9,7 +9,6 @@ from datetime import datetime
 import typer
 
 from play_splitter import PlaySplitter
-from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder, list_parts, compute_output_path
@@ -18,6 +17,8 @@ from markdown_renderer import PlayMarkdownWriter,  RoleMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from paths import AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
+from play_plan_builder import PlayPlanBuilder
+from segment_verifier import SegmentVerifier
 
 
 app = typer.Typer(add_completion=False)
@@ -54,7 +55,7 @@ def main(ctx: typer.Context) -> None:
 
 @app.command()
 def text() -> None:
-    """Build text artifacts (paragraphs, blocks, roles, narration)."""
+    """Build markdown artifacts."""
     setup_logging()
     write_play()
     write_roles()
@@ -115,7 +116,15 @@ def verify(
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
 ) -> None:
     setup_logging()
-    verify_segments(too_short, too_long)
+    _run_verify(too_short, too_long)
+
+
+def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
+    play = PlayTextParser().parse()
+    builder = PlayPlanBuilder(play_text=play)
+    plan, _ = builder.build_audio_plan(parts=builder.list_parts())
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
+    verifier.verify_segments()
 
 
 @app.command()

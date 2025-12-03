@@ -47,8 +47,8 @@ def parse_id(eid: str):
 @dataclass
 class SegmentVerifier:
     plan: List
-    tol_low: float = 0.5
-    tol_high: float = 2.0
+    too_short: float = 0.5
+    too_long: float = 2.0
     play_text: PlayText | None = None
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
     _offsets_map: Dict[str, Dict[str, str]] = field(init=False, default_factory=dict)
@@ -170,9 +170,9 @@ class SegmentVerifier:
                     row["percent"] = round((act / exp) * 100.0, 1)
                     # Apply thresholds; skip warnings if actual is very short.
                     if act >= 2.0:
-                        if act < self.tol_low * exp and exp >= 1.0:
+                        if act < self.too_short * exp and exp >= 1.0:
                             row["warning"] = "<"
-                        elif act > self.tol_high * exp:
+                        elif act > self.too_long * exp:
                             row["warning"] = ">"
                     if row["warning"]:
                         logging.warning(
@@ -253,19 +253,10 @@ if __name__ == "__main__":
     SegmentVerifier(plan=plan).verify_segments()
 
 
-# Backwards-compatible helper for callers expecting a function.
-def verify_segments(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
-    play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play_text=play)
-    plan, _ = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high, play_text=play)
-    return verifier.verify_segments()
-
-
 # Backwards-compatible helper to compute rows directly.
 def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play_text=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, tol_low=tol_low, tol_high=tol_high, play_text=play)
+    verifier = SegmentVerifier(plan=plan, too_short=tol_low, too_long=tol_high, play_text=play)
     return verifier.compute_rows()

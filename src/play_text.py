@@ -6,8 +6,6 @@ from dataclasses import dataclass, field
 from typing import List
 import re
 from pathlib import Path
-
-from paragraphs import collapse_to_paragraphs
 from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment
@@ -221,15 +219,33 @@ class PlayTextParser:
 
     def __init__(self, source_path: Path | None = None) -> None:
         # Prefer the normalized paragraphs file when available to align numbering
-        self.source_path = source_path or (PARAGRAPHS_PATH if PARAGRAPHS_PATH.exists() else DEFAULT_PLAY)
+        self.source_path = source_path or DEFAULT_PLAY
+
+    def collapse_to_paragraphs(self, text: str) -> list[str]:
+        """
+        Join consecutive non-empty lines with spaces and use blank lines as
+        paragraph boundaries, without emitting blank lines.
+        """
+        output: list[str] = []
+        buffer: list[str] = []
+
+        for raw_line in text.splitlines():
+            # Treat any whitespace-only line as a boundary.
+            if raw_line.strip():
+                buffer.append(raw_line.strip())
+            else:
+                if buffer:
+                    output.append(" ".join(buffer))
+                    buffer.clear()
+
+        if buffer:
+            output.append(" ".join(buffer))
+
+        return output
 
     def parse(self) -> PlayText:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
-        if self.source_path == PARAGRAPHS_PATH:
-            # paragraphs.txt is already normalized to one paragraph per line
-            paragraphs = [line.strip() for line in raw_text.splitlines() if line.strip()]
-        else:
-            paragraphs = collapse_to_paragraphs(raw_text)
+        paragraphs = self.collapse_to_paragraphs(raw_text)
 
         play = PlayText()
         current_part: int | None = None
