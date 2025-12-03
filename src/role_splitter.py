@@ -113,26 +113,3 @@ class RoleSplitter:
             )
         return total_time
 
-
-# Backwards-compatible helper for build.py callers expecting a function.
-def process_role(
-    role: str,
-    *,
-    min_silence_ms: int = 1700,
-    silence_thresh: int = -45,
-    part_filter: str | None = None,
-    chunk_size: int = 1,
-    verbose: bool = False,
-    chunk_exports: bool = False,
-    chunk_export_size: int = 25,
-) -> float | None:
-    splitter = RoleSplitter(
-        play_text=PlayTextParser().parse(),
-        min_silence_ms=min_silence_ms,
-        silence_thresh=silence_thresh,
-        chunk_size=chunk_size,
-        verbose=verbose,
-        chunk_exports=chunk_exports,
-        chunk_export_size=chunk_export_size,
-    )
-    return splitter.process_role(role, part_filter=part_filter)

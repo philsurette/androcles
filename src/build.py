@@ -12,7 +12,7 @@ import paragraphs as pg
 import blocks
 import roles
 import narration
-from role_splitter import process_role
+from role_splitter import RoleSplitter
 from narrator_splitter import NarratorSplitter
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
@@ -77,22 +77,22 @@ def split_roles(
     chunk_export_size: int = 25,
 ) -> float:
     total_time = 0.0
+    splitter = RoleSplitter(
+        play_text=PlayTextParser().parse(),
+        min_silence_ms=min_silence_ms,
+        silence_thresh=silence_thresh,
+        chunk_size=chunk_size,
+        verbose=verbose,
+        chunk_exports=chunk_exports,
+        chunk_export_size=chunk_export_size,
+    )
     for rec in RECORDINGS_DIR.glob("*.wav"):
         if rec.name.startswith("_"):
             continue
         role = rec.stem
         if role_filter and role_filter != role:
             continue
-        elapsed = process_role(
-            role,
-            min_silence_ms=min_silence_ms,
-            silence_thresh=silence_thresh,
-            part_filter=part_filter,
-            chunk_size=chunk_size,
-            verbose=verbose,
-            chunk_exports=chunk_exports,
-            chunk_export_size=chunk_export_size,
-        )
+        elapsed = splitter.process_role(role, part_filter=part_filter)
         if elapsed:
             total_time += elapsed
     return total_time
