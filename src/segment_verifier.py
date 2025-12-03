@@ -248,7 +248,7 @@ class SegmentVerifier:
 
 if __name__ == "__main__":
     play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play_text=play)
+    builder = PlayPlanBuilder(play=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
     SegmentVerifier(plan=plan).verify_segments()
 
@@ -256,7 +256,7 @@ if __name__ == "__main__":
 # Backwards-compatible helper to compute rows directly.
 def compute_rows(too_short: float = 0.5, too_long: float = 2.0) -> List[Dict]:
     play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play_text=play)
+    builder = PlayPlanBuilder(play=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
     verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
     return verifier.compute_rows()

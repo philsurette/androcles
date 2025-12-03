@@ -117,7 +117,7 @@ def verify(
 
 def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
     play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play_text=play)
+    builder = PlayPlanBuilder(play=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
     verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
     verifier.verify_segments()

@@ -40,7 +40,7 @@ class PlayBuilder:
         )
         director = director if self.include_callouts else NoCalloutDirector(play)
         builder = PlayPlanBuilder(
-            play_text=play,
+            play=play,
             director=director,
             chapters=chapters,
             spacing_ms=self.spacing_ms,
@@ -74,7 +74,7 @@ class PlayBuilder:
             raise ValueError("No numbered parts available for librivox output.")
         outputs: list[Path] = []
         play = PlayTextParser().parse()
-        chapters = ChapterBuilder().build()
+        chapters = ChapterBuilder(play_text=play).build()
         director: CalloutDirector = (
             ConversationAwareCalloutDirector(play) if self.minimal_callouts else RoleCalloutDirector(play)
         )
@@ -91,7 +91,7 @@ class PlayBuilder:
                 "genre": "Speech",
             }
             builder = PlayPlanBuilder(
-                play_text=play,
+                play=play,
                 director=director,
                 chapters=chapters,
                 spacing_ms=self.spacing_ms,

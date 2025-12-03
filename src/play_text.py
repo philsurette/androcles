@@ -143,6 +143,27 @@ class PlayText(List[Block]):
         if not self._parts:
             self._build_parts_index()
         return self._parts.get(part_id)
+    
+    @property
+    def first_part_id(self) -> int:
+        """Return the first part id in the play."""
+        if not self._parts:
+            self._build_parts_index()
+        return [p.part_no for p in self.parts if p.part_no is not None][0]
+
+    @property
+    def last_part_id(self) -> int:
+        """Return the last part id in the play."""
+        if not self._parts:
+            self._build_parts_index()
+        return [p.part_no for p in self.parts if p.part_no is not None][-1]
+
+    @property
+    def parts(self) -> List[Part]:
+        """Return all Part objects in play order."""
+        if not self._parts:
+            self._build_parts_index()
+        return [self._parts[pid] for pid in self._part_order]
 
     def getParts(self) -> List[Part]:
         """Return all Part objects in play order."""
@@ -165,7 +186,12 @@ class PlayText(List[Block]):
     def title(self) -> str:
         """Return the text of the first block."""
         return self[0].text if self else ""
-    
+
+    @property
+    def author(self) -> str:
+        """Return the text of the first block."""
+        return self[1].text if self else ""
+
     @property
     def roles(self) -> List[Role]:
         """Return all roles in play order of first appearance."""

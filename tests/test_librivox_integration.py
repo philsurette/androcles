@@ -59,7 +59,7 @@ def test_librivox_audio_plans_match_expected(tmp_path: pathlib.Path) -> None:
             ConversationAwareCalloutDirector(play) if minimal_callouts else RoleCalloutDirector(play)
         )
         builder = PlayPlanBuilder(
-            play_text=play,
+            play=play,
             director=director if include_callouts else NoCalloutDirector(play),
             chapters=chapters,
             spacing_ms=1000,
