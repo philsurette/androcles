@@ -72,6 +72,9 @@ def split_roles(
     min_silence_ms: int = 1700,
     silence_thresh: int = -45,
     chunk_size: int = 50,
+    verbose: bool = False,
+    chunk_exports: bool = False,
+    chunk_export_size: int = 100,
 ) -> None:
     for rec in RECORDINGS_DIR.glob("*.wav"):
         if rec.name.startswith("_"):
@@ -85,15 +88,30 @@ def split_roles(
             silence_thresh=silence_thresh,
             part_filter=part_filter,
             chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
         )
 
 
 def split_narrator(
-    part_filter: str | None = None, min_silence_ms: int = 1700, silence_thresh: int = -45, chunk_size: int = 50
+    part_filter: str | None = None,
+    min_silence_ms: int = 1700,
+    silence_thresh: int = -45,
+    chunk_size: int = 50,
+    verbose: bool = False,
+    chunk_exports: bool = False,
+    chunk_export_size: int = 100,
 ) -> None:
     play_text = PlayTextParser().parse()
     NarratorSplitter(
-        play_text=play_text, min_silence_ms=min_silence_ms, silence_thresh=silence_thresh, chunk_size=chunk_size
+        play_text=play_text,
+        min_silence_ms=min_silence_ms,
+        silence_thresh=silence_thresh,
+        chunk_size=chunk_size,
+        verbose=verbose,
+        chunk_exports=chunk_exports,
+        chunk_export_size=chunk_export_size,
     ).split(part_filter=part_filter)
 
 
@@ -120,18 +138,52 @@ def segments(
     silence_thresh: int = typer.Option(-60, help="Silence threshold dBFS for splitting"),
     separator_len_ms: int = typer.Option(1700, "--separator-length-ms", help="Minimum silence length (ms) to split on"),
     chunk_size: int = typer.Option(50, help="Chunk size (ms) for silence detection"),
+    verbose: bool = typer.Option(False, "--verbose", help="Log ffmpeg commands used for splitting"),
+    chunk_exports: bool = typer.Option(False, "--chunk-exports", help="Export in batches instead of one ffmpeg call"),
+    chunk_export_size: int = typer.Option(100, "--chunk-export-size", help="Batch size when chunking exports"),
 ) -> None:
     setup_logging()
     build_paragraphs()
     build_blocks()
     if role is None:
-        split_roles(part_filter=part, min_silence_ms=separator_len_ms, silence_thresh=silence_thresh, chunk_size=chunk_size)
-        split_narrator(part_filter=part, min_silence_ms=separator_len_ms, silence_thresh=silence_thresh, chunk_size=chunk_size)
+        split_roles(
+            part_filter=part,
+            min_silence_ms=separator_len_ms,
+            silence_thresh=silence_thresh,
+            chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
+        )
+        split_narrator(
+            part_filter=part,
+            min_silence_ms=separator_len_ms,
+            silence_thresh=silence_thresh,
+            chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
+        )
     elif role == "_NARRATOR":
-        split_narrator(part_filter=part, min_silence_ms=separator_len_ms, silence_thresh=silence_thresh, chunk_size=chunk_size)
+        split_narrator(
+            part_filter=part,
+            min_silence_ms=separator_len_ms,
+            silence_thresh=silence_thresh,
+            chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
+        )
     else:
         split_roles(
-            role_filter=role, part_filter=part, min_silence_ms=separator_len_ms, silence_thresh=silence_thresh, chunk_size=chunk_size
+            role_filter=role,
+            part_filter=part,
+            min_silence_ms=separator_len_ms,
+            silence_thresh=silence_thresh,
+            chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
         )
 
 

@@ -30,6 +30,9 @@ class RoleSplitter:
     silence_thresh: int = -45
     chunk_size: int = 50
     pad_end_ms: int = 200
+    verbose: bool = False
+    chunk_exports: bool = False
+    chunk_export_size: int = 100
     splitter: AudioSplitter = field(default_factory=AudioSplitter)
 
     def __post_init__(self) -> None:
@@ -40,6 +43,9 @@ class RoleSplitter:
         self.splitter.silence_thresh = self.silence_thresh
         self.splitter.chunk_size = self.chunk_size
         self.splitter.pad_end_ms = self.pad_end_ms
+        self.splitter.verbose = self.verbose
+        self.splitter.chunk_exports = self.chunk_exports
+        self.splitter.chunk_export_size = self.chunk_export_size
 
     def expected_ids(self, role: str, part_filter: str | None = None) -> List[str]:
         """
@@ -78,7 +84,14 @@ class RoleSplitter:
         logging.info("Processing role %s from %s", role, src_path)
         expected_ids = self.expected_ids(role, part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
-        self.splitter.export_spans(src_path, spans, expected_ids, SEGMENTS_DIR / role)
+        self.splitter.export_spans(
+            src_path,
+            spans,
+            expected_ids,
+            SEGMENTS_DIR / role,
+            chunk_exports=self.chunk_exports,
+            chunk_export_size=self.chunk_export_size,
+        )
 
         if len(spans) != len(expected_ids):
             print(f"WARNING {role}: expected {len(expected_ids)} snippets, got {len(spans)}")
@@ -94,6 +107,9 @@ def main() -> None:
     )
     parser.add_argument("--min-silence-ms", type=int, default=1700, help="Silence length (ms) to split on (default 1700)")
     parser.add_argument("--silence-thresh", type=int, default=-45, help="Silence threshold dBFS (default -45)")
+    parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
+    parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
+    parser.add_argument("--chunk-export-size", type=int, default=100, help="Batch size when chunking exports")
     args = parser.parse_args()
 
     SEGMENTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -102,6 +118,9 @@ def main() -> None:
         play_text=PlayTextParser().parse(),
         min_silence_ms=args.min_silence_ms,
         silence_thresh=args.silence_thresh,
+        verbose=args.verbose,
+        chunk_exports=args.chunk_exports,
+        chunk_export_size=args.chunk_export_size,
     )
     if args.role:
         roles = [args.role]
@@ -123,11 +142,17 @@ def process_role(
     silence_thresh: int = -45,
     part_filter: str | None = None,
     chunk_size: int = 1,
+    verbose: bool = False,
+    chunk_exports: bool = False,
+    chunk_export_size: int = 100,
 ) -> None:
     splitter = RoleSplitter(
         play_text=PlayTextParser().parse(),
         min_silence_ms=min_silence_ms,
         silence_thresh=silence_thresh,
         chunk_size=chunk_size,
+        verbose=verbose,
+        chunk_exports=chunk_exports,
+        chunk_export_size=chunk_export_size,
     )
     splitter.process_role(role, part_filter=part_filter)

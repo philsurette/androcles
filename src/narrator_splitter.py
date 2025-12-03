@@ -35,6 +35,10 @@ class NarratorSplitter:
     silence_thresh: int = -45
     pad_end_ms: int = 200
     chunk_size: int = 50
+    detection_chunk_ms: int | None = 300_000  # process silence detection in ~5-minute windows
+    verbose: bool = False
+    chunk_exports: bool = False
+    chunk_export_size: int = 100
 
     def assemble_segments(self, part_filter: str | None = None) -> List[Segment]:
         """Return ordered narrator/meta segments from the PlayText."""
@@ -86,10 +90,18 @@ class NarratorSplitter:
             silence_thresh=self.silence_thresh,
             pad_end_ms=self.pad_end_ms,
             chunk_size=self.chunk_size,
+            verbose=self.verbose,
+            chunk_exports=self.chunk_exports,
+            chunk_export_size=self.chunk_export_size,
         )
-        spans = splitter.detect_spans(src_path)
+        spans = splitter.detect_spans(src_path, chunk_duration_ms=self.detection_chunk_ms)
         splitter.export_spans(
-            src_path, spans, [self._segment_id_str(seg) for seg in expected_segments], SEGMENTS_DIR / "_NARRATOR"
+            src_path,
+            spans,
+            [self._segment_id_str(seg) for seg in expected_segments],
+            SEGMENTS_DIR / "_NARRATOR",
+            chunk_exports=self.chunk_exports,
+            chunk_export_size=self.chunk_export_size,
         )
 
         if len(spans) != len(expected_segments):
@@ -105,6 +117,15 @@ def main() -> None:
     parser.add_argument("--pad-end-ms", type=int, default=200, help="Pad each segment end by this many ms (default 200)")
     parser.add_argument("--part", help="Limit to a specific part id, or '_' for no-part entries")
     parser.add_argument("--chunk-size", type=int, default=50, help="Chunk size (ms) for silence detection")
+    parser.add_argument(
+        "--detect-chunk-ms",
+        type=int,
+        default=300_000,
+        help="Process silence detection in windows of this size (ms). Use 0 to scan whole file.",
+    )
+    parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
+    parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
+    parser.add_argument("--chunk-export-size", type=int, default=100, help="Batch size when chunking exports")
     args = parser.parse_args()
     play_text = PlayTextParser().parse()
     NarratorSplitter(
@@ -113,6 +134,10 @@ def main() -> None:
         silence_thresh=args.silence_thresh,
         pad_end_ms=args.pad_end_ms,
         chunk_size=args.chunk_size,
+        detection_chunk_ms=args.detect_chunk_ms if args.detect_chunk_ms > 0 else None,
+        verbose=args.verbose,
+        chunk_exports=args.chunk_exports,
+        chunk_export_size=args.chunk_export_size,
     ).split(part_filter=args.part)
 
 
