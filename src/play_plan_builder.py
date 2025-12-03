@@ -181,7 +181,7 @@ class PlayPlanBuilder:
     def _add_librivox_each_part_title_suffix(self, plan: AudioPlan[PlanItem], part_id: int) -> None:
         if not self.librivox:
             return
-        if self.play.last_part_id == part_id:
+        if self.play.first_part_id == part_id:
             return
         path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
         plan.addClip(
