@@ -12,7 +12,7 @@ import paragraphs as pg
 import blocks
 import roles
 import narration
-from segment_splitter import SegmentSplitter
+from play_splitter import PlaySplitter
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
@@ -100,7 +100,7 @@ def segments(
     build_paragraphs()
     build_blocks()
     play_text = PlayTextParser().parse()
-    splitter = SegmentSplitter(
+    splitter = PlaySplitter(
         play_text=play_text,
         min_silence_ms=separator_len_ms,
         silence_thresh=silence_thresh,

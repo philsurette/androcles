@@ -14,7 +14,7 @@ from narrator_splitter import NarratorSplitter
 
 
 @dataclass
-class SegmentSplitter:
+class PlaySplitter:
     play_text: PlayText
     min_silence_ms: int = 1700
     silence_thresh: int = -45
@@ -46,7 +46,7 @@ class SegmentSplitter:
             role = rec.stem
             if role_filter and role_filter != role:
                 continue
-            elapsed = splitter.process_role(role, part_filter=part_filter)
+            elapsed = splitter.split(role, part_filter=part_filter)
             if elapsed:
                 total += elapsed
         return total

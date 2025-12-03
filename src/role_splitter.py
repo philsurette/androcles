@@ -76,7 +76,7 @@ class RoleSplitter:
                     )
         return ids
 
-    def process_role(self, role: str, part_filter: str | None = None) -> float | None:
+    def split(self, role: str, part_filter: str | None = None) -> float | None:
         src_path = self.splitter.find_recording(role)
         if not src_path:
             print(f"Recording not found for role {role}", file=sys.stderr)

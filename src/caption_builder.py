@@ -11,15 +11,6 @@ from play_plan_builder import PlanItem
 from audio_plan import AudioPlan
 
 
-def fmt_ts(ms: int) -> str:
-    hours = ms // 3_600_000
-    rem = ms % 3_600_000
-    minutes = rem // 60_000
-    rem = rem % 60_000
-    seconds = rem // 1000
-    millis = rem % 1000
-    return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
-
 
 @dataclass
 class CaptionBuilder:
@@ -28,6 +19,14 @@ class CaptionBuilder:
 
     def build(self, out_path: Path) -> Path:
         """Write WebVTT captions for all clips with text, optionally including callouts."""
+        def fmt_ts(ms: int) -> str:
+            hours = ms // 3_600_000
+            rem = ms % 3_600_000
+            minutes = rem // 60_000
+            rem = rem % 60_000
+            seconds = rem // 1000
+            millis = rem % 1000
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
         lines: List[str] = ["WEBVTT", ""]
         idx = 1
         for item in self.plan:
