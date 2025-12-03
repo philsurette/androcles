@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
+import logging
 
 from paths import MARKDOWN_ROLES_DIR
 from play_text import PlayText, PlayTextParser, RoleBlock
@@ -146,6 +147,7 @@ class RoleCues:
             if content:
                 content += "\n"
             path.write_text(content, encoding="utf-8")
+            logging.info("✅ wrote %s", path)
 
 
 if __name__ == "__main__":

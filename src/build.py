@@ -223,9 +223,11 @@ def run_write_roles(line_no_prefix: bool = True):
 
 def run_write_cues():
     from role_cues import RoleCues
+    from narration_cues import NarrationCues
 
     play = PlayTextParser().parse()
     RoleCues(play).write()
+    NarrationCues(play).write()
 
 
 def run_segments(
