@@ -254,9 +254,9 @@ if __name__ == "__main__":
 
 
 # Backwards-compatible helper to compute rows directly.
-def compute_rows(tol_low: float = 0.5, tol_high: float = 2.0) -> List[Dict]:
+def compute_rows(too_short: float = 0.5, too_long: float = 2.0) -> List[Dict]:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play_text=play)
     plan, _ = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, too_short=tol_low, too_long=tol_high, play_text=play)
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
     return verifier.compute_rows()

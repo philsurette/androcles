@@ -49,16 +49,15 @@ def setup_logging() -> None:
 def main(ctx: typer.Context) -> None:
     setup_logging()
     if ctx.invoked_subcommand is None:
-        segments()
-        text()
-        audioplay()
+        run_segments()
+        run_text()
+        run_audioplay()
 
 @app.command()
 def text() -> None:
     """Build markdown artifacts."""
     setup_logging()
-    write_play()
-    write_roles()
+    run_text()
 
 
 @app.command()
@@ -67,10 +66,7 @@ def write_play(
 ) -> None:
     """Write build/text/<play>.md"""
     setup_logging()
-    play = PlayTextParser().parse()
-    writer = PlayMarkdownWriter(play, prefix_line_nos=line_no_prefix)
-    path = writer.to_markdown()
-    logging.info("✅ wrote %s", path)
+    run_write_play(line_no_prefix)
 
 @app.command()
 def write_roles(
@@ -78,13 +74,7 @@ def write_roles(
 ) -> None:
     """Write build/text/<role>.md - all blocks for each role"""
     setup_logging()
-    play = PlayTextParser().parse()
-    for role in play.roles:
-        writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
-        path = writer.to_markdown()
-        logging.debug("✅ wrote %s", path)
-    logging.info(f"✅ created .md files in {path.parent} for {','.join(
-        [r.name for r in play.roles])} ")
+    run_write_roles(line_no_prefix)
 
 @app.command()
 def segments(
@@ -98,17 +88,16 @@ def segments(
     chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
 ) -> None:
     setup_logging()
-    play_text = PlayTextParser().parse()
-    splitter = PlaySplitter(
-        play_text=play_text,
-        min_silence_ms=separator_len_ms,
+    run_segments(
+        role=role,
+        part=part,
         silence_thresh=silence_thresh,
+        separator_len_ms=separator_len_ms,
         chunk_size=chunk_size,
         verbose=verbose,
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
     )
-    splitter.split_all(part_filter=part, role_filter=role)
 
 @app.command()
 def verify(
@@ -130,18 +119,13 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
 @app.command()
 def check_recording() -> None:
     setup_logging()
-    timings_path = AUDIO_OUT_DIR / "timings.csv"
-    if not timings_path.exists():
-        typer.echo(f"{timings_path} not found; run verify first.")
-        raise typer.Exit(code=1)
-    for line in summarize_recordings(timings_path):
-        typer.echo(line)
+    run_check_recording()
 
 
 @app.command("generate-timings")
 def generate_timings() -> None:
     setup_logging()
-    generate_xlsx()
+    run_generate_timings()
 
 
 @app.command()
@@ -158,43 +142,18 @@ def audioplay(
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
     setup_logging()
-    if audio_format not in ("mp4", "mp3", "wav"):
-        raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
-    parts = []
-    if part is None:
-        parts = list_parts()
-    else:
-        if part == "_":
-            parts = [None]
-            part = None
-        else:
-            try:
-                part = int(part)
-                parts = [part]
-            except ValueError:
-                raise typer.BadParameter("Part must be an integer or '_'")
-    builder = PlayBuilder(
-        spacing_ms=segment_spacing_ms,
-        include_callouts=callouts,
+    run_audioplay(
+        part=part,
+        segment_spacing_ms=segment_spacing_ms,
+        callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
-        audio_format=audio_format,
-        part_gap_ms=2000 if len(parts) > 1 else 0,
+        captions=captions,
         generate_audio=generate_audio,
-        generate_captions=captions,
         librivox=librivox,
+        audio_format=audio_format,
+        normalize_output=normalize_output,
     )
-    out_paths = builder.build_audio(parts=parts, part=part)
-    if normalize_output and generate_audio:
-        normalizer = Normalizer()
-        for out_path in out_paths:
-            target_dir = out_path.parent / "normalized"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            norm_path = target_dir / out_path.name
-            logging.info("Normalizing audioplay to %s", norm_path)
-            normalizer.normalize(str(out_path), str(norm_path))
-    elif normalize_output and not generate_audio:
-        logging.info("Skipping normalization because audio rendering was skipped.")
 
 
 @app.command()
@@ -205,12 +164,7 @@ def normalize(
     Normalize an audio file using ffmpeg loudnorm. Writes to a sibling 'normalized' folder.
     """
     setup_logging()
-    normalizer = Normalizer()
-    src_parent = src.parent
-    out_dir = src_parent / "normalized"
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out_path = out_dir / src.name
-    result = normalizer.normalize(str(src), str(out_path))
+    result = run_normalize(src)
     typer.echo(result.render())
 
 
@@ -223,6 +177,150 @@ def cues(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
 ) -> None:
     setup_logging()
+    run_cues(
+        role=role,
+        response_delay_ms=response_delay_ms,
+        max_cue_size_ms=max_cue_size_ms,
+        include_prompts=include_prompts,
+        callout_spacing_ms=callout_spacing_ms,
+    )
+
+
+# Helper functions (non-Typer) -----------------------------------------------
+
+def run_text(line_no_prefix: bool = True) -> None:
+    run_write_play(line_no_prefix)
+    run_write_roles(line_no_prefix)
+
+
+def run_write_play(line_no_prefix: bool = True):
+    play = PlayTextParser().parse()
+    writer = PlayMarkdownWriter(play, prefix_line_nos=line_no_prefix)
+    path = writer.to_markdown()
+    logging.info("✅ wrote %s", path)
+    return path
+
+
+def run_write_roles(line_no_prefix: bool = True):
+    play = PlayTextParser().parse()
+    paths = []
+    for role in play.roles:
+        writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
+        path = writer.to_markdown()
+        paths.append(path)
+        logging.debug("✅ wrote %s", path)
+    if paths:
+        logging.info("✅ created .md files in %s for %s", paths[0].parent, ",".join([r.name for r in play.roles]))
+    return paths
+
+
+def run_segments(
+    *,
+    role: str | None = None,
+    part: str | None = None,
+    silence_thresh: int = -60,
+    separator_len_ms: int = 1700,
+    chunk_size: int = 50,
+    verbose: bool = False,
+    chunk_exports: bool = True,
+    chunk_export_size: int = 25,
+):
+    play_text = PlayTextParser().parse()
+    splitter = PlaySplitter(
+        play_text=play_text,
+        min_silence_ms=separator_len_ms,
+        silence_thresh=silence_thresh,
+        chunk_size=chunk_size,
+        verbose=verbose,
+        chunk_exports=chunk_exports,
+        chunk_export_size=chunk_export_size,
+    )
+    return splitter.split_all(part_filter=part, role_filter=role)
+
+
+def run_check_recording():
+    timings_path = AUDIO_OUT_DIR / "timings.csv"
+    if not timings_path.exists():
+        typer.echo(f"{timings_path} not found; run verify first.")
+        raise typer.Exit(code=1)
+    for line in summarize_recordings(timings_path):
+        typer.echo(line)
+
+
+def run_generate_timings():
+    generate_xlsx()
+
+
+def run_audioplay(
+    *,
+    part: str | None = None,
+    segment_spacing_ms: int = 1000,
+    callouts: bool = True,
+    callout_spacing_ms: int = 300,
+    minimal_callouts: bool = True,
+    captions: bool = True,
+    generate_audio: bool = True,
+    librivox: bool = False,
+    audio_format: str = "mp4",
+    normalize_output: bool = True,
+):
+    if audio_format not in ("mp4", "mp3", "wav"):
+        raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
+    if part == "_":
+        parts = [None]
+        part_val = None
+    elif part is None:
+        parts = list_parts()
+        part_val = None
+    else:
+        try:
+            part_val = int(part)
+            parts = [part_val]
+        except ValueError:
+            raise typer.BadParameter("Part must be an integer or '_'")
+
+    builder = PlayBuilder(
+        spacing_ms=segment_spacing_ms,
+        include_callouts=callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+        audio_format=audio_format,
+        part_gap_ms=2000 if len(parts) > 1 else 0,
+        generate_audio=generate_audio,
+        generate_captions=captions,
+        librivox=librivox,
+    )
+    out_paths = builder.build_audio(parts=parts, part=part_val)
+    if normalize_output and generate_audio:
+        normalizer = Normalizer()
+        for out_path in out_paths:
+            target_dir = out_path.parent / "normalized"
+            target_dir.mkdir(parents=True, exist_ok=True)
+            norm_path = target_dir / out_path.name
+            logging.info("Normalizing audioplay to %s", norm_path)
+            normalizer.normalize(str(out_path), str(norm_path))
+    elif normalize_output and not generate_audio:
+        logging.info("Skipping normalization because audio rendering was skipped.")
+    return out_paths
+
+
+def run_normalize(src: Path):
+    normalizer = Normalizer()
+    src_parent = src.parent
+    out_dir = src_parent / "normalized"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / src.name
+    return normalizer.normalize(str(src), str(out_path))
+
+
+def run_cues(
+    *,
+    role: str | None = None,
+    response_delay_ms: int = 2000,
+    max_cue_size_ms: int = 5000,
+    include_prompts: bool = True,
+    callout_spacing_ms: int = 300,
+):
     play_text = PlayTextParser().parse()
     builder = CueBuilder(
         play_text,
@@ -231,14 +329,10 @@ def cues(
         include_prompts=include_prompts,
         callout_spacing_ms=callout_spacing_ms,
     )
-    roles = []
-    if role:
-        roles = [role]
-    else:
-        roles = [r.name for r in play_text.roles]
-        roles.append("_NARRATOR")
+    roles = [role] if role else [r.name for r in play_text.roles] + ["_NARRATOR"]
     for r in roles:
         builder.build_cues(r)
+
 
 
 # if __name__ == "__main__":
