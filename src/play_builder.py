@@ -12,7 +12,7 @@ from chapter_builder import ChapterBuilder
 from callout_director import CalloutDirector, ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
 from play_audio_builder import instantiate_plan
 from caption_builder import CaptionBuilder
-from paths import BUILD_DIR, RECORDINGS_DIR, AUDIO_PLAY_DIR
+import paths
 
 
 @dataclass
@@ -51,13 +51,13 @@ class PlayBuilder:
             librivox=self.librivox,
         )
         plan, _ = builder.build_audio_plan(parts=parts)
-        plan_path = BUILD_DIR / "audio_plan.txt"
+        plan_path = paths.BUILD_DIR / "audio_plan.txt"
         plan_path.parent.mkdir(parents=True, exist_ok=True)
         write_plan(plan, plan_path)
         logging.info("Wrote audio plan to %s", plan_path)
         captions_path: Path | None = None
         if self.generate_captions:
-            captions_path = BUILD_DIR / "captions.vtt"
+            captions_path = paths.BUILD_DIR / "captions.vtt"
             CaptionBuilder(plan, include_callouts=self.include_callouts).build(captions_path)
             logging.info("Wrote captions to %s", captions_path)
         if self.generate_audio:
@@ -80,7 +80,7 @@ class PlayBuilder:
         )
         director = director if self.include_callouts else NoCalloutDirector(play)
         for idx, part_id in enumerate(parts_numeric):
-            out_path = AUDIO_PLAY_DIR / f"androclesandthelion_{part_id}_shaw_128kb.mp3"
+            out_path = paths.AUDIO_PLAY_DIR / f"androclesandthelion_{part_id}_shaw_128kb.mp3"
             outputs.append(out_path)
             title_map = {0: "PROLOGUE", 1: "ACT I", 2: "ACT II"}
             metadata = {
@@ -102,7 +102,7 @@ class PlayBuilder:
             )
             plan, _ = builder.build_audio_plan(parts=[part_id], part_index_offset=idx, total_parts=len(parts_numeric))
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
-            plan_path = BUILD_DIR / f"audio_plan_part_{part_id}.txt"
+            plan_path = paths.BUILD_DIR / f"audio_plan_part_{part_id}.txt"
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             write_plan(plan, plan_path)
             logging.info("Wrote audio plan to %s", plan_path)

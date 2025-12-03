@@ -10,7 +10,7 @@ from typing import List, Dict
 
 from pydub import AudioSegment
 
-from paths import RECORDINGS_DIR, SEGMENTS_DIR, AUDIO_OUT_DIR
+import paths
 from play_plan_builder import PlayPlanBuilder
 from play_text import PlayTextParser, PlayText
 from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
@@ -135,7 +135,7 @@ class SegmentVerifier:
         punct = set(string.punctuation)
         for row in rows:
             role = row["role"] or "_NARRATOR"
-            fpath = SEGMENTS_DIR / role / f"{row['id']}.wav"
+            fpath = paths.SEGMENTS_DIR / role / f"{row['id']}.wav"
             row["expected_seconds"] = None
             row["actual_seconds"] = None
             row["percent"] = None
@@ -205,9 +205,9 @@ class SegmentVerifier:
 
     def _load_offsets(self) -> None:
         """Load source offsets from per-role offsets.txt files."""
-        if not SEGMENTS_DIR.exists():
+        if not paths.SEGMENTS_DIR.exists():
             return
-        for role_dir in SEGMENTS_DIR.iterdir():
+        for role_dir in paths.SEGMENTS_DIR.iterdir():
             if not role_dir.is_dir():
                 continue
             offsets_path = role_dir / "offsets.txt"

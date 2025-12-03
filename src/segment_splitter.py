@@ -12,7 +12,7 @@ from abc import ABC, abstractmethod
 
 from audio_splitter import AudioSplitter
 from play_text import PlayText, PlayTextParser
-from paths import RECORDINGS_DIR, SEGMENTS_DIR
+import paths
 
 
 @dataclass
@@ -47,7 +47,7 @@ class SegmentSplitter(ABC):
 
     def recording_path(self) -> Path:
         """Return the source recording path for the given role."""
-        return RECORDINGS_DIR / f"{self.role}.wav"
+        return paths.RECORDINGS_DIR / f"{self.role}.wav"
 
     def split(self, part_filter: str | None = None) -> float | None:
         src_path = self.recording_path()
@@ -61,7 +61,7 @@ class SegmentSplitter(ABC):
             src_path,
             spans,
             expected_ids,
-            SEGMENTS_DIR / self.role,
+            paths.SEGMENTS_DIR / self.role,
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,
         )

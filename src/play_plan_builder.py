@@ -20,12 +20,7 @@ from play_text import PlayText, PlayTextParser, Block, BlockId, MetaBlock
 from chapter_builder import Chapter, ChapterBuilder
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
-from paths import (
-    RECORDINGS_DIR,
-    AUDIO_PLAY_DIR,
-    PARAGRAPHS_PATH,
-    SEGMENTS_DIR
-)
+import paths
 
 IndexEntry = Tuple[int | None, int, str]
 
@@ -87,7 +82,7 @@ class PlayPlanBuilder:
             block_segments.append((owner, sid, text))
 
         for seg_idx, (role, seg_id, text) in enumerate(block_segments):
-            wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+            wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
             if not wav_path.exists():
                 logging.error("Missing snippet %s for role %s", seg_id, role)
                 length_ms = 0
@@ -146,7 +141,7 @@ class PlayPlanBuilder:
         return audio_plan, audio_plan.duration_ms
     
     def _librivox_prologue(self) -> CalloutClip:
-        prologue_path = RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
+        prologue_path = paths.RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
         length_ms = self.get_audio_length_ms(prologue_path, self.length_cache)
         return SegmentClip(
             path=prologue_path,
@@ -158,7 +153,7 @@ class PlayPlanBuilder:
         )
 
     def _librivox_title_and_author(self) -> CalloutClip:
-        title_path = RECORDINGS_DIR / "_LIBRIVOX_TITLE_AND_AUTHOR.wav"
+        title_path = paths.RECORDINGS_DIR / "_LIBRIVOX_TITLE_AND_AUTHOR.wav"
         length_ms = self.get_audio_length_ms(title_path, self.length_cache)
         return SegmentClip(
             path=title_path,
@@ -183,7 +178,7 @@ class PlayPlanBuilder:
             return
         if self.play.first_part_id == part_id:
             return
-        path = RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
+        path = paths.RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
         plan.addClip(
             SegmentClip(
                 path=path,
@@ -201,7 +196,7 @@ class PlayPlanBuilder:
             return
         part = self.play.getPart(part_id)
         if self.play.last_part_id == part_id:            
-            path = RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
+            path = paths.RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
             plan.addSilence(2000)
             plan.addClip(
                 SegmentClip(
@@ -215,7 +210,7 @@ class PlayPlanBuilder:
                 following_silence_ms=INTER_BLOCK_PAUSE_MS,
             )
         else:
-            path = RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
+            path = paths.RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
             part = self.play.getPart(part_id)
             plan.addSilence(2000)
             plan.addClip(
@@ -229,7 +224,7 @@ class PlayPlanBuilder:
                 ),
                 following_silence_ms=INTER_WORD_PAUSE_MS,
             )
-            path = SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
+            path = paths.SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
             plan.addClip(
                 SegmentClip(
                     path=path,
@@ -369,7 +364,7 @@ def build_block_plan(
         block_segments.append((owner, sid, text))
 
     for seg_idx, (role, seg_id, text) in enumerate(block_segments):
-        wav_path = SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+        wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
         if not wav_path.exists():
             logging.error("Missing snippet %s for role %s", seg_id, role)
             continue
@@ -488,7 +483,7 @@ def list_parts(play_text: PlayText | None = None) -> List[int | None]:
 def load_part_titles() -> Dict[int, str]:
     titles: Dict[int, str] = {}
     heading_re = re.compile(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$")
-    for line in PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
+    for line in paths.PARAGRAPHS_PATH.read_text(encoding="utf-8-sig").splitlines():
         if not titles:
             titles[None] = re.match("^::(.*)::$", line).groups()[0].strip().replace(" ", "_")
             continue
@@ -505,4 +500,4 @@ def compute_output_path(parts: List[int | None], part: int, audio_format: str = 
         title = titles.get(None, "play")
     else:
         title = f"{part}_{titles.get(part, 'part')}"
-    return AUDIO_PLAY_DIR / f"{title}.{audio_format}"
+    return paths.AUDIO_PLAY_DIR / f"{title}.{audio_format}"

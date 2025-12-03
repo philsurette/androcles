@@ -8,7 +8,7 @@ from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
 
-from paths import AUDIO_OUT_DIR
+import paths
 from segment_verifier import compute_rows
 
 
@@ -123,7 +123,7 @@ def generate_xlsx():
         ws_role = wb.create_sheet(title=name)
         write_sheet(ws_role, headers, role_rows)
 
-    out_path = AUDIO_OUT_DIR / "timings.xlsx"
+    out_path = paths.AUDIO_OUT_DIR / "timings.xlsx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
     print(f"Wrote {out_path}")

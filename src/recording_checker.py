@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
-from paths import AUDIO_OUT_DIR
+import paths
 
 
 def load_timings(path: Path) -> List[Dict]:
@@ -45,7 +45,7 @@ def summarize(path: Path) -> List[str]:
 
 
 def main() -> None:
-    timings_path = AUDIO_OUT_DIR / "timings.csv"
+    timings_path = paths.AUDIO_OUT_DIR / "timings.csv"
     if not timings_path.exists():
         print(f"timings.csv not found at {timings_path}")
         return

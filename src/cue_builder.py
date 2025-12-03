@@ -12,7 +12,7 @@ from typing import Dict, List, Tuple
 from pydub import AudioSegment
 
 from play_text import PlayText, RoleBlock
-from paths import SEGMENTS_DIR, AUDIO_OUT_DIR, CALLOUTS_DIR
+import paths
 
 
 @dataclass
@@ -33,7 +33,7 @@ class CueBuilder:
         """Concatenate audio segments for a role."""
         audio = AudioSegment.empty()
         for sid in seg_ids:
-            path = SEGMENTS_DIR / role / f"{sid}.wav"
+            path = paths.SEGMENTS_DIR / role / f"{sid}.wav"
             if not path.exists():
                 logging.warning("Missing snippet %s for role %s", sid, role)
                 continue
@@ -42,7 +42,7 @@ class CueBuilder:
 
     def _load_callout(self, role: str) -> AudioSegment | None:
         """Return the callout clip for a role if it exists."""
-        path = CALLOUTS_DIR / f"{role}_callout.wav"
+        path = paths.CALLOUTS_DIR / f"{role}_callout.wav"
         if not path.exists():
             logging.warning("Missing callout for role %s at %s", role, path)
             return None
@@ -180,7 +180,7 @@ class CueBuilder:
         if chapters:
             total = chapters[-1][1]
             audio = audio[:total]
-        out_path = AUDIO_OUT_DIR / "cues" / f"{role}_cue.mp4"
+        out_path = paths.AUDIO_OUT_DIR / "cues" / f"{role}_cue.mp4"
         self._export_mp4(audio, chapters, out_path)
         logging.info("Wrote cue file %s with %d chapters", out_path, len(chapters))
         return out_path

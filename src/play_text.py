@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import List
 import re
 from pathlib import Path
-from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
+import paths
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
@@ -245,7 +245,7 @@ class PlayTextParser:
 
     def __init__(self, source_path: Path | None = None) -> None:
         # Prefer the normalized paragraphs file when available to align numbering
-        self.source_path = source_path or DEFAULT_PLAY
+        self.source_path = source_path or paths.DEFAULT_PLAY
 
     def collapse_to_paragraphs(self, text: str) -> list[str]:
         """
@@ -311,7 +311,7 @@ class PlayTextEncoder:
     """Serialize PlayText back to paragraphs.txt format."""
 
     def __init__(self, output_path: Path | None = None) -> None:
-        self.output_path = output_path or PARAGRAPHS_PATH
+        self.output_path = output_path or paths.PARAGRAPHS_PATH
 
     def encode(self, play: PlayText) -> None:
         lines: List[str] = []

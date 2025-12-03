@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Optional
 
 from play_text import PlayText, PlayTextParser
-from paths import RECORDINGS_DIR
+import paths
 from role_splitter import RoleSplitter
 from narrator_splitter import NarratorSplitter
 
@@ -62,7 +62,7 @@ class PlaySplitter:
             chunk_export_size=self.chunk_export_size,
         )
         total = 0.0
-        for rec in RECORDINGS_DIR.glob("*.wav"):
+        for rec in paths.RECORDINGS_DIR.glob("*.wav"):
             if rec.name.startswith("_"):
                 continue
             role = rec.stem

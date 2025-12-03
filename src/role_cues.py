@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Dict, List
 import logging
 
-from paths import MARKDOWN_ROLES_DIR
+import paths
 from play_text import PlayText, PlayTextParser, RoleBlock
 from segment import DirectionSegment, SpeechSegment
 
@@ -95,8 +95,8 @@ class RoleCues:
 
     def write(self) -> None:
         """Generate role cue files into build/roles."""
-        MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
-        for path in MARKDOWN_ROLES_DIR.glob("*.txt"):
+        paths.MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
+        for path in paths.MARKDOWN_ROLES_DIR.glob("*.txt"):
             path.unlink()
 
         role_entries: Dict[str, List[str]] = {}
@@ -142,7 +142,7 @@ class RoleCues:
             previous_block = blk
 
         for role, entries in role_entries.items():
-            path = MARKDOWN_ROLES_DIR / f"{role}.txt"
+            path = paths.MARKDOWN_ROLES_DIR / f"{role}.txt"
             content = "\n\n".join(entries)
             if content:
                 content += "\n"

@@ -11,7 +11,7 @@ from pydub import AudioSegment
 
 
 from clip import CalloutClip
-from paths import CALLOUTS_DIR
+import paths
 from play_text import PlayText, BlockId, RoleBlock, DirectionSegment
 
 
@@ -30,7 +30,7 @@ class CalloutDirector(ABC):
         return len(AudioSegment.from_file(path))
 
     def _build_callout_clip(self, role: str) -> Optional[CalloutClip]:
-        path = CALLOUTS_DIR / f"{role}_callout.wav"
+        path = paths.CALLOUTS_DIR / f"{role}_callout.wav"
         if not path.exists():
             logging.warning("Callout missing for role %s: %s", role, path)
             return None

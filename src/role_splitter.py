@@ -17,7 +17,6 @@ import os
 from typing import List
 import logging
 from dataclasses import dataclass
-from paths import SEGMENTS_DIR
 from play_text import RoleBlock, SpeechSegment
 from segment_splitter import SegmentSplitter
 

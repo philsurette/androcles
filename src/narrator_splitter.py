@@ -8,7 +8,6 @@ from typing import List
 
 from segment import Segment, DirectionSegment, SpeechSegment
 from block import MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
-from paths import RECORDINGS_DIR
 from role_splitter import RoleSplitter
 
 

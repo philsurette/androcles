@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from typing import Dict, List
 
-from paths import MARKDOWN_ROLES_DIR
+import paths
 from play_text import PlayText, PlayTextParser, DescriptionBlock, DirectionBlock, MetaBlock, RoleBlock
 from segment import DirectionSegment, SpeechSegment
 
@@ -21,8 +21,8 @@ class NarrationCues:
 
     def write(self) -> None:
         """Generate narrator cues into build/markdown/roles/_NARRATOR.txt."""
-        MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
-        out_path = MARKDOWN_ROLES_DIR / "_NARRATOR.txt"
+        paths.MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
+        out_path = paths.MARKDOWN_ROLES_DIR / "_NARRATOR.txt"
 
         entries: List[str] = []
         meta_counters: Dict[int | None, int] = {}

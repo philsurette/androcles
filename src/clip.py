@@ -7,10 +7,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 import os
 
-from paths import AUDIO_OUT_DIR, ROOT
+import paths
 
 
-PROJECT_ROOT = ROOT.parent
+PROJECT_ROOT = paths.ROOT.parent
 
 
 def _rel_path(path: Path) -> Path:

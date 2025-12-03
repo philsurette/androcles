@@ -6,6 +6,7 @@ import sys
 import shlex
 from datetime import datetime
 
+import paths
 import typer
 
 from play_splitter import PlaySplitter
@@ -16,21 +17,26 @@ from play_text import PlayTextParser
 from markdown_renderer import PlayMarkdownWriter,  RoleMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
-from paths import AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
 from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 
 
 app = typer.Typer(add_completion=False)
+PLAY_OPTION = typer.Option(
+    None,
+    "--play",
+    "-p",
+    help=f"Play directory name under plays/ (default: {paths.DEFAULT_PLAY_NAME})",
+)
 
 
 def setup_logging() -> None:
-    BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = LOGS_DIR / "build.log"
+    paths.BUILD_DIR.mkdir(parents=True, exist_ok=True)
+    paths.LOGS_DIR.mkdir(parents=True, exist_ok=True)
+    log_path = paths.LOGS_DIR / "build.log"
     if log_path.exists():
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_path.rename(LOGS_DIR / f"build-{timestamp}.log")
+        log_path.rename(paths.LOGS_DIR / f"build-{timestamp}.log")
 
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
     console = logging.StreamHandler()
@@ -46,7 +52,9 @@ def setup_logging() -> None:
 
 
 @app.callback(invoke_without_command=True)
-def main(ctx: typer.Context) -> None:
+def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
+    play_name = play or paths.DEFAULT_PLAY_NAME
+    paths.set_play_name(play_name)
     setup_logging()
     if ctx.invoked_subcommand is None:
         run_segments()
@@ -54,8 +62,9 @@ def main(ctx: typer.Context) -> None:
         run_audioplay()
 
 @app.command()
-def text() -> None:
+def text(play: str | None = PLAY_OPTION) -> None:
     """Build markdown artifacts."""
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_text()
 
@@ -63,23 +72,28 @@ def text() -> None:
 @app.command()
 def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<play>.md"""
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_write_play(line_no_prefix)
 
 @app.command()
 def write_roles(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<role>.md - all blocks for each role"""
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_write_roles(line_no_prefix)
 
 
 @app.command("write-cues")
-def write_cues() -> None:
+def write_cues(play: str | None = PLAY_OPTION) -> None:
     """Generate role cue text files into build/roles."""
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_write_cues()
 
@@ -93,7 +107,9 @@ def segments(
     verbose: bool = typer.Option(False, "--verbose", help="Log ffmpeg commands used for splitting"),
     chunk_exports: bool = typer.Option(True, "--chunk-exports/--no-chunk-exports", help="Export in batches"),
     chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_segments(
         role=role,
@@ -110,7 +126,9 @@ def segments(
 def verify(
     too_short: float = typer.Option(0.5, help="Lower bound ratio of actual/expected"),
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     _run_verify(too_short, too_long)
 
@@ -124,13 +142,15 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
 
 
 @app.command()
-def check_recording() -> None:
+def check_recording(play: str | None = PLAY_OPTION) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_check_recording()
 
 
 @app.command("generate-timings")
-def generate_timings() -> None:
+def generate_timings(play: str | None = PLAY_OPTION) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_generate_timings()
 
@@ -147,7 +167,9 @@ def audioplay(
     librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_audioplay(
         part=part,
@@ -166,10 +188,12 @@ def audioplay(
 @app.command()
 def normalize(
     src: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+    play: str | None = PLAY_OPTION,
 ) -> None:
     """
     Normalize an audio file using ffmpeg loudnorm. Writes to a sibling 'normalized' folder.
     """
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     result = run_normalize(src)
     typer.echo(result.render())
@@ -182,7 +206,9 @@ def cues(
     max_cue_size_ms: int = typer.Option(5000, help="Max cue length before cropping (ms)"),
     include_prompts: bool = typer.Option(True, help="Include preceding prompts; disables if set false"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
+    play: str | None = PLAY_OPTION,
 ) -> None:
+    paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
     run_cues(
         role=role,
@@ -210,15 +236,15 @@ def run_write_play(line_no_prefix: bool = True):
 
 def run_write_roles(line_no_prefix: bool = True):
     play = PlayTextParser().parse()
-    paths = []
+    written_paths: list[Path] = []
     for role in play.roles:
         writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
         path = writer.to_markdown()
-        paths.append(path)
+        written_paths.append(path)
         logging.debug("✅ wrote %s", path)
-    if paths:
-        logging.info("✅ created .md files in %s for %s", paths[0].parent, ",".join([r.name for r in play.roles]))
-    return paths
+    if written_paths:
+        logging.info("✅ created .md files in %s for %s", written_paths[0].parent, ",".join([r.name for r in play.roles]))
+    return written_paths
 
 
 def run_write_cues():
@@ -255,7 +281,7 @@ def run_segments(
 
 
 def run_check_recording():
-    timings_path = AUDIO_OUT_DIR / "timings.csv"
+    timings_path = paths.AUDIO_OUT_DIR / "timings.csv"
     if not timings_path.exists():
         typer.echo(f"{timings_path} not found; run verify first.")
         raise typer.Exit(code=1)

@@ -10,7 +10,7 @@ import logging
 
 from pydub import AudioSegment, silence
 
-from paths import RECORDINGS_DIR, AUDIO_OUT_DIR
+import paths
 
 
 @dataclass
@@ -28,7 +28,7 @@ class AudioSplitter:
 
     def find_recording(self, role: str) -> Path | None:
         """Find the recording for a role."""
-        candidate = RECORDINGS_DIR / f"{role}.wav"
+        candidate = paths.RECORDINGS_DIR / f"{role}.wav"
         if candidate.exists():
             return candidate
         return None

@@ -5,9 +5,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import paths
 from play_text import PlayText, Role
 from block import *
-from paths import MARKDOWN_DIR
 
 
 @dataclass
@@ -17,7 +17,7 @@ class PlayMarkdownWriter:
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""
-        target = out_path or (MARKDOWN_DIR / f"{self.play.title}.md")
+        target = out_path or (paths.MARKDOWN_DIR / f"{self.play.title}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.play.blocks]
@@ -32,7 +32,7 @@ class RoleMarkdownWriter:
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""
-        target = out_path or (BUILD_DIR / "text" / "role" / f"{self.role.name}.md")
+        target = out_path or (paths.MARKDOWN_ROLES_DIR / f"{self.role.name}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.role.blocks]
@@ -41,4 +41,3 @@ class RoleMarkdownWriter:
         return target
 
     
-
