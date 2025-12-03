@@ -60,7 +60,7 @@ def write_sheet(ws, headers, rows):
             for cell in col:
                 cell.number_format = "0.0"
                 cell.alignment = cell.alignment.copy(horizontal="right")
-        elif header == "start":
+        elif header in ("start", "src_offset"):
             for cell in col:
                 cell.alignment = cell.alignment.copy(horizontal="right")
     # Widen text column
@@ -85,6 +85,12 @@ def write_sheet(ws, headers, rows):
     if "role" in headers:
         idx = headers.index("role") + 1
         ws.column_dimensions[get_column_letter(idx)].width = 5  # match expected/actual columns
+    if "start" in headers:
+        idx = headers.index("start") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 8
+    if "src_offset" in headers:
+        idx = headers.index("src_offset") + 1
+        ws.column_dimensions[get_column_letter(idx)].width = 9
     if "id" in headers:
         idx = headers.index("id") + 1
         for cell in ws[get_column_letter(idx)]:
@@ -93,7 +99,7 @@ def write_sheet(ws, headers, rows):
 
 def generate_xlsx():
     rows = compute_rows()
-    headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "role", "text"]
+    headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "src_offset", "role", "text"]
     wb = Workbook()
     ws = wb.active
     ws.title = "All"

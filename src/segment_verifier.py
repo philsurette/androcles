@@ -51,11 +51,13 @@ class SegmentVerifier:
     tol_high: float = 2.0
     play_text: PlayText | None = None
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
+    _offsets_map: Dict[str, Dict[str, str]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.play_text is None:
             self.play_text = PlayTextParser().parse()
         self._build_plan_start_map()
+        self._load_offsets()
 
     def gather_expected(self) -> List[Dict]:
         rows: List[Dict] = []
@@ -139,6 +141,7 @@ class SegmentVerifier:
             row["percent"] = None
             row["warning"] = ""
             row["start"] = None
+            row["src_offset"] = ""
 
             text = row["text"]
             if text and not all(ch in punct for ch in text):
@@ -149,9 +152,11 @@ class SegmentVerifier:
                 row["actual_seconds"] = round(len(audio) / 1000.0, 1)
                 start_sec = self._plan_start_map.get(row["id"])
                 if start_sec is not None:
-                    mins = int(start_sec // 60)
-                    secs = start_sec - mins * 60
-                    row["start"] = f"{mins}:{secs:04.1f}"
+                    row["start"] = self._format_seconds(start_sec)
+                role_key = row["role"] or "_NARRATOR"
+                src_offset = self._offsets_map.get(role_key, {}).get(row["id"])
+                if src_offset:
+                    row["src_offset"] = self._format_seconds(self._parse_timecode(src_offset))
             else:
                 logging.error("Missing snippet %s for role %s", row["id"], row["role"])
                 row["warning"] = "-"
@@ -197,6 +202,48 @@ class SegmentVerifier:
             # Clip ids in plans use ':' separators; convert to '_' to match segment filenames/ids.
             norm_id = clip_id.replace(":", "_")
             self._plan_start_map[norm_id] = round(getattr(item, "offset_ms", 0) / 1000.0, 1)
+
+    def _load_offsets(self) -> None:
+        """Load source offsets from per-role offsets.txt files."""
+        if not SEGMENTS_DIR.exists():
+            return
+        for role_dir in SEGMENTS_DIR.iterdir():
+            if not role_dir.is_dir():
+                continue
+            offsets_path = role_dir / "offsets.txt"
+            if not offsets_path.exists():
+                continue
+            role_offsets: Dict[str, str] = {}
+            for line in offsets_path.read_text().splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split()
+                if len(parts) < 2:
+                    continue
+                seg_id, ts = parts[0], parts[1]
+                role_offsets[seg_id.replace(":", "_")] = ts
+            self._offsets_map[role_dir.name] = role_offsets
+
+    @staticmethod
+    def _parse_timecode(ts: str) -> float | None:
+        """Parse m:ss.s or seconds strings into float seconds."""
+        try:
+            if ":" in ts:
+                mins, secs = ts.split(":", 1)
+                return float(mins) * 60 + float(secs)
+            return float(ts)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _format_seconds(seconds: float | None) -> str | None:
+        """Format seconds into m:ss.t with tenths precision."""
+        if seconds is None:
+            return None
+        mins = int(seconds // 60)
+        secs = seconds - mins * 60
+        return f"{mins}:{secs:04.1f}"
 
 
 if __name__ == "__main__":
