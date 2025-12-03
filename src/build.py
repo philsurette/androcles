@@ -14,7 +14,7 @@ from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder, list_parts, compute_output_path
 from play_text import PlayTextParser
-from markdown_renderer import PlayMarkdownWriter,  RoleMarkdownWriter
+from markdown_renderer import PlayMarkdownWriter, RoleMarkdownWriter, NarratorMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from play_plan_builder import PlayPlanBuilder
@@ -242,8 +242,11 @@ def run_write_roles(line_no_prefix: bool = True):
         path = writer.to_markdown()
         written_paths.append(path)
         logging.debug("✅ wrote %s", path)
+    narrator_path = NarratorMarkdownWriter(play, prefix_line_nos=line_no_prefix).to_markdown()
+    written_paths.append(narrator_path)
     if written_paths:
-        logging.info("✅ created .md files in %s for %s", written_paths[0].parent, ",".join([r.name for r in play.roles]))
+        role_names = [r.name for r in play.roles] + ["_NARRATOR"]
+        logging.info("✅ created .md files in %s for %s", written_paths[0].parent, ",".join(role_names))
     return written_paths
 
 
