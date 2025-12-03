@@ -16,10 +16,6 @@ from role_splitter import RoleSplitter
 class NarratorSplitter(RoleSplitter):
     role: str = "_NARRATOR"
 
-    def assemble_segments(self, part_filter: str | None = None) -> List[Segment]:
-        """Return ordered narrator/meta segments from the PlayText."""
-
-
     def expected_ids(self, part_filter: str | None = None) -> List[str]:
         """Narrator-specific ids (includes meta/description/direction/inline narrator)."""
         segments: List[Segment] = []

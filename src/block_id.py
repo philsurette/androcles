@@ -24,5 +24,5 @@ class BlockId:
         return hash((self.part_id, self.block_no))
     
     def __str__(self) -> str:
-        part_str = f"{self.part_id}" if self.part_id else ""
+        part_str = f"{self.part_id}" if self.part_id is not None else ""
         return f"{part_str}_{self.block_no}"

@@ -8,10 +8,6 @@ from datetime import datetime
 
 import typer
 
-import paragraphs as pg
-import blocks
-import roles
-import narration
 from play_splitter import PlaySplitter
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
@@ -21,7 +17,7 @@ from play_text import PlayTextParser
 from markdown_renderer import PlayMarkdownWriter,  RoleMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
-from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
+from paths import AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
 
 
 app = typer.Typer(add_completion=False)
@@ -48,38 +44,20 @@ def setup_logging() -> None:
     root.addHandler(file_handler)
 
 
-def build_paragraphs() -> None:
-    text = pg.DEFAULT_PLAY.read_text(encoding="utf-8-sig")
-    paragraphs = pg.collapse_to_paragraphs(text)
-    if paragraphs:
-        pg.OUT_PATH.write_text("\n".join(paragraphs) + "\n", encoding="utf-8")
-    else:
-        pg.OUT_PATH.write_text("", encoding="utf-8")
-
-
-def build_blocks() -> None:
-    blocks.prepare_output_dirs()
-    _, block_map, index = blocks.parse()
-    blocks.write_blocks(block_map)
-    blocks.write_index(index)
-    roles.build_roles()
-    narration.build_narration()
-
-
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     setup_logging()
     if ctx.invoked_subcommand is None:
-        build_paragraphs()
-        build_blocks()
-
+        segments()
+        text()
+        audioplay()
 
 @app.command()
 def text() -> None:
     """Build text artifacts (paragraphs, blocks, roles, narration)."""
     setup_logging()
-    build_paragraphs()
-    build_blocks()
+    write_play()
+    write_roles()
 
 
 @app.command()
@@ -103,7 +81,9 @@ def write_roles(
     for role in play.roles:
         writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
         path = writer.to_markdown()
-        logging.info("✅ wrote %s", path)
+        logging.debug("✅ wrote %s", path)
+    logging.info(f"✅ created .md files in {path.parent} for {','.join(
+        [r.name for r in play.roles])} ")
 
 @app.command()
 def segments(
@@ -115,14 +95,8 @@ def segments(
     verbose: bool = typer.Option(False, "--verbose", help="Log ffmpeg commands used for splitting"),
     chunk_exports: bool = typer.Option(True, "--chunk-exports/--no-chunk-exports", help="Export in batches"),
     chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
-    use_silence_window: bool = typer.Option(
-        False, "--use-silence-window/--no-use-silence-window", help="Windowed silence detection"
-    ),
-    silence_window_size_seconds: int = typer.Option(300, "--silence-window-size-seconds", help="Window size in seconds"),
 ) -> None:
     setup_logging()
-    build_paragraphs()
-    build_blocks()
     play_text = PlayTextParser().parse()
     splitter = PlaySplitter(
         play_text=play_text,
@@ -135,14 +109,13 @@ def segments(
     )
     splitter.split_all(part_filter=part, role_filter=role)
 
-
 @app.command()
 def verify(
-    tol_low: float = typer.Option(0.5, help="Lower bound ratio of actual/expected"),
-    tol_high: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
+    too_short: float = typer.Option(0.5, help="Lower bound ratio of actual/expected"),
+    too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
 ) -> None:
     setup_logging()
-    verify_segments(tol_low, tol_high)
+    verify_segments(too_short, too_long)
 
 
 @app.command()
@@ -176,8 +149,6 @@ def audioplay(
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
 ) -> None:
     setup_logging()
-    build_paragraphs()
-    build_blocks()
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     parts = []
@@ -193,8 +164,6 @@ def audioplay(
                 parts = [part]
             except ValueError:
                 raise typer.BadParameter("Part must be an integer or '_'")
-    if audio_format not in ("mp4", "mp3", "wav"):
-        raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     builder = PlayBuilder(
         spacing_ms=segment_spacing_ms,
         include_callouts=callouts,
@@ -245,8 +214,6 @@ def cues(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
 ) -> None:
     setup_logging()
-    build_paragraphs()
-    build_blocks()
     play_text = PlayTextParser().parse()
     builder = CueBuilder(
         play_text,
@@ -259,7 +226,8 @@ def cues(
     if role:
         roles = [role]
     else:
-        roles = [p.name for p in SEGMENTS_DIR.iterdir() if p.is_dir() and not p.name.startswith("_")]
+        roles = [r.name for r in play_text.roles]
+        roles.append("_NARRATOR")
     for r in roles:
         builder.build_cues(r)
 

@@ -45,7 +45,5 @@ class RoleSplitter(SegmentSplitter):
                     continue
                 seq += 1
                 if isinstance(seg, SpeechSegment) and seg.role == self.role:
-                    ids.append(
-                        f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seq}"
-                    )
+                    ids.append(str(seg.segment_id))
         return ids
