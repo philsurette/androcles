@@ -111,7 +111,16 @@ def generate_xlsx():
         by_role[role].append(row)
 
     used_names: set[str] = {"All"}
+    # Ensure narrator sheet appears immediately after "All".
+    narrator_key = "_NARRATOR"
+    if narrator_key in by_role:
+        name = safe_sheet_name(narrator_key, used_names)
+        ws_role = wb.create_sheet(title=name)
+        write_sheet(ws_role, headers, by_role[narrator_key])
+
     for role, role_rows in sorted(by_role.items()):
+        if role == narrator_key:
+            continue
         name = safe_sheet_name(role, used_names)
         ws_role = wb.create_sheet(title=name)
         write_sheet(ws_role, headers, role_rows)
