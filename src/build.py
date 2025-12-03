@@ -18,6 +18,7 @@ from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder, list_parts, compute_output_path
 from play_text import PlayTextParser
+from play_text_writer import PlayTextWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
@@ -79,6 +80,18 @@ def text() -> None:
     setup_logging()
     build_paragraphs()
     build_blocks()
+
+
+@app.command()
+def write(
+    line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+) -> None:
+    """Write markdown blocks.md from the parsed play text."""
+    setup_logging()
+    play = PlayTextParser().parse()
+    writer = PlayTextWriter(play, prefix_line_nos=line_no_prefix)
+    path = writer.write_blocks()
+    logging.info("✅ wrote %s", path)
 
 
 @app.command()

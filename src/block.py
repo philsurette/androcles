@@ -47,6 +47,17 @@ class Block(ABC):
         """Attempt to parse paragraph; return a Block or None."""
         raise NotImplementedError
 
+    @abstractmethod
+    def _to_markdown(self, prefix: str | None) -> str:
+        raise NotImplementedError
+    
+    def to_markdown(self, render_id=False) -> str:
+        """Render the block back to text."""
+        part = self.block_id.part_id if self.block_id.part_id is not None else ""
+        id = f"{part}.{self.block_id.block_no}"
+        prefix = f"{id} " if render_id else ""
+        return self._to_markdown(prefix=prefix)
+    
 
 @dataclass
 class MetaBlock(Block):
@@ -87,7 +98,9 @@ class MetaBlock(Block):
 
         return None
 
-
+    def _to_markdown(self, prefix: str | None) -> str:
+        return f"{prefix}{self.text}"
+    
 @dataclass
 class DescriptionBlock(Block):
     PREFIX = "[["
@@ -115,6 +128,11 @@ class DescriptionBlock(Block):
         )
         return block
 
+    def _to_markdown(self, prefix: str | None) -> str:
+        return f"""```
+{prefix}{self.text}
+```"""
+
 
 @dataclass
 class DirectionBlock(Block):
@@ -137,7 +155,9 @@ class DirectionBlock(Block):
             segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=text)],
         )
         return block
-
+    
+    def _to_markdown(self, prefix: str | None) -> str:
+        return f"{prefix}*{self.text}*"
 
 @dataclass
 class RoleBlock(Block):
@@ -219,3 +239,6 @@ class RoleBlock(Block):
             segments=cls.split_block_segments(speech, block_id, role),
         )
         return block
+
+    def _to_markdown(self, prefix: str | None) -> str:
+        return f"{prefix}**{self.role}**: {self.text}"
