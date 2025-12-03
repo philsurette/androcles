@@ -12,8 +12,7 @@ import paragraphs as pg
 import blocks
 import roles
 import narration
-from role_splitter import RoleSplitter
-from narrator_splitter import NarratorSplitter
+from segment_splitter import SegmentSplitter
 from segment_verifier import verify_segments
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
@@ -66,63 +65,6 @@ def build_blocks() -> None:
     narration.build_narration()
 
 
-def split_roles(
-    role_filter: str | None = None,
-    part_filter: str | None = None,
-    min_silence_ms: int = 1700,
-    silence_thresh: int = -45,
-    chunk_size: int = 50,
-    verbose: bool = False,
-    chunk_exports: bool = True,
-    chunk_export_size: int = 25,
-) -> float:
-    total_time = 0.0
-    splitter = RoleSplitter(
-        play_text=PlayTextParser().parse(),
-        min_silence_ms=min_silence_ms,
-        silence_thresh=silence_thresh,
-        chunk_size=chunk_size,
-        verbose=verbose,
-        chunk_exports=chunk_exports,
-        chunk_export_size=chunk_export_size,
-    )
-    for rec in RECORDINGS_DIR.glob("*.wav"):
-        if rec.name.startswith("_"):
-            continue
-        role = rec.stem
-        if role_filter and role_filter != role:
-            continue
-        elapsed = splitter.process_role(role, part_filter=part_filter)
-        if elapsed:
-            total_time += elapsed
-    return total_time
-
-
-def split_narrator(
-    part_filter: str | None = None,
-    min_silence_ms: int = 1700,
-    silence_thresh: int = -45,
-    chunk_size: int = 50,
-    verbose: bool = False,
-    chunk_exports: bool = True,
-    chunk_export_size: int = 25,
-    use_silence_window: bool = False,
-    silence_window_size_seconds: int = 300,
-) -> float:
-    play_text = PlayTextParser().parse()
-    return NarratorSplitter(
-        play_text=play_text,
-        min_silence_ms=min_silence_ms,
-        silence_thresh=silence_thresh,
-        chunk_size=chunk_size,
-        verbose=verbose,
-        chunk_exports=chunk_exports,
-        chunk_export_size=chunk_export_size,
-        use_silence_window=use_silence_window,
-        detection_chunk_ms=silence_window_size_seconds * 1000 if use_silence_window else None,
-    ).split(part_filter=part_filter)
-
-
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context) -> None:
     setup_logging()
@@ -157,59 +99,18 @@ def segments(
     setup_logging()
     build_paragraphs()
     build_blocks()
-    total_roles_time = 0.0
-    total_narr_time = 0.0
-    if role is None:
-        total_roles_time = split_roles(
-            part_filter=part,
-            min_silence_ms=separator_len_ms,
-            silence_thresh=silence_thresh,
-            chunk_size=chunk_size,
-            verbose=verbose,
-            chunk_exports=chunk_exports,
-            chunk_export_size=chunk_export_size,
-        )
-        total_narr_time = split_narrator(
-            part_filter=part,
-            min_silence_ms=separator_len_ms,
-            silence_thresh=silence_thresh,
-            chunk_size=chunk_size,
-            verbose=verbose,
-            chunk_exports=chunk_exports,
-            chunk_export_size=chunk_export_size,
-            use_silence_window=use_silence_window,
-            silence_window_size_seconds=silence_window_size_seconds,
-        )
-    elif role == "_NARRATOR":
-        total_narr_time = split_narrator(
-            part_filter=part,
-            min_silence_ms=separator_len_ms,
-            silence_thresh=silence_thresh,
-            chunk_size=chunk_size,
-            verbose=verbose,
-            chunk_exports=chunk_exports,
-            chunk_export_size=chunk_export_size,
-            use_silence_window=use_silence_window,
-            silence_window_size_seconds=silence_window_size_seconds,
-        )
-    else:
-        total_roles_time = split_roles(
-            role_filter=role,
-            part_filter=part,
-            min_silence_ms=separator_len_ms,
-            silence_thresh=silence_thresh,
-            chunk_size=chunk_size,
-            verbose=verbose,
-            chunk_exports=chunk_exports,
-            chunk_export_size=chunk_export_size,
-        )
-    total_time = total_roles_time + total_narr_time
-    logging.info(
-        "✅  Segments split completed in %.0fs (roles %.3fs, narrator %.3fs)",
-        total_time,
-        total_roles_time,
-        total_narr_time,
+    play_text = PlayTextParser().parse()
+    splitter = SegmentSplitter(
+        play_text=play_text,
+        min_silence_ms=separator_len_ms,
+        silence_thresh=silence_thresh,
+        chunk_size=chunk_size,
+        verbose=verbose,
+        chunk_exports=chunk_exports,
+        chunk_export_size=chunk_export_size,
+        detection_chunk_ms=silence_window_size_seconds * 1000 if use_silence_window else None,
     )
+    splitter.split_all(part_filter=part, role_filter=role)
 
 
 @app.command()
