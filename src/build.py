@@ -73,8 +73,8 @@ def split_roles(
     silence_thresh: int = -45,
     chunk_size: int = 50,
     verbose: bool = False,
-    chunk_exports: bool = False,
-    chunk_export_size: int = 100,
+    chunk_exports: bool = True,
+    chunk_export_size: int = 25,
 ) -> None:
     for rec in RECORDINGS_DIR.glob("*.wav"):
         if rec.name.startswith("_"):
@@ -100,8 +100,10 @@ def split_narrator(
     silence_thresh: int = -45,
     chunk_size: int = 50,
     verbose: bool = False,
-    chunk_exports: bool = False,
-    chunk_export_size: int = 100,
+    chunk_exports: bool = True,
+    chunk_export_size: int = 25,
+    use_silence_window: bool = False,
+    silence_window_size_seconds: int = 300,
 ) -> None:
     play_text = PlayTextParser().parse()
     NarratorSplitter(
@@ -112,6 +114,8 @@ def split_narrator(
         verbose=verbose,
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
+        use_silence_window=use_silence_window,
+        detection_chunk_ms=silence_window_size_seconds * 1000 if use_silence_window else None,
     ).split(part_filter=part_filter)
 
 
@@ -139,8 +143,12 @@ def segments(
     separator_len_ms: int = typer.Option(1700, "--separator-length-ms", help="Minimum silence length (ms) to split on"),
     chunk_size: int = typer.Option(50, help="Chunk size (ms) for silence detection"),
     verbose: bool = typer.Option(False, "--verbose", help="Log ffmpeg commands used for splitting"),
-    chunk_exports: bool = typer.Option(False, "--chunk-exports", help="Export in batches instead of one ffmpeg call"),
-    chunk_export_size: int = typer.Option(100, "--chunk-export-size", help="Batch size when chunking exports"),
+    chunk_exports: bool = typer.Option(True, "--chunk-exports/--no-chunk-exports", help="Export in batches"),
+    chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
+    use_silence_window: bool = typer.Option(
+        False, "--use-silence-window/--no-use-silence-window", help="Windowed silence detection"
+    ),
+    silence_window_size_seconds: int = typer.Option(300, "--silence-window-size-seconds", help="Window size in seconds"),
 ) -> None:
     setup_logging()
     build_paragraphs()
@@ -163,6 +171,8 @@ def segments(
             verbose=verbose,
             chunk_exports=chunk_exports,
             chunk_export_size=chunk_export_size,
+            use_silence_window=use_silence_window,
+            silence_window_size_seconds=silence_window_size_seconds,
         )
     elif role == "_NARRATOR":
         split_narrator(
@@ -173,6 +183,8 @@ def segments(
             verbose=verbose,
             chunk_exports=chunk_exports,
             chunk_export_size=chunk_export_size,
+            use_silence_window=use_silence_window,
+            silence_window_size_seconds=silence_window_size_seconds,
         )
     else:
         split_roles(

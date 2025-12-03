@@ -22,7 +22,7 @@ class AudioSplitter:
     pad_start_ms: int | None = None
     verbose: bool = False
     chunk_exports: bool = False
-    chunk_export_size: int = 100
+    chunk_export_size: int = 25
     last_detect_seconds: float = 0.0
     last_export_seconds: float = 0.0
 
@@ -151,12 +151,16 @@ class AudioSplitter:
         total_export_start = perf_counter()
 
         def run_batch(batch_spans: List[Tuple[int, int]], batch_ids: List[str], batch_idx: int) -> None:
+            if not batch_spans:
+                return
+            base_start_ms = min(s for s, _ in batch_spans)
+            base_seek = max(0, base_start_ms / 1000.0)
             filter_parts = []
             maps: List[str] = []
             for idx, ((start_ms, end_ms), eid) in enumerate(zip(batch_spans, batch_ids)):
                 label = f"a{idx}"
-                start_s = start_ms / 1000.0
-                end_s = end_ms / 1000.0
+                start_s = max(0.0, (start_ms - base_start_ms) / 1000.0)
+                end_s = max(start_s, (end_ms - base_start_ms) / 1000.0)
                 filter_parts.append(f"[0:a]atrim=start={start_s}:end={end_s},asetpts=PTS-STARTPTS[{label}]")
                 maps.extend(["-map", f"[{label}]", str(out_dir / f"{eid}.wav")])
             if not filter_parts:
@@ -164,6 +168,8 @@ class AudioSplitter:
             cmd = [
                 "ffmpeg",
                 "-y",
+                "-ss",
+                f"{base_seek:.3f}",
                 "-i",
                 str(source),
                 "-filter_complex",
@@ -171,7 +177,11 @@ class AudioSplitter:
             ] + maps
             if self.verbose:
                 logging.getLogger(__name__).info(
-                    "FFmpeg export batch %d (%d clips): %s", batch_idx, len(batch_ids), " ".join(cmd)
+                    "FFmpeg export batch %d (%d clips, seek %.3fs): %s",
+                    batch_idx,
+                    len(batch_ids),
+                    base_seek,
+                    " ".join(cmd),
                 )
             t0 = perf_counter()
             subprocess.run(cmd, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

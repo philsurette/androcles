@@ -32,7 +32,7 @@ class RoleSplitter:
     pad_end_ms: int = 200
     verbose: bool = False
     chunk_exports: bool = False
-    chunk_export_size: int = 100
+    chunk_export_size: int = 25
     splitter: AudioSplitter = field(default_factory=AudioSplitter)
 
     def __post_init__(self) -> None:
@@ -93,10 +93,25 @@ class RoleSplitter:
             chunk_export_size=self.chunk_export_size,
         )
 
+        total_time = self.splitter.last_detect_seconds + self.splitter.last_export_seconds
         if len(spans) != len(expected_ids):
-            print(f"WARNING {role}: expected {len(expected_ids)} snippets, got {len(spans)}")
+            logging.warning(
+                "⚠️  %s split mismatch: expected %d snippets, got %d (silence detect %.3fs, export %.3fs)",
+                role,
+                len(expected_ids),
+                len(spans),
+                self.splitter.last_detect_seconds,
+                self.splitter.last_export_seconds,
+            )
         else:
-            print(f"{role}: split {len(spans)} snippets OK")
+            logging.info(
+                "✅  %s: split %d snippets in %.0fs (silence detect %.3fs, export %.3fs)",
+                role,
+                len(spans),
+                total_time,
+                self.splitter.last_detect_seconds,
+                self.splitter.last_export_seconds,
+            )
 
 
 def main() -> None:
