@@ -53,18 +53,33 @@ class NarratorMarkdownWriter:
 
         lines: list[str] = []
         for blk in self.play:
-            if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
-                lines.append(blk.to_markdown(render_id=self.prefix_line_nos))
+            part_id = blk.block_id.part_id if blk.block_id.part_id is not None else ""
+            block_line = f"{part_id}.{blk.block_id.block_no}"
+            if isinstance(blk, (DescriptionBlock)):
+                lines.append(block_line)
+                lines.append(f"{blk.to_markdown(render_id='')}")
+                lines.append("")
+                continue
+            if isinstance(blk, (DirectionBlock)):
+                lines.append(block_line)
+                lines.append(f"  - {blk.to_markdown(render_id='')}")
+                lines.append("")
+                continue
+            if isinstance(blk, (MetaBlock)):
+                lines.append(block_line)
+                lines.append(f"  - {blk.to_markdown(render_id='')}")
                 lines.append("")
                 continue
             if isinstance(blk, RoleBlock):
                 if not any(isinstance(seg, (DirectionSegment, SpeechSegment)) and getattr(seg, "role", "_NARRATOR") == "_NARRATOR" for seg in blk.segments):
                     continue
-                part = blk.block_id.part_id if blk.block_id.part_id is not None else ""
-                block_prefix = f"{part}.{blk.block_id.block_no} " if self.prefix_line_nos else ""
-                lines.append(block_prefix)
+                # part = blk.block_id.part_id if blk.block_id.part_id is not None else ""
+                # block_prefix = f"{part}.{blk.block_id.block_no} " if self.prefix_line_nos else ""
+                # lines.append(block_prefix)
+                lines.append(block_line)
                 for seg in blk.segments:
-                    segment_prefix = f"  * .{seg.segment_id.segment_no} " if self.prefix_line_nos else ""
+                    #segment_prefix = f"  - .{seg.segment_id.segment_no} " if self.prefix_line_nos else ""
+                    segment_prefix = "  - "
                     if isinstance(seg, DirectionSegment) or (isinstance(seg, SpeechSegment) and getattr(seg, "role", "_NARRATOR") == "_NARRATOR"):
                         lines.append(f"{segment_prefix}{seg.text}")
                 lines.append("")
