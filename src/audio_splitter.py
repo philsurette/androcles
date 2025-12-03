@@ -150,6 +150,12 @@ class AudioSplitter:
             return
         total_export_start = perf_counter()
 
+        def fmt_offset(ms: int) -> str:
+            secs = ms / 1000.0
+            mins = int(secs // 60)
+            rem = secs - mins * 60
+            return f"{mins}:{rem:04.1f}"
+
         def run_batch(batch_spans: List[Tuple[int, int]], batch_ids: List[str], batch_idx: int) -> None:
             if not batch_spans:
                 return
@@ -201,3 +207,9 @@ class AudioSplitter:
         self.last_export_seconds = perf_counter() - total_export_start
         if self.verbose:
             logging.getLogger(__name__).info("Total ffmpeg export time: %.3fs", self.last_export_seconds)
+
+        # Write offsets.txt with start times for all exported spans.
+        offsets_path = out_dir / "offsets.txt"
+        with offsets_path.open("w", encoding="utf-8") as fh:
+            for (start_ms, _), eid in sorted(zip(spans_list, ids_list), key=lambda x: x[0][0]):
+                fh.write(f"{eid} {fmt_offset(start_ms)}\n")
