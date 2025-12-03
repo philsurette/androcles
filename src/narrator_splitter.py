@@ -35,11 +35,9 @@ class NarratorSplitter:
     silence_thresh: int = -45
     pad_end_ms: int = 200
     chunk_size: int = 50
-    detection_chunk_ms: int | None = None
     verbose: bool = False
     chunk_exports: bool = False
     chunk_export_size: int = 25
-    use_silence_window: bool = False
 
     def assemble_segments(self, part_filter: str | None = None) -> List[Segment]:
         """Return ordered narrator/meta segments from the PlayText."""
@@ -95,9 +93,7 @@ class NarratorSplitter:
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,
         )
-        spans = splitter.detect_spans(
-            src_path, chunk_duration_ms=self.detection_chunk_ms if self.use_silence_window else None
-        )
+        spans = splitter.detect_spans(src_path)
         splitter.export_spans(
             src_path,
             spans,
@@ -126,5 +122,4 @@ class NarratorSplitter:
                 os.path.relpath(str(src_path), str(Path.cwd())),
             )
         return total_time
-
 

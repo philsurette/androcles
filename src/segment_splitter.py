@@ -20,7 +20,6 @@ class SegmentSplitter:
     silence_thresh: int = -45
     pad_end_ms: int = 200
     chunk_size: int = 50
-    detection_chunk_ms: int | None = None
     verbose: bool = False
     chunk_exports: bool = True
     chunk_export_size: int = 25
@@ -59,7 +58,6 @@ class SegmentSplitter:
             silence_thresh=self.silence_thresh,
             pad_end_ms=self.pad_end_ms,
             chunk_size=self.chunk_size,
-            detection_chunk_ms=self.detection_chunk_ms,
             verbose=self.verbose,
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,

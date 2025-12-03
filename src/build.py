@@ -108,7 +108,6 @@ def segments(
         verbose=verbose,
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
-        detection_chunk_ms=silence_window_size_seconds * 1000 if use_silence_window else None,
     )
     splitter.split_all(part_filter=part, role_filter=role)
 
