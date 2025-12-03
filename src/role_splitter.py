@@ -25,16 +25,13 @@ from segment_splitter import SegmentSplitter
 @dataclass
 class RoleSplitter(SegmentSplitter):
 
-    def expected_ids(self, role: str, part_filter: str | None = None) -> List[str]:
+    def expected_ids(self, part_filter: str | None = None) -> List[str]:
         """
         Return expected segment ids for speech lines of a role, optionally filtered by part.
         Uses in-memory PlayText blocks (directions counted for numbering, only speech for the role emits ids).
         """
         ids: List[str] = []
-        role_obj = self.play_text.getRole(role)
-        if role_obj is None:
-            logging.warning("Role %s not found in play text", role)
-            return ids
+        role_obj = self.play_text.getRole(self.role)
 
         blocks: List[RoleBlock] = role_obj.getBlocks(int(part_filter) if part_filter is not None else None)
         for blk in blocks:
@@ -47,9 +44,8 @@ class RoleSplitter(SegmentSplitter):
                 if text in {".", ",", ":", ";"}:
                     continue
                 seq += 1
-                if isinstance(seg, SpeechSegment) and seg.role == role:
+                if isinstance(seg, SpeechSegment) and seg.role == self.role:
                     ids.append(
                         f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seq}"
                     )
         return ids
-

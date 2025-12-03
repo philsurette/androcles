@@ -28,7 +28,29 @@ class PlaySplitter:
         if self.play_text is None:
             self.play_text = PlayTextParser().parse()
 
+
     def split_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
+        total = 0.0
+        for role in self.play_text.getRoles():
+            if role_filter and role_filter != role:
+                continue
+            splitter = RoleSplitter(
+                play_text=self.play_text,
+                role = role.name,
+                min_silence_ms=self.min_silence_ms,
+                silence_thresh=self.silence_thresh,
+                chunk_size=self.chunk_size,
+                pad_end_ms=self.pad_end_ms,
+                verbose=self.verbose,
+                chunk_exports=self.chunk_exports,
+                chunk_export_size=self.chunk_export_size,
+            )
+            elapsed = splitter.split(part_filter=part_filter)
+            if elapsed:
+                total += elapsed
+        return total
+        
+    def oldsplit_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
         splitter = RoleSplitter(
             play_text=self.play_text,
             min_silence_ms=self.min_silence_ms,

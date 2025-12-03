@@ -18,6 +18,7 @@ from paths import RECORDINGS_DIR, SEGMENTS_DIR
 @dataclass
 class SegmentSplitter(ABC):
     play_text: PlayText
+    role: str
     min_silence_ms: int = 1700
     silence_thresh: int = -45
     chunk_size: int = 50
@@ -40,27 +41,27 @@ class SegmentSplitter(ABC):
         self.splitter.chunk_export_size = self.chunk_export_size
 
     @abstractmethod
-    def expected_ids(self, role: str, part_filter: str | None = None) -> List[str]:
+    def expected_ids(self, rpart_filter: str | None = None) -> List[str]:
         """Return expected segment ids for this role."""
         raise NotImplementedError
 
-    def recording_path(self, role: str) -> Optional[Path]:
+    def recording_path(self) -> Path:
         """Return the source recording path for the given role."""
-        return RECORDINGS_DIR / f"{role}.wav"
+        return RECORDINGS_DIR / f"{self.role}.wav"
 
-    def split(self, role: str, part_filter: str | None = None) -> float | None:
-        src_path = self.recording_path(role)
+    def split(self, part_filter: str | None = None) -> float | None:
+        src_path = self.recording_path()
         if not src_path or not src_path.exists():
-            print(f"Recording not found for role {role}", file=sys.stderr)
+            print(f"Recording not found for role {self.role}", file=sys.stderr)
             return None
 
-        expected_ids = self.expected_ids(role, part_filter=part_filter)
+        expected_ids = self.expected_ids(part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
         self.splitter.export_spans(
             src_path,
             spans,
             expected_ids,
-            SEGMENTS_DIR / role,
+            SEGMENTS_DIR / self.role,
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,
         )
