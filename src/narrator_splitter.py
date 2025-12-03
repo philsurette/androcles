@@ -2,15 +2,12 @@
 """Split the narrator recording into per-line WAV snippets using PlayText."""
 from __future__ import annotations
 
-import os
 import sys
 from dataclasses import dataclass
-import logging
 from typing import List
 
 from segment import Segment, DirectionSegment, SpeechSegment
 from block import MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
-from play_text import PlayText
 from paths import RECORDINGS_DIR
 from role_splitter import RoleSplitter
 
@@ -55,9 +52,4 @@ class NarratorSplitter(RoleSplitter):
         return f"{'' if block.part_id is None else block.part_id}_{block.block_no}_{seg.segment_id.segment_no}"
 
     def split(self, part_filter: str | None = None) -> float | None:
-        src_path = RECORDINGS_DIR / "_NARRATOR.wav"
-        if not src_path.exists():
-            print(f"Narrator recording not found: {src_path}", file=sys.stderr)
-            sys.exit(1)
-
         return super().split("_NARRATOR", part_filter=part_filter)

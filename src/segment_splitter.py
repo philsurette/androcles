@@ -1,0 +1,85 @@
+#!/usr/bin/env python3
+"""Abstract splitter for roles and narrator recordings."""
+from __future__ import annotations
+
+import os
+import sys
+import logging
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import List, Optional
+from abc import ABC, abstractmethod
+
+from audio_splitter import AudioSplitter
+from play_text import PlayText, PlayTextParser
+from paths import RECORDINGS_DIR, SEGMENTS_DIR
+
+
+@dataclass
+class SegmentSplitter(ABC):
+    play_text: PlayText
+    min_silence_ms: int = 1700
+    silence_thresh: int = -45
+    chunk_size: int = 50
+    pad_end_ms: int = 200
+    verbose: bool = False
+    chunk_exports: bool = False
+    chunk_export_size: int = 25
+    splitter: AudioSplitter = field(default_factory=AudioSplitter)
+
+    def __post_init__(self) -> None:
+        if self.play_text is None:
+            self.play_text = PlayTextParser().parse()
+        # Sync splitter thresholds
+        self.splitter.min_silence_ms = self.min_silence_ms
+        self.splitter.silence_thresh = self.silence_thresh
+        self.splitter.chunk_size = self.chunk_size
+        self.splitter.pad_end_ms = self.pad_end_ms
+        self.splitter.verbose = self.verbose
+        self.splitter.chunk_exports = self.chunk_exports
+        self.splitter.chunk_export_size = self.chunk_export_size
+
+    @abstractmethod
+    def expected_ids(self, role: str, part_filter: str | None = None) -> List[str]:
+        """Return expected segment ids for this role."""
+        raise NotImplementedError
+
+    def recording_path(self, role: str) -> Optional[Path]:
+        """Return the source recording path for the given role."""
+        return RECORDINGS_DIR / f"{role}.wav"
+
+    def split(self, role: str, part_filter: str | None = None) -> float | None:
+        src_path = self.recording_path(role)
+        if not src_path or not src_path.exists():
+            print(f"Recording not found for role {role}", file=sys.stderr)
+            return None
+
+        expected_ids = self.expected_ids(role, part_filter=part_filter)
+        spans = self.splitter.detect_spans(src_path)
+        self.splitter.export_spans(
+            src_path,
+            spans,
+            expected_ids,
+            SEGMENTS_DIR / role,
+            chunk_exports=self.chunk_exports,
+            chunk_export_size=self.chunk_export_size,
+        )
+
+        total_time = self.splitter.last_detect_seconds + self.splitter.last_export_seconds
+        if len(spans) != len(expected_ids):
+            logging.warning(
+                "⚠️  split %3d/%-3d in %4.1fs %s",
+                len(spans),
+                len(expected_ids),
+                total_time,
+                os.path.relpath(str(src_path), str(Path.cwd())),
+            )
+        else:
+            logging.info(
+                "✅ split %3d/%-3d in %4.1fs %s",
+                len(spans),
+                len(expected_ids),
+                total_time,
+                os.path.relpath(str(src_path), str(Path.cwd())),
+            )
+        return total_time

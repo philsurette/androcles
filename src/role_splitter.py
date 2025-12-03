@@ -14,39 +14,16 @@ from __future__ import annotations
 
 import sys
 import os
-from pathlib import Path
 from typing import List
 import logging
-from dataclasses import dataclass, field
-
-from audio_splitter import AudioSplitter
-from paths import SEGMENTS_DIR, RECORDINGS_DIR
-from play_text import PlayText, PlayTextParser, RoleBlock, SpeechSegment
+from dataclasses import dataclass
+from paths import SEGMENTS_DIR
+from play_text import RoleBlock, SpeechSegment
+from segment_splitter import SegmentSplitter
 
 
 @dataclass
-class RoleSplitter:
-    play_text: PlayText
-    min_silence_ms: int = 1700
-    silence_thresh: int = -45
-    chunk_size: int = 50
-    pad_end_ms: int = 200
-    verbose: bool = False
-    chunk_exports: bool = False
-    chunk_export_size: int = 25
-    splitter: AudioSplitter = field(default_factory=AudioSplitter)
-
-    def __post_init__(self) -> None:
-        if self.play_text is None:
-            raise ValueError("play_text is required for RoleSplitter")
-        # Sync splitter thresholds
-        self.splitter.min_silence_ms = self.min_silence_ms
-        self.splitter.silence_thresh = self.silence_thresh
-        self.splitter.chunk_size = self.chunk_size
-        self.splitter.pad_end_ms = self.pad_end_ms
-        self.splitter.verbose = self.verbose
-        self.splitter.chunk_exports = self.chunk_exports
-        self.splitter.chunk_export_size = self.chunk_export_size
+class RoleSplitter(SegmentSplitter):
 
     def expected_ids(self, role: str, part_filter: str | None = None) -> List[str]:
         """
@@ -75,41 +52,4 @@ class RoleSplitter:
                         f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seq}"
                     )
         return ids
-
-    def split(self, role: str, part_filter: str | None = None) -> float | None:
-        src_path = self.splitter.find_recording(role)
-        if not src_path:
-            print(f"Recording not found for role {role}", file=sys.stderr)
-            return None
-
-        #logging.info("Processing role %s from %s", role, src_path)
-        expected_ids = self.expected_ids(role, part_filter=part_filter)
-        spans = self.splitter.detect_spans(src_path)
-        self.splitter.export_spans(
-            src_path,
-            spans,
-            expected_ids,
-            SEGMENTS_DIR / role,
-            chunk_exports=self.chunk_exports,
-            chunk_export_size=self.chunk_export_size,
-        )
-
-        total_time = self.splitter.last_detect_seconds + self.splitter.last_export_seconds
-        if len(spans) != len(expected_ids):
-            logging.warning(
-                "⚠️  split %3d/%-3d in %4.1fs %s",
-                len(spans),
-                len(expected_ids),
-                total_time,
-                os.path.relpath(str(src_path), str(Path.cwd())),
-            )
-        else:
-            logging.info(
-                "✅ split %3d/%-3d in %4.1fs %s",
-                len(spans),
-                len(expected_ids),
-                total_time,
-                os.path.relpath(str(src_path), str(Path.cwd())),
-            )
-        return total_time
 
