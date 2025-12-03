@@ -229,7 +229,7 @@ class PlayPlanBuilder:
                 ),
                 following_silence_ms=INTER_WORD_PAUSE_MS,
             )
-            path = RECORDINGS_DIR / f"{part_id}_0_1.wav"
+            path = SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
             plan.addClip(
                 SegmentClip(
                     path=path,
