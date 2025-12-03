@@ -33,7 +33,7 @@ class RoleSplitter(SegmentSplitter):
         ids: List[str] = []
         role_obj = self.play_text.getRole(self.role)
 
-        blocks: List[RoleBlock] = role_obj.getBlocks(int(part_filter) if part_filter is not None else None)
+        blocks: List[RoleBlock] = role_obj.get_blocks(int(part_filter) if part_filter is not None else None)
         for blk in blocks:
             seq = 0
             for seg in blk.segments:

@@ -18,7 +18,7 @@ from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder, list_parts, compute_output_path
 from play_text import PlayTextParser
-from play_text_writer import PlayTextWriter
+from markdown_renderer import PlayMarkdownWriter,  RoleMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from paths import RECORDINGS_DIR, AUDIO_OUT_DIR, BUILD_DIR, LOGS_DIR, SEGMENTS_DIR
@@ -83,16 +83,27 @@ def text() -> None:
 
 
 @app.command()
-def write(
+def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
 ) -> None:
-    """Write markdown blocks.md from the parsed play text."""
+    """Write build/text/<play>.md"""
     setup_logging()
     play = PlayTextParser().parse()
-    writer = PlayTextWriter(play, prefix_line_nos=line_no_prefix)
-    path = writer.write_blocks()
+    writer = PlayMarkdownWriter(play, prefix_line_nos=line_no_prefix)
+    path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
 
+@app.command()
+def write_roles(
+    line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+) -> None:
+    """Write build/text/<role>.md - all blocks for each role"""
+    setup_logging()
+    play = PlayTextParser().parse()
+    for role in play.roles:
+        writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
+        path = writer.to_markdown()
+        logging.info("✅ wrote %s", path)
 
 @app.command()
 def segments(

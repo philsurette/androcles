@@ -26,7 +26,7 @@ class Role:
     blocks: List[RoleBlock] = field(default_factory=list)
     meta: bool = False
 
-    def getBlocks(self, part_no: int | None = None) -> List[RoleBlock]:
+    def get_blocks(self, part_no: int | None = None) -> List[RoleBlock]:
         """Return role blocks, optionally filtered by part number."""
         if part_no is None:
             return list(self.blocks)
@@ -35,7 +35,7 @@ class Role:
     def segments(self, part_no: int | None = None) -> dict[tuple[int | None, int], list[str]]:
         """Return mapping (part, block) -> ordered segment ids for this role."""
         mapping: dict[tuple[int | None, int], list[str]] = {}
-        for blk in self.getBlocks(part_no):
+        for blk in self.get_blocks(part_no):
             key = (blk.block_id.part_id, blk.block_id.block_no)
             for seg in blk.segments:
                 if isinstance(seg, SpeechSegment) and seg.role == self.name:
@@ -157,6 +157,23 @@ class PlayText(List[Block]):
         if not self._roles:
             self._build_parts_index()
         return self._roles.get(role_name)
+
+    @property
+    def blocks(self) -> List[Block]:
+        """Return the list of blocks."""
+        return list(self)
+
+    @property
+    def title(self) -> str:
+        """Return the text of the first block."""
+        return self[0].text if self else ""
+    
+    @property
+    def roles(self) -> List[Role]:
+        """Return all roles in play order of first appearance."""
+        if not self._roles:
+            self._build_parts_index()
+        return [self._roles[name] for name in self._role_order]
 
     def getRoles(self) -> List[Role]:
         """Return all roles in play order of first appearance."""
