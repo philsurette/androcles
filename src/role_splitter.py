@@ -75,11 +75,11 @@ class RoleSplitter:
                     )
         return ids
 
-    def process_role(self, role: str, part_filter: str | None = None) -> None:
+    def process_role(self, role: str, part_filter: str | None = None) -> float | None:
         src_path = self.splitter.find_recording(role)
         if not src_path:
             print(f"Recording not found for role {role}", file=sys.stderr)
-            return
+            return None
 
         logging.info("Processing role %s from %s", role, src_path)
         expected_ids = self.expected_ids(role, part_filter=part_filter)
@@ -96,22 +96,25 @@ class RoleSplitter:
         total_time = self.splitter.last_detect_seconds + self.splitter.last_export_seconds
         if len(spans) != len(expected_ids):
             logging.warning(
-                "⚠️  %s split mismatch: expected %d snippets, got %d (silence detect %.3fs, export %.3fs)",
+                "⚠️  %s: split %d/%d snippets in %.1fs (silence detect %.3fs, export %.3fs)",
                 role,
-                len(expected_ids),
                 len(spans),
+                len(expected_ids),
+                total_time,
                 self.splitter.last_detect_seconds,
                 self.splitter.last_export_seconds,
             )
         else:
             logging.info(
-                "✅  %s: split %d snippets in %.0fs (silence detect %.3fs, export %.3fs)",
+                "✅  %s: split %d/%d snippets in %.1fs (silence detect %.3fs, export %.3fs)",
                 role,
                 len(spans),
+                len(expected_ids),
                 total_time,
                 self.splitter.last_detect_seconds,
                 self.splitter.last_export_seconds,
             )
+        return total_time
 
 
 def main() -> None:
@@ -124,7 +127,7 @@ def main() -> None:
     parser.add_argument("--silence-thresh", type=int, default=-45, help="Silence threshold dBFS (default -45)")
     parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
     parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
-    parser.add_argument("--chunk-export-size", type=int, default=100, help="Batch size when chunking exports")
+    parser.add_argument("--chunk-export-size", type=int, default=25, help="Batch size when chunking exports")
     args = parser.parse_args()
 
     SEGMENTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -159,8 +162,8 @@ def process_role(
     chunk_size: int = 1,
     verbose: bool = False,
     chunk_exports: bool = False,
-    chunk_export_size: int = 100,
-) -> None:
+    chunk_export_size: int = 25,
+) -> float | None:
     splitter = RoleSplitter(
         play_text=PlayTextParser().parse(),
         min_silence_ms=min_silence_ms,
@@ -170,4 +173,4 @@ def process_role(
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
     )
-    splitter.process_role(role, part_filter=part_filter)
+    return splitter.process_role(role, part_filter=part_filter)

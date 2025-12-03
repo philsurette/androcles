@@ -77,7 +77,7 @@ class NarratorSplitter:
         block = seg.segment_id.block_id
         return f"{'' if block.part_id is None else block.part_id}_{block.block_no}_{seg.segment_id.segment_no}"
 
-    def split(self, part_filter: str | None = None) -> None:
+    def split(self, part_filter: str | None = None) -> float | None:
         src_path = RECORDINGS_DIR / "_NARRATOR.wav"
         if not src_path.exists():
             print(f"Narrator recording not found: {src_path}", file=sys.stderr)
@@ -125,6 +125,7 @@ class NarratorSplitter:
                 splitter.last_detect_seconds,
                 splitter.last_export_seconds,
             )
+        return total_time
 
 
 def main() -> None:
@@ -142,7 +143,7 @@ def main() -> None:
     )
     parser.add_argument("--verbose", action="store_true", help="Log ffmpeg commands used for splitting")
     parser.add_argument("--chunk-exports", action="store_true", help="Export in batches instead of one ffmpeg call")
-    parser.add_argument("--chunk-export-size", type=int, default=100, help="Batch size when chunking exports")
+    parser.add_argument("--chunk-export-size", type=int, default=25, help="Batch size when chunking exports")
     parser.add_argument(
         "--use-silence-window",
         action="store_true",
