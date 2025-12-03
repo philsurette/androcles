@@ -4,17 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import List
-from abc import ABC, abstractmethod
 import re
 from pathlib import Path
 
 from paragraphs import collapse_to_paragraphs
 from paths import DEFAULT_PLAY, PARAGRAPHS_PATH
-from segment_id import SegmentId
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
-
 
 @dataclass
 class Title:
@@ -236,8 +233,7 @@ class PlayTextParser:
                     break
 
             if parsed_block is None:
-                # Ignore unrecognized paragraphs to stay aligned with existing block numbering.
-                continue
+                raise RuntimeError(f"Unable to parse paragraph into any block type: {paragraph}")
 
             play.append(parsed_block)
             play._by_id[parsed_block.block_id] = parsed_block

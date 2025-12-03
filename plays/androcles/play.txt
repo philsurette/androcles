@@ -1394,8 +1394,8 @@ EDITOR.
 Keeper bolts precipitately into the passage. The gladiators rise
 smartly and form into line._)
 
-The Emperor enters on the Christians’ side, conversing with Metellus,
-and followed by his suite.
+__The Emperor enters on the Christians’ side, conversing with Metellus,
+and followed by his suite.__
 
 GLADIATORS.
 Hail, Caesar! those about to die salute thee.
@@ -1938,12 +1938,14 @@ Who are the baskets for?
 
 CALL BOY.
 For the whip. He’s in pieces. They’re all in pieces, more or less.
-(_Lavinia hides her face._)
 
-(_Two more masked slaves come in with a basket and follow the others
+__Lavinia hides her face.__
+
+__Two more masked slaves come in with a basket and follow the others
 into the arena, as the Call Boy turns to the gladiators and exclaims,
-exhausted_)
+exhausted__
 
+CALL BOY.
 Boys, he’s killed the lot.
 
 CAESAR.

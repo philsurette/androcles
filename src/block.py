@@ -8,8 +8,9 @@ from typing import List
 import re
 
 from block_id import BlockId
+from segment_id import SegmentId
 from segment import Segment, MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
-
+from segment_id import SegmentId
 
 @dataclass
 class Block(ABC):
@@ -143,6 +144,7 @@ class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
     REGEX = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
+    NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role: str = ""
     segments: List[Segment] = field(default_factory=list)
@@ -169,6 +171,33 @@ class RoleBlock(Block):
         return self.role
 
     @classmethod
+    def split_block_segments(cls, text: str, block_id: BlockId, role: str) -> List[Segment]:
+        parts = cls.NARRATION_RE.split(text)
+        segments: List[Segment] = []
+        index = 1
+        for i, part in enumerate(parts):
+            speech = i % 2 == 0
+            if speech:
+                if part.strip():
+                    segments.append(
+                        SpeechSegment(
+                            segment_id=SegmentId(block_id, index),
+                            text=part.strip(),
+                            role=role,
+                        )
+                    )
+                    index += 1
+            else: #narration
+                segments.append(
+                    DirectionSegment(
+                        segment_id=SegmentId(block_id, index),
+                        text=part.strip(),
+                    )
+                )
+                index += 1
+        return segments
+    
+    @classmethod
     def parse(
         cls,
         paragraph: str,
@@ -183,45 +212,10 @@ class RoleBlock(Block):
         block_counter += 1
         block_id = BlockId(current_part, block_counter)
         speech = speech.strip()
-        segments: List[Segment] = []
-        last_end = 0
-        seg_no = 1
-        for match in cls.INLINE_DIR_RE.finditer(speech):
-            pre = speech[last_end : match.start()]
-            if pre.strip():
-                segments.append(SpeechSegment(segment_id=SegmentId(block_id, seg_no), text=pre.strip(), role=role))
-                seg_no += 1
-
-            direction = match.group(0).strip()
-            punct_end = match.end()
-            trailing_punct = ""
-            while punct_end < len(speech) and speech[punct_end] in ".,;:!?":
-                trailing_punct += speech[punct_end]
-                punct_end += 1
-
-            if direction:
-                segments.append(DirectionSegment(segment_id=SegmentId(block_id, seg_no), text=direction))
-                seg_no += 1
-                if trailing_punct:
-                    # Keep trailing punctuation with the direction unless it's an expressive mix of !/?.
-                    if set(trailing_punct) <= set("?!") and "!" in trailing_punct:
-                        segments.append(SpeechSegment(segment_id=SegmentId(block_id, seg_no), text=trailing_punct, role=role))
-                        seg_no += 1
-                    else:
-                        # Append punctuation to the previous direction text.
-                        segments[-1].text = segments[-1].text + trailing_punct
-            last_end = punct_end
-
-        tail = speech[last_end:]
-        if tail.strip():
-            segments.append(SpeechSegment(segment_id=SegmentId(block_id, seg_no), text=tail.strip(), role=role))
-
-        if not segments:
-            segments.append(SpeechSegment(segment_id=SegmentId(block_id, 1), text=speech.strip(), role=role))
         block = cls(
             block_id=block_id,
             role=role,
             text=speech.strip(),
-            segments=segments,
+            segments=cls.split_block_segments(speech, block_id, role),
         )
         return block
