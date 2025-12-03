@@ -13,5 +13,4 @@ class SegmentId:
     segment_no: int
 
     def __str__(self) -> str:
-        part_str = "" if getattr(self.block_id, "part_id", None) is None else str(self.block_id.part_id)
-        return f"{part_str}_{self.block_id.block_no}_{self.segment_no}"
+        return f"{self.block_id}_{self.segment_no}"

@@ -2,18 +2,13 @@
 import pytest
 
 from play_text import (
-    BlockId,
-    DescriptionBlock,
-    DescriptionSegment,
     DirectionSegment,
-    MetaBlock,
-    MetaSegment,
     PlayText,
-    RoleBlock,
-    SegmentId,
-    SpeechSegment,
 )
-
+from segment import DescriptionSegment, MetaSegment, SpeechSegment
+from segment_id import SegmentId
+from block_id import BlockId
+from block import DescriptionBlock, MetaBlock, RoleBlock    
 
 def build_play_text(sequence):
     """Helper to build a PlayText from a list of (part, block_no, role)."""

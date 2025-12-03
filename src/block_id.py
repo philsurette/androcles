@@ -22,3 +22,7 @@ class BlockId:
 
     def __hash__(self) -> int:  # Ensure hashability for dict/set usage.
         return hash((self.part_id, self.block_no))
+    
+    def __str__(self) -> str:
+        part_str = f"{self.part_id}" if self.part_id else ""
+        return f"{part_str}_{self.block_no}"

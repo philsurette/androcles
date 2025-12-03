@@ -1,8 +1,12 @@
 import pytest
 
 from narrator_splitter import NarratorSplitter
-from play_text import BlockId, DirectionSegment, NarratorRole, RoleBlock, SegmentId
+from play_text import NarratorRole, RoleBlock
 
+from segment import DirectionSegment
+from segment_id import SegmentId
+from block_id import BlockId
+from block import RoleBlock 
 
 class DummyPlay:
     def __init__(self, role):
