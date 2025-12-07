@@ -191,13 +191,44 @@ class PlayPlanBuilder:
             following_silence_ms=INTER_BLOCK_PAUSE_MS,
         )
     
+    def _add_librivox_endof(self, plan: AudioPlan[PlanItem], part_id: int) -> None:
+        if not self.librivox:
+            return
+        part = self.play.getPart(part_id)
+        path = paths.RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
+        part = self.play.getPart(part_id)
+        # plan.addSilence(2000)
+        plan.addClip(
+            SegmentClip(
+                path=path,
+                text=f"End of",
+                role="_NARRATOR",
+                clip_id="_LIBRIVOX_ENDOF",
+                length_ms=self.get_audio_length_ms(path, self.length_cache),
+                offset_ms=plan.duration_ms,
+            ),
+            following_silence_ms=INTER_WORD_PAUSE_MS,
+        )
+        path = paths.SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
+        plan.addClip(
+            SegmentClip(
+                path=path,
+                text=part.title,
+                role="_NARRATOR",
+                clip_id=f"{part_id}:0:1",
+                length_ms=self.get_audio_length_ms(path, self.length_cache),
+                offset_ms=plan.duration_ms,
+            ),
+            following_silence_ms=INTER_BLOCK_PAUSE_MS,
+        )
+
     def _add_librivox_epilogue(self, plan: AudioPlan[PlanItem], part_id: int) -> None:
         if not self.librivox:
             return
         part = self.play.getPart(part_id)
         if self.play.last_part_id == part_id:            
             path = paths.RECORDINGS_DIR / "_LIBRIVOX_EPILOG.wav"
-            plan.addSilence(2000)
+            # plan.addSilence(2000)
             plan.addClip(
                 SegmentClip(
                     path=path,
@@ -209,33 +240,9 @@ class PlayPlanBuilder:
                 ),
                 following_silence_ms=INTER_BLOCK_PAUSE_MS,
             )
-        else:
-            path = paths.RECORDINGS_DIR / "_LIBRIVOX_ENDOF.wav"
-            part = self.play.getPart(part_id)
-            plan.addSilence(2000)
-            plan.addClip(
-                SegmentClip(
-                    path=path,
-                    text=f"End of",
-                    role="_NARRATOR",
-                    clip_id="_LIBRIVOX_ENDOF",
-                    length_ms=self.get_audio_length_ms(path, self.length_cache),
-                    offset_ms=plan.duration_ms,
-                ),
-                following_silence_ms=INTER_WORD_PAUSE_MS,
-            )
-            path = paths.SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
-            plan.addClip(
-                SegmentClip(
-                    path=path,
-                    text=part.title,
-                    role="_NARRATOR",
-                    clip_id=f"{part_id}:0:1",
-                    length_ms=self.get_audio_length_ms(path, self.length_cache),
-                    offset_ms=plan.duration_ms,
-                ),
-                following_silence_ms=INTER_BLOCK_PAUSE_MS,
-            )
+    
+    def _add_librivox_trailing_silence(self, plan: AudioPlan) -> None:
+        plan.addSilence(3000)
             
     def build_audio_plan(
         self,
@@ -278,8 +285,11 @@ class PlayPlanBuilder:
                 plan.addSilence(self.part_gap_ms)
 
             ## add end of part clips
+            self._add_librivox_endof(plan=plan, part_id=part_id)
             self._add_librivox_epilogue(plan=plan, part_id=part_id)
             plan.addSilence(1000)
+            self._add_librivox_trailing_silence(plan=plan)
+
         return plan, plan.duration_ms
 
     @staticmethod
