@@ -6,13 +6,7 @@ from dataclasses import dataclass
 from typing import List
 
 from play_text import PlayText
-
-@dataclass(frozen=False)
-class Chapter:
-    block_id: str
-    title: str
-    offset_ms: int | None = None
-
+from chapter import Chapter
 
 @dataclass
 class ChapterBuilder:

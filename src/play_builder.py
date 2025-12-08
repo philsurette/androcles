@@ -28,18 +28,18 @@ class PlayBuilder:
     librivox: bool = False
     play: PlayText = None
 
-    def build_audio(self, parts: list[int], part_no: int) -> list[Path]:
+    def build_audio(self, part_no: int) -> list[Path]:
         """Build audio plans (and optional outputs) using configured settings."""
+        # self.play = PlayTextParser().parse()
         if self.librivox:
             return self._build_librivox()
 
-        self.play = PlayTextParser().parse()
         out_path = self.compute_output_path(part_no, self.audio_format)
         chapters = ChapterBuilder().build()
         director: CalloutDirector = (
-            ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(play)
+            ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )
-        director = director if self.include_callouts else NoCalloutDirector(play)
+        director = director if self.include_callouts else NoCalloutDirector(self.play)
         builder = PlayPlanBuilder(
             play=self.play,
             director=director,
@@ -51,7 +51,7 @@ class PlayBuilder:
             part_gap_ms=self.part_gap_ms,
             librivox=self.librivox,
         )
-        plan, _ = builder.build_audio_plan(parts=parts)
+        plan = builder.build_audio_plan(part_no=part_no)
         plan_path = paths.BUILD_DIR / "audio_plan.txt"
         plan_path.parent.mkdir(parents=True, exist_ok=True)
         write_plan(plan, plan_path)
@@ -69,30 +69,31 @@ class PlayBuilder:
             logging.info("Skipping audio rendering (generate-audio=false)")
         return [out_path]
 
-    def compute_output_path(self, part: int, audio_format: str = "mp4") -> Path:
-        if part is None:
+    def compute_output_path(self, part_no: int, audio_format: str = "mp4") -> Path:
+        if part_no is None:
             title = "play"
         else:
-            part:Part = self.play.getPart(part_id=part)
-            title = f"{part}_{part.title}"
+            part: Part = self.play.getPart(part_no=part_no)
+            title = f"{part.part_no}_{part.title}"
         return paths.AUDIO_PLAY_DIR / f"{title}.{audio_format}"
 
     def _build_librivox(self) -> list[Path]:
         outputs: list[Path] = []
         chapters = ChapterBuilder(play_text=self.play).build()
         director: CalloutDirector = (
-            ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(play)
+            ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )
         director = director if self.include_callouts else NoCalloutDirector(self.play)
-        for idx, part_id in enumerate([p.part_no for p in self.play.parts]]):
-            out_path = paths.AUDIO_PLAY_DIR / f"androclesandthelion_{part_id}_shaw_128kb.mp3"
+        file_friendly_title = ''.join(self.play.title.lower().split())
+        for part_no in [p.part_no for p in self.play.parts if p.part_no is not None]:
+            out_path = paths.AUDIO_PLAY_DIR / f"{file_friendly_title}_{part_no}_shaw_128kb.mp3"
             outputs.append(out_path)
             title_map = {0: "PROLOGUE", 1: "ACT I", 2: "ACT II"}
             metadata = {
-                "title": title_map.get(part_id, str(part_id)),
+                "title": title_map.get(part_no, str(part_no)),
                 "artist": "LibriVox Volunteers",
                 "album": "Androcles and the Lion",
-                "track": f"{idx:02d}",
+                "track": f"{part_no:02d}",
                 "genre": "Speech",
             }
             builder = PlayPlanBuilder(
@@ -105,9 +106,9 @@ class PlayBuilder:
                 part_gap_ms=0,
                 librivox=True,
             )
-            plan, _ = builder.build_audio_plan(parts=None, part_index_offset=idx)
+            plan = builder.build_audio_plan(part_no=part_no)
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
-            plan_path = paths.BUILD_DIR / f"audio_plan_part_{part_id}.txt"
+            plan_path = paths.BUILD_DIR / f"audio_plan_part_{part_no}.txt"
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             write_plan(plan, plan_path)
             logging.info("Wrote audio plan to %s", plan_path)

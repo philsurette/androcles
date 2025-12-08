@@ -6,6 +6,7 @@ from typing import Iterable, TypeVar, Generic, List
 
 from clip import Clip, Silence
 from chapter_builder import Chapter
+from pathlib import Path
 
 PlanItem = Clip | Chapter
 PI = TypeVar("PI", bound=PlanItem)
@@ -16,6 +17,10 @@ class AudioPlan(List[PI], Generic[PI]):
     def __init__(self, items: Iterable[PI] | None = None) -> None:
         super().__init__(items or [])
         self.duration_ms: int = 0
+
+    @property
+    def items(self) -> List[PlanItem]:
+        return self
 
     def addClip(self, clip: Clip, following_silence_ms: int = 0) -> None:
         """Append a clip and optional trailing silence."""
@@ -41,3 +46,4 @@ class AudioPlan(List[PI], Generic[PI]):
         """Add a chapter marker (append or insert) and update duration if offset is known."""
         chapter.offset_ms = self.duration_ms
         self.append(chapter)
+      

@@ -136,7 +136,7 @@ def verify(
 def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play=play)
-    plan, _ = builder.build_audio_plan(parts=builder.list_parts())
+    plan = builder.build_audio_plan(parts=builder.list_parts())
     verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
     verifier.verify_segments()
 
@@ -313,9 +313,9 @@ def run_audioplay(
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     play: PlayText = PlayTextParser().parse()
     if part is None:
-        parts = [p.part_no for p in play.parts]
+        part_no = None
     else:
-        parts = [play.getPart(int(part))]
+        part_no = int(part)
 
     builder = PlayBuilder(
         spacing_ms=segment_spacing_ms,
@@ -323,12 +323,13 @@ def run_audioplay(
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
         audio_format=audio_format,
-        part_gap_ms=2000 if len(parts) > 1 else 0,
+        part_gap_ms=2000,
         generate_audio=generate_audio,
         generate_captions=captions,
         librivox=librivox,
+        play=play
     )
-    out_paths = builder.build_audio(parts=parts, part_no=part_val)
+    out_paths = builder.build_audio(part_no=part_no)
     if normalize_output and generate_audio:
         normalizer = Normalizer()
         for out_path in out_paths:

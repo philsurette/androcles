@@ -69,7 +69,7 @@ def test_librivox_audio_plans_match_expected(tmp_path: pathlib.Path) -> None:
             part_gap_ms=0,
             librivox=True,
         )
-        plan, _ = builder.build_audio_plan(parts=[part_id], part_index_offset=idx, total_parts=len(parts))
+        plan = builder.build_audio_plan(parts=[part_id], part_index_offset=idx, total_parts=len(parts))
         plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
 
         actual_path = tmp_path / f"audio_plan_part_{part_id}.txt"

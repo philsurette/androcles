@@ -12,20 +12,19 @@ from pydub import AudioSegment
 
 from callout_director import (
     CalloutDirector,
-    ConversationAwareCalloutDirector,
     NoCalloutDirector,
-    RoleCalloutDirector,
 )
-from play_text import PlayText, PlayTextParser, Block, BlockId, MetaBlock
-from chapter_builder import Chapter, ChapterBuilder
+from play_text import PlayText, Block, MetaBlock
+from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
 import paths
 
 IndexEntry = Tuple[int | None, int, str]
 
-INTER_WORD_PAUSE_MS = 300
-INTER_BLOCK_PAUSE_MS = 1000
+WORD_PAUSE_MS = 300
+BLOCK_PAUSE_MS = 1000
+COMMA_PAUSE_MS = 500
 
 @dataclass
 class PlayPlanBuilder:
@@ -142,156 +141,201 @@ class PlayPlanBuilder:
 
         return audio_plan, audio_plan.duration_ms
     
-    def _librivox_prologue(self) -> CalloutClip:
-        prologue_path = paths.RECORDINGS_DIR / "_LIBRIVOX_PROLOGUE.wav"
-        length_ms = self.get_audio_length_ms(prologue_path, self.length_cache)
-        return SegmentClip(
-            path=prologue_path,
-            text="Prologue of Androcles and the Lion. This is a LibriVox recording. All LibriVox recordings are in the public domain. For more information or to volunteer, please visit librivox.org. Read by Phil Surette.",
-            role="_NARRATOR",
-            clip_id="_LIBRIVOX_PROLOGUE",
-            length_ms=length_ms,
-            offset_ms=0,
-        )
-
-    def _librivox_title_and_author(self) -> CalloutClip:
-        title_path = paths.RECORDINGS_DIR / "_LIBRIVOX_TITLE_AND_AUTHOR.wav"
-        length_ms = self.get_audio_length_ms(title_path, self.length_cache)
-        return SegmentClip(
-            path=title_path,
-            text=f"{self.play.title}, {self.play.author}.",
-            role="_NARRATOR",
-            clip_id="_LIBRIVOX_TITLE_AND_AUTHOR",
-            length_ms=length_ms,
-            offset_ms=0,
-        )
-    
-    def _add_librivox_prologue(self, part_id: int) -> None:
-        if not self.librivox:
-            return
-        if self.play.first_part_id == part_id:
-            self.plan.addClip(self._librivox_prologue(), 
-                         following_silence_ms=INTER_BLOCK_PAUSE_MS)
-            self.plan.addClip(self._librivox_title_and_author(), 
-                         following_silence_ms=INTER_BLOCK_PAUSE_MS)
-    
-    def _add_librivox_clip(self, file_name: str, text: str, following_silence_ms: int) -> None:
-        path = paths.RECORDINGS_DIR / f"{file_name}.wav"
+    def _add_clip(self, 
+            folder: Path, 
+            file_name: str, 
+            text: str, 
+            following_silence_ms: int = 0,
+            ) -> None:
+        path = folder / f"{file_name}.wav"
         self.plan.addClip(
             SegmentClip(
                 path=path,
                 text=text,
-                role="_NARRATOR",
-                clip_id=file_name,
+                role=None,
+                clip_id=None,
                 length_ms=self.get_audio_length_ms(path, self.length_cache),
-                offset_ms=0
             ),
             following_silence_ms
         )
 
-    def _add_librivox_each_section_prologue(self, part_id: int) -> None:
-        if not self.librivox:
-            return
-        if self.play.first_part_id == part_id:
-            return
-        self._add_librivox_clip(
-            file_name="_LIBRIVOX_SECTION", 
-            text="Section", 
-            following_silence_ms=INTER_WORD_PAUSE_MS
-        )
-        self._add_librivox_clip(
-            file_name=f"_LIBRIVOX_{part_id}", 
-            text=f"{part_id}", 
-            following_silence_ms=INTER_WORD_PAUSE_MS
-        )
-        self._add_librivox_clip(
-            file_name="_LIBRIVOX_OF", 
-            text="of", 
-            following_silence_ms=INTER_WORD_PAUSE_MS
-        )
-        self._add_librivox_clip(
-            file_name="_LIBRIVOX_TITLE_AND_AUTHOR",
-            text=f"{self.play.title} {self.play.author}.",
-            following_silence_ms=INTER_BLOCK_PAUSE_MS
-        )
-        self._add_librivox_clip(
-            file_name="_LIBRIVOX_THIS_LIBRIVOX_RECORDING",
-            text="This librivox recording is in the public domain.",
-            following_silence_ms=INTER_BLOCK_PAUSE_MS
+    def _add_snippet(self,
+            file_name: str, 
+            text: str = None, 
+            following_silence_ms: int = 0,
+        ) -> None:
+        if text is None:
+            text = file_name
+        self._add_clip(
+            file_name=file_name,
+            text=text,
+            following_silence_ms=following_silence_ms,
+            folder=paths.GENERAL_SNIPPETS_DIR
         )
 
-    def _add_librivox_each_part_title_suffix(self, part_id: int) -> None:
+    def _add_words(self,
+            file_name: str, 
+            text: str = None, 
+            sentence_start = False,
+            sentence_end = False,
+            phrase_end = False,
+            following_silence_ms: int = None,
+            folder: Path = paths.GENERAL_SNIPPETS_DIR
+        ) -> None:
+        if text is None:
+            text = file_name
+            if sentence_start is True:
+                text = text.capitalize()
+            if sentence_end is True:
+                text = f"{text}."
+            elif phrase_end is True:
+                text = f"{text},"
+        if following_silence_ms is None:
+            if sentence_end is True:
+                following_silence_ms = BLOCK_PAUSE_MS
+            elif phrase_end is True:
+                following_silence_ms = COMMA_PAUSE_MS
+            else:
+                following_silence_ms = WORD_PAUSE_MS
+        self._add_clip(
+            file_name=file_name,
+            text=text,
+            following_silence_ms=following_silence_ms,
+            folder=folder
+        )
+
+    def _add_sentence(self,
+            file_name: str, 
+            text: str = None, 
+            following_silence_ms: int = BLOCK_PAUSE_MS,
+            folder: Path = paths.GENERAL_SNIPPETS_DIR
+        ) -> None:
+        if text is None:
+            text = f"{file_name.capitalize()}."
+        self._add_clip(
+            file_name=file_name,
+            text=text,
+            following_silence_ms=following_silence_ms,
+            folder=folder
+        )
+
+    def _add_librivox_start_of_recording(self, part_id: int) -> None:
+        if not self.librivox:
+            return
+        if self.play.first_part_id == part_id:
+            self._add_words('section', sentence_start=True)
+            self._add_words(str(part_id))
+            self._add_words('of')
+            self._add_recording(
+                file_name="_TITLE",
+                text=f"""{self.play.title}. """,
+                silence_ms=BLOCK_PAUSE_MS,
+            )
+            self._add_sentence(
+                "this is a LibriVox recording",
+                folder=paths.LIBRIVOX_SNIPPETS_DIR
+            )
+            self._add_sentence(
+                "all LibriVox recordings are in the public domain",
+                folder=paths.LIBRIVOX_SNIPPETS_DIR
+            )
+            self._add_words(
+                "for more information or to volunteer",
+                sentence_start=True,
+                phrase_end=True,
+                folder=paths.LIBRIVOX_SNIPPETS_DIR
+            )
+            self._add_words(
+                "please visit librivox.org",
+                sentence_end=True,
+                folder=paths.LIBRIVOX_SNIPPETS_DIR
+            )
+            self._add_words(
+                file_name="read by",
+                sentence_start=True
+            )
+            self._add_recording(
+                file_name="_READER",
+                text="Phil Surette.",
+                silence_ms=BLOCK_PAUSE_MS
+            )
+            self._add_title_by_author
+        
+    def _add_recording(self, 
+                           file_name: str, 
+                           text: str, 
+                           silence_ms: int) -> None:
+        self._add_clip(
+            folder=paths.RECORDINGS_DIR,
+            file_name=file_name,
+            text=text,
+            following_silence_ms=silence_ms      
+        )
+
+    def _add_title_by_author(self):
+        self._add_recording(
+            file_name="_TITLE",
+            text=f"{self.play.title},",
+            silence_ms=COMMA_PAUSE_MS
+        )
+        self._add_words(
+            file_name="by",
+        )
+        self._add_recording(
+            file_name="_AUTHOR",
+            text=f"{self.play.author}.",
+            silence_ms=BLOCK_PAUSE_MS
+        )        
+
+    def _add_librivox_start_of_section(self, part_id: int) -> None:
         if not self.librivox:
             return
         if self.play.first_part_id == part_id:
             return
-        path = paths.RECORDINGS_DIR / "_LIBRIVOX_EACH_PART.wav"
-        self.plan.addClip(
-            SegmentClip(
-                path=path,
-                text=f"of {self.play.title}. This LibriVox recording is in the public domain.",
-                role="_NARRATOR",
-                clip_id="_LIBRIVOX_EACH_PART",
-                length_ms=self.get_audio_length_ms(path, self.length_cache),
-                offset_ms=self.plan.duration_ms,
-            ),
-            following_silence_ms=INTER_BLOCK_PAUSE_MS,
+        self._add_words("section", sentence_start=True)
+        self._add_words(str(part_id))
+        self._add_words("of")
+        self._add_title_by_author()
+        self._add_sentence(
+            "this librivox recording is in the public domain",
+            folder=paths.LIBRIVOX_SNIPPETS_DIR
         )
     
-    def _add_librivox_endof(self, part_id: int) -> None:
+    def _add_librivox_end_of_section(self, part_no: int) -> None:
         if not self.librivox:
             return
-        part = self.play.getPart(part_id)
-        self._add_librivox_clip(
-            file_name="_LIBRIVOX_ENDOF",
-            text=f"End of",
-            following_silence_ms=INTER_WORD_PAUSE_MS
-        )
-        path = paths.SEGMENTS_DIR / "_NARRATOR" / f"{part_id}_0_1.wav"
-        self.plan.addClip(
-            SegmentClip(
-                path=path,
-                text=part.title,
-                role="_NARRATOR",
-                clip_id=f"{part_id}:0:1",
-                length_ms=self.get_audio_length_ms(path, self.length_cache),
-                offset_ms=plan.duration_ms,
-            ),
-            following_silence_ms=INTER_BLOCK_PAUSE_MS,
-        )
+        self._add_words("end of", sentence_start=True)
+        self._add_words("section")
+        self._add_words(str(part_no), sentence_end=True)
 
-    def _add_librivox_epilogue(self, part_id: int) -> None:
+    def _add_librivox_end_of_recording(self, part_id: int) -> None:
         if not self.librivox:
             return
-        if self.play.last_part_id == part_id:            
-            self._add_librivox_clip(
-                file_name="_LIBRIVOX_EPILOG",
-                text="Epilogue. You have been listening to a LibriVox recording. All LibriVox recordings are in the public domain. For more information or to volunteer, please visit librivox.org. Read by Phil Surette.",
-                following_silence_ms=INTER_BLOCK_PAUSE_MS
-            )
+        if self.play.last_part_id == part_id: 
+            self._add_words("end of", sentence_start=True)
+            self._add_title_by_author()
     
     def _add_librivox_trailing_silence(self) -> None:
-        self.plan.addSilence(3000)
+        self.plan.addSilence(4000)
             
     def build_audio_plan(
         self,
-        parts: List[int | None],
-        part_index_offset: int = 0,
-    ) -> tuple[AudioPlan[PlanItem], int]:
+        part_no: int = None
+    ) -> AudioPlan:
         self.plan.addSilence(1000)
-        for idx, part in enumerate(parts):
-            part_id = part_index_offset + idx
-            self._add_librivox_prologue(plan=self.plan, part_id=part_id)
-            self._add_librivox_each_section_prologue(plan=self.plan, part_id=part_id)
+        parts = [self.play.getPart(part_no)] if part_no != None else [p for p in self.play.parts]
+        for part in parts:
+            part_id = part.part_no
+            self._add_librivox_start_of_recording(part_id=part_id)
+            self._add_librivox_start_of_section(part_id=part_id)
 
-            seg_plan, _ = self.build_part_plan(part_filter=part)
+            seg_plan, _ = self.build_part_plan(part_filter=part.part_no)
 
             ## add segments to plan
             for item in seg_plan:
                 if isinstance(item, Chapter):
                     item.offset_ms = self.plan.duration_ms
                     self.plan.addChapter(item)
-                    #self._add_librivox_each_part_title_suffix(plan=plan, part_id=part_id)
                     continue
                 if isinstance(item, Silence):
                     self.plan.addSilence(item.length_ms)
@@ -309,16 +353,17 @@ class PlayPlanBuilder:
                 else:
                     raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
-            if self.part_gap_ms and idx < len(parts) - 1:
-                self.plan.addSilence(self.part_gap_ms)
-
             ## add end of part clips
-            self._add_librivox_endof(plan=self.plan, part_id=part_id)
-            self._add_librivox_epilogue(plan=self.plan, part_id=part_id)
             self.plan.addSilence(1000)
-            self._add_librivox_trailing_silence(plan=self.plan)
+            if self.librivox:
+                self._add_librivox_end_of_section(part_no=part_id)
+                self._add_librivox_end_of_recording(part_id=part_id)
+                self._add_librivox_trailing_silence()
+            else:
+                if self.part_gap_ms and part_id != self.play.parts[-1]:
+                    self.plan.addSilence(self.part_gap_ms)
 
-        return self.plan, self.plan.duration_ms
+        return self.plan
 
     @staticmethod
     def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
@@ -373,7 +418,7 @@ class PlayPlanBuilder:
         return bullets
 
 
-def write_plan(plan: AudioPlan[PlanItem], path: Path) -> None:
+def write_plan(plan: AudioPlan, path: Path) -> None:
     """Persist plan items to a text file for inspection."""
     lines: List[str] = []
     for item in plan:

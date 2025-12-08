@@ -51,7 +51,7 @@ class CalloutClip(Clip):
 
     def __str__(self) -> str:
         if self.path is None:
-            return "[callout missing]"
+            raise RuntimeError(f"callout missing: {self.path}")
         rel = _rel_path(self.path)
         return f"{rel}: {self.clip_id}"
 
@@ -64,9 +64,11 @@ class SegmentClip(Clip):
 
     def __str__(self) -> str:
         if self.path is None:
-            return "[segment missing]"
+            raise RuntimeError(f"segment missing: {self.path}")
         rel = _rel_path(self.path)
-        return f"{rel}: {self.clip_id}:{self.role} - {self.text}"
+        clip_id = f"{self.clip_id}:" if self.clip_id is not None else ''
+        role = f"{self.role} - " if self.role is not None else ''
+        return f"{rel}: {clip_id}{role}{self.text}"
 
 
 @dataclass
