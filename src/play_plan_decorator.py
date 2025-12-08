@@ -212,9 +212,11 @@ class LibrivoxPlayPlanDecorator(PlayPlanDecorator):
     def add_section_epilog(self, part_no: int):
         self.plan.add_silence(self.spacings.paragraph)
         self._add_sentence(f"end of section {part_no}")
+        self.plan.add_silence(self.epilog_trailing_silence_ms)
 
     def add_project_epilog(self, part_no: int):
-        self.add_section_epilog(part_no=part_no)
+        self.plan.add_silence(self.spacings.paragraph)
+        self._add_sentence(f"end of section {part_no}")
         self.plan.add_silence(self.spacings.paragraph)
         self._add_words("end of", sentence_start=True)
         self._add_title_by_author()
