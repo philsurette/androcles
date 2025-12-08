@@ -19,10 +19,8 @@ from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
 import paths
+from play_plan_decorator import PlayPlanDecorator, DefaultPlayPlanDecorator, LibrivoxPlayPlanDecorator
 from spacing import (
-  WORD_PAUSE_MS, 
-  BLOCK_PAUSE_MS, 
-  COMMA_PAUSE_MS, 
   PARAGRAPH_PAUSE_MS,
   CALLOUT_SPACING_MS,
   SEGMENT_SPACING_MS
@@ -42,6 +40,7 @@ class PlayPlanBuilder:
     play: PlayText
     director: CalloutDirector | None = None
     chapters: List[Chapter] | None = None
+    play_plan_decorator: PlayPlanDecorator | None = None
     segment_spacing_ms: int = SEGMENT_SPACING_MS
     include_callouts: bool = False
     callout_spacing_ms: int = CALLOUT_SPACING_MS
@@ -57,6 +56,17 @@ class PlayPlanBuilder:
         if self.chapters is None:
             self.chapters = []
         self.plan = AudioPlan() 
+        if self.play_plan_decorator is None:
+            if self.librivox:
+                self.play_plan_decorator = LibrivoxPlayPlanDecorator(
+                    play = self.play, 
+                    plan = self.plan
+                )
+            else:
+                self.play_plan_decorator = DefaultPlayPlanDecorator(
+                    play = self.play, 
+                    plan = self.plan
+                )
 
     def list_parts(self) -> List[int | None]:
         parts: List[int | None] = []
@@ -112,7 +122,7 @@ class PlayPlanBuilder:
         part_filter: int | None,
         chapters: List[Chapter] | None = None,
         director: CalloutDirector | None = None,
-    ) -> tuple[AudioPlan[PlanItem], int]:
+    ) -> AudioPlan:
         """Build plan items for a given part (or None for preamble)."""
         chapter_map = {c.block_id: c for c in (chapters if chapters is not None else self.chapters or [])}
         inserted_chapters: set[str] = set()
@@ -148,201 +158,21 @@ class PlayPlanBuilder:
                         audio_plan.addChapter(chapter_obj)
                         inserted_chapters.add(block_id)
 
-        return audio_plan, audio_plan.duration_ms
-    
-    def _add_clip(self, 
-            folder: Path, 
-            file_name: str, 
-            text: str, 
-            following_silence_ms: int = 0,
-            ) -> None:
-        path = folder / f"{file_name}.wav"
-        self.plan.addClip(
-            SegmentClip(
-                path=path,
-                text=text,
-                role=None,
-                clip_id=None,
-                length_ms=self.get_audio_length_ms(path, self.length_cache),
-            ),
-            following_silence_ms
-        )
-
-    def _add_snippet(self,
-            file_name: str, 
-            text: str = None, 
-            following_silence_ms: int = 0,
-        ) -> None:
-        if text is None:
-            text = file_name
-        self._add_clip(
-            file_name=file_name,
-            text=text,
-            following_silence_ms=following_silence_ms,
-            folder=paths.GENERAL_SNIPPETS_DIR
-        )
-
-    def _add_words(self,
-            file_name: str, 
-            text: str = None, 
-            sentence_start = False,
-            sentence_end = False,
-            phrase_end = False,
-            following_silence_ms: int = None,
-            folder: Path = paths.GENERAL_SNIPPETS_DIR
-        ) -> None:
-        if text is None:
-            text = file_name
-            if sentence_start is True:
-                text = text.capitalize()
-            if sentence_end is True:
-                text = f"{text}."
-            elif phrase_end is True:
-                text = f"{text},"
-        if following_silence_ms is None:
-            if sentence_end is True:
-                following_silence_ms = BLOCK_PAUSE_MS
-            elif phrase_end is True:
-                following_silence_ms = COMMA_PAUSE_MS
-            else:
-                following_silence_ms = WORD_PAUSE_MS
-        self._add_clip(
-            file_name=file_name,
-            text=text,
-            following_silence_ms=following_silence_ms,
-            folder=folder
-        )
-
-    def _add_sentence(self,
-            file_name: str, 
-            text: str = None, 
-            following_silence_ms: int = BLOCK_PAUSE_MS,
-            folder: Path = paths.GENERAL_SNIPPETS_DIR
-        ) -> None:
-        if text is None:
-            text = f"{file_name.capitalize()}."
-        self._add_clip(
-            file_name=file_name,
-            text=text,
-            following_silence_ms=following_silence_ms,
-            folder=folder
-        )
-
-    def _add_librivox_start_of_recording(self, part_id: int) -> None:
-        if not self.librivox:
-            return
-        if self.play.first_part_id == part_id:
-            self._add_words(f'section {part_id} of', sentence_start=True)
-            self._add_recording(
-                file_name="_TITLE",
-                text=f"""{self.play.title}. """,
-                silence_ms=BLOCK_PAUSE_MS,
-            )
-            self._add_sentence(
-                "this is a LibriVox recording",
-                folder=paths.LIBRIVOX_SNIPPETS_DIR
-            )
-            self._add_sentence(
-                "all LibriVox recordings are in the public domain",
-                folder=paths.LIBRIVOX_SNIPPETS_DIR
-            )
-            self._add_words(
-                "for more information or to volunteer",
-                sentence_start=True,
-                phrase_end=True,
-                folder=paths.LIBRIVOX_SNIPPETS_DIR
-            )
-            self._add_words(
-                "please visit librivox dot org",
-                sentence_end=True,
-                folder=paths.LIBRIVOX_SNIPPETS_DIR
-            )
-            self._add_words(
-                file_name="read by",
-                sentence_start=True
-            )
-            self._add_recording(
-                file_name="_READER",
-                text="Phil Surette.",
-                silence_ms=BLOCK_PAUSE_MS
-            )
-            self._add_title_by_author()
-        
-    def _add_recording(self, 
-                           file_name: str, 
-                           text: str, 
-                           silence_ms: int) -> None:
-        self._add_clip(
-            folder=paths.RECORDINGS_DIR,
-            file_name=file_name,
-            text=text,
-            following_silence_ms=silence_ms      
-        )
-
-    def _add_title_by_author(self):
-        self._add_recording(
-            file_name="_TITLE",
-            text=f"{self.play.title},",
-            silence_ms=COMMA_PAUSE_MS
-        )
-        self._add_words(
-            file_name="by",
-        )
-        self._add_recording(
-            file_name="_AUTHOR",
-            text=f"{self.play.author}.",
-            silence_ms=BLOCK_PAUSE_MS
-        )        
-
-    def _add_librivox_start_of_section(self, part_id: int) -> None:
-        if not self.librivox:
-            return
-        if self.play.first_part_id == part_id:
-            return
-        self._add_words(f"section {part_id} of", sentence_start=True)
-        self._add_title_by_author()
-        self._add_sentence(
-            "this librivox recording is in the public domain",
-            folder=paths.LIBRIVOX_SNIPPETS_DIR
-        )
-    
-    def _add_librivox_end_of_section(self, part_no: int) -> None:
-        if not self.librivox:
-            return
-        self.plan.add_silence(PARAGRAPH_PAUSE_MS)
-        self._add_sentence(f"end of section {part_no}")
-
-    def _add_librivox_end_of_recording(self, part_id: int) -> None:
-        if not self.librivox:
-            return
-        if self.play.last_part_id == part_id: 
-            self._add_words("end of", sentence_start=True)
-            self._add_title_by_author()
-    
-    def _add_leading_silence(self) -> None:
-        if self.librivox:
-            self.plan.add_silence(LIBRIVOX_LEADING_SILENCE_MS)
-        else:
-            self.plan.add_silence(LEADING_SILENCE_MS)
-
-    def _add_trailing_silence(self) -> None:
-        if self.librivox:
-            self.plan.add_silence(LIBRIVOX_TRAILING_SILENCE_MS)
-        else:
-            self.plan.add_silence(TRAILING_SILENCE_MS)
+        return audio_plan
             
     def build_audio_plan(
         self,
         part_no: int = None
     ) -> AudioPlan:
-        self._add_leading_silence()
         parts = [self.play.getPart(part_no)] if part_no != None else [p for p in self.play.parts]
         for part in parts:
             part_id = part.part_no
-            self._add_librivox_start_of_recording(part_id=part_id)
-            self._add_librivox_start_of_section(part_id=part_id)
+            if part_id == self.play.first_part_id:
+                self.play_plan_decorator.add_project_preamble(part_no=part_id)
+            else:                
+                self.play_plan_decorator.add_section_preamble(part_no=part_id)
 
-            seg_plan, _ = self.build_part_plan(part_filter=part.part_no)
+            seg_plan = self.build_part_plan(part_filter=part.part_no)
 
             ## add segments to plan
             for item in seg_plan:
@@ -368,10 +198,10 @@ class PlayPlanBuilder:
 
             ## add end of part clips
             self.plan.add_silence(PARAGRAPH_PAUSE_MS)
-            if self.librivox:
-                self._add_librivox_end_of_section(part_no=part_id)
-                self._add_librivox_end_of_recording(part_id=part_id)
-            self._add_trailing_silence()
+            if self.play.last_part_id == part_id: 
+                self.play_plan_decorator.add_project_epilog(part_no=part_id)
+            else:
+                self.play_plan_decorator.add_section_epilog(part_no=part_id)
 
         return self.plan
 

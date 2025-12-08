@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from pathlib import Path
+from dataclasses import dataclass, field
+from pydub import AudioSegment
 
-
+from typing import Dict
 ROOT = Path(__file__).resolve().parent
 BUILD_ROOT = ROOT.parent / "build"
 LOGS_DIR = BUILD_ROOT / "logs"
@@ -64,9 +66,25 @@ def set_play_name(play_name: str | None = None) -> Path:
     EXTRA_FILES = [PARAGRAPHS_PATH, INDEX_PATH]
     SNIPPETS_DIR = ROOT.parent / 'snippets'
     GENERAL_SNIPPETS_DIR = SNIPPETS_DIR / 'default_narrator'
-    LIBRIVOX_SNIPPETS_DIR = SNIPPETS_DIR / 'librivox'
+    LIBRIVOX_SNIPPETS_DIR = GENERAL_SNIPPETS_DIR / 'librivox'
     return DEFAULT_PLAY
 
+@dataclass
+class Paths:
+    global RECORDINGS_DIR, GENERAL_SNIPPETS_DIR
+    play_recordings: Path = field(default_factory=lambda: RECORDINGS_DIR)
+    audio_snippets: Path = field(default_factory=lambda: GENERAL_SNIPPETS_DIR)
+    cache: Dict[Path, int] = field(default_factory=dict)
+
+    def get_audio_length_ms(self, path: Path) -> int:
+        """Return audio length in ms, caching results (0 if missing)."""
+        if path in self.cache:
+            return self.cache[path]
+        if not path.exists():
+            raise RuntimeError("Audio file missing: %s", path)
+        length = len(AudioSegment.from_file(path))
+        self.cache[path] = length
+        return length
 
 # Initialize module globals with the default play.
 set_play_name(DEFAULT_PLAY_NAME)
