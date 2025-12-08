@@ -2,7 +2,7 @@
 """Clip definitions for audio plan items."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
 import os
@@ -35,7 +35,7 @@ class Clip(ABC):
     role: str | None
     clip_id: str | None
     length_ms: int
-    offset_ms: int
+    offset_ms: int = field(default=0)
 
     @property
     @abstractmethod

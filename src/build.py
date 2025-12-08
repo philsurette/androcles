@@ -12,8 +12,8 @@ import typer
 from play_splitter import PlaySplitter
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
-from play_builder import PlayBuilder, list_parts, compute_output_path
-from play_text import PlayTextParser
+from play_builder import PlayBuilder
+from play_text import PlayTextParser, PlayText, Part
 from markdown_renderer import PlayMarkdownWriter, RoleMarkdownWriter, NarratorMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
@@ -311,18 +311,11 @@ def run_audioplay(
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
-    if part == "_":
-        parts = [None]
-        part_val = None
-    elif part is None:
-        parts = list_parts()
-        part_val = None
+    play: PlayText = PlayTextParser().parse()
+    if part is None:
+        parts = [p.part_no for p in play.parts]
     else:
-        try:
-            part_val = int(part)
-            parts = [part_val]
-        except ValueError:
-            raise typer.BadParameter("Part must be an integer or '_'")
+        parts = [play.getPart(int(part))]
 
     builder = PlayBuilder(
         spacing_ms=segment_spacing_ms,
@@ -335,7 +328,7 @@ def run_audioplay(
         generate_captions=captions,
         librivox=librivox,
     )
-    out_paths = builder.build_audio(parts=parts, part=part_val)
+    out_paths = builder.build_audio(parts=parts, part_no=part_val)
     if normalize_output and generate_audio:
         normalizer = Normalizer()
         for out_path in out_paths:
