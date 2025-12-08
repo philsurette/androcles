@@ -33,7 +33,7 @@ class AudioPlan(List[PI], Generic[PI]):
             offset_ms += following_silence_ms
             self.duration_ms = max(self.duration_ms, offset_ms)
 
-    def addSilence(self, ms: int) -> None:
+    def add_silence(self, ms: int) -> None:
         """Append silence if duration > 0."""
         if ms <= 0:
             return

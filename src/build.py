@@ -20,6 +20,10 @@ from cue_builder import CueBuilder
 from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 
+from spacing import (
+  CALLOUT_SPACING_MS,
+  SEGMENT_SPACING_MS
+)
 
 app = typer.Typer(add_completion=False)
 PLAY_OPTION = typer.Option(
@@ -158,9 +162,9 @@ def generate_timings(play: str | None = PLAY_OPTION) -> None:
 @app.command()
 def audioplay(
     part: str = typer.Option(None, help="Part number to assemble, '_' for preamble, omit for all parts"),
-    segment_spacing_ms: int = typer.Option(1000, help="Silence (ms) to insert between segments"),
+    segment_spacing_ms: int = typer.Option(SEGMENT_SPACING_MS, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
-    callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between callout and line"),
+    callout_spacing_ms: int = typer.Option(CALLOUT_SPACING_MS, help="Silence (ms) between callout and line"),
     minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
     captions: bool = typer.Option(True, help="Generate captions (WebVTT) and mux into mp4 when possible"),
     generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),
@@ -299,9 +303,9 @@ def run_generate_timings():
 def run_audioplay(
     *,
     part: str | None = None,
-    segment_spacing_ms: int = 1000,
+    segment_spacing_ms: int = 500,
     callouts: bool = True,
-    callout_spacing_ms: int = 300,
+    callout_spacing_ms: int = 125,
     minimal_callouts: bool = True,
     captions: bool = True,
     generate_audio: bool = True,

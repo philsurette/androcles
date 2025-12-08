@@ -62,7 +62,7 @@ def test_librivox_audio_plans_match_expected(tmp_path: pathlib.Path) -> None:
             play=play,
             director=director if include_callouts else NoCalloutDirector(play),
             chapters=chapters,
-            spacing_ms=1000,
+            segment_spacing_ms=1000,
             include_callouts=include_callouts,
             callout_spacing_ms=300,
             minimal_callouts=minimal_callouts,

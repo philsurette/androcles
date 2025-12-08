@@ -19,12 +19,21 @@ from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
 import paths
+from spacing import (
+  WORD_PAUSE_MS, 
+  BLOCK_PAUSE_MS, 
+  COMMA_PAUSE_MS, 
+  PARAGRAPH_PAUSE_MS,
+  CALLOUT_SPACING_MS,
+  SEGMENT_SPACING_MS
+)
+
+LEADING_SILENCE_MS = 500
+TRAILING_SILENCE_MS = 1000
+LIBRIVOX_LEADING_SILENCE_MS = 1000
+LIBRIVOX_TRAILING_SILENCE_MS = 5000
 
 IndexEntry = Tuple[int | None, int, str]
-
-WORD_PAUSE_MS = 300
-BLOCK_PAUSE_MS = 1000
-COMMA_PAUSE_MS = 500
 
 @dataclass
 class PlayPlanBuilder:
@@ -33,9 +42,9 @@ class PlayPlanBuilder:
     play: PlayText
     director: CalloutDirector | None = None
     chapters: List[Chapter] | None = None
-    spacing_ms: int = 0
+    segment_spacing_ms: int = SEGMENT_SPACING_MS
     include_callouts: bool = False
-    callout_spacing_ms: int = 300
+    callout_spacing_ms: int = CALLOUT_SPACING_MS
     minimal_callouts: bool = False
     part_gap_ms: int = 0
     librivox: bool = False
@@ -90,7 +99,7 @@ class PlayPlanBuilder:
             else:
                 length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
             is_last_seg = seg_idx == len(block_segments) - 1
-            gap = self.spacing_ms if self.spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
+            gap = self.segment_spacing_ms if self.segment_spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
             plan_items.addClip(
                 SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
                 following_silence_ms=gap,
@@ -223,9 +232,7 @@ class PlayPlanBuilder:
         if not self.librivox:
             return
         if self.play.first_part_id == part_id:
-            self._add_words('section', sentence_start=True)
-            self._add_words(str(part_id))
-            self._add_words('of')
+            self._add_words(f'section {part_id} of', sentence_start=True)
             self._add_recording(
                 file_name="_TITLE",
                 text=f"""{self.play.title}. """,
@@ -246,7 +253,7 @@ class PlayPlanBuilder:
                 folder=paths.LIBRIVOX_SNIPPETS_DIR
             )
             self._add_words(
-                "please visit librivox.org",
+                "please visit librivox dot org",
                 sentence_end=True,
                 folder=paths.LIBRIVOX_SNIPPETS_DIR
             )
@@ -259,7 +266,7 @@ class PlayPlanBuilder:
                 text="Phil Surette.",
                 silence_ms=BLOCK_PAUSE_MS
             )
-            self._add_title_by_author
+            self._add_title_by_author()
         
     def _add_recording(self, 
                            file_name: str, 
@@ -292,9 +299,7 @@ class PlayPlanBuilder:
             return
         if self.play.first_part_id == part_id:
             return
-        self._add_words("section", sentence_start=True)
-        self._add_words(str(part_id))
-        self._add_words("of")
+        self._add_words(f"section {part_id} of", sentence_start=True)
         self._add_title_by_author()
         self._add_sentence(
             "this librivox recording is in the public domain",
@@ -304,9 +309,8 @@ class PlayPlanBuilder:
     def _add_librivox_end_of_section(self, part_no: int) -> None:
         if not self.librivox:
             return
-        self._add_words("end of", sentence_start=True)
-        self._add_words("section")
-        self._add_words(str(part_no), sentence_end=True)
+        self.plan.add_silence(PARAGRAPH_PAUSE_MS)
+        self._add_sentence(f"end of section {part_no}")
 
     def _add_librivox_end_of_recording(self, part_id: int) -> None:
         if not self.librivox:
@@ -315,14 +319,23 @@ class PlayPlanBuilder:
             self._add_words("end of", sentence_start=True)
             self._add_title_by_author()
     
-    def _add_librivox_trailing_silence(self) -> None:
-        self.plan.addSilence(4000)
+    def _add_leading_silence(self) -> None:
+        if self.librivox:
+            self.plan.add_silence(LIBRIVOX_LEADING_SILENCE_MS)
+        else:
+            self.plan.add_silence(LEADING_SILENCE_MS)
+
+    def _add_trailing_silence(self) -> None:
+        if self.librivox:
+            self.plan.add_silence(LIBRIVOX_TRAILING_SILENCE_MS)
+        else:
+            self.plan.add_silence(TRAILING_SILENCE_MS)
             
     def build_audio_plan(
         self,
         part_no: int = None
     ) -> AudioPlan:
-        self.plan.addSilence(1000)
+        self._add_leading_silence()
         parts = [self.play.getPart(part_no)] if part_no != None else [p for p in self.play.parts]
         for part in parts:
             part_id = part.part_no
@@ -338,7 +351,7 @@ class PlayPlanBuilder:
                     self.plan.addChapter(item)
                     continue
                 if isinstance(item, Silence):
-                    self.plan.addSilence(item.length_ms)
+                    self.plan.add_silence(item.length_ms)
                 elif isinstance(item, (CalloutClip, SegmentClip)):
                     self.plan.addClip(
                         item.__class__(
@@ -354,14 +367,11 @@ class PlayPlanBuilder:
                     raise RuntimeError(f"Unexpected plan item type: {type(item)}")
 
             ## add end of part clips
-            self.plan.addSilence(1000)
+            self.plan.add_silence(PARAGRAPH_PAUSE_MS)
             if self.librivox:
                 self._add_librivox_end_of_section(part_no=part_id)
                 self._add_librivox_end_of_recording(part_id=part_id)
-                self._add_librivox_trailing_silence()
-            else:
-                if self.part_gap_ms and part_id != self.play.parts[-1]:
-                    self.plan.addSilence(self.part_gap_ms)
+            self._add_trailing_silence()
 
         return self.plan
 
