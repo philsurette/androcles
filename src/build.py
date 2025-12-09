@@ -165,7 +165,7 @@ def audioplay(
     segment_spacing_ms: int = typer.Option(SEGMENT_SPACING_MS, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
     callout_spacing_ms: int = typer.Option(CALLOUT_SPACING_MS, help="Silence (ms) between callout and line"),
-    minimal_callouts: bool = typer.Option(True, help="Reduce callouts during alternating two-person dialogue"),
+    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
     captions: bool = typer.Option(True, help="Generate captions (WebVTT) and mux into mp4 when possible"),
     generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),
     librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),

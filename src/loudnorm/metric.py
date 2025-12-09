@@ -34,12 +34,22 @@ class Metrics:
                 output_unit="LUFS",
                 option='i',  
                 is_controllable=True,
+                # original settings
+            # target_range=Target(
+                #     too_low=-20, 
+                #     low=-16, 
+                #     high=-14, 
+                #     too_high=-10, 
+                #     target=-14
+                # )
+                
+                # 5db quieter for librivox 
                 target_range=Target(
-                    too_low=-20, 
-                    low=-16, 
-                    high=-14, 
-                    too_high=-10, 
-                    target=-14
+                    too_low=-27, 
+                    low=-23, 
+                    high=-21, 
+                    too_high=-17, 
+                    target=-21
                 )
             ),
             Metric(
