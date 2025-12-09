@@ -68,6 +68,7 @@ class Normalizer:
             "-i", input_file,
             "-map_metadata",
             "0",
+            "-ar", "44100",
             "-af", #audio format
             filter_spec,
         ]
