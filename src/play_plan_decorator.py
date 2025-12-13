@@ -228,10 +228,10 @@ class DefaultPlayPlanDecorator(PlayPlanDecorator):
         return
     
     def add_project_preamble(self, part_no: int):
-        self.plan._add_silenct(self.prologue_leeading_silence)
+        self.plan.add_silence(self.preamble_leading_silence_ms)
 
     def add_section_epilog(self, part_no: int):
         return
 
     def add_project_epilog(self, part_no: int):
-        self.plan._add_silence(self.epilog_trailing_silence)
+        self.plan.add_silence(self.epilogue_trailing_silence_ms)

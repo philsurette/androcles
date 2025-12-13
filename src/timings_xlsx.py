@@ -95,8 +95,8 @@ def write_sheet(ws, headers, rows):
             cell.alignment = cell.alignment.copy(horizontal="right")
 
 
-def generate_xlsx():
-    rows = compute_rows()
+def generate_xlsx(librivox: bool):
+    rows = compute_rows(librivox)
     headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "src_offset", "role", "text"]
     wb = Workbook()
     ws = wb.active

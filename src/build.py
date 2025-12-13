@@ -153,10 +153,13 @@ def check_recording(play: str | None = PLAY_OPTION) -> None:
 
 
 @app.command("generate-timings")
-def generate_timings(play: str | None = PLAY_OPTION) -> None:
+def generate_timings(
+    play: str | None = PLAY_OPTION,
+    librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
+    ) -> None:
     paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
-    run_generate_timings()
+    run_generate_timings(librivox=librivox)
 
 
 @app.command()
@@ -296,8 +299,8 @@ def run_check_recording():
         typer.echo(line)
 
 
-def run_generate_timings():
-    generate_xlsx()
+def run_generate_timings(librivox: bool):
+    generate_xlsx(librivox)
 
 
 def run_audioplay(

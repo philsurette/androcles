@@ -31,12 +31,12 @@ class PlaySplitter:
 
     def split_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
         total = 0.0
-        for role in self.play_text.getRoles():
-            if role_filter and role_filter != role:
+        for role_name in [r.name for r in self.play_text.getRoles()]:
+            if role_filter and role_filter != role_name:
                 continue
             splitter = RoleSplitter(
                 play_text=self.play_text,
-                role = role.name,
+                role = role_name,
                 min_silence_ms=self.min_silence_ms,
                 silence_thresh=self.silence_thresh,
                 chunk_size=self.chunk_size,
