@@ -107,8 +107,8 @@ class RoleCues:
                 previous_block = blk if isinstance(blk, RoleBlock) else None
                 continue
 
-            role_name = blk.role
-            if role_name.startswith("_"):
+            speaker_list = blk.speakers if getattr(blk, "speakers", None) else [blk.role]
+            if any(r.startswith("_") for r in speaker_list):
                 previous_block = blk
                 continue
 
@@ -138,7 +138,8 @@ class RoleCues:
                     continue
                 lines.append(f"- {text}")
 
-            role_entries.setdefault(role_name, []).append("\n".join(lines))
+            for role_name in speaker_list:
+                role_entries.setdefault(role_name, []).append("\n".join(lines))
             previous_block = blk
 
         for role, entries in role_entries.items():

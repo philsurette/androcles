@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from typing import Iterable, TypeVar, Generic, List
 
-from clip import Clip, Silence
+from clip import Clip, Silence, ParallelClips
 from chapter_builder import Chapter
 from pathlib import Path
 
-PlanItem = Clip | Chapter
+PlanItem = Clip | Chapter | ParallelClips
 PI = TypeVar("PI", bound=PlanItem)
 
 class AudioPlan(List[PI], Generic[PI]):
@@ -46,4 +46,23 @@ class AudioPlan(List[PI], Generic[PI]):
         """Add a chapter marker (append or insert) and update duration if offset is known."""
         chapter.offset_ms = self.duration_ms
         self.append(chapter)
+
+    def add_parallel(self, clips: List[Clip], following_silence_ms: int = 0) -> ParallelClips:
+        """Append a group of clips that should be played together."""
+        if not clips:
+            return ParallelClips(clips=[], offset_ms=self.duration_ms, length_ms=0)
+        start = self.duration_ms
+        max_len = 0
+        for clip in clips:
+            clip.offset_ms = start
+            max_len = max(max_len, clip.length_ms)
+        group = ParallelClips(clips=clips, offset_ms=start, length_ms=max_len)
+        self.append(group)
+        end = start + max_len
+        self.duration_ms = max(self.duration_ms, end)
+        if following_silence_ms > 0:
+            self.append(Silence(following_silence_ms, offset_ms=end))
+            end += following_silence_ms
+            self.duration_ms = max(self.duration_ms, end)
+        return group
       

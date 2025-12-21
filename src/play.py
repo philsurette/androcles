@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 import paths
 from block_id import BlockId
-from segment import DirectionSegment, SpeechSegment
+from segment import DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
 
 @dataclass
@@ -37,6 +37,9 @@ class Role:
             key = (blk.block_id.part_id, blk.block_id.block_no)
             for seg in blk.segments:
                 if isinstance(seg, SpeechSegment) and seg.role == self.name:
+                    seg_id = f"{'' if key[0] is None else key[0]}_{key[1]}_{seg.segment_id.segment_no}"
+                    mapping.setdefault(key, []).append(seg_id)
+                elif isinstance(seg, SimultaneousSegment) and self.name in getattr(seg, "roles", []):
                     seg_id = f"{'' if key[0] is None else key[0]}_{key[1]}_{seg.segment_id.segment_no}"
                     mapping.setdefault(key, []).append(seg_id)
         return mapping
@@ -97,9 +100,11 @@ class Play(List[Block]):
             if limit_to_current_part and blk.block_id.part_id != block_id.part_id:
                 continue
             if isinstance(blk, RoleBlock):
-                if not include_meta_roles and blk.role.startswith("_"):
-                    continue
-                roles.append(blk.role)
+                speaker_list = blk.speakers if blk.speakers else [blk.role]
+                for role in speaker_list:
+                    if not include_meta_roles and role.startswith("_"):
+                        continue
+                    roles.append(role)
         distinct: List[str] = []
         for role in reversed(roles):
             if role not in distinct:
@@ -130,13 +135,15 @@ class Play(List[Block]):
                 self._part_order.append(pid)
             self._parts[pid].blocks.append(blk)
             if isinstance(blk, RoleBlock):
-                if blk.role not in self._roles:
-                    if blk.role == "_NARRATOR":
-                        self._roles[blk.role] = NarratorRole(name=blk.role, blocks=[], meta=True)
-                    else:
-                        self._roles[blk.role] = Role(name=blk.role, blocks=[])
-                    self._role_order.append(blk.role)
-                self._roles[blk.role].blocks.append(blk)
+                speaker_list = blk.speakers if blk.speakers else [blk.role]
+                for role_name in speaker_list:
+                    if role_name not in self._roles:
+                        if role_name == "_NARRATOR":
+                            self._roles[role_name] = NarratorRole(name=role_name, blocks=[], meta=True)
+                        else:
+                            self._roles[role_name] = Role(name=role_name, blocks=[])
+                        self._role_order.append(role_name)
+                    self._roles[role_name].blocks.append(blk)
 
     def getPart(self, part_id: int | None) -> Part | None:
         """Return the Part object for the given id."""
@@ -222,7 +229,9 @@ class Play(List[Block]):
                 has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in block.segments)
                 if has_inline_dirs:
                     entries.append((part, block_no, "_NARRATOR"))
-                entries.append((part, block_no, block.role))
+                speaker_list = block.speakers if block.speakers else [block.role]
+                for role in speaker_list:
+                    entries.append((part, block_no, role))
             else:
                 entries.append((part, block_no, "_NARRATOR"))
         return entries
@@ -326,7 +335,12 @@ class PlayTextEncoder:
             elif isinstance(block, DirectionBlock):
                 lines.append(f"_{block.text}_")
             elif isinstance(block, RoleBlock):
-                lines.append(f"{block.role}. {block.text}")
+                speakers = block.speakers if block.speakers else [block.role]
+                if len(speakers) > 1:
+                    prefix = ". ".join(speakers) + "."
+                    lines.append(f"{prefix} {block.text}")
+                else:
+                    lines.append(f"{block.role}. {block.text}")
             else:
                 raise RuntimeError(f"Unexpected block type during encoding: {type(block)}")
         content = "\n".join(lines) + ("\n" if lines else "")

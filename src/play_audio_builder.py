@@ -9,7 +9,7 @@ from typing import Dict, List, Tuple
 from pydub import AudioSegment
 
 from play_plan_builder import PlanItem, Silence, Chapter, PlayPlanBuilder
-from clip import CalloutClip, SegmentClip
+from clip import CalloutClip, SegmentClip, ParallelClips
 
 
 def export_with_chapters(
@@ -95,6 +95,25 @@ def instantiate_plan(
                 chapters.append((current_chapter_start, len(audio), current_chapter_title or ""))
             current_chapter_title = item.title or ""
             current_chapter_start = len(audio)
+            continue
+        if isinstance(item, ParallelClips):
+            if not item.clips:
+                continue
+            segs = []
+            max_len = 0
+            for clip in item.clips:
+                if clip.path is None:
+                    continue
+                seg = PlayPlanBuilder.load_audio_by_path(clip.path, cache)
+                if seg:
+                    segs.append(seg)
+                    max_len = max(max_len, len(seg))
+            if not segs:
+                continue
+            base = AudioSegment.silent(duration=max_len)
+            for seg in segs:
+                base = base.overlay(seg)
+            audio += base
             continue
         if isinstance(item, Silence):
             if item.length_ms > 0:

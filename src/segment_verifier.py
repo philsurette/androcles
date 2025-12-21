@@ -13,7 +13,7 @@ from pydub import AudioSegment
 import paths
 from play_plan_builder import PlayPlanBuilder
 from play import PlayTextParser, Play
-from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
+from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import RoleBlock, MetaBlock, DescriptionBlock, DirectionBlock
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
@@ -79,7 +79,9 @@ class SegmentVerifier:
                     if not text or text in {".", ",", ":", ";"}:
                         continue
                     seq += 1
-                    if isinstance(seg, SpeechSegment) and seg.role == role:
+                    if (isinstance(seg, SpeechSegment) and seg.role == role) or (
+                        isinstance(seg, SimultaneousSegment) and role in getattr(seg, "roles", [])
+                    ):
                         rows.append(
                             {
                                 "id": f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}_{blk.block_id.block_no}_{seq}",
@@ -196,6 +198,14 @@ class SegmentVerifier:
     def _build_plan_start_map(self) -> None:
         """Build a mapping clip_id -> start seconds using the provided plan."""
         for item in self.plan:
+            if hasattr(item, "clips"):
+                for clip in getattr(item, "clips", []):
+                    clip_id = getattr(clip, "clip_id", None)
+                    if not clip_id:
+                        continue
+                    norm_id = str(clip_id).replace(":", "_")
+                    self._plan_start_map[norm_id] = round(getattr(clip, "offset_ms", 0) / 1000.0, 1)
+                continue
             if not hasattr(item, "clip_id") or not getattr(item, "clip_id"):
                 continue
             clip_id = str(getattr(item, "clip_id"))

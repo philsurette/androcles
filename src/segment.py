@@ -38,3 +38,14 @@ class SpeechSegment(Segment):
 
     def __str__(self) -> str:
         return f"{self.role}: {self.text}"
+
+
+@dataclass
+class SimultaneousSegment(Segment):
+    """A single line spoken together by multiple roles."""
+
+    roles: list[str]
+
+    def __str__(self) -> str:
+        roles = " + ".join(self.roles)
+        return f"{roles}: {self.text}"

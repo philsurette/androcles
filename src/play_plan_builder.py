@@ -15,8 +15,9 @@ from callout_director import (
     NoCalloutDirector,
 )
 from play import Play, Block, MetaBlock
+from segment import SimultaneousSegment
 from chapter_builder import Chapter
-from clip import SegmentClip, CalloutClip, SegmentClip, Silence
+from clip import SegmentClip, CalloutClip, Silence, ParallelClips
 from audio_plan import AudioPlan, PlanItem
 import paths
 from play_plan_decorator import PlayPlanDecorator, DefaultPlayPlanDecorator, LibrivoxPlayPlanDecorator
@@ -32,6 +33,15 @@ LIBRIVOX_LEADING_SILENCE_MS = 1000
 LIBRIVOX_TRAILING_SILENCE_MS = 5000
 
 IndexEntry = Tuple[int | None, int, str]
+
+@dataclass
+class BlockBullet:
+    """Represents a block segment ready for planning."""
+
+    segment_no: int
+    owners: List[str]
+    text: str
+    simultaneous: bool = False
 
 @dataclass
 class PlayPlanBuilder:
@@ -95,25 +105,43 @@ class PlayPlanBuilder:
             # Place callout before the block with a short gap into the first line.
             plan_items.addClip(callout_clip, following_silence_ms=self.callout_spacing_ms)
 
-        block_segments: List[Tuple[str, str, str]] = []
         bullets = self.read_block_bullets(block)
-        for seg_no, owner, text in bullets:
-            sid = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{seg_no}"
-            block_segments.append((owner, sid, text))
-
-        for seg_idx, (role, seg_id, text) in enumerate(block_segments):
-            wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
-            if not wav_path.exists():
-                logging.error("Missing snippet %s for role %s", seg_id, role)
-                length_ms = 0
-            else:
-                length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
-            is_last_seg = seg_idx == len(block_segments) - 1
+        for b_idx, bullet in enumerate(bullets):
+            seg_id = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}:{bullet.segment_no}"
+            is_last_seg = b_idx == len(bullets) - 1
             gap = self.segment_spacing_ms if self.segment_spacing_ms > 0 and not (is_last_block and is_last_seg) else 0
-            plan_items.addClip(
-                SegmentClip(path=wav_path, text=text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
-                following_silence_ms=gap,
-            )
+            if bullet.simultaneous or len(bullet.owners) > 1:
+                clips: List[SegmentClip] = []
+                for role in bullet.owners:
+                    wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+                    if not wav_path.exists():
+                        logging.error("Missing snippet %s for role %s", seg_id, role)
+                        length_ms = 0
+                    else:
+                        length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
+                    clips.append(
+                        SegmentClip(
+                            path=wav_path,
+                            text=bullet.text,
+                            role=role,
+                            clip_id=seg_id,
+                            length_ms=length_ms,
+                            offset_ms=0,
+                        )
+                    )
+                plan_items.add_parallel(clips, following_silence_ms=gap)
+            else:
+                role = bullet.owners[0]
+                wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+                if not wav_path.exists():
+                    logging.error("Missing snippet %s for role %s", seg_id, role)
+                    length_ms = 0
+                else:
+                    length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
+                plan_items.addClip(
+                    SegmentClip(path=wav_path, text=bullet.text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
+                    following_silence_ms=gap,
+                )
 
         return list(plan_items[start_idx:])
 
@@ -157,6 +185,20 @@ class PlayPlanBuilder:
                         )
                         audio_plan.addChapter(chapter_obj)
                         inserted_chapters.add(block_id)
+                elif isinstance(item, ParallelClips):
+                    for clip in item.clips:
+                        if not getattr(clip, "clip_id", None):
+                            continue
+                        block_id = ":".join(str(clip.clip_id).split(":")[:2])
+                        if block_id in chapter_map and block_id not in inserted_chapters:
+                            chapter_template = chapter_map[block_id]
+                            chapter_obj = Chapter(
+                                block_id=chapter_template.block_id,
+                                title=chapter_template.title,
+                                offset_ms=item.offset_ms,
+                            )
+                            audio_plan.addChapter(chapter_obj)
+                            inserted_chapters.add(block_id)
 
         return audio_plan
             
@@ -182,6 +224,20 @@ class PlayPlanBuilder:
                     continue
                 if isinstance(item, Silence):
                     self.plan.add_silence(item.length_ms)
+                elif isinstance(item, ParallelClips):
+                    clips: List[SegmentClip] = []
+                    for clip in item.clips:
+                        clips.append(
+                            clip.__class__(
+                                path=clip.path,
+                                text=clip.text,
+                                role=clip.role,
+                                clip_id=clip.clip_id,
+                                length_ms=clip.length_ms,
+                                offset_ms=self.plan.duration_ms,
+                            )
+                        )
+                    self.plan.add_parallel(clips, following_silence_ms=0)
                 elif isinstance(item, (CalloutClip, SegmentClip)):
                     self.plan.addClip(
                         item.__class__(
@@ -229,16 +285,16 @@ class PlayPlanBuilder:
         cache[path] = length
         return length
 
-    def read_block_bullets(self, block_obj: Block) -> List[Tuple[int, str, str]]:
+    def read_block_bullets(self, block_obj: Block) -> List[BlockBullet]:
         """
-        Return tuples of (segment_no, owner, text) for the given block from in-memory PlayText.
+        Return BlockBullet entries for the given block from in-memory PlayText.
         Owner is derived from the segment role or block owner for directions/meta.
         """
         blk = block_obj
         if not blk or not hasattr(blk, "segments"):
             logging.warning("Block %s not found in play text", getattr(blk, "block_id", None))
             return []
-        bullets: List[Tuple[int, str, str]] = []
+        bullets: List[BlockBullet] = []
         for seg in getattr(blk, "segments", []):
             text = getattr(seg, "text", "").strip()
             if not text:
@@ -250,11 +306,43 @@ class PlayPlanBuilder:
                 text = m.group(1).strip() if m else cleaned
             # Merge standalone trivial punctuation into previous text.
             if text in {".", ",", ":", ";"} and bullets:
-                prev_no, prev_owner, prev_text = bullets[-1]
-                bullets[-1] = (prev_no, prev_owner, prev_text + text)
+                prev = bullets[-1]
+                bullets[-1] = BlockBullet(
+                    segment_no=prev.segment_no,
+                    owners=prev.owners,
+                    text=prev.text + text,
+                    simultaneous=prev.simultaneous,
+                )
                 continue
-            owner = blk.owner_for_text(text) if hasattr(blk, "owner_for_text") else (getattr(seg, "role", None) or getattr(blk, "owner", "_NARRATOR"))
-            bullets.append((seg.segment_id.segment_no, owner or "_NARRATOR", text))
+
+            if isinstance(seg, SimultaneousSegment):
+                owners = list(getattr(seg, "roles", [])) or []
+                if not owners:
+                    owners = [getattr(blk, "role", "_NARRATOR")]
+                bullets.append(
+                    BlockBullet(
+                        segment_no=seg.segment_id.segment_no,
+                        owners=owners,
+                        text=text,
+                        simultaneous=True,
+                    )
+                )
+                continue
+
+            owner = None
+            if hasattr(seg, "role"):
+                owner = getattr(seg, "role", None)
+            if not owner:
+                owner = blk.owner_for_text(text) if hasattr(blk, "owner_for_text") else getattr(blk, "owner", "_NARRATOR")
+            if not owner:
+                owner = "_NARRATOR"
+            bullets.append(
+                BlockBullet(
+                    segment_no=seg.segment_id.segment_no,
+                    owners=[owner],
+                    text=text,
+                )
+            )
         return bullets
 
 
@@ -267,6 +355,9 @@ def write_plan(plan: AudioPlan, path: Path) -> None:
         prefix = f"{mins:02d}:{secs_ms/1000:06.3f} "
         if isinstance(item, (CalloutClip, SegmentClip, Silence)):
             lines.append(prefix + str(item))
+        elif isinstance(item, ParallelClips):
+            for clip in item.clips:
+                lines.append(prefix + f"[parallel] {clip}")
         elif isinstance(item, Chapter):
             suffix = f" {item.title}" if item.title else ""
             lines.append(f"{prefix}[chapter]{suffix}")
@@ -274,8 +365,3 @@ def write_plan(plan: AudioPlan, path: Path) -> None:
     if content:
         content += "\n"
     path.write_text(content, encoding="utf-8")
-
-
-
-
-

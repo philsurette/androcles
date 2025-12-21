@@ -6,7 +6,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import List
 
-from clip import SegmentClip, CalloutClip
+from clip import SegmentClip, CalloutClip, ParallelClips
 from play_plan_builder import PlanItem
 from audio_plan import AudioPlan
 
@@ -40,6 +40,18 @@ class CaptionBuilder:
                 lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
                 lines.append(text)
                 lines.append("")  # blank separator
+                idx += 1
+            elif isinstance(item, ParallelClips):
+                texts = [(c.text or "").strip() for c in item.clips if (c.text or "").strip()]
+                if not texts:
+                    continue
+                label = texts[0]
+                start_ms = item.offset_ms
+                end_ms = item.offset_ms + item.length_ms
+                lines.append(str(idx))
+                lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
+                lines.append(label)
+                lines.append("")
                 idx += 1
             elif self.include_callouts and isinstance(item, CalloutClip):
                 label = (item.text or "").strip() or (item.clip_id or "").strip()

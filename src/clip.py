@@ -87,3 +87,20 @@ class Silence(Clip):
 
     def __str__(self) -> str:
         return f"[silence {self.length_ms}ms]"
+
+
+@dataclass
+class ParallelClips:
+    """Container for clips that should play at the same offset."""
+
+    clips: list[Clip]
+    offset_ms: int = 0
+    length_ms: int = 0
+
+    @property
+    def kind(self) -> str:
+        return "parallel"
+
+    def __str__(self) -> str:
+        clip_str = " | ".join(str(c) for c in self.clips)
+        return f"[parallel] {clip_str}"

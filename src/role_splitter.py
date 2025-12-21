@@ -17,7 +17,7 @@ import os
 from typing import List
 import logging
 from dataclasses import dataclass
-from play import RoleBlock, SpeechSegment
+from play import RoleBlock, SpeechSegment, SimultaneousSegment
 from segment_splitter import SegmentSplitter
 
 
@@ -44,5 +44,7 @@ class RoleSplitter(SegmentSplitter):
                     continue
                 seq += 1
                 if isinstance(seg, SpeechSegment) and seg.role == self.role:
+                    ids.append(str(seg.segment_id))
+                elif isinstance(seg, SimultaneousSegment) and self.role in getattr(seg, "roles", []):
                     ids.append(str(seg.segment_id))
         return ids

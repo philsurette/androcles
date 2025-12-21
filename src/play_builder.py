@@ -35,7 +35,7 @@ class PlayBuilder:
             return self._build_librivox()
 
         out_path = self.compute_output_path(part_no, self.audio_format)
-        chapters = ChapterBuilder().build()
+        chapters = ChapterBuilder(play=self.play).build()
         director: CalloutDirector = (
             ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )
