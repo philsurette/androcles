@@ -1061,13 +1061,13 @@ and trot along spry. (_The soldiers fall in. The Christians rise._)
 
 __A man with an ox goad comes running through the central arch.__
 
-OX DRIVER.
+OX-DRIVER.
 Here, you soldiers! clear out of the way for the Emperor.
 
 CENTURION.
 Emperor! Where’s the Emperor? You ain’t the Emperor, are you?
 
-OX DRIVER.
+OX-DRIVER.
 It’s the menagerie service. My team of oxen is drawing the new lion to
 the Coliseum. You clear the road.
 
@@ -1075,7 +1075,7 @@ CENTURION.
 What! Go in after you in your dust, with half the town at the heels of
 you and your lion! Not likely. We go first.
 
-OX DRIVER.
+OX-DRIVER.
 The menagerie service is the Emperor’s personal retinue. You clear out,
 I tell you.
 
@@ -1154,7 +1154,7 @@ them.]]
 
 __The Call Boy enters from the passage.__
 
-CALL BOY.
+CALL-BOY.
 Number six. Retiarius versus Secutor.
 
 __The gladiator with the net picks it up. The gladiator with the helmet
@@ -1564,7 +1564,7 @@ comes from the passage, followed by three attendants carrying
 respectively a bundle of swords, some helmets, and some breastplates
 and pieces of armor which they throw down in a heap._)
 
-CALL BOY.
+CALL-BOY.
 By your leave, Caesar. Number eleven! Gladiators and Christians!
 
 __Ferrovius springs up, ready for martyrdom. The other Christians take
@@ -1716,7 +1716,7 @@ __Before the Editor can retort, the Call Boy rushes up through the
 passage; and the Captain comes from the Emperor’s box and descends the
 steps.__
 
-CALL BOY.
+CALL-BOY.
 In with you: into the arena. The stage is waiting.
 
 CAPTAIN.
@@ -1954,7 +1954,7 @@ ANDROCLES.
 Oh, don’t ask me, don’t ask me. Something too dreadful. Oh! (_He
 crouches by her and hides his face in her robe, sobbing._)
 
-CALL BOY. (_rushing through from the passage as before_) Ropes and
+CALL-BOY. (_rushing through from the passage as before_) Ropes and
 hooks there! Ropes and hooks.
 
 EDITOR.
@@ -1962,9 +1962,9 @@ Well, need you excite yourself about it? (_Another burst of applause._)
 
 __Two slaves in Etruscan masks, with ropes and drag hooks, hurry in.__
 
-ONE OF THE SLAVES. How many dead?
+ONE-OF-THE-SLAVES. How many dead?
 
-CALL BOY.
+CALL-BOY.
 Six. (_The slave blows a whistle twice; and four more masked slaves
 rush through into the arena with the same apparatus_) And the basket.
 Bring the baskets. (_The slave whistles three times, and runs through
@@ -1973,7 +1973,7 @@ the passage with his companion._)
 CAPTAIN.
 Who are the baskets for?
 
-CALL BOY.
+CALL-BOY.
 For the whip. He’s in pieces. They’re all in pieces, more or less.
 
 __Lavinia hides her face.__
@@ -1982,7 +1982,7 @@ __Two more masked slaves come in with a basket and follow the others
 into the arena, as the Call Boy turns to the gladiators and exclaims,
 exhausted__
 
-CALL BOY.
+CALL-BOY.
 Boys, he’s killed the lot.
 
 CAESAR.
@@ -2062,7 +2062,7 @@ Why not that little Greek chap? He’s not a Christian: he’s a sorcerer.
 CAESAR.
 The very thing: he will do very well.
 
-CALL BOY. (_issuing from the passage_) Number twelve. The Christian
+CALL-BOY. (_issuing from the passage_) Number twelve. The Christian
 for the new lion.
 
 ANDROCLES.
@@ -2293,7 +2293,8 @@ wide a berth as possible._)
 
 ## 3: Unnamed Appendix ##
 
-[[In this play I have represented one of the Roman persecutions of the
+SHAW.
+In this play I have represented one of the Roman persecutions of the
 early Christians, not as the conflict of a false theology with a true,
 but as what all such persecutions essentially are: an attempt to
 suppress a propaganda that seemed to threaten the interests involved in
@@ -2312,9 +2313,10 @@ as other people do. The second is by leading the herd to war, which
 immediately and infallibly makes them forget everything, even their
 most cherished and hardwon public liberties and private interests, in
 the irresistible surge of their pugnacity and the tense pre-occupation
-of their terror.]]
+of their terror.
 
-[[There is no reason to believe that there was anything more in the Roman
+SHAW.
+There is no reason to believe that there was anything more in the Roman
 persecutions than this. The attitude of the Roman Emperor and the
 officers of his staff towards the opinions at issue were much the same
 as those of a modern British Home Secretary towards members of the
@@ -2329,9 +2331,10 @@ religious sensibility; but the thing is done because the governing
 classes, provided only the law against blasphemy is not applied to
 themselves, strongly approve of such persecution because it enables
 them to represent their own privileges as part of the religion of the
-country.]]
+country.
 
-[[Therefore my martyrs are the martyrs of all time, and my persecutors
+SHAW.
+Therefore my martyrs are the martyrs of all time, and my persecutors
 the persecutors of all time. My Emperor, who has no sense of the value
 of common people’s lives, and amuses himself with killing as carelessly
 as with sparing, is the sort of monster you can make of any
@@ -2340,9 +2343,10 @@ on by such idols that one of the leading pastors of the Free Churches
 in London denounced my play on the ground that my persecuting Emperor
 is a very fine fellow, and the persecuted Christians ridiculous. From
 which I conclude that a popular pulpit may be as perilous to a man’s
-soul as an imperial throne.]]
+soul as an imperial throne.
 
-[[All my articulate Christians, the reader will notice, have different
+SHAW.
+All my articulate Christians, the reader will notice, have different
 enthusiasms, which they accept as the same religion only because it
 involves them in a common opposition to the official religion and
 consequently in a common doom. Androcles is a humanitarian naturalist,
@@ -2355,9 +2359,10 @@ one period of his development that most Christians were what we call
 wrong uns. No doubt he was to some extent right: I have had occasion
 often to point out that revolutionary movements attract those who are
 not good enough for established institutions as well as those who are
-too good for them.]]
+too good for them.
 
-[[But the most striking aspect of the play at this moment is the terrible
+SHAW.
+But the most striking aspect of the play at this moment is the terrible
 topicality given it by the war. We were at peace when I pointed out, by
 the mouth of Ferrovius, the path of an honest man who finds out, when
 the trumpet sounds, that he cannot follow Jesus. Many years earlier, in
@@ -2432,9 +2437,10 @@ home to lunch or dinner, having in fact, for all practical purposes, no
 reasoned convictions at all, and being equally ready to persecute a
 poor Freethinker for saying that St. James was not infallible, and to
 send one of the Peculiar People to prison for being so very peculiar as
-to take St. James seriously.]]
+to take St. James seriously.
 
-[[In short, a Christian martyr was thrown to the lions not because he was
+SHAW.
+In short, a Christian martyr was thrown to the lions not because he was
 a Christian, but because he was a crank: that is, an unusual sort of
 person. And multitudes of people, quite as civilized and amiable as we,
 crowded to see the lions eat him just as they now crowd the lion-house
@@ -2460,9 +2466,10 @@ Anti-Vivisectionists, Flat-Earth men, scoffers at the laboratories, or
 infidels who refuse to kneel down when a procession of doctors goes by.
 But the lions will hurt them just as much, and the spectators will
 enjoy themselves just as much, as the Roman lions and spectators used
-to do.]]
+to do.
 
-[[It was currently reported in the Berlin newspapers that when Androcles
+SHAW.
+It was currently reported in the Berlin newspapers that when Androcles
 was first performed in Berlin, the Crown Prince rose and left the
 house, unable to endure the (_I hope_) very clear and fair exposition
 of autocratic Imperialism given by the Roman captain to his Christian
@@ -2471,4 +2478,4 @@ do the same in London. If the report is correct, I confirm the logic of
 the Crown Prince, and am glad to find myself so well understood. But I
 can assure him that the Empire which served for my model when I wrote
 Androcles was, as he is now finding to his cost, much nearer my home
-than the German one.]]
+than the German one.
