@@ -11,13 +11,13 @@ from typing import List, Optional
 from abc import ABC, abstractmethod
 
 from audio_splitter import AudioSplitter
-from play_text import PlayText, PlayTextParser
+from play import Play, PlayTextParser
 import paths
 
 
 @dataclass
 class SegmentSplitter(ABC):
-    play_text: PlayText
+    play: Play
     role: str
     min_silence_ms: int = 1700
     silence_thresh: int = -45
@@ -29,8 +29,8 @@ class SegmentSplitter(ABC):
     splitter: AudioSplitter = field(default_factory=AudioSplitter)
 
     def __post_init__(self) -> None:
-        if self.play_text is None:
-            self.play_text = PlayTextParser().parse()
+        if self.play is None:
+            self.play = PlayTextParser().parse()
         # Sync splitter thresholds
         self.splitter.min_silence_ms = self.min_silence_ms
         self.splitter.silence_thresh = self.silence_thresh

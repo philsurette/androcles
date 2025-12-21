@@ -17,7 +17,7 @@ import os
 from typing import List
 import logging
 from dataclasses import dataclass
-from play_text import RoleBlock, SpeechSegment
+from play import RoleBlock, SpeechSegment
 from segment_splitter import SegmentSplitter
 
 
@@ -30,7 +30,7 @@ class RoleSplitter(SegmentSplitter):
         Uses in-memory PlayText blocks (directions counted for numbering, only speech for the role emits ids).
         """
         ids: List[str] = []
-        role_obj = self.play_text.getRole(self.role)
+        role_obj = self.play.getRole(self.role)
 
         blocks: List[RoleBlock] = role_obj.get_blocks(int(part_filter) if part_filter is not None else None)
         for blk in blocks:

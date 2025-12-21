@@ -6,13 +6,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import paths
-from play_text import PlayText, Role
+from play import Play, Role
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock, DirectionSegment, SpeechSegment
 
 
 @dataclass
 class PlayMarkdownWriter:
-    play: PlayText
+    play: Play
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
@@ -43,7 +43,7 @@ class RoleMarkdownWriter:
 
 @dataclass
 class NarratorMarkdownWriter:
-    play: PlayText
+    play: Play
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:

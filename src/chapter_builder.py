@@ -5,18 +5,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List
 
-from play_text import PlayText
+from play import Play
 from chapter import Chapter
 
 @dataclass
 class ChapterBuilder:
     """Create Chapter entries from a PlayText."""
 
-    play_text: PlayText
+    play: Play
 
     def build(self) -> List[Chapter]:
         chapters: List[Chapter] = []
-        for part in self.play_text.getParts():
+        for part in self.play.getParts():
             part_id = part.part_no
             if part_id is None:
                 # Skip preamble; chapters are keyed to numbered parts.

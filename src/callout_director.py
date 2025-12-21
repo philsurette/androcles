@@ -12,14 +12,14 @@ from pydub import AudioSegment
 
 from clip import CalloutClip
 import paths
-from play_text import PlayText, BlockId, RoleBlock, DirectionSegment
+from play import Play, BlockId, RoleBlock, DirectionSegment
 
 
 class CalloutDirector(ABC):
     """Base class for callout decision logic."""
 
-    def __init__(self, play_text: PlayText) -> None:
-        self.play_text = play_text
+    def __init__(self, play: Play) -> None:
+        self.play = play
 
     @abstractmethod
     def calloutForBlock(self, block_id: BlockId) -> Optional[CalloutClip]:
@@ -45,7 +45,7 @@ class CalloutDirector(ABC):
         )
 
     def _find_block(self, block_id: BlockId) -> Optional[RoleBlock]:
-        for blk in self.play_text:
+        for blk in self.play:
             if blk.block_id.part_id == block_id.part_id and blk.block_id.block_no == block_id.block_no:
                 if isinstance(blk, RoleBlock):
                     return blk
@@ -77,8 +77,8 @@ class ConversationAwareCalloutDirector(CalloutDirector):
       iii) callout if the role differs from both of the last two roles in this part
     """
 
-    def __init__(self, play_text: PlayText) -> None:
-        super().__init__(play_text)
+    def __init__(self, play: Play) -> None:
+        super().__init__(play)
 
     def calloutForBlock(self, block_id: BlockId) -> Optional[CalloutClip]:
         block = self._find_block(block_id)
@@ -86,7 +86,7 @@ class ConversationAwareCalloutDirector(CalloutDirector):
             return None
 
         starts_with_direction = bool(block.segments and isinstance(block.segments[0], DirectionSegment))
-        last_two = self.play_text.getPrecedingRoles(block_id, num_preceding=2, limit_to_current_part=True)
+        last_two = self.play.getPrecedingRoles(block_id, num_preceding=2, limit_to_current_part=True)
         is_first_two = len(last_two) < 2
         is_new_speaker = block.role not in last_two
 

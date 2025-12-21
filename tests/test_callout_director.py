@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from play_text import PlayText, BlockId, RoleBlock, DescriptionBlock, DirectionSegment
+from play import Play, BlockId, RoleBlock, DescriptionBlock, DirectionSegment
 from callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
@@ -14,7 +14,7 @@ from callout_director import (
 from clip import CalloutClip
 
 
-def build_play_text(seq):
+def build_play(seq):
     """Helper to build a PlayText from a list of tuples describing blocks."""
     items = []
     for entry in seq:
@@ -28,19 +28,19 @@ def build_play_text(seq):
         elif kind == "desc":
             text = entry[3]
             items.append(DescriptionBlock(block_id=BlockId(part, block_no), text=text, segments=[]))
-    return PlayText(items)
+    return Play(items)
 
 
 class TestNoCalloutDirector:
     def test_no_callout(self):
-        pt = build_play_text([("role", 0, 1, "A")])
+        pt = build_play([("role", 0, 1, "A")])
         director = NoCalloutDirector(pt)
         assert director.calloutForBlock(BlockId(0, 1)) is None
 
 
 class TestRoleCalloutDirector:
     def test_calloutForBlock_role(self):
-        pt = build_play_text([("role", 0, 1, "A")])
+        pt = build_play([("role", 0, 1, "A")])
         director = RoleCalloutDirector(pt)
         director._build_callout_clip = lambda role: CalloutClip(
             path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
@@ -50,13 +50,13 @@ class TestRoleCalloutDirector:
         assert clip.clip_id == "A"
 
     def test_calloutForBlock_description(self):
-        pt = build_play_text([("desc", 0, 1, 'description text')])
+        pt = build_play([("desc", 0, 1, 'description text')])
         director = RoleCalloutDirector(pt)
         assert director.calloutForBlock(BlockId(0, 1)) == None
 
 class TestConversationAwareCalloutDirector:
     def test_first_two_roles(self):
-        pt = build_play_text([
+        pt = build_play([
             ("role", 0, 1, "A"),
             ("role", 0, 2, "B"),
             ("role", 0, 3, "A"),
@@ -71,7 +71,7 @@ class TestConversationAwareCalloutDirector:
 
     def test_direction_leading_role(self):
         segs = [DirectionSegment(segment_id=None, text="(_dir_)")]
-        pt = build_play_text([("role", 0, 1, "A", segs)])
+        pt = build_play([("role", 0, 1, "A", segs)])
         director = ConversationAwareCalloutDirector(pt)
         director._build_callout_clip = lambda role: CalloutClip(
             path=Path("/tmp/fake.wav"), text="", role="_NARRATOR", clip_id=role, length_ms=0, offset_ms=0
@@ -80,7 +80,7 @@ class TestConversationAwareCalloutDirector:
         assert clip is not None
 
     def test_part_scoped_history(self):
-        pt = build_play_text([
+        pt = build_play([
             ("role", 0, 0, "_NARRATOR"),
             ("role", 0, 1, "A"),
             ("role", 1, 0, "_NARRATOR"),

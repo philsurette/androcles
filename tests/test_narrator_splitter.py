@@ -1,7 +1,7 @@
 import pytest
 
 from narrator_splitter import NarratorSplitter
-from play_text import NarratorRole, RoleBlock
+from play import NarratorRole, RoleBlock
 
 from segment import DirectionSegment
 from segment_id import SegmentId
@@ -31,7 +31,7 @@ def test_assemble_segment_ids_filters_punctuation():
         name="_NARRATOR",
         blocks=[_block(None, 1, ["Intro", ".", "More"]), _block(1, 2, [",", "Line", ";"])],
     )
-    splitter = NarratorSplitter(play_text=DummyPlay(role))
+    splitter = NarratorSplitter(play=DummyPlay(role))
 
     segments = splitter.expected_ids()
 
@@ -44,7 +44,7 @@ def test_assemble_segment_ids_respects_part_filter():
         name="_NARRATOR",
         blocks=[_block(None, 1, ["Intro"]), _block(1, 2, ["Part1"]), _block(2, 3, ["Part2"])],
     )
-    splitter = NarratorSplitter(play_text=DummyPlay(role))
+    splitter = NarratorSplitter(play=DummyPlay(role))
 
     segments = splitter.expected_ids(part_filter="1")
 

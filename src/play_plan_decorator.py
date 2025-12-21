@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-from play_text import PlayText, Block, MetaBlock
+from play import Play, Block, MetaBlock
 from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
@@ -16,7 +16,7 @@ from spacing import Spacings
 
 @dataclass
 class PlayPlanDecorator(ABC):
-    play: PlayText
+    play: Play
     plan: AudioPlan
     paths: Paths = field(default_factory=Paths)
     spacings: Spacings = field(default_factory=Spacings)

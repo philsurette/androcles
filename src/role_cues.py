@@ -8,17 +8,17 @@ from typing import Dict, List
 import logging
 
 import paths
-from play_text import PlayText, PlayTextParser, RoleBlock
+from play import Play, PlayTextParser, RoleBlock
 from segment import DirectionSegment, SpeechSegment
 
 
 @dataclass
 class RoleCues:
-    play_text: PlayText
+    play: Play
 
     def __post_init__(self) -> None:
-        if self.play_text is None:
-            self.play_text = PlayTextParser().parse()
+        if self.play is None:
+            self.play = PlayTextParser().parse()
 
     def shorten_cue_lines(self, lines: List[str]) -> List[str]:
         """
@@ -102,7 +102,7 @@ class RoleCues:
         role_entries: Dict[str, List[str]] = {}
         previous_block: RoleBlock | None = None
 
-        for blk in self.play_text:
+        for blk in self.play:
             if not isinstance(blk, RoleBlock):
                 previous_block = blk if isinstance(blk, RoleBlock) else None
                 continue
@@ -151,4 +151,4 @@ class RoleCues:
 
 
 if __name__ == "__main__":
-    RoleCues(play_text=None).write()
+    RoleCues(play=None).write()

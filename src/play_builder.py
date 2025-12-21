@@ -7,7 +7,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 from play_plan_builder import PlayPlanBuilder, write_plan, PlanItem
-from play_text import PlayTextParser, PlayText, Part
+from play import PlayTextParser, Play, Part
 from chapter_builder import ChapterBuilder
 from callout_director import CalloutDirector, ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
 from play_audio_builder import instantiate_plan
@@ -26,7 +26,7 @@ class PlayBuilder:
     generate_audio: bool = True
     generate_captions: bool = True
     librivox: bool = False
-    play: PlayText = None
+    play: Play = None
 
     def build_audio(self, part_no: int) -> list[Path]:
         """Build audio plans (and optional outputs) using configured settings."""
@@ -79,7 +79,7 @@ class PlayBuilder:
 
     def _build_librivox(self) -> list[Path]:
         outputs: list[Path] = []
-        chapters = ChapterBuilder(play_text=self.play).build()
+        chapters = ChapterBuilder(play=self.play).build()
         director: CalloutDirector = (
             ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )

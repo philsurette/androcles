@@ -12,7 +12,7 @@ from pydub import AudioSegment
 
 import paths
 from play_plan_builder import PlayPlanBuilder
-from play_text import PlayTextParser, PlayText
+from play import PlayTextParser, Play
 from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment
 from block import RoleBlock, MetaBlock, DescriptionBlock, DirectionBlock
 
@@ -49,25 +49,25 @@ class SegmentVerifier:
     plan: List
     too_short: float = 0.5
     too_long: float = 2.0
-    play_text: PlayText | None = None
+    play: Play | None = None
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
     _offsets_map: Dict[str, Dict[str, str]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
-        if self.play_text is None:
-            self.play_text = PlayTextParser().parse()
+        if self.play is None:
+            self.play = PlayTextParser().parse()
         self._build_plan_start_map()
         self._load_offsets()
 
     def gather_expected(self) -> List[Dict]:
         rows: List[Dict] = []
-        if self.play_text is None:
+        if self.play is None:
             return rows
         # Narrator/meta content
         rows.extend(self._gather_narrator_segments())
 
         # Roles (skip narrator to avoid double counting)
-        for role_obj in self.play_text.getRoles():
+        for role_obj in self.play.getRoles():
             role = role_obj.name
             if role == "_NARRATOR":
                 continue
@@ -92,10 +92,10 @@ class SegmentVerifier:
     def _gather_narrator_segments(self) -> List[Dict]:
         """Collect narrator/meta segments directly from PlayText."""
         rows: List[Dict] = []
-        if self.play_text is None:
+        if self.play is None:
             return rows
 
-        for blk in self.play_text:
+        for blk in self.play:
             if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
                 relevant = blk.segments
             elif isinstance(blk, RoleBlock):
@@ -262,5 +262,5 @@ def compute_rows(
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play=play, librivox=librivox)
     plan = builder.build_audio_plan()
-    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play)
     return verifier.compute_rows()

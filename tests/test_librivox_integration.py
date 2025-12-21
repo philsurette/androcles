@@ -12,7 +12,7 @@ if str(SRC) not in sys.path:
 
 from chapter_builder import ChapterBuilder
 from play_plan_builder import PlayPlanBuilder, write_plan
-from play_text import PlayTextParser
+from play import PlayTextParser
 from callout_director import ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
 
 

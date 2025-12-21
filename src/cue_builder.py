@@ -11,7 +11,7 @@ from typing import Dict, List, Tuple
 
 from pydub import AudioSegment
 
-from play_text import PlayText, RoleBlock
+from play import Play, RoleBlock
 import paths
 
 
@@ -19,7 +19,7 @@ import paths
 class CueBuilder:
     """Build cues using in-memory PlayText data."""
 
-    play: PlayText
+    play: Play
     response_delay_ms: int = 2000
     max_cue_size_ms: int = 5000
     include_prompts: bool = True

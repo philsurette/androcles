@@ -14,7 +14,7 @@ from callout_director import (
     CalloutDirector,
     NoCalloutDirector,
 )
-from play_text import PlayText, Block, MetaBlock
+from play import Play, Block, MetaBlock
 from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
@@ -37,7 +37,7 @@ IndexEntry = Tuple[int | None, int, str]
 class PlayPlanBuilder:
     """Encapsulates play context and helpers for building audio plans."""
 
-    play: PlayText
+    play: Play
     director: CalloutDirector | None = None
     chapters: List[Chapter] | None = None
     play_plan_decorator: PlayPlanDecorator | None = None

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from play_text import PlayText, PlayTextParser
+from play import Play, PlayTextParser
 import paths
 from role_splitter import RoleSplitter
 from narrator_splitter import NarratorSplitter
@@ -15,7 +15,7 @@ from narrator_splitter import NarratorSplitter
 
 @dataclass
 class PlaySplitter:
-    play_text: PlayText
+    play: Play
     min_silence_ms: int = 1700
     silence_thresh: int = -45
     pad_end_ms: int = 200
@@ -25,17 +25,17 @@ class PlaySplitter:
     chunk_export_size: int = 25
 
     def __post_init__(self) -> None:
-        if self.play_text is None:
-            self.play_text = PlayTextParser().parse()
+        if self.play is None:
+            self.play = PlayTextParser().parse()
 
 
     def split_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
         total = 0.0
-        for role_name in [r.name for r in self.play_text.getRoles()]:
+        for role_name in [r.name for r in self.play.getRoles()]:
             if role_filter and role_filter != role_name:
                 continue
             splitter = RoleSplitter(
-                play_text=self.play_text,
+                play=self.play,
                 role = role_name,
                 min_silence_ms=self.min_silence_ms,
                 silence_thresh=self.silence_thresh,
@@ -52,7 +52,7 @@ class PlaySplitter:
         
     def oldsplit_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
         splitter = RoleSplitter(
-            play_text=self.play_text,
+            play=self.play,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,
             chunk_size=self.chunk_size,
@@ -75,7 +75,7 @@ class PlaySplitter:
 
     def split_narrator(self, part_filter: Optional[str] = None) -> float:
         splitter = NarratorSplitter(
-            play_text=self.play_text,
+            play=self.play,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,
             pad_end_ms=self.pad_end_ms,

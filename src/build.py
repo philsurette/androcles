@@ -13,7 +13,7 @@ from play_splitter import PlaySplitter
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder
-from play_text import PlayTextParser, PlayText, Part
+from play import PlayTextParser, Play, Part
 from markdown_renderer import PlayMarkdownWriter, RoleMarkdownWriter, NarratorMarkdownWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
@@ -141,7 +141,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
     play = PlayTextParser().parse()
     builder = PlayPlanBuilder(play=play)
     plan = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play_text=play)
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play)
     verifier.verify_segments()
 
 
@@ -277,9 +277,9 @@ def run_segments(
     chunk_exports: bool = True,
     chunk_export_size: int = 25,
 ):
-    play_text = PlayTextParser().parse()
+    play = PlayTextParser().parse()
     splitter = PlaySplitter(
-        play_text=play_text,
+        play=play,
         min_silence_ms=separator_len_ms,
         silence_thresh=silence_thresh,
         chunk_size=chunk_size,
@@ -318,7 +318,7 @@ def run_audioplay(
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
-    play: PlayText = PlayTextParser().parse()
+    play: Play = PlayTextParser().parse()
     if part is None:
         part_no = None
     else:
@@ -367,15 +367,15 @@ def run_cues(
     include_prompts: bool = True,
     callout_spacing_ms: int = 300,
 ):
-    play_text = PlayTextParser().parse()
+    play = PlayTextParser().parse()
     builder = CueBuilder(
-        play_text,
+        play,
         response_delay_ms=response_delay_ms,
         max_cue_size_ms=max_cue_size_ms,
         include_prompts=include_prompts,
         callout_spacing_ms=callout_spacing_ms,
     )
-    roles = [role] if role else [r.name for r in play_text.roles] + ["_NARRATOR"]
+    roles = [role] if role else [r.name for r in play.roles] + ["_NARRATOR"]
     for r in roles:
         builder.build_cues(r)
 

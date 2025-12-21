@@ -7,17 +7,17 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 import paths
-from play_text import PlayText, PlayTextParser, DescriptionBlock, DirectionBlock, MetaBlock, RoleBlock
+from play import Play, PlayTextParser, DescriptionBlock, DirectionBlock, MetaBlock, RoleBlock
 from segment import DirectionSegment, SpeechSegment
 
 
 @dataclass
 class NarrationCues:
-    play_text: PlayText
+    play: Play
 
     def __post_init__(self) -> None:
-        if self.play_text is None:
-            self.play_text = PlayTextParser().parse()
+        if self.play is None:
+            self.play = PlayTextParser().parse()
 
     def write(self) -> None:
         """Generate narrator cues into build/markdown/roles/_NARRATOR.txt."""
@@ -29,7 +29,7 @@ class NarrationCues:
         current_part: int | None = None
         block_counter = 0
 
-        for blk in self.play_text:
+        for blk in self.play:
             if blk.block_id.part_id != current_part:
                 current_part = blk.block_id.part_id
                 block_counter = 0
@@ -74,4 +74,4 @@ class NarrationCues:
 
 
 if __name__ == "__main__":
-    NarrationCues(play_text=None).write()
+    NarrationCues(play=None).write()

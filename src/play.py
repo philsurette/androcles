@@ -67,7 +67,7 @@ class Part:
     blocks: List[Block] = field(default_factory=list)
 
 
-class PlayText(List[Block]):
+class Play(List[Block]):
     def __init__(self, items: List[Block] | None = None) -> None:
         super().__init__(items or [])
         self._by_id: dict[BlockId, Block] = {}
@@ -269,11 +269,11 @@ class PlayTextParser:
 
         return output
 
-    def parse(self) -> PlayText:
+    def parse(self) -> Play:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
         paragraphs = self.collapse_to_paragraphs(raw_text)
 
-        play = PlayText()
+        play = Play()
         current_part: int | None = None
         block_counter = 0
         meta_counters: dict[int | None, int] = {}
@@ -313,7 +313,7 @@ class PlayTextEncoder:
     def __init__(self, output_path: Path | None = None) -> None:
         self.output_path = output_path or paths.PARAGRAPHS_PATH
 
-    def encode(self, play: PlayText) -> None:
+    def encode(self, play: Play) -> None:
         lines: List[str] = []
         for block in play:
             if isinstance(block, MetaBlock):
