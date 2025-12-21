@@ -10,6 +10,7 @@ from pydub import AudioSegment
 
 from play_plan_builder import PlanItem, Silence, Chapter, PlayPlanBuilder
 from clip import CalloutClip, SegmentClip, ParallelClips
+from audio_mixer import AudioMixer
 
 
 def export_with_chapters(
@@ -75,9 +76,11 @@ def instantiate_plan(
     prepend_paths: List[Path] | None = None,
     append_paths: List[Path] | None = None,
     metadata: dict[str, str] | None = None,
+    audio_mixer: AudioMixer | None = None,
 ) -> None:
     """Render the audio plan into a single audio file, optionally muxing captions and a blank video track."""
     cache: Dict[Path, AudioSegment | None] = {}
+    mixer = audio_mixer or AudioMixer()
     audio = AudioSegment.empty()
     chapters: List[Tuple[int, int, str]] = []
     current_chapter_title: str | None = None
@@ -99,21 +102,14 @@ def instantiate_plan(
         if isinstance(item, ParallelClips):
             if not item.clips:
                 continue
-            segs = []
-            max_len = 0
+            paths: List[Path] = []
             for clip in item.clips:
                 if clip.path is None:
                     continue
-                seg = PlayPlanBuilder.load_audio_by_path(clip.path, cache)
-                if seg:
-                    segs.append(seg)
-                    max_len = max(max_len, len(seg))
-            if not segs:
-                continue
-            base = AudioSegment.silent(duration=max_len)
-            for seg in segs:
-                base = base.overlay(seg)
-            audio += base
+                paths.append(clip.path)
+            mixed = mixer.mix_parallel(paths)
+            if mixed:
+                audio += mixed
             continue
         if isinstance(item, Silence):
             if item.length_ms > 0:
