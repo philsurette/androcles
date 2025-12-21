@@ -291,7 +291,7 @@ the gladiators presently. Think of that; and it’ll help you to behave
 properly before the captain. (_The Captain arrives._) Attention!
 Salute! (_The soldiers salute._)
 
-CHRISTIAN-1.
+A CHRISTIAN.
 (_cheerfully_) God bless you, Captain.
 
 CENTURION.
@@ -1090,15 +1090,12 @@ LAVINIA.
 (_marching_) Come along, the rest of the dinner. I shall be the olives
 and anchovies.
 
-FEMALE-CHRISTIAN-1.
-(_laughing_) 
-I shall be the soup.
+ANOTHER CHRISTIAN.
+(_laughing_) I shall be the soup.
 
-CHRISTIAN-2. 
-I shall be the fish.
+ANOTHER CHRISTIAN. I shall be the fish.
 
-CHRISTIAN-3. 
-Ferrovius shall be the roast boar.
+ANOTHER CHRISTIAN. Ferrovius shall be the roast boar.
 
 FERROVIUS.
 (_heavily_) I see the joke. Yes, yes: I shall be the roast boar. Ha!
@@ -1343,29 +1340,18 @@ The apostate has perished. Praise be to God’s justice!
 
 ANDROCLES. The poor beast was starving. It couldn’t help itself. 
 
-CHRISTIAN-1. 
-What! Ate him! How frightful! How terrible! 
-
-CHRISTIAN-2.
-Without a moment to repent! God be merciful to him, a sinner!
-
-CHRISTIAN-3
-Oh, I can’t bear to think of it! In the midst of his sin! 
-
-CHRISTIAN-4
-Horrible, horrible! 
+CHRISTIANS. What! Ate him! How frightful! How
+terrible! Without a moment to repent! God be merciful to him, a sinner!
+Oh, I can’t bear to think of it! In the midst of his sin! Horrible,
+horrible! 
 
 EDITOR. 
 Serve the rotter right! 
 
-GLADIATOR-1. 
-Just walked into it, he did. He’s martyred all right enough. Good old lion!
-
-GLADIATOR-2.
-Old Jock doesn’t like that: look at his face. Devil a better! 
-
-GLADIATOR-3.
-The Emperor will laugh when he hears of it. I can’t help smiling. Ha ha
+GLADIATORS. Just
+walked into it, he did. He’s martyred all right enough. Good old lion!
+Old Jock doesn’t like that: look at his face. Devil a better! The
+Emperor will laugh when he hears of it. I can’t help smiling. Ha ha
 ha!!!!!
 
 KEEPER.
@@ -1411,9 +1397,7 @@ smartly and form into line._)
 __The Emperor enters on the Christians’ side, conversing with Metellus,
 and followed by his suite.__
 
-GLADIATOR-1. 
-GLADIATOR-2. 
-GLADIATOR-3.
+GLADIATORS.
 Hail, Caesar! those about to die salute thee.
 
 CAESAR.
@@ -1439,11 +1423,7 @@ do no wrong and therefore cannot be forgiven?
 LAVINIA.
 I expect the Emperor knows better. Anyhow, we forgive him.
 
-CHRISTIAN-1. 
-CHRISTIAN-2.
-CHRISTIAN-3.
-CHRISTIAN-4.
-Amen!
+CHRISTIANS. Amen!
 
 CAESAR.
 Metellus: you see now the disadvantage of too much severity. These
@@ -1733,29 +1713,13 @@ EDITOR.
 (_not heeding him_) March. (_The gladiators told off to fight with the
 Christians march down the passage_) Follow up there, you.
 
-CHRISTIAN-1.
-(_as they part_) Be steadfast, brother. Farewell. 
-
-CHRISTIAN-3.
-Hold up the faith, brother. Farewell. 
-
-CHRISTIAN-2.
-Go to glory, dearest. Farewell. 
-
-CHRISTIAN-4.
-Remember: we are praying for you. Farewell. 
-
-CHRISTIAN-1.
-Be strong, brother. Farewell. 
-
-CHRISTIAN-4.
-Don’t forget that the divine love and our love surround you. Farewell. 
-
-CHRISTIAN-3.
-Nothing can hurt you: remember that, brother. Farewell. 
-
-CHRISITAN-2.
-Eternal glory, dearest. Farewell.
+CHRISTIAN MEN AND WOMEN.
+(_as they part_) Be steadfast, brother. Farewell. Hold up the faith,
+brother. Farewell. Go to glory, dearest. Farewell. Remember: we are
+praying for you. Farewell. Be strong, brother. Farewell. Don’t forget
+that the divine love and our love surround you. Farewell. Nothing can
+hurt you: remember that, brother. Farewell. Eternal glory, dearest.
+Farewell.
 
 EDITOR.
 (_out of patience_) Shove them in, there.
