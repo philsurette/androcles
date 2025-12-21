@@ -1090,7 +1090,7 @@ LAVINIA.
 (_marching_) Come along, the rest of the dinner. I shall be the olives
 and anchovies.
 
-FEMALE-CHRISTIAN-1.
+CHRISTIAN-1.
 (_laughing_) 
 I shall be the soup.
 
@@ -1349,10 +1349,10 @@ What! Ate him! How frightful! How terrible!
 CHRISTIAN-2.
 Without a moment to repent! God be merciful to him, a sinner!
 
-CHRISTIAN-3
+CHRISTIAN-3.
 Oh, I can’t bear to think of it! In the midst of his sin! 
 
-CHRISTIAN-4
+CHRISTIAN-4.
 Horrible, horrible! 
 
 EDITOR. 

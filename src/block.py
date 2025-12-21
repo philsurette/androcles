@@ -163,7 +163,7 @@ class DirectionBlock(Block):
 class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
-    REGEX = re.compile(r"^([A-Z][A-Z '()-]*?)\.\s*(.*)$")
+    REGEX = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\.\s*(.*)$")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role: str = ""
