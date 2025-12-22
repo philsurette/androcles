@@ -1417,6 +1417,7 @@ and followed by his suite.__
 GLADIATOR-1. 
 GLADIATOR-2. 
 GLADIATOR-3.
+GLADIATOR-4.
 Hail, Caesar! those about to die salute thee.
 
 CAESAR.
