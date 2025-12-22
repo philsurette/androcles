@@ -339,8 +339,8 @@ class RoleBlock(Block):
             # Distinct callout and primary role.
             names = f"{self.callout}/{speakers}"
         else:
-            names = ",".join(speakers)
-        return f"**{prefix}/{names}**: {self.text}"
+            names = speakers
+        return f"**{names}**: {self.text}"
 
     def to_markdown_for_role(self, role: str, prefix: str | None) -> str:
         """
