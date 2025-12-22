@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Optional
 import re
 from pathlib import Path
 import paths
@@ -69,8 +69,12 @@ class Part:
     title: str | None
     blocks: List[Block] = field(default_factory=list)
 
-
+@dataclass
 class Play(List[Block]):
+    title: str = field(default='Untitled')
+    subtitles: list[str] = field(default_factory=list)
+    authors: list[str] = field(default_factory=list)
+    publication_year: Optional[str]
     def __init__(self, items: List[Block] | None = None) -> None:
         super().__init__(items or [])
         self._by_id: dict[BlockId, Block] = {}
