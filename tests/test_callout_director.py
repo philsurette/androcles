@@ -24,7 +24,7 @@ def build_play(seq):
         if kind == "role":
             role = entry[3]
             segments = entry[4] if len(entry) > 4 else []
-            items.append(RoleBlock(block_id=BlockId(part, block_no), role=role, text="", segments=segments))
+            items.append(RoleBlock(block_id=BlockId(part, block_no), role_name=role, text="", segments=segments))
         elif kind == "desc":
             text = entry[3]
             items.append(DescriptionBlock(block_id=BlockId(part, block_no), text=text, segments=[]))

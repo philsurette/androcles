@@ -17,7 +17,7 @@ def build_play(sequence):
         items.append(
             RoleBlock(
                 block_id=BlockId(part, block_no),
-                role=role,
+                role_name=role,
                 text="",
                 segments=[SpeechSegment(segment_id=SegmentId(BlockId(part, block_no), 1), text="", role=role)],
             )
@@ -105,7 +105,7 @@ def test_to_index_entries_matches_block_order_and_inline_dirs():
     role_id = BlockId(0, 1)
     role_block = RoleBlock(
         block_id=role_id,
-        role="A",
+        role_name="A",
         text="Hello",
         segments=[SpeechSegment(segment_id=SegmentId(role_id, 1), text="Hello", role="A")],
     )
@@ -113,7 +113,7 @@ def test_to_index_entries_matches_block_order_and_inline_dirs():
     role_with_dir_id = BlockId(0, 2)
     role_with_dir_block = RoleBlock(
         block_id=role_with_dir_id,
-        role="B",
+        role_name="B",
         text="(_wave_) Hi",
         segments=[
             DirectionSegment(segment_id=SegmentId(role_with_dir_id, 1), text="(_wave_)"),

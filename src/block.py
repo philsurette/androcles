@@ -165,33 +165,39 @@ class RoleBlock(Block):
     SUFFIX = ""
     REGEX = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\.\s*(.*)$")
     MULTI_ROLE_RE = re.compile(r"^((?:[A-Z][A-Z0-9 '()-]*?\.\s*){2,})(.+)$")
+    GROUP_ROLE_RE = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\s*\[(.+?)\]\s*[.:]?\s*(.*)$")
     ROLE_NAME_RE = re.compile(r"([A-Z][A-Z0-9 '()-]*?)\.\s*")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
-    role: str = ""
+    role_name: str = ""
+    callout_name: str | None = None
     speakers: List[str] = field(default_factory=list)
     segments: List[Segment] = field(default_factory=list)
 
     def __str__(self) -> str:
         if self.segments:
             return " ".join(str(s) for s in self.segments)
-        return f"{self.role}: {self.text}"
+        return f"{self.role_name}: {self.text}"
 
     @property
     def roles(self) -> List[str]:
         has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in self.segments)
         roles: List[str] = ["_NARRATOR"] if has_inline_dirs else []
-        roles.extend(self.speakers if self.speakers else [self.role])
+        roles.extend(self.speakers if self.speakers else [self.role_name])
         return roles
 
     @property
     def owner(self) -> str:
-        return self.role
+        return self.role_name
+    
+    @property
+    def callout(self) -> str:
+        return self.callout_name if self.callout_name is not None else self.role_name
 
     def owner_for_text(self, text: str) -> str:
         if text.startswith("(_"):
             return "_NARRATOR"
-        return self.role
+        return self.role_name
 
     @classmethod
     def split_block_segments(cls, text: str, block_id: BlockId, role: str) -> List[Segment]:
@@ -228,6 +234,30 @@ class RoleBlock(Block):
         block_counter: int,
         meta_counters: dict[int | None, int],
     ) -> Block | None:
+        grouped_match = cls.GROUP_ROLE_RE.match(paragraph)
+        if grouped_match:
+            group_role, raw_roles, speech = grouped_match.groups()
+            roles = [r.strip() for r in raw_roles.split(",") if r.strip()]
+            speech = speech.strip()
+            if not speech:
+                return None
+            block_counter += 1
+            block_id = BlockId(current_part, block_counter)
+            segment = SimultaneousSegment(
+                segment_id=SegmentId(block_id, 1),
+                text=speech,
+                roles=roles if roles else [group_role],
+            )
+            block = cls(
+                block_id=block_id,
+                role=group_role,
+                callout_role=group_role,
+                speakers=roles if roles else [group_role],
+                text=speech,
+                segments=[segment],
+            )
+            return block
+
         multi_match = cls.MULTI_ROLE_RE.match(paragraph)
         if multi_match:
             roles_chunk, speech = multi_match.groups()
@@ -243,7 +273,8 @@ class RoleBlock(Block):
                 )
                 block = cls(
                     block_id=block_id,
-                    role=roles[0],
+                    role_name=roles[0],
+                    callout_name=roles[0],
                     speakers=roles,
                     text=speech,
                     segments=[segment],
@@ -259,7 +290,7 @@ class RoleBlock(Block):
         speech = speech.strip()
         block = cls(
             block_id=block_id,
-            role=role,
+            role_name=role,
             speakers=[role],
             text=speech.strip(),
             segments=cls.split_block_segments(speech, block_id, role),
@@ -267,5 +298,5 @@ class RoleBlock(Block):
         return block
 
     def _to_markdown(self, prefix: str | None) -> str:
-        names = " + ".join(self.speakers if self.speakers else [self.role])
+        names = " + ".join(self.speakers if self.speakers else [self.role_name])
         return f"{prefix}**{names}**: {self.text}"

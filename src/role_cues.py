@@ -107,7 +107,7 @@ class RoleCues:
                 previous_block = blk if isinstance(blk, RoleBlock) else None
                 continue
 
-            speaker_list = blk.speakers if getattr(blk, "speakers", None) else [blk.role]
+            speaker_list = blk.speakers if getattr(blk, "speakers", None) else [blk.role_name]
             if any(r.startswith("_") for r in speaker_list):
                 previous_block = blk
                 continue
@@ -117,7 +117,7 @@ class RoleCues:
             cue_lines: List[str] = []
 
             if previous_block and isinstance(previous_block, RoleBlock):
-                cue_label = previous_block.role.lstrip("_")
+                cue_label = previous_block.role_name.lstrip("_")
                 cue_texts = [str(seg) for seg in previous_block.segments if getattr(seg, "text", "").strip()]
                 cue_lines = self.shorten_cue_lines(cue_texts)
                 if cue_lines and cue_lines[0].lstrip().startswith("(_"):

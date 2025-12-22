@@ -66,7 +66,7 @@ class RoleCalloutDirector(CalloutDirector):
         block = self._find_block(block_id)
         if block is None:
             return None
-        return self._build_callout_clip(block.role)
+        return self._build_callout_clip(block.callout)
 
 
 class ConversationAwareCalloutDirector(CalloutDirector):
@@ -88,11 +88,11 @@ class ConversationAwareCalloutDirector(CalloutDirector):
         starts_with_direction = bool(block.segments and isinstance(block.segments[0], DirectionSegment))
         last_two = self.play.getPrecedingRoles(block_id, num_preceding=2, limit_to_current_part=True)
         is_first_two = len(last_two) < 2
-        is_new_speaker = block.role not in last_two
+        is_new_speaker = block.callout not in last_two
 
         need_callout = starts_with_direction or is_first_two or is_new_speaker
 
         if not need_callout:
             return None
 
-        return self._build_callout_clip(block.role)
+        return self._build_callout_clip(block.callout)
