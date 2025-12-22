@@ -74,7 +74,7 @@ class CueBuilder:
             prev = part_blocks[j]
             if not isinstance(prev, RoleBlock):
                 continue
-            if prev.role_name.startswith("_"):
+            if prev.primary_role.startswith("_"):
                 continue
             return prev
         return None
@@ -131,13 +131,13 @@ class CueBuilder:
         callout_gap: AudioSegment | None,
     ) -> None:
         """Append cues for a single block to the combined audio and chapters."""
-        if block.role_name != role:
+        if block.primary_role != role:
             return
 
         prev_block = self._previous_speech_block(speech_blocks, idx)
 
         if prev_block and self.include_prompts:
-            cue_role = prev_block.role_name
+            cue_role = prev_block.primary_role
             key = (prev_block.block_id.part_id, prev_block.block_id.block_no)
             cue_ids = self.segment_maps.get(cue_role, {}).get(key, [])
             if cue_ids:

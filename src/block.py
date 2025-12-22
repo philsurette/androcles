@@ -169,31 +169,37 @@ class RoleBlock(Block):
     ROLE_NAME_RE = re.compile(r"([A-Z][A-Z0-9 '()-]*?)\.\s*")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
-    role_name: str = ""
+    role_names: List[str] = field(default_factory=list)
     callout: Optional[str] = None
-    speakers: List[str] = field(default_factory=list)
     segments: List[Segment] = field(default_factory=list)
 
     def __str__(self) -> str:
         if self.segments:
             return " ".join(str(s) for s in self.segments)
-        return f"{self.role_name}: {self.text}"
+        else:
+            prefix = f"{self.callout}/" if self.callout is not None else "/"
+            roles = ",".join(self.role_names)
+            return f"{prefix}{roles}: {self.text}"
+
+    @property
+    def primary_role(self) -> str:
+        return self.role_names[0] if self.role_names else "_NARRATOR"
 
     @property
     def roles(self) -> List[str]:
         has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in self.segments)
         roles: List[str] = ["_NARRATOR"] if has_inline_dirs else []
-        roles.extend(self.speakers if self.speakers else [self.role_name])
+        roles.extend(self.role_names)
         return roles
 
     @property
     def owner(self) -> str:
-        return self.role_name
+        return self.primary_role
 
     def owner_for_text(self, text: str) -> str:
         if text.startswith("(_"):
             return "_NARRATOR"
-        return self.role_name
+        return self.primary_role
 
     @classmethod
     def split_block_segments(cls, text: str, block_id: BlockId, role: str) -> List[Segment]:
@@ -246,9 +252,8 @@ class RoleBlock(Block):
             )
             block = cls(
                 block_id=block_id,
-                role_name=group_role,
+                role_names=roles if roles else [group_role],
                 callout=group_role,
-                speakers=roles if roles else [group_role],
                 text=speech,
                 segments=[segment],
             )
@@ -269,9 +274,8 @@ class RoleBlock(Block):
                 )
                 block = cls(
                     block_id=block_id,
-                    role_name=roles[0],
+                    role_names=roles,
                     callout=roles[0],
-                    speakers=roles,
                     text=speech,
                     segments=[segment],
                 )
@@ -310,36 +314,33 @@ class RoleBlock(Block):
             )
             block = cls(
                 block_id=block_id,
-                role_name=role_names[0],
+                role_names=role_names,
                 callout=callout_val,
-                speakers=role_names,
                 text=speech,
                 segments=[segment],
             )
             return block
 
-        role = role_names[0]
         block = cls(
             block_id=block_id,
-            role_name=role,
+            role_names=role_names,
             callout=callout_val,
-            speakers=[role],
             text=speech.strip(),
-            segments=cls.split_block_segments(speech, block_id, role),
+            segments=cls.split_block_segments(speech, block_id, role_names[0]),
         )
         return block
 
     def _to_markdown(self, prefix: str | None) -> str:
-        speakers = self.speakers if self.speakers else [self.role_name]
+        speakers = ",".join(self.role_names)
         if self.callout is None:
             # Explicitly suppress callout; show leading slash.
-            names = f"/{speakers[0]}"
+            names = f"/{speakers}"
         elif self.callout and self.callout not in speakers:
             # Distinct callout and primary role.
-            names = f"{self.callout}/{speakers[0]}"
+            names = f"{self.callout}/{speakers}"
         else:
-            names = " + ".join(speakers)
-        return f"{prefix}**{names}**: {self.text}"
+            names = ",".join(speakers)
+        return f"**{prefix}/{names}**: {self.text}"
 
     def to_markdown_for_role(self, role: str, prefix: str | None) -> str:
         """

@@ -106,10 +106,8 @@ class Play(List[Block]):
                     speaker_list.append("_NARRATOR")
                 if getattr(blk, "callout", None):
                     speaker_list.append(getattr(blk, "callout"))
-                elif blk.speakers:
-                    speaker_list.extend(blk.speakers)
-                else:
-                    speaker_list.append(blk.role_name)
+                if getattr(blk, "role_names", None):
+                    speaker_list.extend(getattr(blk, "role_names"))
                 for role in speaker_list:
                     if not include_meta_roles and role.startswith("_"):
                         continue
@@ -144,7 +142,7 @@ class Play(List[Block]):
                 self._part_order.append(pid)
             self._parts[pid].blocks.append(blk)
             if isinstance(blk, RoleBlock):
-                speaker_list = blk.speakers if blk.speakers else [blk.role_name]
+                speaker_list = blk.role_names if getattr(blk, "role_names", None) else [blk.primary_role]
                 for role_name in speaker_list:
                     if role_name not in self._roles:
                         if role_name == "_NARRATOR":
@@ -238,7 +236,7 @@ class Play(List[Block]):
                 has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in block.segments)
                 if has_inline_dirs:
                     entries.append((part, block_no, "_NARRATOR"))
-                speaker_list = block.speakers if block.speakers else [block.role_name]
+                speaker_list = block.role_names if getattr(block, "role_names", None) else [block.primary_role]
                 for role in speaker_list:
                     entries.append((part, block_no, role))
             else:
@@ -344,18 +342,18 @@ class PlayTextEncoder:
             elif isinstance(block, DirectionBlock):
                 lines.append(f"_{block.text}_")
             elif isinstance(block, RoleBlock):
-                speakers = block.speakers if block.speakers else [block.role_name]
+                speakers = block.role_names if getattr(block, "role_names", None) else [block.primary_role]
                 if block.callout is None:
-                    prefix = f"/{block.role_name}."
+                    prefix = f"/{block.primary_role}."
                     lines.append(f"{prefix} {block.text}")
                 elif block.callout and block.callout not in speakers:
                     roles = ",".join(speakers)
-                    lines.append(f"{block.callout}/{block.role_name}. {block.text}")
+                    lines.append(f"{block.callout}/{block.primary_role}. {block.text}")
                 elif len(speakers) > 1:
                     prefix = ". ".join(speakers) + "."
                     lines.append(f"{prefix} {block.text}")
                 else:
-                    lines.append(f"{block.role_name}. {block.text}")
+                    lines.append(f"{block.primary_role}. {block.text}")
             else:
                 raise RuntimeError(f"Unexpected block type during encoding: {type(block)}")
         content = "\n".join(lines) + ("\n" if lines else "")

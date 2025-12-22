@@ -23,7 +23,7 @@ class DummyPlay:
 def _block(part_id, block_no, texts):
     bid = BlockId(part_id, block_no)
     segments = [DirectionSegment(segment_id=SegmentId(bid, idx + 1), text=t) for idx, t in enumerate(texts)]
-    return RoleBlock(block_id=bid, role_name="_NARRATOR", text=" ".join(texts), segments=segments)
+    return RoleBlock(block_id=bid, role_names=["_NARRATOR"], text=" ".join(texts), segments=segments)
 
 
 def test_assemble_segment_ids_filters_punctuation():

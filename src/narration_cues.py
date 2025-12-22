@@ -63,7 +63,7 @@ class NarrationCues:
                     elif isinstance(seg, SpeechSegment) and getattr(seg, "role", "") == "_NARRATOR":
                         directions.append(f"  - {text}")
                 if directions:
-                    header = f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}:{blk.block_id.block_no} {blk.role_name}"
+                    header = f"{'' if blk.block_id.part_id is None else blk.block_id.part_id}:{blk.block_id.block_no} {blk.primary_role}"
                     entries.append("\n".join([header] + directions))
 
         content = "\n\n".join(entries)
