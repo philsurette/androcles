@@ -344,16 +344,18 @@ class PlayTextEncoder:
             elif isinstance(block, DirectionBlock):
                 lines.append(f"_{block.text}_")
             elif isinstance(block, RoleBlock):
-                if block.callout_name and block.speakers and block.callout_name not in block.speakers:
-                    roles = ",".join(block.speakers)
-                    lines.append(f"{block.callout_name}[{roles}]. {block.text}")
+                speakers = block.speakers if block.speakers else [block.role_name]
+                if block.callout is None:
+                    prefix = f"/{block.role_name}."
+                    lines.append(f"{prefix} {block.text}")
+                elif block.callout and block.callout not in speakers:
+                    roles = ",".join(speakers)
+                    lines.append(f"{block.callout}/{block.role_name}. {block.text}")
+                elif len(speakers) > 1:
+                    prefix = ". ".join(speakers) + "."
+                    lines.append(f"{prefix} {block.text}")
                 else:
-                    speakers = block.speakers if block.speakers else [block.role_name]
-                    if len(speakers) > 1:
-                        prefix = ". ".join(speakers) + "."
-                        lines.append(f"{prefix} {block.text}")
-                    else:
-                        lines.append(f"{block.role_name}. {block.text}")
+                    lines.append(f"{block.role_name}. {block.text}")
             else:
                 raise RuntimeError(f"Unexpected block type during encoding: {type(block)}")
         content = "\n".join(lines) + ("\n" if lines else "")

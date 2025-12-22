@@ -163,14 +163,14 @@ class DirectionBlock(Block):
 class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
-    REGEX = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\.\s*(.*)$")
+    REGEX = re.compile(r"^(/?[A-Z][A-Z0-9 '()/:,-]*?)\.\s*(.*)$")
     MULTI_ROLE_RE = re.compile(r"^((?:[A-Z][A-Z0-9 '()-]*?\.\s*){2,})(.+)$")
     GROUP_ROLE_RE = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\s*\[(.+?)\]\s*[.:]?\s*(.*)$")
     ROLE_NAME_RE = re.compile(r"([A-Z][A-Z0-9 '()-]*?)\.\s*")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role_name: str = ""
-    callout_name: Optional[str] = field(default=None)
+    callout: Optional[str] = None
     speakers: List[str] = field(default_factory=list)
     segments: List[Segment] = field(default_factory=list)
 
@@ -189,10 +189,6 @@ class RoleBlock(Block):
     @property
     def owner(self) -> str:
         return self.role_name
-    
-    @property
-    def callout(self) -> Optional[str]:
-        return self.callout_name
 
     def owner_for_text(self, text: str) -> str:
         if text.startswith("(_"):
@@ -250,8 +246,8 @@ class RoleBlock(Block):
             )
             block = cls(
                 block_id=block_id,
-                role=group_role,
-                callout_role=group_role,
+                role_name=group_role,
+                callout=group_role,
                 speakers=roles if roles else [group_role],
                 text=speech,
                 segments=[segment],
@@ -274,7 +270,7 @@ class RoleBlock(Block):
                 block = cls(
                     block_id=block_id,
                     role_name=roles[0],
-                    callout_name=roles[0],
+                    callout=roles[0],
                     speakers=roles,
                     text=speech,
                     segments=[segment],
@@ -284,13 +280,49 @@ class RoleBlock(Block):
         role_match = cls.REGEX.match(paragraph)
         if not role_match:
             return None
-        role, speech = role_match.groups()
+        raw_prefix, speech = role_match.groups()
         block_counter += 1
         block_id = BlockId(current_part, block_counter)
         speech = speech.strip()
+
+        # Support callout_name/role_name, /role_name (no callout), or plain role.
+        callout_val: Optional[str]
+        role_part: str
+        if "/" in raw_prefix:
+            callout_part, role_part = raw_prefix.split("/", 1)
+            callout_val = callout_part or None
+        elif raw_prefix.startswith("/"):
+            callout_val = None
+            role_part = raw_prefix.lstrip("/")
+        else:
+            callout_val = raw_prefix
+            role_part = raw_prefix
+
+        role_names = [r.strip() for r in role_part.split(",") if r.strip()]
+        if not role_names:
+            return None
+
+        if len(role_names) > 1:
+            segment = SimultaneousSegment(
+                segment_id=SegmentId(block_id, 1),
+                text=speech,
+                roles=role_names,
+            )
+            block = cls(
+                block_id=block_id,
+                role_name=role_names[0],
+                callout=callout_val,
+                speakers=role_names,
+                text=speech,
+                segments=[segment],
+            )
+            return block
+
+        role = role_names[0]
         block = cls(
             block_id=block_id,
             role_name=role,
+            callout=callout_val,
             speakers=[role],
             text=speech.strip(),
             segments=cls.split_block_segments(speech, block_id, role),

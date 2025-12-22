@@ -30,6 +30,8 @@ class CalloutDirector(ABC):
         return len(AudioSegment.from_file(path))
 
     def _build_callout_clip(self, role: str) -> Optional[CalloutClip]:
+        if role is None:
+            return None
         path = paths.CALLOUTS_DIR / f"{role}_callout.wav"
         if not path.exists():
             logging.warning("Callout missing for role %s: %s", role, path)
@@ -66,6 +68,8 @@ class RoleCalloutDirector(CalloutDirector):
         block = self._find_block(block_id)
         if block is None:
             return None
+        if block.callout is None:
+            return None
         return self._build_callout_clip(block.callout)
 
 
@@ -83,6 +87,8 @@ class ConversationAwareCalloutDirector(CalloutDirector):
     def calloutForBlock(self, block_id: BlockId) -> Optional[CalloutClip]:
         block = self._find_block(block_id)
         if block is None:
+            return None
+        if block.callout is None:
             return None
 
         starts_with_direction = bool(block.segments and isinstance(block.segments[0], DirectionSegment))
