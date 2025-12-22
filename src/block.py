@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Optional
 import re
 
 from block_id import BlockId
@@ -170,7 +170,7 @@ class RoleBlock(Block):
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role_name: str = ""
-    callout_name: str | None = None
+    callout_name: Optional[str] = field(default=None)
     speakers: List[str] = field(default_factory=list)
     segments: List[Segment] = field(default_factory=list)
 
@@ -191,8 +191,8 @@ class RoleBlock(Block):
         return self.role_name
     
     @property
-    def callout(self) -> str:
-        return self.callout_name if self.callout_name is not None else self.role_name
+    def callout(self) -> Optional[str]:
+        return self.callout_name
 
     def owner_for_text(self, text: str) -> str:
         if text.startswith("(_"):
