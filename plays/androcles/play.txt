@@ -1359,7 +1359,10 @@ EDITOR.
 Serve the rotter right! 
 
 GLADIATOR-1. 
-Just walked into it, he did. He’s martyred all right enough. Good old lion!
+Just walked into it, he did. 
+
+GLADIATOR-2.
+He’s martyred all right enough. Good old lion!
 
 GLADIATOR-2.
 Old Jock doesn’t like that: look at his face. Devil a better! 
@@ -1754,7 +1757,7 @@ Don’t forget that the divine love and our love surround you. Farewell.
 CHRISTIAN-3.
 Nothing can hurt you: remember that, brother. Farewell. 
 
-CHRISITAN-2.
+CHRISTIAN-2.
 Eternal glory, dearest. Farewell.
 
 EDITOR.
