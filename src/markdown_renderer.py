@@ -60,6 +60,38 @@ class CalloutsMarkdownWriter:
 
         target.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
         return target
+
+
+@dataclass
+class CalloutScriptWriter:
+    play: Play
+
+    def to_markdown(self, out_path: Path | None = None) -> Path:
+        """
+        Write _CALLOUT.md listing each callout to record in a single _CALLOUT.wav.
+        Callouts are sorted alphabetically and use the callout name as the id.
+        """
+        target = out_path or (paths.MARKDOWN_ROLES_DIR / "_CALLOUT.md")
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        callouts: list[str] = []
+        seen: set[str] = set()
+        for blk in self.play:
+            if not isinstance(blk, RoleBlock):
+                continue
+            if blk.callout is None:
+                continue
+            if blk.callout in seen:
+                continue
+            seen.add(blk.callout)
+            callouts.append(blk.callout)
+
+        lines: list[str] = ["# _CALLOUT", ""]
+        for name in sorted(callouts):
+            lines.append(f"- {name}")
+
+        target.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        return target
     
 @dataclass
 class RoleMarkdownWriter:

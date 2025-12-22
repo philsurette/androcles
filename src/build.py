@@ -14,7 +14,13 @@ from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder
 from play import PlayTextParser, Play, Part
-from markdown_renderer import PlayMarkdownWriter, RoleMarkdownWriter, NarratorMarkdownWriter, CalloutsMarkdownWriter
+from markdown_renderer import (
+    PlayMarkdownWriter,
+    RoleMarkdownWriter,
+    NarratorMarkdownWriter,
+    CalloutsMarkdownWriter,
+    CalloutScriptWriter,
+)
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from play_plan_builder import PlayPlanBuilder
@@ -232,6 +238,8 @@ def run_text(line_no_prefix: bool = True) -> None:
     run_write_play(line_no_prefix)
     run_write_roles(line_no_prefix)
     run_write_callouts()
+    run_write_callout_script()
+    run_write_callouts()
 
 
 def run_write_play(line_no_prefix: bool = True):
@@ -261,6 +269,14 @@ def run_write_roles(line_no_prefix: bool = True):
 def run_write_callouts():
     play = PlayTextParser().parse()
     writer = CalloutsMarkdownWriter(play)
+    path = writer.to_markdown()
+    logging.info("✅ wrote %s", path)
+    return path
+
+
+def run_write_callout_script():
+    play = PlayTextParser().parse()
+    writer = CalloutScriptWriter(play)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
