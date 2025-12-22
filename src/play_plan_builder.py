@@ -14,7 +14,7 @@ from callout_director import (
     CalloutDirector,
     NoCalloutDirector,
 )
-from play import Play, Block, MetaBlock
+from play import Play, Block, TitleBlock
 from segment import SimultaneousSegment
 from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, Silence, ParallelClips
@@ -300,7 +300,7 @@ class PlayPlanBuilder:
             if not text:
                 continue
             # Strip heading markers from meta headings for friendlier titles.
-            if isinstance(blk, MetaBlock) and text.startswith("##") and text.endswith("##"):
+            if isinstance(blk, TitleBlock) and text.startswith("##") and text.endswith("##"):
                 cleaned = text.strip("# ").strip()
                 m = re.match(r"^\s*\d+\s*[:.]\s*(.*)$", cleaned)
                 text = m.group(1).strip() if m else cleaned

@@ -51,10 +51,13 @@ class Block(ABC):
     
 
 @dataclass
-class MetaBlock(Block):
+class TitleBlock(Block):
     PREFIX = "::"
     SUFFIX = "::"
     REGEX = re.compile(fr"^{re.escape(PREFIX)}(.*){re.escape(SUFFIX)}$")
+    
+    part_id: int = -1
+    heading: str = ""
 
     @classmethod
     def parse(
@@ -64,33 +67,23 @@ class MetaBlock(Block):
         block_counter: int,
         meta_counters: dict[int | None, int],
     ) -> Block | None:
-        heading = re.match(r"^##\s*(\d+)\s*[:.]\s*(.*?)\s*##$", paragraph)
-        if heading:
-            new_part = int(heading.group(1))
-            block_id = BlockId(new_part, 0)
+        match = re.match(r"^##\s*(?P<part>\d+)\s*[:.]\s*(?P<heading>.*?)\s*##$", paragraph)
+        if match:
+            part_id = int(match.groupdict()['part'])
+            heading = match.groupdict()['heading']
+            block_id = BlockId(part_id, 0)
             block = cls(
                 block_id=block_id,
                 text=paragraph,
                 segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=paragraph)],
+                part_id=part_id,
+                heading=heading
             )
             return block
-
-        meta_match = cls.REGEX.match(paragraph)
-        if meta_match:
-            meta_counters[current_part] = meta_counters.get(current_part, 0) + 1
-            block_id = BlockId(current_part, meta_counters[current_part])
-            text = meta_match.group(1).strip()
-            block = cls(
-                block_id=block_id,
-                text=text,
-                segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=text)],
-            )
-            return block
-
         return None
-
+    
     def _to_markdown(self, prefix: str | None) -> str:
-        return f"{prefix}{self.text}"
+        return f"{prefix}{self.heading}"
     
 @dataclass
 class DescriptionBlock(Block):

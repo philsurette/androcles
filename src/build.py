@@ -261,11 +261,15 @@ def run_write_roles(line_no_prefix: bool = True):
     play = PlayTextParser().parse()
     written_paths: list[Path] = []
     for role in play.roles:
-        writer = RoleMarkdownWriter(role, prefix_line_nos=line_no_prefix)
+        writer = RoleMarkdownWriter(role, reading_metadata=getattr(play, "reading_metadata", None), prefix_line_nos=line_no_prefix)
         path = writer.to_markdown()
         written_paths.append(path)
         logging.debug("✅ wrote %s", path)
-    narrator_path = NarratorMarkdownWriter(play, prefix_line_nos=line_no_prefix).to_markdown()
+    narrator_path = NarratorMarkdownWriter(
+        play,
+        reading_metadata=getattr(play, "reading_metadata", None),
+        prefix_line_nos=line_no_prefix,
+    ).to_markdown()
     written_paths.append(narrator_path)
     if written_paths:
         role_names = [r.name for r in play.roles] + ["_NARRATOR"]

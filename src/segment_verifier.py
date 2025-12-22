@@ -14,7 +14,7 @@ import paths
 from play_plan_builder import PlayPlanBuilder
 from play import PlayTextParser, Play
 from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
-from block import RoleBlock, MetaBlock, DescriptionBlock, DirectionBlock
+from block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -98,7 +98,7 @@ class SegmentVerifier:
             return rows
 
         for blk in self.play.blocks:
-            if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
+            if isinstance(blk, (TitleBlock, DescriptionBlock, DirectionBlock)):
                 relevant = blk.segments
             elif isinstance(blk, RoleBlock):
                 relevant = []

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import List
 
 from segment import Segment, DirectionSegment, SpeechSegment
-from block import MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
+from block import TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock
 from role_splitter import RoleSplitter
 
 
@@ -33,7 +33,7 @@ class NarratorSplitter(RoleSplitter):
                 if blk.block_id.part_id != part_no:
                     continue
 
-            if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
+            if isinstance(blk, (TitleBlock, DescriptionBlock, DirectionBlock)):
                 segments.extend(blk.segments)
             elif isinstance(blk, RoleBlock):
                 for seg in blk.segments:

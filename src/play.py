@@ -10,7 +10,7 @@ from pathlib import Path
 import paths
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment, SimultaneousSegment
-from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
+from block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock
 import logging
 from enum import Enum
 
@@ -207,7 +207,7 @@ class Play:
             pid = blk.block_id.part_id
             if pid not in self._parts:
                 title: str | None = None
-                if isinstance(blk, MetaBlock) and blk.text.startswith("##"):
+                if isinstance(blk, TitleBlock) and blk.text.startswith("##"):
                     m = heading_re.match(blk.text.strip())
                     if m:
                         title = m.group(2).strip()
@@ -396,7 +396,7 @@ class PlayTextParser:
             previous_block_counter = block_counter
             # Try each block type in order.
             parsed_block: Block | None = None
-            for cls in (MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock):
+            for cls in (TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock):
                 block = cls.parse(paragraph, current_part, block_counter, meta_counters)
                 if block is not None:
                     parsed_block = block
@@ -408,7 +408,7 @@ class PlayTextParser:
             play.blocks.append(parsed_block)
             play._by_id[parsed_block.block_id] = parsed_block
             current_part = parsed_block.block_id.part_id
-            if isinstance(parsed_block, MetaBlock) and not parsed_block.text.startswith("##"):
+            if isinstance(parsed_block, TitleBlock) and not parsed_block.text.startswith("##"):
                 # Inline meta paragraphs should not advance the speech block counter.
                 block_counter = previous_block_counter
             else:
@@ -427,7 +427,7 @@ class PlayTextEncoder:
     def encode(self, play: Play) -> None:
         lines: List[str] = []
         for block in play.blocks:
-            if isinstance(block, MetaBlock):
+            if isinstance(block, TitleBlock):
                 if block.text.startswith("##"):
                     lines.append(block.text)
                 else:

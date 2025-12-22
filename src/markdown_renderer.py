@@ -7,8 +7,8 @@ from collections import OrderedDict
 from pathlib import Path
 
 import paths
-from play import Play, Role
-from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock, DirectionSegment, SpeechSegment
+from play import Play, Role, Reader, ReadingMetadata
+from block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock, DirectionSegment, SpeechSegment
 
 
 @dataclass
@@ -97,6 +97,7 @@ class CalloutScriptWriter:
 @dataclass
 class RoleMarkdownWriter:
     role: Role
+    reading_metadata: ReadingMetadata
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
@@ -105,6 +106,13 @@ class RoleMarkdownWriter:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = []
+        rm = getattr(self.reading_metadata, "dramatic_reading", False)
+        if rm:
+            reader: Reader = self.reading_metadata.reader_for_id(self.role.name)
+            role_label = reader.role_name
+            reader_name = reader.reader if reader.reader else self.reading_metadata.default_reader.reader
+            lines.append(f"{role_label}, read by {reader_name}")
+
         for blk in self.role.blocks:
             if isinstance(blk, RoleBlock):
                 prefix = None
@@ -122,6 +130,7 @@ class RoleMarkdownWriter:
 @dataclass
 class NarratorMarkdownWriter:
     play: Play
+    reading_metadata: ReadingMetadata
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
@@ -130,6 +139,10 @@ class NarratorMarkdownWriter:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines: list[str] = []
+
+        narrator_name = self.reading_metadata.reader_for_id("_NARRATOR").reader
+        lines.append(f"Narrated by {narrator_name}\n")
+
         for blk in self.play.blocks:
             part_id = blk.block_id.part_id if blk.block_id.part_id is not None else ""
             block_line = f"{part_id}.{blk.block_id.block_no}"
@@ -143,9 +156,9 @@ class NarratorMarkdownWriter:
                 lines.append(f"  - {blk.to_markdown(render_id='')}")
                 lines.append("")
                 continue
-            if isinstance(blk, (MetaBlock)):
+            if isinstance(blk, (TitleBlock)):
                 lines.append(block_line)
-                lines.append(f"  - {blk.to_markdown(render_id='')}")
+                lines.append(f"# {blk.to_markdown(render_id='')}")
                 lines.append("")
                 continue
             if isinstance(blk, RoleBlock):

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 import paths
-from play import Play, PlayTextParser, DescriptionBlock, DirectionBlock, MetaBlock, RoleBlock
+from play import Play, PlayTextParser, DescriptionBlock, DirectionBlock, TitleBlock, RoleBlock
 from segment import DirectionSegment, SpeechSegment
 
 
@@ -33,12 +33,12 @@ class NarrationCues:
             if blk.block_id.part_id != current_part:
                 current_part = blk.block_id.part_id
                 block_counter = 0
-                if isinstance(blk, MetaBlock) and blk.text.startswith("##"):
+                if isinstance(blk, TitleBlock) and blk.text.startswith("##"):
                     title = blk.text
                     entries.append("\n".join([f"{current_part}:0", f"  - {title.strip()}"]))
                     continue
 
-            if isinstance(blk, MetaBlock) and not blk.text.startswith("##"):
+            if isinstance(blk, TitleBlock) and not blk.text.startswith("##"):
                 key = blk.block_id.part_id
                 meta_counters[key] = meta_counters.get(key, 0) + 1
                 header = f"{'' if key is None else key}:{meta_counters[key]} META"

@@ -8,7 +8,7 @@ from play import (
 from segment import DescriptionSegment, MetaSegment, SpeechSegment
 from segment_id import SegmentId
 from block_id import BlockId
-from block import DescriptionBlock, MetaBlock, RoleBlock    
+from block import DescriptionBlock, TitleBlock, RoleBlock    
 
 def build_play(sequence):
     """Helper to build a PlayText from a list of (part, block_no, role)."""
@@ -96,7 +96,7 @@ def test_block_lookup_by_id():
 
 def test_to_index_entries_matches_block_order_and_inline_dirs():
     meta_id = BlockId(None, 1)
-    meta_block = MetaBlock(
+    meta_block = TitleBlock(
         block_id=meta_id,
         text="::intro::",
         segments=[MetaSegment(segment_id=SegmentId(meta_id, 1), text="intro")],

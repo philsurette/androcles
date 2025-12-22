@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-from play import Play, Block, MetaBlock
+from play import Play, Block, TitleBlock
 from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, SegmentClip, Silence
 from audio_plan import AudioPlan, PlanItem
