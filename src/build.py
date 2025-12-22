@@ -117,6 +117,7 @@ def segments(
     verbose: bool = typer.Option(False, "--verbose", help="Log ffmpeg commands used for splitting"),
     chunk_exports: bool = typer.Option(True, "--chunk-exports/--no-chunk-exports", help="Export in batches"),
     chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
+    force: bool = typer.Option(False, "--force/--no-force", help="Force re-splitting even if outputs are newer"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     paths.set_play_name(play or paths.PLAY_NAME)
@@ -130,6 +131,7 @@ def segments(
         verbose=verbose,
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
+        force=force,
     )
 
 @app.command()
@@ -301,10 +303,12 @@ def run_segments(
     verbose: bool = False,
     chunk_exports: bool = True,
     chunk_export_size: int = 25,
+    force: bool = False,
 ):
     play = PlayTextParser().parse()
     splitter = PlaySplitter(
         play=play,
+        force=force,
         min_silence_ms=separator_len_ms,
         silence_thresh=silence_thresh,
         chunk_size=chunk_size,

@@ -19,6 +19,7 @@ import logging
 from dataclasses import dataclass
 from play import RoleBlock, SpeechSegment, SimultaneousSegment
 from segment_splitter import SegmentSplitter
+import paths
 
 
 @dataclass
@@ -48,3 +49,34 @@ class RoleSplitter(SegmentSplitter):
                 elif isinstance(seg, SimultaneousSegment) and self.role in getattr(seg, "roles", []):
                     ids.append(str(seg.segment_id))
         return ids
+
+
+@dataclass
+class CalloutSplitter(SegmentSplitter):
+    """
+    Split the callout recording into per-callout wavs.
+
+    Input: plays/.../recordings/_CALLER.wav and build/markdown/roles/_CALLER.md
+    Output: build/audio/callouts/<CALLOUT>.wav (one per callout name)
+    """
+
+    def expected_ids(self, part_filter: str | None = None) -> List[str]:
+        """Callout ids are the callout names listed in _CALLER.md."""
+        path = paths.MARKDOWN_ROLES_DIR / "_CALLER.md"
+        if not path.exists():
+            raise RuntimeError(f"Missing callout script: {path}")
+        ids: List[str] = []
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or not line.startswith("-"):
+                continue
+            name = line.lstrip("-").strip()
+            if name:
+                ids.append(name)
+        return ids
+
+    def output_dir(self) -> Path:
+        return paths.BUILD_DIR / "audio" / "callouts"
+
+    def source_path(self) -> Path:
+        return paths.RECORDINGS_DIR / "_CALLER.wav"

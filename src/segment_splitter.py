@@ -19,6 +19,7 @@ import paths
 class SegmentSplitter(ABC):
     play: Play
     role: str
+    force: bool = False
     min_silence_ms: int = 1700
     silence_thresh: int = -45
     chunk_size: int = 50
@@ -41,7 +42,7 @@ class SegmentSplitter(ABC):
         self.splitter.chunk_export_size = self.chunk_export_size
 
     @abstractmethod
-    def expected_ids(self, rpart_filter: str | None = None) -> List[str]:
+    def expected_ids(self, part_filter: str | None = None) -> List[str]:
         """Return expected segment ids for this role."""
         raise NotImplementedError
 
@@ -49,11 +50,25 @@ class SegmentSplitter(ABC):
         """Return the source recording path for the given role."""
         return paths.RECORDINGS_DIR / f"{self.role}.wav"
 
+    def output_dir(self) -> Path:
+        """Return the destination directory for split segments."""
+        return paths.SEGMENTS_DIR / self.role
+
     def split(self, part_filter: str | None = None) -> float | None:
         src_path = self.recording_path()
         if not src_path or not src_path.exists():
             print(f"Recording not found for role {self.role}", file=sys.stderr)
             return None
+
+        out_dir = self.output_dir()
+        if not self.force and out_dir.exists():
+            outputs = list(out_dir.glob("*.wav"))
+            if outputs:
+                src_mtime = src_path.stat().st_mtime
+                oldest_out = min(f.stat().st_mtime for f in outputs)
+                if oldest_out > src_mtime:
+                    logging.info("⏭️  Skipping split for %s (outputs newer than recording)", self.role)
+                    return 0.0
 
         expected_ids = self.expected_ids(part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
@@ -61,7 +76,7 @@ class SegmentSplitter(ABC):
             src_path,
             spans,
             expected_ids,
-            paths.SEGMENTS_DIR / self.role,
+            out_dir,
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,
         )

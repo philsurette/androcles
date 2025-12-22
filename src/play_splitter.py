@@ -9,13 +9,14 @@ from typing import Optional
 
 from play import Play, PlayTextParser
 import paths
-from role_splitter import RoleSplitter
+from role_splitter import RoleSplitter, CalloutSplitter
 from narrator_splitter import NarratorSplitter
 
 
 @dataclass
 class PlaySplitter:
     play: Play
+    force: bool = False
     min_silence_ms: int = 1700
     silence_thresh: int = -45
     pad_end_ms: int = 200
@@ -36,7 +37,8 @@ class PlaySplitter:
                 continue
             splitter = RoleSplitter(
                 play=self.play,
-                role = role_name,
+                role=role_name,
+                force=self.force,
                 min_silence_ms=self.min_silence_ms,
                 silence_thresh=self.silence_thresh,
                 chunk_size=self.chunk_size,
@@ -49,10 +51,12 @@ class PlaySplitter:
             if elapsed:
                 total += elapsed
         return total
-        
-    def oldsplit_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
-        splitter = RoleSplitter(
+
+    def split_callouts(self) -> float:
+        splitter = CalloutSplitter(
             play=self.play,
+            role="_CALLER",
+            force=self.force,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,
             chunk_size=self.chunk_size,
@@ -61,21 +65,13 @@ class PlaySplitter:
             chunk_exports=self.chunk_exports,
             chunk_export_size=self.chunk_export_size,
         )
-        total = 0.0
-        for rec in paths.RECORDINGS_DIR.glob("*.wav"):
-            if rec.name.startswith("_"):
-                continue
-            role = rec.stem
-            if role_filter and role_filter != role:
-                continue
-            elapsed = splitter.split(role, part_filter=part_filter)
-            if elapsed:
-                total += elapsed
-        return total
-
+        elapsed = splitter.split(part_filter=None)
+        return elapsed or 0.0
+        
     def split_narrator(self, part_filter: Optional[str] = None) -> float:
         splitter = NarratorSplitter(
             play=self.play,
+            force=self.force,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,
             pad_end_ms=self.pad_end_ms,
@@ -90,18 +86,24 @@ class PlaySplitter:
     def split_all(self, part_filter: Optional[str] = None, role_filter: Optional[str] = None) -> tuple[float, float]:
         roles_time = 0.0
         narr_time = 0.0
+        callout_time = 0.0
         if role_filter is None:
             roles_time = self.split_roles(role_filter=None, part_filter=part_filter)
             narr_time = self.split_narrator(part_filter=part_filter)
+            # Always split callouts from _CALLER.wav when doing a full split.
+            callout_time = self.split_callouts()
         elif role_filter == "_NARRATOR":
             narr_time = self.split_narrator(part_filter=part_filter)
+        elif role_filter == "_CALLER":
+            callout_time = self.split_callouts()
         else:
             roles_time = self.split_roles(role_filter=role_filter, part_filter=part_filter)
 
         logging.info(
-            "✅  Segments split completed in %.0fs (roles %.3fs, narrator %.3fs)",
-            roles_time + narr_time,
+            "✅  Segments split completed in %.0fs (roles %.3fs, narrator %.3fs, callouts %.3fs)",
+            roles_time + narr_time + callout_time,
             roles_time,
             narr_time,
+            callout_time,
         )
         return roles_time, narr_time

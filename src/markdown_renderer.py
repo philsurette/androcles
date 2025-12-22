@@ -33,7 +33,7 @@ class CalloutsMarkdownWriter:
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write callouts.md listing callouts and their associated roles."""
-        target = out_path or (paths.MARKDOWN_DIR / "callouts.md")
+        target = out_path or (paths.MARKDOWN_DIR / "_CALLOUTS.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         callouts: OrderedDict[str, list[str]] = OrderedDict()
@@ -52,7 +52,8 @@ class CalloutsMarkdownWriter:
                     callouts[callout].append(role)
 
         lines: list[str] = []
-        for callout, roles in callouts.items():
+        for callout in sorted(callouts.keys()):
+            roles = callouts[callout]
             lines.append(f"# {callout}")
             for role in roles:
                 lines.append(f"* {role}")
@@ -68,10 +69,10 @@ class CalloutScriptWriter:
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """
-        Write _CALLOUT.md listing each callout to record in a single _CALLOUT.wav.
+        Write _CALLER.md listing each callout to record in a single _CALLOUT.wav.
         Callouts are sorted alphabetically and use the callout name as the id.
         """
-        target = out_path or (paths.MARKDOWN_ROLES_DIR / "_CALLOUT.md")
+        target = out_path or (paths.MARKDOWN_ROLES_DIR / "_CALLER.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         callouts: list[str] = []
@@ -86,7 +87,7 @@ class CalloutScriptWriter:
             seen.add(blk.callout)
             callouts.append(blk.callout)
 
-        lines: list[str] = ["# _CALLOUT", ""]
+        lines: list[str] = []
         for name in sorted(callouts):
             lines.append(f"- {name}")
 
