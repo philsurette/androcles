@@ -7,10 +7,10 @@ from pathlib import Path
 from dataclasses import dataclass, field
 
 from play_plan_builder import PlayPlanBuilder, write_plan, PlanItem
-from play import PlayTextParser, Play, Part
+from play import Play, Part
 from chapter_builder import ChapterBuilder
 from callout_director import CalloutDirector, ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
-from play_audio_builder import instantiate_plan
+from play_audio_builder import PlayAudioBuilder
 from caption_builder import CaptionBuilder
 import paths
 
@@ -27,6 +27,7 @@ class PlayBuilder:
     generate_captions: bool = True
     librivox: bool = False
     play: Play = None
+    audio_builder:PlayAudioBuilder = field(default_factory = PlayAudioBuilder)
 
     def build_audio(self, part_no: int) -> list[Path]:
         """Build audio plans (and optional outputs) using configured settings."""
@@ -40,6 +41,7 @@ class PlayBuilder:
             ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )
         director = director if self.include_callouts else NoCalloutDirector(self.play)
+        audio_builder = PlayAudioBuilder()
         builder = PlayPlanBuilder(
             play=self.play,
             director=director,
@@ -63,7 +65,7 @@ class PlayBuilder:
             logging.info("Wrote captions to %s", captions_path)
         if self.generate_audio:
             logging.info("Generating audioplay to %s", out_path)
-            instantiate_plan(plan, out_path, audio_format=self.audio_format, captions_path=captions_path)
+            audio_builder.instantiate_plan(plan, out_path, audio_format=self.audio_format, captions_path=captions_path)
             logging.info("Wrote %s", out_path)
         else:
             logging.info("Skipping audio rendering (generate-audio=false)")
@@ -84,6 +86,7 @@ class PlayBuilder:
             ConversationAwareCalloutDirector(self.play) if self.minimal_callouts else RoleCalloutDirector(self.play)
         )
         director = director if self.include_callouts else NoCalloutDirector(self.play)
+
         file_friendly_title = ''.join(self.play.title.lower().split())
         for part_no in [p.part_no for p in self.play.parts if p.part_no is not None]:
             out_path = paths.AUDIO_PLAY_DIR / f"{file_friendly_title}_{part_no}_shaw_128kb.mp3"
@@ -113,7 +116,7 @@ class PlayBuilder:
             write_plan(plan, plan_path)
             logging.info("Wrote audio plan to %s", plan_path)
             if self.generate_audio:
-                instantiate_plan(
+                self.audio_builder.instantiate_plan(
                     plan,
                     out_path,
                     audio_format="mp3",
