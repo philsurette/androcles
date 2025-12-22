@@ -340,3 +340,16 @@ class RoleBlock(Block):
         else:
             names = " + ".join(speakers)
         return f"{prefix}**{names}**: {self.text}"
+
+    def to_markdown_for_role(self, role: str, prefix: str | None) -> str:
+        """
+        Render markdown labeling with the provided role (for role-specific views).
+        Uses the block's callout if present; otherwise suppresses with '/' prefix.
+        """
+        if self.callout is None:
+            names = f"/{role}"
+        elif self.callout and self.callout != role:
+            names = f"{self.callout}/{role}"
+        else:
+            names = role
+        return f"{prefix}**{names}**: {self.text}"

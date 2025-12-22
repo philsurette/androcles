@@ -35,7 +35,16 @@ class RoleMarkdownWriter:
         target = out_path or (paths.MARKDOWN_ROLES_DIR / f"{self.role.name}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
-        lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.role.blocks]
+        lines = []
+        for blk in self.role.blocks:
+            if isinstance(blk, RoleBlock):
+                prefix = None
+                if self.prefix_line_nos:
+                    part = blk.block_id.part_id if blk.block_id.part_id is not None else ""
+                    prefix = f"{part}.{blk.block_id.block_no} "
+                lines.append(blk.to_markdown_for_role(self.role.name, prefix=prefix))
+            else:
+                lines.append(blk.to_markdown(render_id=self.prefix_line_nos))
 
         target.write_text("\n\n".join(lines).rstrip() + "\n", encoding="utf-8")
         return target
