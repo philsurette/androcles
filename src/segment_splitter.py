@@ -61,14 +61,27 @@ class SegmentSplitter(ABC):
             return None
 
         out_dir = self.output_dir()
-        if not self.force and out_dir.exists():
-            outputs = list(out_dir.glob("*.wav"))
-            if outputs:
-                src_mtime = src_path.stat().st_mtime
-                oldest_out = min(f.stat().st_mtime for f in outputs)
-                if oldest_out > src_mtime:
-                    logging.info("⏭️  Skipping split for %s (outputs newer than recording)", self.role)
-                    return 0.0
+        outputs = list(out_dir.glob("*.wav")) if out_dir.exists() else []
+
+        src_mtime = src_path.stat().st_mtime
+        aup3 = src_path.with_suffix(".aup3")
+        aup3_mtime = aup3.stat().st_mtime if aup3.exists() else None
+        reference_mtime = max(src_mtime, aup3_mtime or src_mtime)
+
+        if aup3_mtime and outputs:
+            newest_out = max(f.stat().st_mtime for f in outputs)
+            if newest_out < aup3_mtime:
+                logging.warning(
+                    "⚠️  %s is newer than existing exports for %s; consider re-exporting",
+                    aup3.name,
+                    self.role,
+                )
+
+        if not self.force and outputs:
+            oldest_out = min(f.stat().st_mtime for f in outputs)
+            if oldest_out > reference_mtime:
+                logging.info("⏭️  Skipping split for %s (outputs newer than recording/project)", self.role)
+                return 0.0
 
         expected_ids = self.expected_ids(part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
