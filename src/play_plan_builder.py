@@ -80,7 +80,7 @@ class PlayPlanBuilder:
 
     def list_parts(self) -> List[int | None]:
         parts: List[int | None] = []
-        for blk in self.play:
+        for blk in self.play.blocks:
             pid = blk.block_id.part_id
             if pid not in parts:
                 parts.append(pid)

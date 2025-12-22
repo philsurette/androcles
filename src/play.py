@@ -114,7 +114,7 @@ class Play:
         Return the last `num_preceding` distinct roles (by appearance) prior to block_id.
         """
         roles: List[str] = []
-        for blk in self:
+        for blk in self.blocks:
             if blk.block_id.part_id == block_id.part_id and blk.block_id.block_no == block_id.block_no:
                 break
             if limit_to_current_part and blk.block_id.part_id != block_id.part_id:
@@ -243,7 +243,7 @@ class Play:
         Inline directions in role blocks emit a preceding _NARRATOR entry.
         """
         entries: List[tuple[int | None, int, str]] = []
-        for block in self:
+        for block in self.blocks:
             part = block.block_id.part_id
             block_no = block.block_id.block_no
             if isinstance(block, RoleBlock):
@@ -358,7 +358,7 @@ class PlayTextEncoder:
 
     def encode(self, play: Play) -> None:
         lines: List[str] = []
-        for block in play:
+        for block in play.blocks:
             if isinstance(block, MetaBlock):
                 if block.text.startswith("##"):
                     lines.append(block.text)

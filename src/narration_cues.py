@@ -29,7 +29,7 @@ class NarrationCues:
         current_part: int | None = None
         block_counter = 0
 
-        for blk in self.play:
+        for blk in self.play.blocks:
             if blk.block_id.part_id != current_part:
                 current_part = blk.block_id.part_id
                 block_counter = 0

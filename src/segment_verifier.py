@@ -97,7 +97,7 @@ class SegmentVerifier:
         if self.play is None:
             return rows
 
-        for blk in self.play:
+        for blk in self.play.blocks:
             if isinstance(blk, (MetaBlock, DescriptionBlock, DirectionBlock)):
                 relevant = blk.segments
             elif isinstance(blk, RoleBlock):

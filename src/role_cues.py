@@ -102,7 +102,7 @@ class RoleCues:
         role_entries: Dict[str, List[str]] = {}
         previous_block: RoleBlock | None = None
 
-        for blk in self.play:
+        for blk in self.play.blocks:
             if not isinstance(blk, RoleBlock):
                 previous_block = blk if isinstance(blk, RoleBlock) else None
                 continue

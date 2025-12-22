@@ -25,7 +25,7 @@ class NarratorSplitter(RoleSplitter):
         else:
             part_no = int(part_filter)
 
-        for blk in self.play:
+        for blk in self.play.blocks:
             if part_no == "_":
                 if blk.block_id.part_id is not None:
                     continue

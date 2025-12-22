@@ -48,7 +48,7 @@ class CalloutDirector(ABC):
         )
 
     def _find_block(self, block_id: BlockId) -> Optional[RoleBlock]:
-        for blk in self.play:
+        for blk in self.play.blocks:
             if blk.block_id.part_id == block_id.part_id and blk.block_id.block_no == block_id.block_no:
                 if isinstance(blk, RoleBlock):
                     return blk
