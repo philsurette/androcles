@@ -122,6 +122,11 @@ def segments(
 ) -> None:
     paths.set_play_name(play or paths.PLAY_NAME)
     setup_logging()
+    if role:
+        play_obj = PlayTextParser().parse()
+        valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER"}
+        if role not in valid_roles:
+            raise typer.BadParameter(f"Unknown role: {role}")
     run_segments(
         role=role,
         part=part,
