@@ -4,5 +4,6 @@ pydub
 openpyxl
 typer
 regex
+ruamel.yaml
 # test deps
 pytest

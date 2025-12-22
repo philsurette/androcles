@@ -38,7 +38,7 @@ class CalloutsMarkdownWriter:
 
         callouts: OrderedDict[str, list[str]] = OrderedDict()
 
-        for blk in self.play:
+        for blk in self.play.blocks:
             if not isinstance(blk, RoleBlock):
                 continue
             callout = blk.callout
@@ -77,7 +77,7 @@ class CalloutScriptWriter:
 
         callouts: list[str] = []
         seen: set[str] = set()
-        for blk in self.play:
+        for blk in self.play.blocks:
             if not isinstance(blk, RoleBlock):
                 continue
             if blk.callout is None:
@@ -130,7 +130,7 @@ class NarratorMarkdownWriter:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines: list[str] = []
-        for blk in self.play:
+        for blk in self.play.blocks:
             part_id = blk.block_id.part_id if blk.block_id.part_id is not None else ""
             block_line = f"{part_id}.{blk.block_id.block_no}"
             if isinstance(blk, (DescriptionBlock)):

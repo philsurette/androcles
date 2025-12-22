@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import List, Optional
+from ruamel import yaml
 import re
 from pathlib import Path
 import paths
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
+import logging
 
 @dataclass
 class Title:
@@ -69,23 +71,37 @@ class Part:
     title: str | None
     blocks: List[Block] = field(default_factory=list)
 
-@dataclass
-class Play(List[Block]):
+@dataclass 
+class SourceTextMetadata:
     title: str = field(default='Untitled')
     subtitles: list[str] = field(default_factory=list)
     authors: list[str] = field(default_factory=list)
-    publication_year: Optional[str]
-    def __init__(self, items: List[Block] | None = None) -> None:
-        super().__init__(items or [])
+    translators: list[str] = field(default_factory=list)
+    source: Optional[str] = field(default=None)
+    source_edition: Optional[str] = field(default=None) 
+    source_url: Optional[str] = field(default=None)
+    original_publication_year: Optional[str] = field(default=None)
+    text_basis_year: Optional[str] = field(default=None)
+    original_translation_year: Optional[str] = field(default=None)
+    revised_translation_year: Optional[str] = field(default=None)
+
+    @property
+    def author(self):
+        return self.authors[0] if self.authors else "Unknown Author"
+    
+@dataclass
+class Play:
+    metadata: SourceTextMetadata = field(default_factory=SourceTextMetadata)
+    blocks: List[Block] = field(default_factory=list)
+    def __post_init__(self) -> None:
         self._by_id: dict[BlockId, Block] = {}
-        for block in self:
+        for block in self.blocks:
             self._by_id[block.block_id] = block
         self._parts: dict[int | None, Part] = {}
         self._part_order: List[int | None] = []
         self._roles: dict[str, Role] = {}
         self._role_order: List[str] = []
-        if items:
-            self._build_parts_index()
+        self._build_parts_index()
 
     def getPrecedingRoles(
         self,
@@ -123,6 +139,14 @@ class Play(List[Block]):
             if len(distinct) >= num_preceding:
                 break
         return list(reversed(distinct))
+    
+    @property
+    def author(self):
+        return self.metadata.author
+    
+    @property
+    def title(self):
+        return self.metadata.title
 
     def block_for_id(self, block_id: BlockId) -> Block | None:
         """Return the Block for the given id, or None if not present."""
@@ -134,7 +158,7 @@ class Play(List[Block]):
         self._part_order.clear()
         self._roles.clear()
         self._role_order.clear()
-        for blk in self:
+        for blk in self.blocks:
             pid = blk.block_id.part_id
             if pid not in self._parts:
                 title: str | None = None
@@ -195,20 +219,6 @@ class Play(List[Block]):
             self._build_parts_index()
         return self._roles.get(role_name)
 
-    @property
-    def blocks(self) -> List[Block]:
-        """Return the list of blocks."""
-        return list(self)
-
-    @property
-    def title(self) -> str:
-        """Return the text of the first block."""
-        return self[0].text if self else ""
-
-    @property
-    def author(self) -> str:
-        """Return the text of the first block."""
-        return self[1].text if self else ""
 
     @property
     def roles(self) -> List[Role]:
@@ -267,6 +277,18 @@ class PlayTextParser:
         # Prefer the normalized paragraphs file when available to align numbering
         self.source_path = source_path or paths.DEFAULT_PLAY
 
+    def _load_metadata(self) -> SourceTextMetadata:
+        """Load source text metadata from YAML adjacent to play.txt."""
+        meta_path = self.source_path.with_name("source_text_metadata.yaml")
+        if not meta_path.exists():
+            logging.warning(f"could not find source text metadata at {meta_path}")
+            return SourceTextMetadata()
+        yml = yaml.YAML(typ='safe', pure=True)
+        raw = yml.load(meta_path.read_text(encoding="utf-8")) or {}
+        if not isinstance(raw, dict):
+            raise RuntimeError(f"Invalid metadata format in {meta_path}")
+        return SourceTextMetadata(**raw)
+
     def collapse_to_paragraphs(self, text: str) -> list[str]:
         """
         Join consecutive non-empty lines with spaces and use blank lines as
@@ -293,7 +315,8 @@ class PlayTextParser:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
         paragraphs = self.collapse_to_paragraphs(raw_text)
 
-        play = Play()
+        metadata = self._load_metadata()
+        play = Play(metadata=metadata)
         current_part: int | None = None
         block_counter = 0
         meta_counters: dict[int | None, int] = {}
@@ -314,7 +337,7 @@ class PlayTextParser:
             if parsed_block is None:
                 raise RuntimeError(f"Unable to parse paragraph into any block type: {paragraph}")
 
-            play.append(parsed_block)
+            play.blocks.append(parsed_block)
             play._by_id[parsed_block.block_id] = parsed_block
             current_part = parsed_block.block_id.part_id
             if isinstance(parsed_block, MetaBlock) and not parsed_block.text.startswith("##"):

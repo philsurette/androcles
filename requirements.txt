@@ -40,6 +40,10 @@ regex==2025.11.3
     # via -r requirements.in
 rich==14.2.0
     # via typer
+ruamel-yaml==0.18.17
+    # via -r requirements.in
+ruamel-yaml-clib==0.2.15
+    # via ruamel-yaml
 shellingham==1.5.4
     # via typer
 typer==0.20.0
