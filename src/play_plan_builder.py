@@ -333,8 +333,6 @@ class PlayPlanBuilder:
             if hasattr(seg, "role"):
                 owner = getattr(seg, "role", None)
             if not owner:
-                owner = blk.owner_for_text(text) if hasattr(blk, "owner_for_text") else getattr(blk, "owner", "_NARRATOR")
-            if not owner:
                 owner = "_NARRATOR"
             bullets.append(
                 BlockBullet(
