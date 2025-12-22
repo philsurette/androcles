@@ -93,9 +93,9 @@ class SourceTextMetadata:
 @dataclass
 class Reader:
     id: str
-    reader: Optional[str]
-    role_name: Optional[str]
-    notes: Optional[str]
+    reader: Optional[str] = field(default=None)
+    role_name: Optional[str] = field(default=None)
+    notes: Optional[str] = field(default=None)
 
 @dataclass
 class ReadingMetadata:
@@ -107,31 +107,30 @@ class ReadingMetadata:
 
     def __post_init__(self):
         if self.solo_reading:
-            if len(self.readers > 1):
+            if len(self.readers) > 1:
                 raise RuntimeError("only one reader allowed for solo readings")
         if len(self.readers) == 0:
             self.readers.append(Reader(
                 id="_DEFAULT",
                 reader="Anonymous"))
+        self.default_reader = next((r for r in self.readers if r.id == "_DEFAULT"), Reader(id="_DEFAULT", reader="Anonymous"))
         self.id_to_reader: Dict[str, Reader] = {} 
         for reader in self.readers:
             if reader.id in self.id_to_reader:
                 raise RuntimeError(f"reader id {reader.id} is defined multiple times")
-            if reader.id == "_DEFAULT":
-                self.default_reader = reader
-            else:
+            if reader.id != "_DEFAULT":
                 self.id_to_reader[reader.id] = reader                
 
     @property
     def solo_reading(self):
-        self.reading_type == 'solo'
+        return str(self.reading_type).strip().lower() in {'solo', 'solo reading'}
 
     @property
     def dramatic_reading(self):
-        self.reading_type == 'dramatic'
+        return str(self.reading_type).strip().lower() in {'dramatic', 'dramatic reading'}
 
     def reader_for_id(self, id: str):
-        return self.id_to_reader(id)
+        return self.id_to_reader.get(id) or self.default_reader
     
     
 @dataclass

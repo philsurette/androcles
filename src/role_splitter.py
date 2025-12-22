@@ -25,6 +25,38 @@ import paths
 @dataclass
 class RoleSplitter(SegmentSplitter):
 
+    def pre_export_spans(self, spans: List[tuple[int, int]], expected_ids: List[str], source_path) -> List[tuple[int, int]]:
+        """
+        For dramatic readings, peel off the initial \"<role> read by <reader>\" line
+        and export it separately to build/audio/readers/{role}_reader.wav.
+        """
+        rm = getattr(self.play, "reading_metadata", None)
+        if not rm or not rm.dramatic_reading:
+            return spans
+
+        if len(spans) < len(expected_ids) + 1:
+            logging.warning(
+                "Expected reader intro for %s but found %d spans vs %d expected segments",
+                self.role,
+                len(spans),
+                len(expected_ids),
+            )
+            return spans
+
+        reader_span = spans[0]
+        remaining_spans = spans[1:]
+        readers_dir = paths.BUILD_DIR / "audio" / "readers"
+        reader_id = f"{self.role}_reader"
+        self.splitter.export_spans(
+            source_path,
+            [reader_span],
+            [reader_id],
+            readers_dir,
+            chunk_exports=False,
+            cleanup_existing=False,
+        )
+        return remaining_spans
+
     def expected_ids(self, part_filter: str | None = None) -> List[str]:
         """
         Return expected segment ids for speech lines of a role, optionally filtered by part.

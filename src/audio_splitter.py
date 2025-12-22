@@ -136,13 +136,15 @@ class AudioSplitter:
         *,
         chunk_exports: bool | None = None,
         chunk_export_size: int | None = None,
+        cleanup_existing: bool = True,
     ) -> None:
         """Export spans to WAV files using configured splitter."""
         chunk_exports = self.chunk_exports if chunk_exports is None else chunk_exports
         chunk_export_size = self.chunk_export_size if chunk_export_size is None else chunk_export_size
         out_dir.mkdir(parents=True, exist_ok=True)
-        for f in out_dir.glob("*.wav"):
-            f.unlink()
+        if cleanup_existing:
+            for f in out_dir.glob("*.wav"):
+                f.unlink()
 
         spans_list = list(spans_ms)
         ids_list = list(ids)
@@ -210,6 +212,17 @@ class AudioSplitter:
 
         # Write offsets.txt with start times for all exported spans.
         offsets_path = out_dir / "offsets.txt"
+        offsets: dict[str, str] = {}
+        if not cleanup_existing and offsets_path.exists():
+            for line in offsets_path.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    offsets[parts[0]] = parts[1]
+        for (start_ms, _), eid in zip(spans_list, ids_list):
+            offsets[eid] = fmt_offset(start_ms)
         with offsets_path.open("w", encoding="utf-8") as fh:
-            for (start_ms, _), eid in sorted(zip(spans_list, ids_list), key=lambda x: x[0][0]):
-                fh.write(f"{eid} {fmt_offset(start_ms)}\n")
+            for eid, ts in sorted(offsets.items()):
+                fh.write(f"{eid} {ts}\n")

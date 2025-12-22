@@ -50,6 +50,13 @@ class SegmentSplitter(ABC):
         """Return the source recording path for the given role."""
         return paths.RECORDINGS_DIR / f"{self.role}.wav"
 
+    def pre_export_spans(self, spans: List[tuple[int, int]], expected_ids: List[str], source_path: Path) -> List[tuple[int, int]]:
+        """
+        Hook for subclasses to adjust spans or emit extra exports before main export.
+        Default implementation is a no-op.
+        """
+        return spans
+
     def output_dir(self) -> Path:
         """Return the destination directory for split segments."""
         return paths.SEGMENTS_DIR / self.role
@@ -85,6 +92,7 @@ class SegmentSplitter(ABC):
 
         expected_ids = self.expected_ids(part_filter=part_filter)
         spans = self.splitter.detect_spans(src_path)
+        spans = self.pre_export_spans(spans, expected_ids, src_path)
         self.splitter.export_spans(
             src_path,
             spans,
