@@ -291,7 +291,7 @@ the gladiators presently. Think of that; and it’ll help you to behave
 properly before the captain. (_The Captain arrives._) Attention!
 Salute! (_The soldiers salute._)
 
-A-CHRISTIAN/CHRISTIAN-1.
+A CHRISTIAN/CHRISTIAN-1.
 (_cheerfully_) God bless you, Captain.
 
 CENTURION.
@@ -1090,7 +1090,7 @@ LAVINIA.
 (_marching_) Come along, the rest of the dinner. I shall be the olives
 and anchovies.
 
-ANOTHER-CHRISTIAN/CHRISTIAN-1.
+ANOTHER CHRISTIAN/CHRISTIAN-1.
 (_laughing_) 
 I shall be the soup.
 
@@ -1365,10 +1365,10 @@ Just walked into it, he did.
 /GLADIATOR-2.
 He’s martyred all right enough. Good old lion!
 
-/GLADIATOR-2.
+/GLADIATOR-3.
 Old Jock doesn’t like that: look at his face. Devil a better! 
 
-/GLADIATOR-3.
+/GLADIATOR-4.
 The Emperor will laugh when he hears of it. I can’t help smiling. Ha ha
 ha!!!!!
 

@@ -330,5 +330,13 @@ class RoleBlock(Block):
         return block
 
     def _to_markdown(self, prefix: str | None) -> str:
-        names = " + ".join(self.speakers if self.speakers else [self.role_name])
+        speakers = self.speakers if self.speakers else [self.role_name]
+        if self.callout is None:
+            # Explicitly suppress callout; show leading slash.
+            names = f"/{speakers[0]}"
+        elif self.callout and self.callout not in speakers:
+            # Distinct callout and primary role.
+            names = f"{self.callout}/{speakers[0]}"
+        else:
+            names = " + ".join(speakers)
         return f"{prefix}**{names}**: {self.text}"
