@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 from ruamel import yaml
 import re
 from pathlib import Path
@@ -72,7 +72,7 @@ class Part:
     title: str | None
     blocks: List[Block] = field(default_factory=list)
 
-@dataclass 
+@dataclass
 class SourceTextMetadata:
     title: str = field(default='Untitled')
     subtitles: list[str] = field(default_factory=list)
@@ -91,22 +91,53 @@ class SourceTextMetadata:
         return self.authors[0] if self.authors else "Unknown Author"
     
 @dataclass
-class ReadingMetadata:
-    target: str = field(default='librivox')
-    reading_type: str = field(default='solo')
-    readers: list[str] = field(default=list)
-
-@dataclass
 class Reader:
     id: str
     reader: Optional[str]
     role_name: Optional[str]
     notes: Optional[str]
+
+@dataclass
+class ReadingMetadata:
+    target: str = field(default='librivox')
+    reading_type: str = field(default='solo')
+    readers: List[Reader] = field(default_factory=list)
+    id_to_reader: Dict[str, Reader] = field(init=False)
+    default_reader: Reader = field(init=False)
+
+    def __post_init__(self):
+        if self.solo_reading:
+            if len(self.readers > 1):
+                raise RuntimeError("only one reader allowed for solo readings")
+        if len(self.readers) == 0:
+            self.readers.append(Reader(
+                id="_DEFAULT",
+                reader="Anonymous"))
+        self.id_to_reader: Dict[str, Reader] = {} 
+        for reader in self.readers:
+            if reader.id in self.id_to_reader:
+                raise RuntimeError(f"reader id {reader.id} is defined multiple times")
+            if reader.id == "_DEFAULT":
+                self.default_reader = reader
+            else:
+                self.id_to_reader[reader.id] = reader                
+
+    @property
+    def solo_reading(self):
+        self.reading_type == 'solo'
+
+    @property
+    def dramatic_reading(self):
+        self.reading_type == 'dramatic'
+
+    def reader_for_id(self, id: str):
+        return self.id_to_reader(id)
+    
     
 @dataclass
 class Play:
     source_text_metadata: SourceTextMetadata = field(default_factory=SourceTextMetadata)
-    reading_metadata = field(default_factory = ReadingMetadata)
+    reading_metadata: ReadingMetadata = field(default_factory=ReadingMetadata)
     blocks: List[Block] = field(default_factory=list)
     def __post_init__(self) -> None:
         self._by_id: dict[BlockId, Block] = {}
@@ -313,7 +344,18 @@ class PlayTextParser:
         raw = yml.load(meta_path.read_text(encoding="utf-8")) or {}
         if not isinstance(raw, dict):
             raise RuntimeError(f"Invalid metadata format in {meta_path}")
-        return ReadingMetadata(**raw)
+        readers: list[Reader] = []
+        for entry in raw.get("readers", []) or []:
+            if isinstance(entry, dict):
+                readers.append(Reader(**entry))
+            elif isinstance(entry, Reader):
+                readers.append(entry)
+            else:
+                logging.warning("Skipping unexpected reader entry %r in %s", entry, meta_path)
+
+        meta_kwargs = dict(raw)
+        meta_kwargs["readers"] = readers
+        return ReadingMetadata(**meta_kwargs)
 
     def collapse_to_paragraphs(self, text: str) -> list[str]:
         """
@@ -342,7 +384,8 @@ class PlayTextParser:
         paragraphs = self.collapse_to_paragraphs(raw_text)
 
         metadata = self._load_source_text_metadata()
-        play = Play(source_text_metadata=metadata)
+        reading_metadata = self._load_reading_metadata()
+        play = Play(source_text_metadata=metadata, reading_metadata=reading_metadata)
         current_part: int | None = None
         block_counter = 0
         meta_counters: dict[int | None, int] = {}
