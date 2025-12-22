@@ -1,0 +1,18 @@
+this_is_a_librivox_recording: |
+  This is a Librivox Recording. 
+all_librivox_recordings: |
+  All Librivox Recordings are in the public domain. 
+for_more_information_or_to_volunteer: |
+  For more information or to volunteer, please visit librivox.org.
+project_epilog: |
+  End of {title} by {author}.
+section: |
+  section 
+end_of_section: |
+  end of section
+of: |
+  of
+by: |
+  by
+public_domain_declaration:
+  This librivox recording is in the public domain.

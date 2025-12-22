@@ -1,0 +1,102 @@
+target: librivox
+reading_type: dramatic
+readers: 
+  - id: __DEFAULT
+    reader: Phil Surette
+    role_name: ~
+    notes: for 'solo' readings, the reader... for dramatic plays, a placeholder for unassigned roles
+  - id: _ANNOUNCER
+    reader: ~
+    role_name: Announcer
+    notes: reads all of the librivox extras... this is a librivox recording, section 2 of 3, etc.
+  - id: _CALLER
+    reader: ~
+    role_name: Caller
+    notes: reads all of the callouts... the name of the character that is prepended to each character's speech, e.g. 'androcles' in 'ANDROCLES. Not again, dear'
+  - id: _NARRATOR
+    reader: Cathy Edwards
+    role_name: Narrator
+    notes: reads the titles of each part (prologue/act1/...), descriptions, and stage direction
+  - id: ANDROCLES 
+    reader: Andrew Rooney
+    role_name: Androcles
+  - id: CAESAR
+    reader: ~
+    role_name: Caesar
+  - id: CALL-BOY 
+    reader: ~
+    role_name: The Call Boy
+  - id: CAPTAIN 
+    reader: Phil Surette
+    role_name: The Captain
+  - id: CENTURION 
+    reader: Jim Payette
+    role_name: The Centurion
+  - id: CHRISTIAN-1 
+    reader: ~
+    role_name: Christian Number One
+    notes: a woman
+  - id: CHRISTIAN-2 
+    reader: ~
+    role_name: Christian Number Two
+    notes: a man
+  - id: CHRISTIAN-3
+    reader: ~
+    role_name: Christian Number Three
+    notes: a woman
+  - id: CHRISTIAN-4
+    reader: ~
+    role_name: Christian Number Four
+    notes: a man
+  - id: EDITOR
+    reader: Mark Arneson
+    role_name: The Editor
+  - id: FERROVIUS 
+    reader: Greg Mckenzie
+    role_name: Ferrovius
+  - id: GLADIATOR-1
+    reader: ~
+    role_name: Gladiator Number One
+  - id: GLADIATOR-2
+    reader: ~
+    role_name: Gladiator Number Two
+  - id: GLADIATOR-3
+    reader: ~
+    role_name: Gladiator Number Three
+  - id: GLADIATOR-4
+    reader: ~
+    role_name: Gladiator Number Four
+  - id: KEEPER
+    reader: ~
+    role_name: The Keeper
+  - id: LAVINIA
+    reader: Margo Seymour
+    role_name: Lavinia
+  - id: LENTULUS
+    reader: ~
+    role_name: Lentulus
+  - id: MEGAERA
+    reader: Abrah Arneson
+    role_name: Megaera
+  - id: METELLUS
+    reader: Gillian Kirk
+    role_name: Metellus
+  - id: OX-DRIVER
+    reader: ~
+    role_name: Ox Driver
+  - id: RETIARIUS
+    reader: Eitan A
+    role_name: The Retiarius
+  - id: SECUTOR
+    reader: ~
+    role_name: The Secutor
+  - id: SHAW
+    reader: ~
+    role_name: George Bernard Shaw
+    notes: the role of the author himself... for reading Shaw's commentary in the unnamed appendix at the end of the text
+  - id: SLAVE-1
+    reader: ~
+    role_name: One of the Slaves 
+  - id: SPINTHO
+    reader: ~
+    role_name: Spintho

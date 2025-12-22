@@ -12,6 +12,7 @@ from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import Block, MetaBlock, DescriptionBlock, DirectionBlock, RoleBlock
 import logging
+from enum import Enum
 
 @dataclass
 class Title:
@@ -90,8 +91,22 @@ class SourceTextMetadata:
         return self.authors[0] if self.authors else "Unknown Author"
     
 @dataclass
+class ReadingMetadata:
+    target: str = field(default='librivox')
+    reading_type: str = field(default='solo')
+    readers: list[str] = field(default=list)
+
+@dataclass
+class Reader:
+    id: str
+    reader: Optional[str]
+    role_name: Optional[str]
+    notes: Optional[str]
+    
+@dataclass
 class Play:
-    metadata: SourceTextMetadata = field(default_factory=SourceTextMetadata)
+    source_text_metadata: SourceTextMetadata = field(default_factory=SourceTextMetadata)
+    reading_metadata = field(default_factory = ReadingMetadata)
     blocks: List[Block] = field(default_factory=list)
     def __post_init__(self) -> None:
         self._by_id: dict[BlockId, Block] = {}
@@ -142,11 +157,11 @@ class Play:
     
     @property
     def author(self):
-        return self.metadata.author
+        return self.source_text_metadata.author
     
     @property
     def title(self):
-        return self.metadata.title
+        return self.source_text_metadata.title
 
     def block_for_id(self, block_id: BlockId) -> Block | None:
         """Return the Block for the given id, or None if not present."""
@@ -277,7 +292,7 @@ class PlayTextParser:
         # Prefer the normalized paragraphs file when available to align numbering
         self.source_path = source_path or paths.DEFAULT_PLAY
 
-    def _load_metadata(self) -> SourceTextMetadata:
+    def _load_source_text_metadata(self) -> SourceTextMetadata:
         """Load source text metadata from YAML adjacent to play.txt."""
         meta_path = self.source_path.with_name("source_text_metadata.yaml")
         if not meta_path.exists():
@@ -288,6 +303,17 @@ class PlayTextParser:
         if not isinstance(raw, dict):
             raise RuntimeError(f"Invalid metadata format in {meta_path}")
         return SourceTextMetadata(**raw)
+    
+    def _load_reading_metadata(self) -> ReadingMetadata:
+        meta_path = self.source_path.with_name("reading_metadata.yaml")
+        if not meta_path.exists():
+            logging.warning(f"could not find reading metadata at {meta_path}")
+            return ReadingMetadata()
+        yml = yaml.YAML(typ='safe', pure=True)
+        raw = yml.load(meta_path.read_text(encoding="utf-8")) or {}
+        if not isinstance(raw, dict):
+            raise RuntimeError(f"Invalid metadata format in {meta_path}")
+        return ReadingMetadata(**raw)
 
     def collapse_to_paragraphs(self, text: str) -> list[str]:
         """
@@ -315,8 +341,8 @@ class PlayTextParser:
         raw_text = self.source_path.read_text(encoding="utf-8-sig")
         paragraphs = self.collapse_to_paragraphs(raw_text)
 
-        metadata = self._load_metadata()
-        play = Play(metadata=metadata)
+        metadata = self._load_source_text_metadata()
+        play = Play(source_text_metadata=metadata)
         current_part: int | None = None
         block_counter = 0
         meta_counters: dict[int | None, int] = {}
