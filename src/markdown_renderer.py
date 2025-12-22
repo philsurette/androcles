@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from collections import OrderedDict
 from pathlib import Path
 
 import paths
@@ -23,6 +24,41 @@ class PlayMarkdownWriter:
         lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.play.blocks]
 
         target.write_text("\n\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        return target
+
+
+@dataclass
+class CalloutsMarkdownWriter:
+    play: Play
+
+    def to_markdown(self, out_path: Path | None = None) -> Path:
+        """Write callouts.md listing callouts and their associated roles."""
+        target = out_path or (paths.MARKDOWN_DIR / "callouts.md")
+        target.parent.mkdir(parents=True, exist_ok=True)
+
+        callouts: OrderedDict[str, list[str]] = OrderedDict()
+
+        for blk in self.play:
+            if not isinstance(blk, RoleBlock):
+                continue
+            callout = blk.callout
+            if callout is None:
+                continue
+            roles = blk.role_names if getattr(blk, "role_names", None) else [blk.primary_role]
+            if callout not in callouts:
+                callouts[callout] = []
+            for role in roles:
+                if role not in callouts[callout]:
+                    callouts[callout].append(role)
+
+        lines: list[str] = []
+        for callout, roles in callouts.items():
+            lines.append(f"# {callout}")
+            for role in roles:
+                lines.append(f"* {role}")
+            lines.append("")
+
+        target.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
         return target
     
 @dataclass
