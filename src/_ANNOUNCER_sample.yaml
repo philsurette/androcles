@@ -1,0 +1,38 @@
+title: |
+  Androcles and the Lion
+author: |
+  George Bernard Shaw
+end_of_recording: |
+  End of "Androcles and the Lion" by George Bernard Shaw.
+librivox:
+  this_is_a_librivox_recording: |
+    This is a Librivox Recording.
+  all_librivox_recordings: |
+    All Librivox Recordings are in the public domain.
+  for_more_information: |
+    For more information or to volunteer, please visit librivox.org.
+  section_pd_declaration: |
+    This librivox recording is in the public domain.
+  section_end_suffix: |
+    of "Androcles and the Lion" by George Bernard Shaw
+  sections:
+    0:
+      start: |
+        section 0
+      end: |
+        end of section 0
+    1:
+      start: |
+        section 1
+      end: |
+        end of section 1
+    2:
+      start: |
+        section 2
+      end: |
+        end of section 2
+    3:
+      start: |
+        section 3
+      end: |
+        end of section 3

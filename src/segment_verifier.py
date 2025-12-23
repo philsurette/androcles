@@ -12,7 +12,8 @@ from pydub import AudioSegment
 
 import paths
 from play_plan_builder import PlayPlanBuilder
-from play import PlayTextParser, Play
+from play import Play
+from play_text_parser import PlayTextParser
 from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
 

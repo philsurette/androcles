@@ -8,7 +8,8 @@ from typing import Dict, List
 import logging
 
 import paths
-from play import Play, PlayTextParser, RoleBlock
+from play import Play, RoleBlock
+from play_text_parser import PlayTextParser
 from segment import DirectionSegment, SpeechSegment
 
 

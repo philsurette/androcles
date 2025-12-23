@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from typing import Dict, List
 
 import paths
-from play import Play, PlayTextParser, DescriptionBlock, DirectionBlock, TitleBlock, RoleBlock
+from play import Play, DescriptionBlock, DirectionBlock, TitleBlock, RoleBlock
+from play_text_parser import PlayTextParser
 from segment import DirectionSegment, SpeechSegment
 
 

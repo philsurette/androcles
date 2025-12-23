@@ -7,7 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from play import Play, PlayTextParser
+from play import Play
+from play_text_parser import PlayTextParser
 import paths
 from role_splitter import RoleSplitter, CalloutSplitter
 from narrator_splitter import NarratorSplitter

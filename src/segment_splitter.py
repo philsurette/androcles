@@ -12,7 +12,8 @@ from typing import List, Optional
 from abc import ABC, abstractmethod
 
 from audio_splitter import AudioSplitter
-from play import Play, PlayTextParser
+from play import Play
+from play_text_parser import PlayTextParser
 import paths
 
 

@@ -13,7 +13,9 @@ from play_splitter import PlaySplitter
 from recording_checker import summarize as summarize_recordings
 from timings_xlsx import generate_xlsx
 from play_builder import PlayBuilder
-from play import PlayTextParser, Play, Part
+from play import Play, Part
+from play_text_parser import PlayTextParser
+from announcer_script_writer import AnnouncerScriptWriter
 from play_markdown_writer import PlayMarkdownWriter
 from role_markdown_writer import RoleMarkdownWriter
 from narrator_markdown_writer import NarratorMarkdownWriter
@@ -245,6 +247,7 @@ def run_text(line_no_prefix: bool = True) -> None:
     run_write_callouts()
     run_write_callout_script()
     run_write_callouts()
+    run_write_announcer()
 
 
 def run_write_play(line_no_prefix: bool = True):
@@ -287,6 +290,13 @@ def run_write_callout_script():
     play = PlayTextParser().parse()
     writer = CalloutScriptWriter(play)
     path = writer.to_markdown()
+    logging.info("✅ wrote %s", path)
+    return path
+
+def run_write_announcer():
+    play = PlayTextParser().parse()
+    writer = AnnouncerScriptWriter(play)
+    path = writer.to_yaml()
     logging.info("✅ wrote %s", path)
     return path
 
