@@ -6,11 +6,11 @@ readers:
     role_name: ~
     notes: for 'solo' readings, the reader... for dramatic plays, a placeholder for unassigned roles
   - id: _ANNOUNCER
-    reader: ~
+    reader: Cathy Edwards
     role_name: Announcer
     notes: reads all of the librivox extras... this is a librivox recording, section 2 of 3, etc.
   - id: _CALLER
-    reader: ~
+    reader: Cathy Edwards
     role_name: Caller
     notes: reads all of the callouts... the name of the character that is prepended to each character's speech, e.g. 'androcles' in 'ANDROCLES. Not again, dear'
   - id: _NARRATOR
