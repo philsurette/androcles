@@ -12,6 +12,7 @@ from play_text_parser import PlayTextParser
 import paths
 from role_splitter import RoleSplitter, CalloutSplitter
 from narrator_splitter import NarratorSplitter
+from announcer_splitter import AnnouncerSplitter
 
 
 @dataclass
@@ -68,6 +69,21 @@ class PlaySplitter:
         )
         elapsed = splitter.split(part_filter=None)
         return elapsed or 0.0
+
+    def split_announcer(self) -> float:
+        splitter = AnnouncerSplitter(
+            play=self.play,
+            force=self.force,
+            min_silence_ms=self.min_silence_ms,
+            silence_thresh=self.silence_thresh,
+            chunk_size=self.chunk_size,
+            pad_end_ms=self.pad_end_ms,
+            verbose=self.verbose,
+            chunk_exports=self.chunk_exports,
+            chunk_export_size=self.chunk_export_size,
+        )
+        elapsed = splitter.split(part_filter=None)
+        return elapsed or 0.0
         
     def split_narrator(self, part_filter: Optional[str] = None) -> float:
         splitter = NarratorSplitter(
@@ -88,23 +104,28 @@ class PlaySplitter:
         roles_time = 0.0
         narr_time = 0.0
         callout_time = 0.0
+        announcer_time = 0.0
         if role_filter is None:
             roles_time = self.split_roles(role_filter=None, part_filter=part_filter)
             narr_time = self.split_narrator(part_filter=part_filter)
             # Always split callouts from _CALLER.wav when doing a full split.
             callout_time = self.split_callouts()
+            announcer_time = self.split_announcer()
         elif role_filter == "_NARRATOR":
             narr_time = self.split_narrator(part_filter=part_filter)
         elif role_filter == "_CALLER":
             callout_time = self.split_callouts()
+        elif role_filter == "_ANNOUNCER":
+            announcer_time = self.split_announcer()
         else:
             roles_time = self.split_roles(role_filter=role_filter, part_filter=part_filter)
 
         logging.info(
-            "✅  Segments split completed in %.0fs (roles %.3fs, narrator %.3fs, callouts %.3fs)",
-            roles_time + narr_time + callout_time,
+            "✅  Segments split completed in %.0fs (roles %.3fs, narrator %.3fs, callouts %.3fs, announcer %.3fs)",
+            roles_time + narr_time + callout_time + announcer_time,
             roles_time,
             narr_time,
             callout_time,
+            announcer_time,
         )
         return roles_time, narr_time

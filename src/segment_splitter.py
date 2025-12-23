@@ -66,7 +66,7 @@ class SegmentSplitter(ABC):
     def split(self, part_filter: str | None = None) -> float | None:
         src_path = self.recording_path()
         if not src_path or not src_path.exists():
-            print(f"Recording not found for role {self.role}", file=sys.stderr)
+            logging.error(f"Recording not found for role {self.role}", file=sys.stderr)
             return None
 
         out_dir = self.output_dir()
