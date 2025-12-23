@@ -34,9 +34,11 @@ class CalloutScriptWriter:
             seen.add(blk.callout)
             callouts.append(blk.callout)
 
-        lines: list[str] = []
+        reader_name = self.play.reading_metadata.reader_for_id("_CALLER").reader
+        paragraphs: list[str] = [f"callouts read by {reader_name}"]
         for name in sorted(callouts):
-            lines.append(f"- {name}")
+            paragraphs.append(name.replace("-", " "))
 
-        target.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
+        content = "\n\n".join(paragraphs).rstrip() + "\n"
+        target.write_text(content, encoding="utf-8")
         return target
