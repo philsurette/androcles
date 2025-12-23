@@ -7,6 +7,7 @@ import sys
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+from datetime import datetime, timezone
 from typing import List, Optional
 from abc import ABC, abstractmethod
 
@@ -76,12 +77,17 @@ class SegmentSplitter(ABC):
         reference_mtime = max(src_mtime, aup3_mtime or src_mtime)
 
         if aup3_mtime and outputs:
-            newest_out = max(f.stat().st_mtime for f in outputs)
-            if newest_out < aup3_mtime:
+            newest_out_ns = max(f.stat().st_mtime_ns for f in outputs)
+            aup3_ns = aup3.stat().st_mtime_ns
+            if newest_out_ns < aup3_ns:
+                def fmt(ts_ns: int) -> str:
+                    return datetime.fromtimestamp(ts_ns / 1e9, tz=timezone.utc).isoformat()
                 logging.warning(
-                    "⚠️  %s is newer than existing exports for %s; consider re-exporting",
+                    "⚠️  %s is newer than existing exports for %s (aup3 %s vs newest export %s); consider re-exporting",
                     aup3.name,
                     self.role,
+                    fmt(aup3_ns),
+                    fmt(newest_out_ns),
                 )
 
         if not self.force and outputs:

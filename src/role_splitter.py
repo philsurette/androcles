@@ -34,28 +34,13 @@ class RoleSplitter(SegmentSplitter):
         if not rm or not rm.dramatic_reading:
             return spans
 
-        readers_dir = paths.BUILD_DIR / "audio" / "readers"
-        reader_id = f"{self.role}_reader"
-        reader_obj = rm.reader_for_id(self.role) if hasattr(rm, "reader_for_id") else None
-        role_label = reader_obj.role_name if reader_obj and reader_obj.role_name else self.role
-        reader_name = reader_obj.reader if reader_obj and reader_obj.reader else (reader_obj.id if reader_obj else self.role)
-        readers_dir.mkdir(parents=True, exist_ok=True)
-        (readers_dir / f"{reader_id}.txt").write_text(f"0.0 {role_label} read by {reader_name}\n", encoding="utf-8")
-
         if not spans:
             logging.warning("Expected reader intro for %s but found no spans to split", self.role)
             return spans
 
-        if len(spans) <= len(expected_ids):
-            logging.warning(
-                "Expected reader intro for %s but span count (%d) is not greater than expected ids (%d)",
-                self.role,
-                len(spans),
-                len(expected_ids),
-            )
-            return spans
-
         reader_span, *remaining_spans = spans
+        readers_dir = paths.BUILD_DIR / "audio" / "readers"
+        reader_id = f"{self.role}_reader"
         self.splitter.export_spans(
             source_path,
             [reader_span],
@@ -64,6 +49,13 @@ class RoleSplitter(SegmentSplitter):
             chunk_exports=False,
             cleanup_existing=False,
         )
+        if len(remaining_spans) != len(expected_ids):
+            logging.warning(
+                "Reader intro split for %s left %d spans vs %d expected ids; verify recording",
+                self.role,
+                len(remaining_spans),
+                len(expected_ids),
+            )
         return remaining_spans
 
     def expected_ids(self, part_filter: str | None = None) -> List[str]:
