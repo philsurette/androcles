@@ -16,6 +16,7 @@ from play_builder import PlayBuilder
 from play import Play, Part
 from play_text_parser import PlayTextParser
 from announcer_script_writer import AnnouncerScriptWriter
+from announcer import LibrivoxAnnouncer
 from play_markdown_writer import PlayMarkdownWriter
 from role_markdown_writer import RoleMarkdownWriter
 from narrator_markdown_writer import NarratorMarkdownWriter
@@ -295,8 +296,9 @@ def run_write_callout_script():
 
 def run_write_announcer():
     play = PlayTextParser().parse()
-    writer = AnnouncerScriptWriter(play)
-    path = writer.to_yaml()
+    announcer = LibrivoxAnnouncer(play)
+    writer = AnnouncerScriptWriter(announcer=announcer)
+    path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
 

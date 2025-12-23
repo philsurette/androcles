@@ -34,7 +34,7 @@ class Announcer:
     def by_author_announcement(self) -> Announcement:
         return Announcement(
             ["by"],
-            "by {self.play.author}"
+            f"by {self.play.author}"
         )
     
     def original_publication_date_announcement(self) -> Announcement:
