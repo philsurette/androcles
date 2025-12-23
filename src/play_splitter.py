@@ -13,6 +13,7 @@ import paths
 from role_splitter import RoleSplitter, CalloutSplitter
 from narrator_splitter import NarratorSplitter
 from announcer_splitter import AnnouncerSplitter
+from announcer import Announcer, LibrivoxAnnouncer
 
 
 @dataclass

@@ -124,7 +124,7 @@ def segments(
     setup_logging()
     if role:
         play_obj = PlayTextParser().parse()
-        valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER"}
+        valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
         if role not in valid_roles:
             raise typer.BadParameter(f"Unknown role: {role}")
     run_segments(

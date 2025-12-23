@@ -14,11 +14,10 @@ class Announcement:
 class Announcer:
     play: Play
     announcer_role: str = "_ANNOUNCER"
-    metadata: ReadingMetadata = field(init=False)
+    metadata: ReadingMetadata | None = field(init=False, default=None)
 
     def __post_init__(self) -> None:
-        self.metadata = self.play.get_reading_metadata_for_role(self.announcer_role)
-        
+        self.metadata = getattr(self.play, "reading_metadata", None)
 
     def title_announcement(self) -> Announcement:
         return Announcement(
@@ -63,8 +62,11 @@ class Announcer:
             self.original_publication_date_announcement(),
             self.end_of_recording_announcement()
         ]
-    
-def LibrivoxAnnouncer(Announcer):
+class LibrivoxAnnouncer(Announcer):
+
+    def title_announcement(self) -> Announcement:
+        # Override to match Librivox phrasing
+        return Announcement(["title"], f"{self.play.title}")
 
     def this_is_a_librivox_recording(self) -> Announcement:
         return Announcement(
@@ -98,11 +100,8 @@ def LibrivoxAnnouncer(Announcer):
 
     def section_start_announcement(self, section_number: int) -> Announcement:
         return Announcement(
-            ["librivox", 
-             "sections", 
-             str(section_number),
-             "end"], 
-             f"section{section_number}",
+            ["librivox", "sections", str(section_number), "start"],
+            f"section {section_number}",
         )
     
     def section_end_announcement(self, section_number: int) -> Announcement:
@@ -115,11 +114,12 @@ def LibrivoxAnnouncer(Announcer):
         )
     
     def section_announcements(self) -> List[Announcement]:
-        anouncements = []
-        for s in range(self.play.first_section, self.play.last_section + 1):
-            anouncements.extend(self.section_start_announcement(s))
-            anouncements.extend(self.section_end_announcement(s))
-        return anouncements
+        announcements: List[Announcement] = []
+        parts = [p for p in self.play.parts if p.part_no is not None]
+        for part in parts:
+            announcements.append(self.section_start_announcement(part.part_no))
+            announcements.append(self.section_end_announcement(part.part_no))
+        return announcements
     
     def announcements(self) -> List[Announcement]:
         base_announcements = super().announcements()
@@ -128,7 +128,7 @@ def LibrivoxAnnouncer(Announcer):
             self.all_librivox_recordings(),
             self.for_more_information(),
             self.section_pd_declaration(),
-            self.section_end_suffix()
+            self.section_end_suffix(),
         ]
         return base_announcements + librivox_announcements + self.section_announcements()
     
