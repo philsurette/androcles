@@ -20,7 +20,8 @@ from chapter_builder import Chapter
 from clip import SegmentClip, CalloutClip, Silence, ParallelClips
 from audio_plan import AudioPlan, PlanItem
 import paths
-from play_plan_decorator import PlayPlanDecorator, DefaultPlayPlanDecorator, LibrivoxPlayPlanDecorator
+from play_plan_decorator import PlayPlanDecorator, DefaultPlayPlanDecorator
+from librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
 from spacing import (
   PARAGRAPH_PAUSE_MS,
   CALLOUT_SPACING_MS,
