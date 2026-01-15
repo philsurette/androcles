@@ -188,6 +188,7 @@ def audioplay(
     librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
+    prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     paths.set_play_name(play or paths.PLAY_NAME)
@@ -203,6 +204,7 @@ def audioplay(
         librivox=librivox,
         audio_format=audio_format,
         normalize_output=normalize_output,
+        prepare=prepare,
     )
 
 
@@ -363,9 +365,14 @@ def run_audioplay(
     librivox: bool = False,
     audio_format: str = "mp4",
     normalize_output: bool = True,
+    prepare: bool = True,
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
+    if prepare:
+        logging.info("Preparing text artifacts and split segments before audioplay")
+        run_text(line_no_prefix=True)
+        run_segments()
     play: Play = PlayTextParser().parse()
     if part is None:
         part_no = None

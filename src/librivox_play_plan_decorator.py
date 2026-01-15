@@ -27,8 +27,8 @@ class LibrivoxPlayPlanDecorator(PlayPlanDecorator):
     def add_project_preamble(self, part_no: int):
         self.plan.add_silence(self.preamble_leading_silence_ms)
         self._add_words(f"section {part_no} of", sentence_start=True)
-        self._add_recording(
-            file_name="_TITLE",
+        self._add_announcement(
+            file_name="title",
             text=f"{self.play.title}. ",
             silence_ms=self.spacings.segment,
         )
@@ -55,8 +55,8 @@ class LibrivoxPlayPlanDecorator(PlayPlanDecorator):
             file_name="read by",
             sentence_start=True,
         )
-        self._add_recording(
-            file_name="_READER",
+        self._add_announcement(
+            file_name="reader",
             text="Phil Surette.",
             silence_ms=self.spacings.segment,
         )

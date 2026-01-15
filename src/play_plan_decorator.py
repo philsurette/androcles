@@ -34,15 +34,26 @@ class PlayPlanDecorator(ABC):
     def add_project_epilog(self, part_no: int):
         raise RuntimeError("not implemented")
     
-    def _add_recording(self, 
-                           file_name: str, 
-                           text: str, 
-                           silence_ms: int) -> None:
-        self._add_clip(
-            folder=paths.RECORDINGS_DIR,
-            file_name=file_name,
-            text=text,
-            following_silence_ms=silence_ms      
+    def _add_announcement(
+        self,
+        file_name: str,
+        text: str,
+        silence_ms: int,
+    ) -> None:
+        base = paths.SEGMENTS_DIR / "_ANNOUNCER"
+        path = base / f"{file_name}.wav"
+        if not path.exists():
+            raise RuntimeError(f"Announcer recording not found at {path}")
+
+        self.plan.addClip(
+            SegmentClip(
+                path=path,
+                text=text,
+                role=None,
+                clip_id=None,
+                length_ms=self.paths.get_audio_length_ms(path),
+            ),
+            silence_ms,
         )
     
     def _add_clip(self, 
@@ -130,16 +141,16 @@ class PlayPlanDecorator(ABC):
         )
     
     def _add_title_by_author(self):
-        self._add_recording(
-            file_name="_TITLE",
+        self._add_announcement(
+            file_name="title",
             text=f"{self.play.title},",
             silence_ms=self.spacings.comma
         )
         self._add_words(
             file_name="by",
         )
-        self._add_recording(
-            file_name="_AUTHOR",
+        self._add_announcement(
+            file_name="author",
             text=f"{self.play.author}.",
             silence_ms=0
         )        

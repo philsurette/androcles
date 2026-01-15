@@ -42,10 +42,9 @@ class CueBuilder:
 
     def _load_callout(self, role: str) -> AudioSegment | None:
         """Return the callout clip for a role if it exists."""
-        path = paths.CALLOUTS_DIR / f"{role}_callout.wav"
+        path = paths.BUILD_DIR / "audio" / "callouts" / f"{role}_callout.wav"
         if not path.exists():
-            logging.warning("Missing callout for role %s at %s", role, path)
-            return None
+            raise RuntimeError(f"Callout missing for role {role} at {path}")
         return AudioSegment.from_file(path)
 
     @staticmethod
