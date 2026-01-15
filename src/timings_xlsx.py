@@ -95,8 +95,9 @@ def write_sheet(ws, headers, rows):
             cell.alignment = cell.alignment.copy(horizontal="right")
 
 
-def generate_xlsx(librivox: bool = False):
-    rows = compute_rows(librivox=librivox)
+def generate_xlsx(librivox: bool = False, paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    rows = compute_rows(librivox=librivox, paths_config=cfg)
     headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "src_offset", "role", "text"]
     wb = Workbook()
     ws = wb.active
@@ -123,8 +124,7 @@ def generate_xlsx(librivox: bool = False):
         ws_role = wb.create_sheet(title=name)
         write_sheet(ws_role, headers, role_rows)
 
-    out_path = paths.AUDIO_OUT_DIR / "timings.xlsx"
+    out_path = cfg.audio_out_dir / "timings.xlsx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
     print(f"Wrote {out_path}")
-

@@ -21,6 +21,7 @@ import paths
 class SegmentSplitter(ABC):
     play: Play
     role: str
+    paths: paths.PathConfig = field(default_factory=paths.current)
     force: bool = False
     min_silence_ms: int = 1700
     silence_thresh: int = -45
@@ -33,7 +34,7 @@ class SegmentSplitter(ABC):
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser().parse()
+            self.play = PlayTextParser(paths_config=self.paths).parse()
         # Sync splitter thresholds
         self.splitter.min_silence_ms = self.min_silence_ms
         self.splitter.silence_thresh = self.silence_thresh
@@ -50,7 +51,7 @@ class SegmentSplitter(ABC):
 
     def recording_path(self) -> Path:
         """Return the source recording path for the given role."""
-        return paths.RECORDINGS_DIR / f"{self.role}.wav"
+        return self.paths.recordings_dir / f"{self.role}.wav"
 
     def pre_export_spans(self, spans: List[tuple[int, int]], expected_ids: List[str], source_path: Path) -> List[tuple[int, int]]:
         """
@@ -61,7 +62,7 @@ class SegmentSplitter(ABC):
 
     def output_dir(self) -> Path:
         """Return the destination directory for split segments."""
-        return paths.SEGMENTS_DIR / self.role
+        return self.paths.segments_dir / self.role
 
     def split(self, part_filter: str | None = None) -> float | None:
         src_path = self.recording_path()

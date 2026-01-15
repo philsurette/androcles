@@ -19,6 +19,7 @@ from announcer import Announcer, LibrivoxAnnouncer
 @dataclass
 class PlaySplitter:
     play: Play
+    paths: paths.PathConfig = None
     force: bool = False
     min_silence_ms: int = 1700
     silence_thresh: int = -45
@@ -30,7 +31,9 @@ class PlaySplitter:
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser().parse()
+            self.play = PlayTextParser(paths_config=self.paths or paths.current()).parse()
+        if self.paths is None:
+            self.paths = paths.current()
 
 
     def split_roles(self, role_filter: Optional[str] = None, part_filter: Optional[str] = None) -> float:
@@ -40,6 +43,7 @@ class PlaySplitter:
                 continue
             splitter = RoleSplitter(
                 play=self.play,
+                paths=self.paths,
                 role=role_name,
                 force=self.force,
                 min_silence_ms=self.min_silence_ms,
@@ -58,6 +62,7 @@ class PlaySplitter:
     def split_callouts(self) -> float:
         splitter = CalloutSplitter(
             play=self.play,
+            paths=self.paths,
             role="_CALLER",
             force=self.force,
             min_silence_ms=self.min_silence_ms,
@@ -74,6 +79,7 @@ class PlaySplitter:
     def split_announcer(self) -> float:
         splitter = AnnouncerSplitter(
             play=self.play,
+            paths=self.paths,
             force=self.force,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,
@@ -89,6 +95,7 @@ class PlaySplitter:
     def split_narrator(self, part_filter: Optional[str] = None) -> float:
         splitter = NarratorSplitter(
             play=self.play,
+            paths=self.paths,
             force=self.force,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,

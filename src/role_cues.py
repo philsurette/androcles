@@ -16,10 +16,13 @@ from segment import DirectionSegment, SpeechSegment
 @dataclass
 class RoleCues:
     play: Play
+    paths: paths.PathConfig = None
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser().parse()
+            self.play = PlayTextParser(paths_config=self.paths or paths.current()).parse()
+        if self.paths is None:
+            self.paths = paths.current()
 
     def shorten_cue_lines(self, lines: List[str]) -> List[str]:
         """
@@ -96,8 +99,8 @@ class RoleCues:
 
     def write(self) -> None:
         """Generate role cue files into build/roles."""
-        paths.MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
-        for path in paths.MARKDOWN_ROLES_DIR.glob("*.txt"):
+        self.paths.markdown_roles_dir.mkdir(parents=True, exist_ok=True)
+        for path in self.paths.markdown_roles_dir.glob("*.txt"):
             path.unlink()
 
         role_entries: Dict[str, List[str]] = {}
@@ -144,7 +147,7 @@ class RoleCues:
             previous_block = blk
 
         for role, entries in role_entries.items():
-            path = paths.MARKDOWN_ROLES_DIR / f"{role}.txt"
+            path = self.paths.markdown_roles_dir / f"{role}.txt"
             content = "\n\n".join(entries)
             if content:
                 content += "\n"

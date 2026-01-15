@@ -12,11 +12,12 @@ from play import Play
 @dataclass
 class PlayMarkdownWriter:
     play: Play
+    paths: paths.PathConfig = field(default_factory=paths.current)
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""
-        target = out_path or (paths.MARKDOWN_DIR / f"{self.play.title}.md")
+        target = out_path or (self.paths.markdown_dir / f"{self.play.title}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = [blk.to_markdown(render_id=self.prefix_line_nos) for blk in self.play.blocks]

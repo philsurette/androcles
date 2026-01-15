@@ -13,13 +13,14 @@ from block import RoleBlock
 @dataclass
 class CalloutScriptWriter:
     play: Play
+    paths: paths.PathConfig = field(default_factory=paths.current)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """
         Write _CALLER.md listing each callout to record in a single _CALLOUT.wav.
         Callouts are sorted alphabetically and use the callout name as the id.
         """
-        target = out_path or (paths.MARKDOWN_ROLES_DIR / "_CALLER.md")
+        target = out_path or (self.paths.markdown_roles_dir / "_CALLER.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         callouts: list[str] = []

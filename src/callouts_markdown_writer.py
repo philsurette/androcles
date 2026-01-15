@@ -14,10 +14,11 @@ from block import RoleBlock
 @dataclass
 class CalloutsMarkdownWriter:
     play: Play
+    paths: paths.PathConfig = field(default_factory=paths.current)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write callouts.md listing callouts and their associated roles."""
-        target = out_path or (paths.MARKDOWN_DIR / "_CALLOUTS.md")
+        target = out_path or (self.paths.markdown_dir / "_CALLOUTS.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         callouts: OrderedDict[str, list[str]] = OrderedDict()

@@ -35,11 +35,11 @@ def _sample_play(tmp_path: Path) -> Path:
 
 
 def test_librivox_plan_adds_preambles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cfg = paths.PathConfig(play_name="test", build_root=tmp_path / "build", plays_dir=tmp_path / "plays", snippets_dir=tmp_path / "snippets")
     src = _sample_play(tmp_path)
-    play = PlayTextParser(source_path=src).parse()
+    play = PlayTextParser(source_path=src, paths_config=cfg).parse()
 
-    seg_dir = tmp_path / "segments"
-    monkeypatch.setattr(paths, "SEGMENTS_DIR", seg_dir)
+    seg_dir = cfg.segments_dir
     for role, seg_id in (("ANDROCLES", "1_1_1"), ("MEGAERA", "2_1_1")):
         role_dir = seg_dir / role
         role_dir.mkdir(parents=True, exist_ok=True)
@@ -50,10 +50,9 @@ def test_librivox_plan_adds_preambles(tmp_path: Path, monkeypatch: pytest.Monkey
         (announcer_dir / name).write_bytes(b"")
 
     monkeypatch.setattr(PlayPlanBuilder, "get_audio_length_ms", staticmethod(lambda path, cache: 500))
-    monkeypatch.setattr(paths.Paths, "get_audio_length_ms", lambda self, path: 500)
-    monkeypatch.setattr(paths, "RECORDINGS_DIR", tmp_path / "recordings")
+    monkeypatch.setattr(paths.PathConfig, "get_audio_length_ms", lambda self, path: 500)
 
-    builder = PlayPlanBuilder(play=play, segment_spacing_ms=0, librivox=True)
+    builder = PlayPlanBuilder(play=play, segment_spacing_ms=0, librivox=True, paths=cfg)
     plan = builder.build_audio_plan(part_no=1)
 
     assert plan[0].kind == "silence"

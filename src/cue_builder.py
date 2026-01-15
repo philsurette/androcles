@@ -20,6 +20,7 @@ class CueBuilder:
     """Build cues using in-memory PlayText data."""
 
     play: Play
+    paths: paths.PathConfig = field(default_factory=paths.current)
     response_delay_ms: int = 2000
     max_cue_size_ms: int = 5000
     include_prompts: bool = True
@@ -33,7 +34,7 @@ class CueBuilder:
         """Concatenate audio segments for a role."""
         audio = AudioSegment.empty()
         for sid in seg_ids:
-            path = paths.SEGMENTS_DIR / role / f"{sid}.wav"
+            path = self.paths.segments_dir / role / f"{sid}.wav"
             if not path.exists():
                 logging.warning("Missing snippet %s for role %s", sid, role)
                 continue
@@ -42,7 +43,7 @@ class CueBuilder:
 
     def _load_callout(self, role: str) -> AudioSegment | None:
         """Return the callout clip for a role if it exists."""
-        path = paths.BUILD_DIR / "audio" / "callouts" / f"{role}_callout.wav"
+        path = self.paths.build_dir / "audio" / "callouts" / f"{role}_callout.wav"
         if not path.exists():
             raise RuntimeError(f"Callout missing for role {role} at {path}")
         return AudioSegment.from_file(path)
@@ -179,7 +180,7 @@ class CueBuilder:
         if chapters:
             total = chapters[-1][1]
             audio = audio[:total]
-        out_path = paths.AUDIO_OUT_DIR / "cues" / f"{role}_cue.mp4"
+        out_path = self.paths.audio_out_dir / "cues" / f"{role}_cue.mp4"
         self._export_mp4(audio, chapters, out_path)
         logging.info("Wrote cue file %s with %d chapters", out_path, len(chapters))
         return out_path

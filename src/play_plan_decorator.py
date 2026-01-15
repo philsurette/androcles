@@ -6,14 +6,13 @@ from play import Play
 from clip import SegmentClip
 from audio_plan import AudioPlan
 import paths
-from paths import Paths
 from spacing import Spacings
 
 @dataclass
 class PlayPlanDecorator(ABC):
     play: Play
     plan: AudioPlan
-    paths: Paths = field(default_factory=Paths)
+    paths: paths.PathConfig = field(default_factory=paths.current)
     spacings: Spacings = field(default_factory=Spacings)
     preamble_leading_silence_ms = 500
     epilogue_trailing_silence_ms = 1000
@@ -40,7 +39,7 @@ class PlayPlanDecorator(ABC):
         text: str,
         silence_ms: int,
     ) -> None:
-        base = paths.SEGMENTS_DIR / "_ANNOUNCER"
+        base = self.paths.segments_dir / "_ANNOUNCER"
         path = base / f"{file_name}.wav"
         if not path.exists():
             raise RuntimeError(f"Announcer recording not found at {path}")
@@ -61,7 +60,7 @@ class PlayPlanDecorator(ABC):
             file_name: str, 
             text: str, 
             following_silence_ms: int = 0,
-            ) -> None:
+        ) -> None:
         path = folder / f"{file_name}.wav"
         self.plan.addClip(
             SegmentClip(
@@ -85,7 +84,7 @@ class PlayPlanDecorator(ABC):
             file_name=file_name,
             text=text,
             following_silence_ms=following_silence_ms,
-            folder=self.paths.audio_snippets
+            folder=self.paths.general_snippets_dir
         )
 
     def _add_words(self,
@@ -98,7 +97,7 @@ class PlayPlanDecorator(ABC):
             folder: Path = None
         ) -> None:
         if folder is None:
-            folder = self.paths.audio_snippets
+            folder = self.paths.general_snippets_dir
         if text is None:
             text = file_name
             if sentence_start is True:
@@ -130,7 +129,7 @@ class PlayPlanDecorator(ABC):
         if following_silence_ms is None:
             following_silence_ms = self.spacings.segment
         if folder is None:
-            folder = self.paths.audio_snippets
+            folder = self.paths.general_snippets_dir
         if text is None:
             text = f"{file_name.capitalize()}."
         self._add_clip(

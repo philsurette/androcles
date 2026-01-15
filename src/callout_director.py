@@ -18,8 +18,9 @@ from play import Play, BlockId, RoleBlock, DirectionSegment
 class CalloutDirector(ABC):
     """Base class for callout decision logic."""
 
-    def __init__(self, play: Play) -> None:
+    def __init__(self, play: Play, paths_config: paths.PathConfig | None = None) -> None:
         self.play = play
+        self.paths = paths_config or paths.current()
 
     @abstractmethod
     def calloutForBlock(self, block_id: BlockId) -> Optional[CalloutClip]:
@@ -33,7 +34,7 @@ class CalloutDirector(ABC):
         if role is None:
             return None
         # Expect callout clips to be split from recordings/_CALLER.wav into build/audio/callouts/<callout>.wav
-        path = paths.BUILD_DIR / "audio" / "callouts" / f"{role}.wav"
+        path = self.paths.build_dir / "audio" / "callouts" / f"{role}.wav"
         if not path.exists():
             logging.warning("Callout missing for role %s (expected in %s)", role, path)
             return None

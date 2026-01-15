@@ -16,9 +16,10 @@ from block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock
 class PlayTextParser:
     """Parse a source play text file into a PlayText of Blocks."""
 
-    def __init__(self, source_path: Path | None = None) -> None:
+    def __init__(self, source_path: Path | None = None, paths_config: paths.PathConfig | None = None) -> None:
+        self.paths = paths_config or paths.current()
         # Prefer the normalized paragraphs file when available to align numbering
-        self.source_path = source_path or paths.DEFAULT_PLAY
+        self.source_path = source_path or self.paths.play_text
 
     def _load_source_text_metadata(self) -> SourceTextMetadata:
         """Load source text metadata from YAML adjacent to play.txt."""

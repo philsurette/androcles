@@ -15,15 +15,18 @@ from segment import DirectionSegment, SpeechSegment
 @dataclass
 class NarrationCues:
     play: Play
+    paths: paths.PathConfig = None
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser().parse()
+            self.play = PlayTextParser(paths_config=self.paths or paths.current()).parse()
+        if self.paths is None:
+            self.paths = paths.current()
 
     def write(self) -> None:
         """Generate narrator cues into build/markdown/roles/_NARRATOR.txt."""
-        paths.MARKDOWN_ROLES_DIR.mkdir(parents=True, exist_ok=True)
-        out_path = paths.MARKDOWN_ROLES_DIR / "_NARRATOR.txt"
+        self.paths.markdown_roles_dir.mkdir(parents=True, exist_ok=True)
+        out_path = self.paths.markdown_roles_dir / "_NARRATOR.txt"
 
         entries: List[str] = []
         meta_counters: Dict[int | None, int] = {}

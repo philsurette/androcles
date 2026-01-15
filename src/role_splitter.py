@@ -39,7 +39,7 @@ class RoleSplitter(SegmentSplitter):
             return spans
 
         reader_span, *remaining_spans = spans
-        readers_dir = paths.BUILD_DIR / "audio" / "readers"
+        readers_dir = self.paths.build_dir / "audio" / "readers"
         reader_id = f"{self.role}_reader"
         self.splitter.export_spans(
             source_path,
@@ -95,7 +95,7 @@ class CalloutSplitter(SegmentSplitter):
 
     def expected_ids(self, part_filter: str | None = None) -> List[str]:
         """Callout ids are the callout names listed in _CALLER.md."""
-        path = paths.MARKDOWN_ROLES_DIR / "_CALLER.md"
+        path = self.paths.markdown_roles_dir / "_CALLER.md"
         if not path.exists():
             raise RuntimeError(f"Missing callout script: {path}")
         ids: List[str] = []
@@ -109,7 +109,7 @@ class CalloutSplitter(SegmentSplitter):
         return ids
 
     def output_dir(self) -> Path:
-        return paths.BUILD_DIR / "audio" / "callouts"
+        return self.paths.build_dir / "audio" / "callouts"
 
     def source_path(self) -> Path:
-        return paths.RECORDINGS_DIR / "_CALLER.wav"
+        return self.paths.recordings_dir / "_CALLER.wav"

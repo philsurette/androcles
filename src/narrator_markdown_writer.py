@@ -14,11 +14,12 @@ from block import TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock, Direc
 class NarratorMarkdownWriter:
     play: Play
     reading_metadata: ReadingMetadata
+    paths: paths.PathConfig = field(default_factory=paths.current)
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write narrator/meta text into build/markdown/roles/_NARRATOR.md."""
-        target = out_path or (paths.MARKDOWN_ROLES_DIR / "_NARRATOR.md")
+        target = out_path or (self.paths.markdown_roles_dir / "_NARRATOR.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines: list[str] = []

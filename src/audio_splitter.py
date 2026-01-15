@@ -26,9 +26,10 @@ class AudioSplitter:
     last_detect_seconds: float = 0.0
     last_export_seconds: float = 0.0
 
-    def find_recording(self, role: str) -> Path | None:
+    def find_recording(self, role: str, paths_config: paths.PathConfig | None = None) -> Path | None:
         """Find the recording for a role."""
-        candidate = paths.RECORDINGS_DIR / f"{role}.wav"
+        cfg = paths_config or paths.current()
+        candidate = cfg.recordings_dir / f"{role}.wav"
         if candidate.exists():
             return candidate
         return None

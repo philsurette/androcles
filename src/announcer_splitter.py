@@ -29,7 +29,7 @@ class AnnouncerSplitter(SegmentSplitter):
             logging.warning("Expected announcer intro but found no spans to split")
             return spans
         # First span is the reader intro
-        readers_dir = paths.BUILD_DIR / "audio" / "readers"
+        readers_dir = self.paths.build_dir / "audio" / "readers"
         readers_dir.mkdir(parents=True, exist_ok=True)
         self.splitter.export_spans(
             source_path,
@@ -42,4 +42,4 @@ class AnnouncerSplitter(SegmentSplitter):
         return spans[1:]
 
     def output_dir(self) -> Path:
-        return paths.SEGMENTS_DIR / self.role
+        return self.paths.segments_dir / self.role

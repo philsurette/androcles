@@ -14,11 +14,12 @@ from block import RoleBlock
 class RoleMarkdownWriter:
     role: Role
     reading_metadata: ReadingMetadata
+    paths: paths.PathConfig = field(default_factory=paths.current)
     prefix_line_nos: bool = field(default=True)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""
-        target = out_path or (paths.MARKDOWN_ROLES_DIR / f"{self.role.name}.md")
+        target = out_path or (self.paths.markdown_roles_dir / f"{self.role.name}.md")
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = []

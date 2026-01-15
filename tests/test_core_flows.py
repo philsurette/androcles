@@ -29,6 +29,15 @@ def _write_play(tmp_path: Path, content: str) -> Path:
     return path
 
 
+def _config(tmp_path: Path) -> paths.PathConfig:
+    return paths.PathConfig(
+        play_name="test",
+        build_root=tmp_path / "build",
+        plays_dir=tmp_path / "plays",
+        snippets_dir=tmp_path / "snippets",
+    )
+
+
 def _sample_play(tmp_path: Path):
     text = """
     ## 1: Part One ##
@@ -41,8 +50,9 @@ def _sample_play(tmp_path: Path):
 
     ANDROCLES,MEGAERA. Together now
     """
+    cfg = _config(tmp_path)
     src = _write_play(tmp_path, text)
-    return PlayTextParser(source_path=src).parse()
+    return PlayTextParser(source_path=src, paths_config=cfg).parse()
 
 
 def test_build_segment_maps_handles_simultaneous(tmp_path: Path):
@@ -60,7 +70,9 @@ def test_play_plan_builder_inserts_preamble_and_chapter(tmp_path: Path, monkeypa
     play = _sample_play(tmp_path)
 
     seg_dir = tmp_path / "segments"
-    monkeypatch.setattr(paths, "SEGMENTS_DIR", seg_dir)
+    cfg = _config(tmp_path)
+    monkeypatch.setattr(paths, "current", lambda: cfg)
+    seg_dir = cfg.segments_dir
     for role, ids in {
         "ANDROCLES": ["1_2_1", "1_4_1"],
         "MEGAERA": ["1_3_2", "1_4_1"],
@@ -75,6 +87,7 @@ def test_play_plan_builder_inserts_preamble_and_chapter(tmp_path: Path, monkeypa
 
     builder = PlayPlanBuilder(
         play=play,
+        paths=cfg,
         segment_spacing_ms=0,
         include_callouts=False,
         chapters=ChapterBuilder(play).build(),
@@ -118,15 +131,30 @@ def test_caption_builder_handles_parallel_group(tmp_path: Path):
 
 
 def test_segment_verifier_reports_offsets(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
-    play = _sample_play(tmp_path)
+    cfg = _config(tmp_path)
+    play = PlayTextParser(source_path=_write_play(tmp_path, """
+    ## 1: Part One ##
 
-    seg_dir = tmp_path / "segments"
-    monkeypatch.setattr(paths, "SEGMENTS_DIR", seg_dir)
-    for role, ids in {
-        "ANDROCLES": ["1_2_1", "1_4_1"],
-        "MEGAERA": ["1_3_2", "1_4_1"],
-        "_NARRATOR": ["1_3_1"],
-    }.items():
+    ANDY/ANDROCLES. Hello there
+
+    MEGAERA. (_aside_) Hmm
+
+    ANDROCLES,MEGAERA. Together now
+    """), paths_config=cfg).parse()
+
+    seg_dir = cfg.segments_dir
+    role_to_ids: dict[str, list[str]] = {}
+    for blk in play.blocks:
+        for seg in getattr(blk, "segments", []):
+            seg_id = str(seg.segment_id)
+            if hasattr(seg, "roles"):
+                for role in getattr(seg, "roles", []):
+                    role_to_ids.setdefault(role, []).append(seg_id)
+            else:
+                role = getattr(seg, "role", "_NARRATOR") if hasattr(seg, "role") else "_NARRATOR"
+                role_to_ids.setdefault(role, []).append(seg_id)
+
+    for role, ids in role_to_ids.items():
         role_dir = seg_dir / role
         role_dir.mkdir(parents=True, exist_ok=True)
         (role_dir / "offsets.txt").write_text(
@@ -147,11 +175,12 @@ def test_segment_verifier_reports_offsets(tmp_path: Path, monkeypatch: pytest.Mo
 
     monkeypatch.setattr(segment_verifier, "AudioSegment", _DummyAudioSegment)
 
-    plan = PlayPlanBuilder(play=play, segment_spacing_ms=0).build_audio_plan(part_no=1)
-    verifier = SegmentVerifier(plan=plan, play=play)
+    plan = PlayPlanBuilder(play=play, paths=cfg, segment_spacing_ms=0).build_audio_plan(part_no=1)
+    verifier = SegmentVerifier(plan=plan, play=play, paths=cfg)
     rows = verifier.compute_rows()
 
-    sample = next(row for row in rows if row["id"] == "1_3_2")
+    expected_ids = set(id for ids in role_to_ids.values() for id in ids)
+    sample = next(row for row in rows if row["id"] in expected_ids)
     assert sample["actual_seconds"] == 1.0
     assert sample["start"] is not None
     assert sample["src_offset"] is not None

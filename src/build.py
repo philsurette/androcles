@@ -41,13 +41,13 @@ PLAY_OPTION = typer.Option(
 )
 
 
-def setup_logging() -> None:
-    paths.BUILD_DIR.mkdir(parents=True, exist_ok=True)
-    paths.LOGS_DIR.mkdir(parents=True, exist_ok=True)
-    log_path = paths.LOGS_DIR / "build.log"
+def setup_logging(paths_config: paths.PathConfig) -> None:
+    paths_config.build_dir.mkdir(parents=True, exist_ok=True)
+    paths_config.logs_dir.mkdir(parents=True, exist_ok=True)
+    log_path = paths_config.logs_dir / "build.log"
     if log_path.exists():
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        log_path.rename(paths.LOGS_DIR / f"build-{timestamp}.log")
+        log_path.rename(paths_config.logs_dir / f"build-{timestamp}.log")
 
     formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
     console = logging.StreamHandler()
@@ -65,19 +65,19 @@ def setup_logging() -> None:
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
     play_name = play or paths.DEFAULT_PLAY_NAME
-    paths.set_play_name(play_name)
-    setup_logging()
+    cfg = paths.PathConfig(play_name)
+    setup_logging(cfg)
     if ctx.invoked_subcommand is None:
-        run_segments()
-        run_text()
-        run_audioplay()
+        run_segments(paths_config=cfg)
+        run_text(paths_config=cfg)
+        run_audioplay(paths_config=cfg)
 
 @app.command()
 def text(play: str | None = PLAY_OPTION) -> None:
     """Build markdown artifacts."""
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_text()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_text(paths_config=cfg)
 
 
 @app.command()
@@ -86,9 +86,9 @@ def write_play(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<play>.md"""
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_write_play(line_no_prefix)
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_write_play(line_no_prefix, paths_config=cfg)
 
 @app.command()
 def write_roles(
@@ -96,17 +96,17 @@ def write_roles(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<role>.md - all blocks for each role"""
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_write_roles(line_no_prefix)
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_write_roles(line_no_prefix, paths_config=cfg)
 
 
 @app.command("write-cues")
 def write_cues(play: str | None = PLAY_OPTION) -> None:
     """Generate role cue text files into build/roles."""
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_write_cues()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_write_cues(paths_config=cfg)
 
 @app.command()
 def segments(
@@ -121,10 +121,10 @@ def segments(
     force: bool = typer.Option(False, "--force/--no-force", help="Force re-splitting even if outputs are newer"),
     play: str | None = PLAY_OPTION,
 ) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
     if role:
-        play_obj = PlayTextParser().parse()
+        play_obj = PlayTextParser(paths_config=cfg).parse()
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
         if role not in valid_roles:
             raise typer.BadParameter(f"Unknown role: {role}")
@@ -138,6 +138,7 @@ def segments(
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
         force=force,
+        paths_config=cfg,
     )
 
 @app.command()
@@ -146,24 +147,25 @@ def verify(
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
     play: str | None = PLAY_OPTION,
 ) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    _run_verify(too_short, too_long)
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    _run_verify(too_short, too_long, paths_config=cfg)
 
 
-def _run_verify(too_short: float = 0.5, too_long: float = 2.0) -> None:
-    play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play=play)
+def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: paths.PathConfig | None = None) -> None:
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    builder = PlayPlanBuilder(play=play, paths=cfg)
     plan = builder.build_audio_plan(parts=builder.list_parts())
-    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play)
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play, paths=cfg)
     verifier.verify_segments()
 
 
 @app.command()
 def check_recording(play: str | None = PLAY_OPTION) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_check_recording()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_check_recording(paths_config=cfg)
 
 
 @app.command("generate-timings")
@@ -171,9 +173,9 @@ def generate_timings(
     play: str | None = PLAY_OPTION,
     librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
     ) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
-    run_generate_timings(librivox=librivox)
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    run_generate_timings(librivox=librivox, paths_config=cfg)
 
 
 @app.command()
@@ -191,8 +193,8 @@ def audioplay(
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
     play: str | None = PLAY_OPTION,
 ) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
     run_audioplay(
         part=part,
         segment_spacing_ms=segment_spacing_ms,
@@ -204,6 +206,7 @@ def audioplay(
         librivox=librivox,
         audio_format=audio_format,
         normalize_output=normalize_output,
+        paths_config=cfg,
         prepare=prepare,
     )
 
@@ -216,8 +219,8 @@ def normalize(
     """
     Normalize an audio file using ffmpeg loudnorm. Writes to a sibling 'normalized' folder.
     """
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
     result = run_normalize(src)
     typer.echo(result.render())
 
@@ -231,47 +234,57 @@ def cues(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
     play: str | None = PLAY_OPTION,
 ) -> None:
-    paths.set_play_name(play or paths.PLAY_NAME)
-    setup_logging()
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
     run_cues(
         role=role,
         response_delay_ms=response_delay_ms,
         max_cue_size_ms=max_cue_size_ms,
         include_prompts=include_prompts,
         callout_spacing_ms=callout_spacing_ms,
+        paths_config=cfg,
     )
 
 
 # Helper functions (non-Typer) -----------------------------------------------
 
-def run_text(line_no_prefix: bool = True) -> None:
-    run_write_play(line_no_prefix)
-    run_write_roles(line_no_prefix)
-    run_write_callouts()
-    run_write_callout_script()
-    run_write_callouts()
-    run_write_announcer()
+def run_text(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None) -> None:
+    cfg = paths_config or paths.current()
+    run_write_play(line_no_prefix, paths_config=cfg)
+    run_write_roles(line_no_prefix, paths_config=cfg)
+    run_write_callouts(paths_config=cfg)
+    run_write_callout_script(paths_config=cfg)
+    run_write_callouts(paths_config=cfg)
+    run_write_announcer(paths_config=cfg)
 
 
-def run_write_play(line_no_prefix: bool = True):
-    play = PlayTextParser().parse()
-    writer = PlayMarkdownWriter(play, prefix_line_nos=line_no_prefix)
+def run_write_play(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    writer = PlayMarkdownWriter(play, paths=cfg, prefix_line_nos=line_no_prefix)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
 
 
-def run_write_roles(line_no_prefix: bool = True):
-    play = PlayTextParser().parse()
+def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
     written_paths: list[Path] = []
     for role in play.roles:
-        writer = RoleMarkdownWriter(role, reading_metadata=getattr(play, "reading_metadata", None), prefix_line_nos=line_no_prefix)
+        writer = RoleMarkdownWriter(
+            role,
+            reading_metadata=getattr(play, "reading_metadata", None),
+            paths=cfg,
+            prefix_line_nos=line_no_prefix,
+        )
         path = writer.to_markdown()
         written_paths.append(path)
         logging.debug("✅ wrote %s", path)
     narrator_path = NarratorMarkdownWriter(
         play,
         reading_metadata=getattr(play, "reading_metadata", None),
+        paths=cfg,
         prefix_line_nos=line_no_prefix,
     ).to_markdown()
     written_paths.append(narrator_path)
@@ -281,37 +294,41 @@ def run_write_roles(line_no_prefix: bool = True):
     return written_paths
 
 
-def run_write_callouts():
-    play = PlayTextParser().parse()
-    writer = CalloutsMarkdownWriter(play)
+def run_write_callouts(paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    writer = CalloutsMarkdownWriter(play, paths=cfg)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
 
 
-def run_write_callout_script():
-    play = PlayTextParser().parse()
-    writer = CalloutScriptWriter(play)
+def run_write_callout_script(paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    writer = CalloutScriptWriter(play, paths=cfg)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
 
-def run_write_announcer():
-    play = PlayTextParser().parse()
+def run_write_announcer(paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
     announcer = LibrivoxAnnouncer(play)
-    writer = AnnouncerScriptWriter(announcer=announcer)
+    writer = AnnouncerScriptWriter(announcer=announcer, paths=cfg)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
     return path
 
 
-def run_write_cues():
+def run_write_cues(paths_config: paths.PathConfig | None = None):
     from role_cues import RoleCues
     from narration_cues import NarrationCues
 
-    play = PlayTextParser().parse()
-    RoleCues(play).write()
-    NarrationCues(play).write()
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    RoleCues(play, paths=cfg).write()
+    NarrationCues(play, paths=cfg).write()
 
 
 def run_segments(
@@ -325,10 +342,13 @@ def run_segments(
     chunk_exports: bool = True,
     chunk_export_size: int = 25,
     force: bool = False,
+    paths_config: paths.PathConfig | None = None,
 ):
-    play = PlayTextParser().parse()
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
     splitter = PlaySplitter(
         play=play,
+        paths=cfg,
         force=force,
         min_silence_ms=separator_len_ms,
         silence_thresh=silence_thresh,
@@ -340,8 +360,9 @@ def run_segments(
     return splitter.split_all(part_filter=part, role_filter=role)
 
 
-def run_check_recording():
-    timings_path = paths.AUDIO_OUT_DIR / "timings.csv"
+def run_check_recording(paths_config: paths.PathConfig | None = None):
+    cfg = paths_config or paths.current()
+    timings_path = cfg.audio_out_dir / "timings.csv"
     if not timings_path.exists():
         typer.echo(f"{timings_path} not found; run verify first.")
         raise typer.Exit(code=1)
@@ -349,8 +370,8 @@ def run_check_recording():
         typer.echo(line)
 
 
-def run_generate_timings(librivox: bool):
-    generate_xlsx(librivox)
+def run_generate_timings(librivox: bool, paths_config: paths.PathConfig | None = None):
+    generate_xlsx(librivox, paths_config=paths_config)
 
 
 def run_audioplay(
@@ -366,14 +387,16 @@ def run_audioplay(
     audio_format: str = "mp4",
     normalize_output: bool = True,
     prepare: bool = True,
+    paths_config: paths.PathConfig | None = None,
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
+    cfg = paths_config or paths.current()
     if prepare:
         logging.info("Preparing text artifacts and split segments before audioplay")
-        run_text(line_no_prefix=True)
-        run_segments()
-    play: Play = PlayTextParser().parse()
+        run_text(line_no_prefix=True, paths_config=cfg)
+        run_segments(paths_config=cfg)
+    play: Play = PlayTextParser(paths_config=cfg).parse()
     if part is None:
         part_no = None
     else:
@@ -389,7 +412,8 @@ def run_audioplay(
         generate_audio=generate_audio,
         generate_captions=captions,
         librivox=librivox,
-        play=play
+        play=play,
+        paths=cfg,
     )
     out_paths = builder.build_audio(part_no=part_no)
     if normalize_output and generate_audio:
@@ -421,10 +445,13 @@ def run_cues(
     max_cue_size_ms: int = 5000,
     include_prompts: bool = True,
     callout_spacing_ms: int = 300,
+    paths_config: paths.PathConfig | None = None,
 ):
-    play = PlayTextParser().parse()
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
     builder = CueBuilder(
         play,
+        paths=cfg,
         response_delay_ms=response_delay_ms,
         max_cue_size_ms=max_cue_size_ms,
         include_prompts=include_prompts,

@@ -11,7 +11,7 @@ class LibrivoxPlayPlanDecorator(PlayPlanDecorator):
     librivox_snippets: Path = field(init=False)
 
     def __post_init__(self):
-        self.librivox_snippets = self.paths.audio_snippets / "librivox"
+        self.librivox_snippets = self.paths.librivox_snippets_dir
 
     def add_section_preamble(self, part_no: int):
         self.plan.add_silence(self.preamble_leading_silence_ms)

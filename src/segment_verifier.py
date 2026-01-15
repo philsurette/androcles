@@ -51,12 +51,13 @@ class SegmentVerifier:
     too_short: float = 0.5
     too_long: float = 2.0
     play: Play | None = None
+    paths: paths.PathConfig = field(default_factory=paths.current)
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
     _offsets_map: Dict[str, Dict[str, str]] = field(init=False, default_factory=dict)
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser().parse()
+            self.play = PlayTextParser(paths_config=self.paths).parse()
         self._build_plan_start_map()
         self._load_offsets()
 
@@ -138,7 +139,7 @@ class SegmentVerifier:
         punct = set(string.punctuation)
         for row in rows:
             role = row["role"] or "_NARRATOR"
-            fpath = paths.SEGMENTS_DIR / role / f"{row['id']}.wav"
+            fpath = self.paths.segments_dir / role / f"{row['id']}.wav"
             row["expected_seconds"] = None
             row["actual_seconds"] = None
             row["percent"] = None
@@ -216,9 +217,9 @@ class SegmentVerifier:
 
     def _load_offsets(self) -> None:
         """Load source offsets from per-role offsets.txt files."""
-        if not paths.SEGMENTS_DIR.exists():
+        if not self.paths.segments_dir.exists():
             return
-        for role_dir in paths.SEGMENTS_DIR.iterdir():
+        for role_dir in self.paths.segments_dir.iterdir():
             if not role_dir.is_dir():
                 continue
             offsets_path = role_dir / "offsets.txt"
@@ -268,10 +269,12 @@ if __name__ == "__main__":
 def compute_rows(
         too_short: float = 0.5, 
         too_long: float = 2.0,
-        librivox: bool = False
+        librivox: bool = False,
+        paths_config: paths.PathConfig | None = None,
     ) -> List[Dict]:
-    play = PlayTextParser().parse()
-    builder = PlayPlanBuilder(play=play, librivox=librivox)
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    builder = PlayPlanBuilder(play=play, librivox=librivox, paths=cfg)
     plan = builder.build_audio_plan()
-    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play)
+    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play, paths=cfg)
     return verifier.compute_rows()

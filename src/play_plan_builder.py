@@ -50,6 +50,7 @@ class PlayPlanBuilder:
 
     play: Play
     director: CalloutDirector | None = None
+    paths: paths.PathConfig = field(default_factory=paths.current)
     chapters: List[Chapter] | None = None
     play_plan_decorator: PlayPlanDecorator | None = None
     segment_spacing_ms: int = SEGMENT_SPACING_MS
@@ -63,7 +64,7 @@ class PlayPlanBuilder:
 
     def __post_init__(self) -> None:
         if self.director is None:
-            self.director = NoCalloutDirector(self.play)
+            self.director = NoCalloutDirector(self.play, paths_config=self.paths)
         if self.chapters is None:
             self.chapters = []
         self.plan = AudioPlan() 
@@ -71,12 +72,14 @@ class PlayPlanBuilder:
             if self.librivox:
                 self.play_plan_decorator = LibrivoxPlayPlanDecorator(
                     play = self.play, 
-                    plan = self.plan
+                    plan = self.plan,
+                    paths=self.paths,
                 )
             else:
                 self.play_plan_decorator = DefaultPlayPlanDecorator(
                     play = self.play, 
-                    plan = self.plan
+                    plan = self.plan,
+                    paths=self.paths,
                 )
 
     def list_parts(self) -> List[int | None]:
@@ -114,7 +117,7 @@ class PlayPlanBuilder:
             if bullet.simultaneous or len(bullet.owners) > 1:
                 clips: List[SegmentClip] = []
                 for role in bullet.owners:
-                    wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+                    wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
                     if not wav_path.exists():
                         logging.error("Missing snippet %s for role %s", seg_id, role)
                         length_ms = 0
@@ -133,7 +136,7 @@ class PlayPlanBuilder:
                 plan_items.add_parallel(clips, following_silence_ms=gap)
             else:
                 role = bullet.owners[0]
-                wav_path = paths.SEGMENTS_DIR / role / f"{seg_id.replace(':', '_')}.wav"
+                wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
                 if not wav_path.exists():
                     logging.error("Missing snippet %s for role %s", seg_id, role)
                     length_ms = 0
@@ -155,7 +158,7 @@ class PlayPlanBuilder:
         """Build plan items for a given part (or None for preamble)."""
         chapter_map = {c.block_id: c for c in (chapters if chapters is not None else self.chapters or [])}
         inserted_chapters: set[str] = set()
-        director_obj = director or self.director or NoCalloutDirector(self.play)
+        director_obj = director or self.director or NoCalloutDirector(self.play, paths_config=self.paths)
 
         part_obj = self.play.getPart(part_filter)
         if part_obj is None or not part_obj.blocks:

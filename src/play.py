@@ -317,8 +317,9 @@ class Play:
 class PlayTextEncoder:
     """Serialize PlayText back to paragraphs.txt format."""
 
-    def __init__(self, output_path: Path | None = None) -> None:
-        self.output_path = output_path or paths.PARAGRAPHS_PATH
+    def __init__(self, output_path: Path | None = None, paths_config: paths.PathConfig | None = None) -> None:
+        self.paths = paths_config or paths.current()
+        self.output_path = output_path or self.paths.paragraphs_path
 
     def encode(self, play: Play) -> None:
         lines: List[str] = []
