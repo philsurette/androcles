@@ -18,11 +18,12 @@ def build_play(sequence):
             RoleBlock(
                 block_id=BlockId(part, block_no),
                 role_names=[role],
+                callout=role if not role.startswith("_") else None,
                 text="",
                 segments=[SpeechSegment(segment_id=SegmentId(BlockId(part, block_no), 1), text="", role=role)],
             )
         )
-    return Play(items)
+    return Play(blocks=items)
 
 
 def test_preceding_roles_basic():
@@ -90,7 +91,7 @@ def test_block_id_equality_and_hash():
 
 def test_block_lookup_by_id():
     pt = build_play([(0, 1, "A"), (0, 2, "B")])
-    assert pt.block_for_id(BlockId(0, 1)).role == "A"
+    assert pt.block_for_id(BlockId(0, 1)).primary_role == "A"
     assert pt.block_for_id(BlockId(0, 99)) is None
 
 
@@ -128,7 +129,7 @@ def test_to_index_entries_matches_block_order_and_inline_dirs():
         segments=[DescriptionSegment(segment_id=SegmentId(desc_id, 1), text="desc")],
     )
 
-    play = Play([meta_block, role_block, role_with_dir_block, desc_block])
+    play = Play(blocks=[meta_block, role_block, role_with_dir_block, desc_block])
 
     assert play.to_index_entries() == [
         (None, 1, "_NARRATOR"),  # meta block

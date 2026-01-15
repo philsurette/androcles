@@ -1,85 +1,58 @@
 import pathlib
 import sys
+import textwrap
+from pathlib import Path
 
 import pytest
-
-pytest.importorskip("pydub", reason="pydub required for integration test")
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from chapter_builder import ChapterBuilder
-from play_plan_builder import PlayPlanBuilder, write_plan
-from play import PlayTextParser
-from callout_director import ConversationAwareCalloutDirector, RoleCalloutDirector, NoCalloutDirector
+import paths
+from play_text_parser import PlayTextParser
+from play_plan_builder import PlayPlanBuilder
+from librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
 
 
-def _normalize_plan_text(text: str) -> str:
-    lines = []
-    skip_next_silence = False
-    for line in text.splitlines():
-        # Strip timestamp prefix for comparison.
-        parts = line.split(" ", 1)
-        content = parts[1] if len(parts) > 1 else line
-        # Normalize ids where expressive punctuation created extra segments in the new plan.
-        if "2_12_3" in content:
-            content = content.replace("2_12_3", "2_12_2")
-        if "2_189_3" in content:
-            content = content.replace("2_189_3", "2_189_2")
-        if any(tok in content for tok in ("2_12_2", "2_189_2", "1_156_2")):
-            skip_next_silence = True
-            continue
-        if skip_next_silence and content.startswith("[silence"):
-            skip_next_silence = False
-            continue
-        skip_next_silence = False
-        # Drop lines that are only expressive punctuation (e.g., !!!, ?!?).
-        tail = content.split(":", 1)[-1]
-        # Also drop lines where the text after the last '-' is only punctuation.
-        trailing_text = tail.rsplit("-", 1)[-1].strip()
-        if trailing_text and all(ch in "!?" for ch in trailing_text):
-            continue
-        lines.append(content)
-    return "\n".join(lines)
+pytest.importorskip("pydub", reason="pydub required for integration test")
 
 
-def test_librivox_audio_plans_match_expected(tmp_path: pathlib.Path) -> None:
-    resources = pathlib.Path(__file__).parent / "resources"
-    play = PlayTextParser().parse()
-    chapters = ChapterBuilder().build()
+def _sample_play(tmp_path: Path) -> Path:
+    text = """
+    ## 1: First ##
 
-    parts = [0, 1, 2]
-    include_callouts = True
-    minimal_callouts = True
+    ANDROCLES. Hello
 
-    for idx, part_id in enumerate(parts):
-        director = (
-            ConversationAwareCalloutDirector(play) if minimal_callouts else RoleCalloutDirector(play)
-        )
-        builder = PlayPlanBuilder(
-            play=play,
-            director=director if include_callouts else NoCalloutDirector(play),
-            chapters=chapters,
-            segment_spacing_ms=1000,
-            include_callouts=include_callouts,
-            callout_spacing_ms=300,
-            minimal_callouts=minimal_callouts,
-            part_gap_ms=0,
-            librivox=True,
-        )
-        plan = builder.build_audio_plan(parts=[part_id], part_index_offset=idx, total_parts=len(parts))
-        plan = [item for item in plan if item.__class__.__name__ != "Chapter"]
+    ## 2: Second ##
 
-        actual_path = tmp_path / f"audio_plan_part_{part_id}.txt"
-        write_plan(plan, actual_path)
+    MEGAERA. Hi
+    """
+    path = tmp_path / "play.txt"
+    path.write_text(textwrap.dedent(text).strip() + "\n", encoding="utf-8")
+    return path
 
-        expected_path = resources / f"audio_plan_part_{part_id}.txt"
-        assert expected_path.exists(), f"Missing expected plan {expected_path}"
-        actual_text = _normalize_plan_text(actual_path.read_text(encoding="utf-8"))
-        expected_text = _normalize_plan_text(expected_path.read_text(encoding="utf-8"))
-        if part_id in (0, 1, 2):
-            # Skip strict comparison for parts whose legacy resources don't include updated expressive splits.
-            continue
-        assert actual_text == expected_text, f"Plan mismatch for part {part_id}"
+
+def test_librivox_plan_adds_preambles(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    src = _sample_play(tmp_path)
+    play = PlayTextParser(source_path=src).parse()
+
+    seg_dir = tmp_path / "segments"
+    monkeypatch.setattr(paths, "SEGMENTS_DIR", seg_dir)
+    for role, seg_id in (("ANDROCLES", "1_1_1"), ("MEGAERA", "2_1_1")):
+        role_dir = seg_dir / role
+        role_dir.mkdir(parents=True, exist_ok=True)
+        (role_dir / f"{seg_id}.wav").write_bytes(b"")
+
+    monkeypatch.setattr(PlayPlanBuilder, "get_audio_length_ms", staticmethod(lambda path, cache: 500))
+    monkeypatch.setattr(paths.Paths, "get_audio_length_ms", lambda self, path: 500)
+    monkeypatch.setattr(paths, "RECORDINGS_DIR", tmp_path / "recordings")
+
+    builder = PlayPlanBuilder(play=play, segment_spacing_ms=0, librivox=True)
+    plan = builder.build_audio_plan(part_no=1)
+
+    assert plan[0].kind == "silence"
+    assert plan[0].length_ms == LibrivoxPlayPlanDecorator.preamble_leading_silence_ms
+    assert any(item.kind == "segment" for item in plan)
+    assert plan[-1].kind == "silence"

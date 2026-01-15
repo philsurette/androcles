@@ -35,8 +35,7 @@ def test_assemble_segment_ids_filters_punctuation():
 
     segments = splitter.expected_ids()
 
-    ids = [str(seg.segment_id) for seg in segments]
-    assert ids == ["_1_1", "_1_2", "_1_3", "1_2_1", "1_2_2", "1_2_3"]
+    assert segments == ["_1_1", "_1_2", "_1_3", "1_2_1", "1_2_2", "1_2_3"]
 
 
 def test_assemble_segment_ids_respects_part_filter():
@@ -48,5 +47,4 @@ def test_assemble_segment_ids_respects_part_filter():
 
     segments = splitter.expected_ids(part_filter="1")
 
-    ids = [splitter._segment_id_str(seg) for seg in segments]
-    assert ids == ["1_2_1"]
+    assert segments == ["1_2_1"]
