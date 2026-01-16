@@ -47,8 +47,9 @@ class RoleAlignmentVerifier:
     skip_audio_penalty: float = -0.35
     skip_text_penalty: float = -0.5
     match_weight: float = 1.0
-    min_match_similarity: float = 0.3
-    low_match_penalty: float = -0.6
+    min_match_similarity: float = 0.55
+    low_match_penalty: float = -0.9
+    next_word_boost_threshold: float = 0.9
 
     _model_cache: ClassVar[dict[tuple[str, str, str], WhisperModel]] = {}
     _logger: logging.Logger = field(init=False, repr=False)
@@ -209,8 +210,7 @@ class RoleAlignmentVerifier:
         for i in range(1, script_len + 1):
             expected = script_words[i - 1]
             for j in range(1, audio_len + 1):
-                actual = audio_words[j - 1]["norm"]
-                sim = self._similarity(expected, actual) / 100.0
+                sim = self._match_similarity(script_words, audio_words, i - 1, j - 1)
                 if sim < self.min_match_similarity:
                     score_match = dp[i - 1][j - 1] + self.low_match_penalty
                 else:
@@ -235,7 +235,7 @@ class RoleAlignmentVerifier:
             if op == "match":
                 i -= 1
                 j -= 1
-                sim = self._similarity(script_words[i], audio_words[j]["norm"])
+                sim = self._match_similarity(script_words, audio_words, i, j) * 100.0
                 steps.append(
                     {
                         "op": "match",
@@ -429,3 +429,27 @@ class RoleAlignmentVerifier:
 
     def _similarity(self, expected: str, actual: str) -> float:
         return float(fuzz.token_set_ratio(expected, actual))
+
+    def _match_similarity(
+        self,
+        script_words: list[str],
+        audio_words: list[dict],
+        script_index: int,
+        audio_index: int,
+    ) -> float:
+        expected = script_words[script_index]
+        actual = audio_words[audio_index]["norm"]
+        base = self._similarity(expected, actual) / 100.0
+        next_script = script_index + 1
+        next_audio = audio_index + 1
+        if next_script < len(script_words) and next_audio < len(audio_words):
+            next_expected = script_words[next_script]
+            next_actual = audio_words[next_audio]["norm"]
+            next_sim = self._similarity(next_expected, next_actual) / 100.0
+            if next_sim >= self.next_word_boost_threshold:
+                bigram_expected = f"{expected} {next_expected}"
+                bigram_actual = f"{actual} {next_actual}"
+                bigram_sim = fuzz.ratio(bigram_expected, bigram_actual) / 100.0
+                if bigram_sim > base:
+                    return bigram_sim
+        return base
