@@ -16,6 +16,10 @@ class AnnouncerSplitter(SegmentSplitter):
     announcer: Announcer = None
     role: str = "_ANNOUNCER"
 
+    def extra_outputs(self):
+        readers_dir = self.paths.build_dir / "audio" / "readers"
+        return list(readers_dir.glob(f"{self.role}*.wav")) if readers_dir.exists() else []
+
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.announcer is None:

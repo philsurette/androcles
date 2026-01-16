@@ -6,13 +6,14 @@ from play import Play
 from clip import SegmentClip
 from audio_plan import AudioPlan
 import paths
+from paths import PathConfig
 from spacing import Spacings
 
 @dataclass
 class PlayPlanDecorator(ABC):
     play: Play
     plan: AudioPlan
-    paths: paths.PathConfig = field(default_factory=paths.current)
+    paths: PathConfig = field(default_factory=paths.current)
     spacings: Spacings = field(default_factory=Spacings)
     preamble_leading_silence_ms = 500
     epilogue_trailing_silence_ms = 1000

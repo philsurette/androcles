@@ -60,6 +60,13 @@ class SegmentSplitter(ABC):
         """
         return spans
 
+    def extra_outputs(self) -> List[Path]:
+        """
+        Additional outputs to consider when checking staleness (e.g., reader intros).
+        Default: none.
+        """
+        return []
+
     def output_dir(self) -> Path:
         """Return the destination directory for split segments."""
         return self.paths.segments_dir / self.role
@@ -72,6 +79,7 @@ class SegmentSplitter(ABC):
 
         out_dir = self.output_dir()
         outputs = list(out_dir.glob("*.wav")) if out_dir.exists() else []
+        outputs.extend(self.extra_outputs())
 
         src_mtime = src_path.stat().st_mtime
         aup3 = src_path.with_suffix(".aup3")

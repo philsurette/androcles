@@ -56,7 +56,7 @@ def test_librivox_preamble_uses_announcer_segments(tmp_path: Path, monkeypatch: 
 
     split_announcer = cfg.segments_dir / "_ANNOUNCER"
     split_announcer.mkdir(parents=True, exist_ok=True)
-    for name in ["title.wav", "author.wav", "reader.wav"]:
+    for name in ["title.wav", "author.wav"]:
         (split_announcer / name).write_bytes(b"")
 
     decorator.paths.get_audio_length_ms = lambda path: 0  # type: ignore[assignment]

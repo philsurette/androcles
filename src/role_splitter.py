@@ -12,18 +12,20 @@ Assumptions:
 from __future__ import annotations
 
 
-import sys
-import os
 from typing import List
 import logging
 from dataclasses import dataclass
 from play import RoleBlock, SpeechSegment, SimultaneousSegment
 from segment_splitter import SegmentSplitter
-import paths
+from paths import Path
 
 
 @dataclass
 class RoleSplitter(SegmentSplitter):
+
+    def extra_outputs(self) -> List[Path]:
+        readers_dir = self.paths.build_dir / "audio" / "readers"
+        return list(readers_dir.glob(f"{self.role}*.wav")) if readers_dir.exists() else []
 
     def pre_export_spans(self, spans: List[tuple[int, int]], expected_ids: List[str], source_path) -> List[tuple[int, int]]:
         """

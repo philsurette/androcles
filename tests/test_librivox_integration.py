@@ -46,7 +46,7 @@ def test_librivox_plan_adds_preambles(tmp_path: Path, monkeypatch: pytest.Monkey
         (role_dir / f"{seg_id}.wav").write_bytes(b"")
     announcer_dir = seg_dir / "_ANNOUNCER"
     announcer_dir.mkdir(parents=True, exist_ok=True)
-    for name in ["title.wav", "author.wav", "reader.wav"]:
+    for name in ["title.wav", "author.wav"]:
         (announcer_dir / name).write_bytes(b"")
 
     monkeypatch.setattr(PlayPlanBuilder, "get_audio_length_ms", staticmethod(lambda path, cache: 500))

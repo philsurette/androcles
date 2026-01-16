@@ -2,7 +2,7 @@
 """Generate announcer script markdown from an Announcer."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 import paths

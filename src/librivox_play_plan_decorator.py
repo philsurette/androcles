@@ -51,15 +51,6 @@ class LibrivoxPlayPlanDecorator(PlayPlanDecorator):
             sentence_end=True,
             folder=self.librivox_snippets,
         )
-        self._add_words(
-            file_name="read by",
-            sentence_start=True,
-        )
-        self._add_announcement(
-            file_name="reader",
-            text="Phil Surette.",
-            silence_ms=self.spacings.segment,
-        )
         self.plan.add_silence(self.spacings.paragraph)
         self._add_title_by_author()
         self.plan.add_silence(self.spacings.paragraph)

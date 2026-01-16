@@ -2,7 +2,7 @@
 """Emit callouts and associated roles to markdown."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from collections import OrderedDict
 from pathlib import Path
 
