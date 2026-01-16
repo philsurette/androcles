@@ -5,5 +5,9 @@ openpyxl
 typer
 regex
 ruamel.yaml
+faster-whisper
+rapidfuzz
+soundfile
+python-Levenshtein
 # test deps
 pytest

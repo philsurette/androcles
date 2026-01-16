@@ -20,9 +20,9 @@ class MixAttenuator(ABC):
     
 @dataclass
 class PerceptualSummationAttenuator(MixAttenuator):
-    scale_down: int = field(default = .6) # used to reduce from full volume preserving
+    scale_down: float = field(default=0.6)  # fraction of full volume-preserving attenuation
     def attenuation_db(self, num_tracks: int):
-        return self.scale_factor * 10.0 * math.log10(num_tracks)
+        return self.scale_down * 10.0 * math.log10(num_tracks)
     
 class DirectSummationAttenuator(MixAttenuator):
     def attenuation_db(self, num_tracks: int):
