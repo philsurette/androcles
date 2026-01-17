@@ -12,7 +12,7 @@ class ExtraAudioDiff(AudioVerifierDiff):
     heard: str
 
     def error_symbol(self) -> str:
-        return "❌"
+        return "❓"
 
     def to_row(self) -> dict[str, object]:
         return {

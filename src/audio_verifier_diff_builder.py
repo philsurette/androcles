@@ -15,12 +15,14 @@ from missing_audio_diff import MissingAudioDiff
 class AudioVerifierDiffBuilder:
     window_before: int = 3
     window_after: int = 1
+    name_tokens: set[str] = field(default_factory=set)
     differ: InlineTextDiffer = field(init=False)
 
     def __post_init__(self) -> None:
         self.differ = InlineTextDiffer(
             window_before=self.window_before,
             window_after=self.window_after,
+            name_tokens=self.name_tokens,
         )
 
     def build(self, results: dict) -> list[AudioVerifierDiff]:

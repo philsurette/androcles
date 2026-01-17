@@ -24,8 +24,8 @@ class AudioVerifierXlsxWriter:
                 "len",
                 "dc",
                 "diff",
-                "expected",
                 "heard",
+                "expected",
             ]
 
     def write(self, diffs: list[AudioVerifierDiff], out_path: Path, sheet_name: str = "Verification") -> Path:
@@ -50,9 +50,9 @@ class AudioVerifierXlsxWriter:
             "offset": 10,
             "len": 8,
             "dc": 6,
-            "diff": 80,
-            "expected": 70,
-            "heard": 70,
+            "diff": 36,
+            "heard": 36,
+            "expected": 36,
         }
         for idx, header in enumerate(self.headers, start=1):
             col_letter = get_column_letter(idx)
@@ -66,3 +66,12 @@ class AudioVerifierXlsxWriter:
             if header == "status":
                 for cell in ws[col_letter]:
                     cell.alignment = cell.alignment.copy(horizontal="center")
+            if header in {"diff", "heard", "expected"}:
+                for cell in ws[col_letter]:
+                    if cell.row == 1:
+                        continue
+                    cell.alignment = cell.alignment.copy(
+                        horizontal="left",
+                        vertical="top",
+                        wrapText=True,
+                    )

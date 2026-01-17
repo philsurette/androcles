@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from typing import Iterable
 import string
 
+from rapidfuzz import fuzz
+
 from diff_match_patch import diff_match_patch
 
 from inline_text_diff import InlineTextDiff
@@ -20,6 +22,8 @@ class InlineTextDiffer:
         default_factory=lambda: set(string.punctuation)
         | {"\u201c", "\u201d", "\u2018", "\u2019", "\u2026", "\u2014", "\u2013"}
     )
+    name_tokens: set[str] = field(default_factory=set)
+    name_similarity: float = 0.85
 
     def diff(self, expected: str, actual: str) -> InlineTextDiff:
         diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types = self._diffs_for_texts(
@@ -491,7 +495,22 @@ class InlineTextDiffer:
             actual_tokens[actual_start : actual_start + actual_count],
             actual_types[actual_start : actual_start + actual_count],
         )
-        return expected_words == actual_words
+        if expected_words == actual_words:
+            return True
+        if not expected_words or not actual_words:
+            return False
+        if len(expected_words) == len(actual_words):
+            for expected_word, actual_word in zip(expected_words, actual_words):
+                if expected_word == actual_word:
+                    continue
+                if self._name_match(expected_word, actual_word):
+                    continue
+                return False
+            return True
+        if self._all_name_words(expected_words):
+            ratio = fuzz.ratio("".join(expected_words), "".join(actual_words)) / 100.0
+            return ratio >= self.name_similarity
+        return False
 
     def _normalized_words(self, tokens: list[str], types: list[str]) -> list[str]:
         words: list[str] = []
@@ -502,6 +521,17 @@ class InlineTextDiffer:
             word = word.replace("'", "")
             words.append(word)
         return words
+
+    def _name_match(self, expected_word: str, actual_word: str) -> bool:
+        if expected_word not in self.name_tokens:
+            return False
+        ratio = fuzz.ratio(expected_word, actual_word) / 100.0
+        return ratio >= self.name_similarity
+
+    def _all_name_words(self, words: list[str]) -> bool:
+        if not words:
+            return False
+        return all(word in self.name_tokens for word in words)
 
     def _slice_tokens(self, tokens: list[str], start: int, count: int) -> str:
         return "".join(tokens[start : start + count])

@@ -163,3 +163,14 @@ def test_inline_text_differ_ignores_missing_apostrophes() -> None:
 
     assert diff.inline_diff == expected
     assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_relaxes_known_names() -> None:
+    differ = InlineTextDiffer(name_tokens={"ferrovius", "call", "boy"})
+    expected = "Ferrovius went to the Call Boy."
+    actual = "Ferovius went to the Callboy."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0

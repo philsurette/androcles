@@ -20,6 +20,7 @@ from inline_text_differ import InlineTextDiffer
 from audio_verifier_diff import AudioVerifierDiff
 from audio_verifier_diff_builder import AudioVerifierDiffBuilder
 from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
+from announcer import LibrivoxAnnouncer
 
 
 @dataclass
@@ -61,6 +62,7 @@ class RoleAudioVerifier:
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel = field(init=False, repr=False)
     _inline_differ: InlineTextDiffer = field(init=False, repr=False)
+    _name_tokens: set[str] = field(init=False, repr=False)
     _punct_re: re.Pattern[str] = field(init=False, repr=False)
     _space_re: re.Pattern[str] = field(init=False, repr=False)
 
@@ -78,9 +80,11 @@ class RoleAudioVerifier:
                 local_files_only=True,
             )
         self._model = self._load_model()
+        self._name_tokens = self._build_name_tokens()
         self._inline_differ = InlineTextDiffer(
             window_before=self.diff_window_before,
             window_after=self.diff_window_after,
+            name_tokens=self._name_tokens,
         )
 
     def verify(self, recording_path: Path | None = None) -> dict:
@@ -113,8 +117,32 @@ class RoleAudioVerifier:
         builder = AudioVerifierDiffBuilder(
             window_before=self.diff_window_before,
             window_after=self.diff_window_after,
+            name_tokens=self._name_tokens,
         )
         return builder.build(results)
+
+    def _build_name_tokens(self) -> set[str]:
+        tokens: set[str] = set()
+        if self.play is None:
+            return tokens
+        for role in self.play.roles:
+            if role.name.startswith("_"):
+                continue
+            tokens.update(self._tokenize_name(role.name))
+            reader = self.play.reading_metadata.reader_for_id(role.name)
+            if reader and reader.role_name:
+                tokens.update(self._tokenize_name(reader.role_name))
+        return tokens
+
+    def _tokenize_name(self, name: str) -> list[str]:
+        raw_tokens = re.findall(r"[A-Za-z0-9']+", name)
+        tokens: list[str] = []
+        for token in raw_tokens:
+            token = token.lower().replace("\u2019", "'").replace("\u2018", "'")
+            token = token.replace("'", "")
+            if token:
+                tokens.append(token)
+        return tokens
 
     def write_xlsx(self, results: dict, out_path: Path | None = None) -> Path:
         target = out_path or (self.paths.audio_out_dir / f"{self.role}_audio_verification.xlsx")
@@ -159,6 +187,10 @@ class RoleAudioVerifier:
             raise RuntimeError("Play is not loaded")
         if self.role == "_NARRATOR":
             return self._collect_narrator_segments()
+        if self.role == "_CALLER":
+            return self._collect_caller_segments()
+        if self.role == "_ANNOUNCER":
+            return self._collect_announcer_segments()
         role_obj = self.play.getRole(self.role)
         if role_obj is None:
             raise RuntimeError(f"Role not found: {self.role}")
@@ -202,6 +234,58 @@ class RoleAudioVerifier:
                 if not text or text in {".", ",", ":", ";"}:
                     continue
                 segments.append({"segment_id": str(seg.segment_id), "expected_text": text})
+        return segments
+
+    def _collect_caller_segments(self) -> list[dict]:
+        if self.play is None:
+            raise RuntimeError("Play is not loaded")
+        reader = self.play.reading_metadata.reader_for_id("_CALLER")
+        reader_name = reader.reader
+        segments: list[dict] = [
+            {
+                "segment_id": f"{self.role}_reader",
+                "expected_text": f"callouts read by {reader_name}",
+            }
+        ]
+        callouts: list[str] = []
+        seen: set[str] = set()
+        for blk in self.play.blocks:
+            if not isinstance(blk, RoleBlock):
+                continue
+            if blk.callout is None:
+                continue
+            if blk.callout in seen:
+                continue
+            seen.add(blk.callout)
+            callouts.append(blk.callout)
+        for name in sorted(callouts):
+            segments.append(
+                {
+                    "segment_id": name,
+                    "expected_text": name.replace("-", " "),
+                }
+            )
+        return segments
+
+    def _collect_announcer_segments(self) -> list[dict]:
+        if self.play is None:
+            raise RuntimeError("Play is not loaded")
+        reader = self.play.reading_metadata.reader_for_id("_ANNOUNCER")
+        reader_name = reader.reader or "<name>"
+        segments: list[dict] = [
+            {
+                "segment_id": f"{self.role}_reader",
+                "expected_text": f"announcements read by {reader_name}",
+            }
+        ]
+        announcer = LibrivoxAnnouncer(self.play)
+        for announcement in announcer.announcements():
+            segments.append(
+                {
+                    "segment_id": announcement.key_as_filename(),
+                    "expected_text": announcement.text,
+                }
+            )
         return segments
 
     def _transcribe_words(self, path: Path) -> list[dict]:
