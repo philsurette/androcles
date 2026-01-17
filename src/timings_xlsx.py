@@ -10,6 +10,7 @@ from openpyxl.styles import PatternFill
 
 import paths
 from segment_verifier import compute_rows
+from spacing import CALLOUT_SPACING_MS, SEGMENT_SPACING_MS
 
 
 def safe_sheet_name(name: str, existing: set[str]) -> str:
@@ -95,9 +96,27 @@ def write_sheet(ws, headers, rows):
             cell.alignment = cell.alignment.copy(horizontal="right")
 
 
-def generate_xlsx(librivox: bool = False, paths_config: paths.PathConfig | None = None):
+def generate_xlsx(
+    librivox: bool = False,
+    part_no: int | None = None,
+    include_callouts: bool = False,
+    callout_spacing_ms: int = CALLOUT_SPACING_MS,
+    minimal_callouts: bool = False,
+    segment_spacing_ms: int = SEGMENT_SPACING_MS,
+    include_decorations: bool = False,
+    paths_config: paths.PathConfig | None = None,
+):
     cfg = paths_config or paths.current()
-    rows = compute_rows(librivox=librivox, paths_config=cfg)
+    rows = compute_rows(
+        librivox=librivox,
+        part_no=part_no,
+        include_callouts=include_callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+        segment_spacing_ms=segment_spacing_ms,
+        include_decorations=include_decorations,
+        paths_config=cfg,
+    )
     headers = ["id", "warning", "expected_seconds", "actual_seconds", "percent", "start", "src_offset", "role", "text"]
     wb = Workbook()
     ws = wb.active
@@ -124,7 +143,11 @@ def generate_xlsx(librivox: bool = False, paths_config: paths.PathConfig | None 
         ws_role = wb.create_sheet(title=name)
         write_sheet(ws_role, headers, role_rows)
 
-    out_path = cfg.audio_out_dir / "timings.xlsx"
+    if part_no is None:
+        out_path = cfg.audio_out_dir / "timings.xlsx"
+    else:
+        out_path = cfg.audio_out_dir / f"timings_part_{part_no}.xlsx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
     print(f"Wrote {out_path}")
+    return out_path
