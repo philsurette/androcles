@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import paths
-from play import Role, Reader, ReadingMetadata
+from play import Role, ReadingMetadata
 from block import RoleBlock
 
 
@@ -23,14 +23,7 @@ class RoleMarkdownWriter:
         target.parent.mkdir(parents=True, exist_ok=True)
 
         lines = []
-        rm = getattr(self.reading_metadata, "dramatic_reading", False)
-        if rm:
-            reader: Reader = self.reading_metadata.reader_for_id(self.role.name)
-            role_label = reader.role_name
-            reader_name = reader.reader if reader.reader else self.reading_metadata.default_reader.reader
-            lines.append(f"{role_label}, read by {reader_name}")
-
-        for blk in self.role.blocks:
+        for blk in self.role.blocks_with_reader():
             if isinstance(blk, RoleBlock):
                 prefix = None
                 if self.prefix_line_nos:

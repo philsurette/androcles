@@ -10,6 +10,7 @@ import paths
 from block_id import BlockId
 from segment import DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock
+from reader_block import ReaderBlock
 import logging
 from enum import Enum
 
@@ -25,12 +26,19 @@ class Role:
     name: str
     blocks: List[RoleBlock] = field(default_factory=list)
     meta: bool = False
+    reader_block: ReaderBlock | None = None
 
     def get_blocks(self, part_no: int | None = None) -> List[RoleBlock]:
         """Return role blocks, optionally filtered by part number."""
         if part_no is None:
             return list(self.blocks)
         return [blk for blk in self.blocks if blk.block_id.part_id == part_no]
+
+    def blocks_with_reader(self) -> List[Block]:
+        """Return reader intro block followed by role blocks (if present)."""
+        if self.reader_block is None:
+            return list(self.blocks)
+        return [self.reader_block, *self.blocks]
 
     def segments(self, part_no: int | None = None) -> dict[tuple[int | None, int], list[str]]:
         """Return mapping (part, block) -> ordered segment ids for this role."""
@@ -223,6 +231,18 @@ class Play:
                             self._roles[role_name] = Role(name=role_name, blocks=[])
                         self._role_order.append(role_name)
                     self._roles[role_name].blocks.append(blk)
+        self._attach_reader_blocks()
+
+    def _attach_reader_blocks(self) -> None:
+        if not self.reading_metadata.dramatic_reading:
+            return
+        for role in self._roles.values():
+            if role.meta:
+                continue
+            reader = self.reading_metadata.reader_for_id(role.name)
+            role_label = reader.role_name
+            reader_name = reader.reader if reader.reader else self.reading_metadata.default_reader.reader
+            role.reader_block = ReaderBlock.build(role_label=role_label, reader_name=reader_name)
 
     def getPart(self, part_id: int | None) -> Part | None:
         """Return the Part object for the given id."""

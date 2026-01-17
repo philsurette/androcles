@@ -16,14 +16,15 @@ from play import Play
 from play_text_parser import PlayTextParser
 from segment import SpeechSegment, SimultaneousSegment, DirectionSegment
 from whisper_model_store import WhisperModelStore
+from inline_text_differ import InlineTextDiffer
 
 
 @dataclass
-class RoleAlignmentVerifier:
+class RoleAudioVerifier:
     role: str
     paths: paths.PathConfig = field(default_factory=paths.current)
     play: Play | None = None
-    model_name: str = "tiny.en"
+    model_name: str = "base.en" #tiny.em, base.em, small.em, med.em
     device: str = "cpu"
     compute_type: str = "int8"
     whisper_store: WhisperModelStore | None = None
@@ -51,9 +52,12 @@ class RoleAlignmentVerifier:
     min_match_similarity: float = 0.55
     low_match_penalty: float = -0.9
     next_word_boost_threshold: float = 0.9
+    diff_window_before: int = 3
+    diff_window_after: int = 1
 
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel = field(init=False, repr=False)
+    _inline_differ: InlineTextDiffer = field(init=False, repr=False)
     _punct_re: re.Pattern[str] = field(init=False, repr=False)
     _space_re: re.Pattern[str] = field(init=False, repr=False)
 
@@ -71,6 +75,10 @@ class RoleAlignmentVerifier:
                 local_files_only=True,
             )
         self._model = self._load_model()
+        self._inline_differ = InlineTextDiffer(
+            window_before=self.diff_window_before,
+            window_after=self.diff_window_after,
+        )
 
     def verify(self, recording_path: Path | None = None) -> dict:
         path = recording_path or (self.paths.recordings_dir / f"{self.role}.wav")
@@ -326,6 +334,7 @@ class RoleAlignmentVerifier:
                 similarity = 0.0
                 matched_text = ""
                 status = "missing"
+            diff_result = self._inline_differ.diff(segment["expected_text"], matched_text)
             expected_count = segment["expected_word_count"]
             matched_count = len(matched_indices)
             coverage = (matched_count / expected_count) if expected_count else 0.0
@@ -342,6 +351,8 @@ class RoleAlignmentVerifier:
                     "matched_word_count": matched_count,
                     "coverage": round(coverage, 3),
                     "matched_audio_text": matched_text,
+                    "inline_diff": diff_result.inline_diff,
+                    "windowed_diffs": diff_result.windowed_diffs,
                 }
             )
 
