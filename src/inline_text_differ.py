@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Iterable
+import string
 
 from diff_match_patch import diff_match_patch
 
@@ -15,7 +16,10 @@ class InlineTextDiffer:
     window_before: int = 3
     window_after: int = 1
     dmp: diff_match_patch = field(default_factory=diff_match_patch)
-    ignorable_punct: set[str] = field(default_factory=lambda: {",", ";", ":", "."})
+    ignorable_punct: set[str] = field(
+        default_factory=lambda: set(string.punctuation)
+        | {"\u201c", "\u201d", "\u2018", "\u2019", "\u2026", "\u2014", "\u2013"}
+    )
 
     def diff(self, expected: str, actual: str) -> InlineTextDiff:
         diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types = self._diffs_for_texts(
@@ -66,6 +70,20 @@ class InlineTextDiffer:
             if op == -1 and i + 1 < len(diffs) and diffs[i + 1][0] == 1:
                 delete_tokens = self._decode_tokens(diffs[i][1], id_to_token)
                 insert_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
+                if self._equivalent_ignoring_punct(
+                    expected_tokens,
+                    expected_types,
+                    exp_idx,
+                    len(delete_tokens),
+                    actual_tokens,
+                    actual_types,
+                    act_idx,
+                    len(insert_tokens),
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
                 if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, len(delete_tokens)) and self._is_ignorable_slice(
                     actual_tokens, actual_types, act_idx, len(insert_tokens)
                 ):
@@ -81,6 +99,20 @@ class InlineTextDiffer:
             if op == 1 and i + 1 < len(diffs) and diffs[i + 1][0] == -1:
                 insert_tokens = self._decode_tokens(diffs[i][1], id_to_token)
                 delete_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
+                if self._equivalent_ignoring_punct(
+                    expected_tokens,
+                    expected_types,
+                    exp_idx,
+                    len(delete_tokens),
+                    actual_tokens,
+                    actual_types,
+                    act_idx,
+                    len(insert_tokens),
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
                 if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, len(delete_tokens)) and self._is_ignorable_slice(
                     actual_tokens, actual_types, act_idx, len(insert_tokens)
                 ):
@@ -189,6 +221,7 @@ class InlineTextDiffer:
         if token_type == "word":
             token = token.lower()
             token = token.replace("\u2019", "'").replace("\u2018", "'")
+            token = token.replace("'", "")
             return token
         return token
 
@@ -262,6 +295,29 @@ class InlineTextDiffer:
                 if i + 1 < len(diffs) and diffs[i + 1][0] == 1:
                     insert_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
                     insert_count = len(insert_tokens)
+                    if self._equivalent_ignoring_punct(
+                        expected_tokens,
+                        expected_types,
+                        exp_idx,
+                        count,
+                        actual_tokens,
+                        actual_types,
+                        act_idx,
+                        insert_count,
+                    ):
+                        expected_text = self._slice_tokens(expected_tokens, exp_idx, count)
+                        segments.append(
+                            {
+                                "text": expected_text,
+                                "exp_start": exp_idx,
+                                "exp_end": exp_idx + count,
+                                "anchor": None,
+                            }
+                        )
+                        exp_idx += count
+                        act_idx += insert_count
+                        i += 2
+                        continue
                     if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, count) and self._is_ignorable_slice(
                         actual_tokens, actual_types, act_idx, insert_count
                     ):
@@ -323,6 +379,29 @@ class InlineTextDiffer:
                 if i + 1 < len(diffs) and diffs[i + 1][0] == -1:
                     delete_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
                     delete_count = len(delete_tokens)
+                    if self._equivalent_ignoring_punct(
+                        expected_tokens,
+                        expected_types,
+                        exp_idx,
+                        delete_count,
+                        actual_tokens,
+                        actual_types,
+                        act_idx,
+                        count,
+                    ):
+                        expected_text = self._slice_tokens(expected_tokens, exp_idx, delete_count)
+                        segments.append(
+                            {
+                                "text": expected_text,
+                                "exp_start": exp_idx,
+                                "exp_end": exp_idx + delete_count,
+                                "anchor": None,
+                            }
+                        )
+                        exp_idx += delete_count
+                        act_idx += count
+                        i += 2
+                        continue
                     if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, delete_count) and self._is_ignorable_slice(
                         actual_tokens, actual_types, act_idx, count
                     ):
@@ -392,6 +471,37 @@ class InlineTextDiffer:
                 continue
             return False
         return has_ignorable
+
+    def _equivalent_ignoring_punct(
+        self,
+        expected_tokens: list[str],
+        expected_types: list[str],
+        expected_start: int,
+        expected_count: int,
+        actual_tokens: list[str],
+        actual_types: list[str],
+        actual_start: int,
+        actual_count: int,
+    ) -> bool:
+        expected_words = self._normalized_words(
+            expected_tokens[expected_start : expected_start + expected_count],
+            expected_types[expected_start : expected_start + expected_count],
+        )
+        actual_words = self._normalized_words(
+            actual_tokens[actual_start : actual_start + actual_count],
+            actual_types[actual_start : actual_start + actual_count],
+        )
+        return expected_words == actual_words
+
+    def _normalized_words(self, tokens: list[str], types: list[str]) -> list[str]:
+        words: list[str] = []
+        for token, token_type in zip(tokens, types):
+            if token_type != "word":
+                continue
+            word = token.lower().replace("\u2019", "'").replace("\u2018", "'")
+            word = word.replace("'", "")
+            words.append(word)
+        return words
 
     def _slice_tokens(self, tokens: list[str], start: int, count: int) -> str:
         return "".join(tokens[start : start + count])

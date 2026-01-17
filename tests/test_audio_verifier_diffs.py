@@ -130,3 +130,36 @@ def test_inline_text_differ_ignores_punctuation_changes() -> None:
 
     assert diff.inline_diff == expected
     assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_quotes_and_question_runs() -> None:
+    differ = InlineTextDiffer()
+    expected = 'He said, "What?!??"'
+    actual = "he said what."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_dash_sequences() -> None:
+    differ = InlineTextDiffer()
+    expected = "Wait -- what --- now."
+    actual = "wait. what: now"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_missing_apostrophes() -> None:
+    differ = InlineTextDiffer()
+    expected = "Well, the lion’s ate him."
+    actual = "Well, the lions ate him."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
