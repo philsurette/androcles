@@ -58,6 +58,7 @@ class RoleAudioVerifier:
     next_word_boost_threshold: float = 0.9
     diff_window_before: int = 3
     diff_window_after: int = 1
+    extra_audio_padding_ms: int = 150
 
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel = field(init=False, repr=False)
@@ -401,6 +402,7 @@ class RoleAudioVerifier:
         matched_word_scores: list[float] = []
         skipped_text_words = 0
         skipped_audio_words = 0
+        skipped_audio_indices: list[int] = []
 
         for step in alignment:
             if step["op"] == "match":
@@ -412,6 +414,43 @@ class RoleAudioVerifier:
                 skipped_text_words += 1
             elif step["op"] == "skip_audio":
                 skipped_audio_words += 1
+                skipped_audio_indices.append(step["audio_index"])
+
+        segment_windows: list[dict] = []
+        if skipped_audio_indices:
+            pad_seconds = self.extra_audio_padding_ms / 1000.0
+            for segment in expected_segments:
+                match_info = segment_matches[segment["segment_index"]]
+                matched_indices = match_info["matched_audio_indices"]
+                if not matched_indices:
+                    continue
+                start = min(audio_words[i]["start"] for i in matched_indices)
+                end = max(audio_words[i]["end"] for i in matched_indices)
+                segment_windows.append(
+                    {
+                        "segment_index": segment["segment_index"],
+                        "start": start - pad_seconds,
+                        "end": end + pad_seconds,
+                        "mid": (start + end) / 2.0,
+                    }
+                )
+
+        segment_extra_indices: dict[int, list[int]] = {}
+        reassigned_audio_indices: set[int] = set()
+        if segment_windows:
+            for audio_index in skipped_audio_indices:
+                word = audio_words[audio_index]
+                word_mid = (word["start"] + word["end"]) / 2.0
+                candidates = [
+                    window
+                    for window in segment_windows
+                    if window["start"] <= word_mid <= window["end"]
+                ]
+                if not candidates:
+                    continue
+                best = min(candidates, key=lambda window: abs(word_mid - window["mid"]))
+                segment_extra_indices.setdefault(best["segment_index"], []).append(audio_index)
+                reassigned_audio_indices.add(audio_index)
 
         segments_out: list[dict] = []
         matched_segments = 0
@@ -422,10 +461,12 @@ class RoleAudioVerifier:
             scores = match_info["scores"]
             if matched_indices:
                 matched_segments += 1
-                start = min(audio_words[i]["start"] for i in matched_indices)
-                end = max(audio_words[i]["end"] for i in matched_indices)
+                extra_indices = segment_extra_indices.get(segment["segment_index"], [])
+                combined_indices = sorted(set(matched_indices + extra_indices))
+                start = min(audio_words[i]["start"] for i in combined_indices)
+                end = max(audio_words[i]["end"] for i in combined_indices)
                 similarity = sum(scores) / len(scores)
-                matched_text = " ".join(audio_words[i]["word"] for i in matched_indices)
+                matched_text = " ".join(audio_words[i]["word"] for i in combined_indices)
                 status = "matched"
             else:
                 missing_segments += 1
@@ -456,7 +497,11 @@ class RoleAudioVerifier:
                 }
             )
 
-        extra_entries = self._build_extra_audio_entries(audio_words, alignment)
+        extra_entries = self._build_extra_audio_entries(
+            audio_words,
+            alignment,
+            reassigned_audio_indices,
+        )
         avg_similarity = (
             sum(matched_word_scores) / len(matched_word_scores) if matched_word_scores else 0.0
         )
@@ -486,11 +531,13 @@ class RoleAudioVerifier:
         self,
         audio_words: list[dict],
         alignment: list[dict],
+        excluded_indices: set[int] | None = None,
     ) -> list[dict]:
         extra_indices = [
             step["audio_index"]
             for step in alignment
             if step["op"] == "skip_audio"
+            and (excluded_indices is None or step["audio_index"] not in excluded_indices)
         ]
         extra_entries: list[dict] = []
         if not extra_indices:
