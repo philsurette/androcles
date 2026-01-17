@@ -26,6 +26,7 @@ from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
 from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
+from whisper_model_store import WhisperModelStore
 
 from spacing import (
   CALLOUT_SPACING_MS,
@@ -176,6 +177,27 @@ def generate_timings(
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_generate_timings(librivox=librivox, paths_config=cfg)
+
+
+@app.command("whisper-init")
+def whisper_init(
+    model: list[str] = typer.Option(None, "--model", "-m", help="Whisper model name(s) to cache"),
+    device: str = typer.Option("cpu", help="Device to load the model for caching"),
+    compute_type: str = typer.Option("int8", help="Compute type for loading cached models"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    model_names = model if model else ["tiny.en"]
+    store = WhisperModelStore(
+        paths=cfg,
+        device=device,
+        compute_type=compute_type,
+        local_files_only=False,
+    )
+    for model_name in model_names:
+        store.load(model_name)
+    logging.info("✅ cached whisper model(s) in %s", store.cache_dir)
 
 
 @app.command()

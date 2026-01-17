@@ -24,6 +24,8 @@ coloredlogs==15.0.1
     # via onnxruntime
 ctranslate2==4.6.3
     # via faster-whisper
+diff-match-patch==20241021
+    # via -r requirements.in
 et-xmlfile==2.0.0
     # via openpyxl
 faster-whisper==1.2.1

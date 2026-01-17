@@ -9,5 +9,6 @@ faster-whisper
 rapidfuzz
 soundfile
 python-Levenshtein
+diff-match-patch
 # test deps
 pytest

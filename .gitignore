@@ -9,5 +9,6 @@
 **/.DS_Store
 **/__pycache__/
 .venv/
+.whisper/
 build/
 plays/androcles-no-appendix

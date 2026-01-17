@@ -6,7 +6,6 @@ import logging
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import ClassVar
 
 from faster_whisper import WhisperModel
 from rapidfuzz import fuzz
@@ -16,6 +15,7 @@ from block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
 from play import Play
 from play_text_parser import PlayTextParser
 from segment import SpeechSegment, SimultaneousSegment, DirectionSegment
+from whisper_model_store import WhisperModelStore
 
 
 @dataclass
@@ -26,6 +26,7 @@ class RoleAlignmentVerifier:
     model_name: str = "tiny.en"
     device: str = "cpu"
     compute_type: str = "int8"
+    whisper_store: WhisperModelStore | None = None
     remove_fillers: bool = True
     filler_words: set[str] = field(
         default_factory=lambda: {
@@ -51,7 +52,6 @@ class RoleAlignmentVerifier:
     low_match_penalty: float = -0.9
     next_word_boost_threshold: float = 0.9
 
-    _model_cache: ClassVar[dict[tuple[str, str, str], WhisperModel]] = {}
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel = field(init=False, repr=False)
     _punct_re: re.Pattern[str] = field(init=False, repr=False)
@@ -63,6 +63,13 @@ class RoleAlignmentVerifier:
         self._space_re = re.compile(r"\s+")
         if self.play is None:
             self.play = PlayTextParser(paths_config=self.paths).parse()
+        if self.whisper_store is None:
+            self.whisper_store = WhisperModelStore(
+                paths=self.paths,
+                device=self.device,
+                compute_type=self.compute_type,
+                local_files_only=True,
+            )
         self._model = self._load_model()
 
     def verify(self, recording_path: Path | None = None) -> dict:
@@ -92,14 +99,9 @@ class RoleAlignmentVerifier:
         return results
 
     def _load_model(self) -> WhisperModel:
-        key = (self.model_name, self.device, self.compute_type)
-        if key not in self._model_cache:
-            self._model_cache[key] = WhisperModel(
-                self.model_name,
-                device=self.device,
-                compute_type=self.compute_type,
-            )
-        return self._model_cache[key]
+        if self.whisper_store is None:
+            raise RuntimeError("Whisper model store is not configured")
+        return self.whisper_store.load(self.model_name)
 
     def _build_expected_words(self) -> tuple[list[dict], list[str], list[int]]:
         expected_segments = self._collect_expected_segments()
@@ -137,6 +139,13 @@ class RoleAlignmentVerifier:
         if role_obj is None:
             raise RuntimeError(f"Role not found: {self.role}")
         segments: list[dict] = []
+        if role_obj.reader_block is not None:
+            segments.append(
+                {
+                    "segment_id": f"{self.role}_reader",
+                    "expected_text": role_obj.reader_block.text,
+                }
+            )
         for blk in role_obj.blocks:
             for seg in blk.segments:
                 text = getattr(seg, "text", "").strip()
