@@ -27,6 +27,8 @@ from cue_builder import CueBuilder
 from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 from whisper_model_store import WhisperModelStore
+from role_audio_verifier import RoleAudioVerifier
+from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
   CALLOUT_SPACING_MS,
@@ -40,6 +42,13 @@ PLAY_OPTION = typer.Option(
     "-p",
     help=f"Play directory name under plays/ (default: {paths.DEFAULT_PLAY_NAME})",
 )
+MODEL_CHOICES = ("tiny", "base", "small", "med")
+MODEL_NAME_MAP = {
+    "tiny": "tiny.en",
+    "base": "base.en",
+    "small": "small.en",
+    "med": "medium.en",
+}
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -172,11 +181,70 @@ def check_recording(play: str | None = PLAY_OPTION) -> None:
 @app.command("generate-timings")
 def generate_timings(
     play: str | None = PLAY_OPTION,
-    librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
+    librivox: bool = typer.Option(False, help="Use Librivox preamble/epilog when computing timings"),
+    segment_spacing_ms: int = typer.Option(SEGMENT_SPACING_MS, "--segment-spacing-ms", help="Silence (ms) between segments"),
+    callouts: bool = typer.Option(True, help="Include callout audio when computing timings"),
+    callout_spacing_ms: int = typer.Option(CALLOUT_SPACING_MS, "--callout-spacing-ms", help="Silence (ms) between callout and line"),
+    minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
+    include_decorations: bool = typer.Option(
+        True,
+        "--include-decorations/--no-include-decorations",
+        help="Include callouts and announcer clips in timings output",
+    ),
     ) -> None:
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
-    run_generate_timings(librivox=librivox, paths_config=cfg)
+    run_generate_timings(
+        librivox=librivox,
+        segment_spacing_ms=segment_spacing_ms,
+        callouts=callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+        include_decorations=include_decorations,
+        paths_config=cfg,
+    )
+
+
+@app.command("verify-audio")
+def verify_audio(
+    role: str = typer.Option(..., "--role", "-r", help="Role to verify"),
+    recording: Path | None = typer.Option(None, "--recording", help="Override recording WAV path"),
+    output: Path | None = typer.Option(None, "--out", help="Output XLSX path"),
+    model: str = typer.Option("base", "--model", "-m", help="Whisper model: tiny, base, small, med"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    play_obj = PlayTextParser(paths_config=cfg).parse()
+    valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR"}
+    if role not in valid_roles:
+        raise typer.BadParameter(f"Unknown role: {role}")
+    model_key = model.lower().strip()
+    if model_key not in MODEL_CHOICES:
+        raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
+    model_name = MODEL_NAME_MAP[model_key]
+    store = WhisperModelStore(
+        paths=cfg,
+        device="cpu",
+        compute_type="int8",
+        local_files_only=True,
+    )
+    try:
+        store.load(model_name)
+    except LocalEntryNotFoundError as exc:
+        raise typer.BadParameter(
+            f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
+        ) from exc
+    verifier = RoleAudioVerifier(
+        role=role,
+        paths=cfg,
+        play=play_obj,
+        model_name=model_name,
+        whisper_store=store,
+    )
+    results = verifier.verify(recording_path=recording)
+    out_path = verifier.write_xlsx(results, out_path=output)
+    logging.info("✅ wrote %s", out_path)
 
 
 @app.command("whisper-init")
@@ -392,8 +460,40 @@ def run_check_recording(paths_config: paths.PathConfig | None = None):
         typer.echo(line)
 
 
-def run_generate_timings(librivox: bool, paths_config: paths.PathConfig | None = None):
-    generate_xlsx(librivox, paths_config=paths_config)
+def run_generate_timings(
+    librivox: bool,
+    segment_spacing_ms: int = SEGMENT_SPACING_MS,
+    callouts: bool = True,
+    callout_spacing_ms: int = CALLOUT_SPACING_MS,
+    minimal_callouts: bool = False,
+    include_decorations: bool = True,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    part_ids = [p.part_no for p in play.parts if p.part_no is not None]
+    if librivox and len(part_ids) > 1:
+        for part_no in part_ids:
+            generate_xlsx(
+                librivox=librivox,
+                part_no=part_no,
+                include_callouts=callouts,
+                callout_spacing_ms=callout_spacing_ms,
+                minimal_callouts=minimal_callouts,
+                segment_spacing_ms=segment_spacing_ms,
+                include_decorations=include_decorations,
+                paths_config=cfg,
+            )
+        return
+    generate_xlsx(
+        librivox=librivox,
+        include_callouts=callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+        segment_spacing_ms=segment_spacing_ms,
+        include_decorations=include_decorations,
+        paths_config=cfg,
+    )
 
 
 def run_audioplay(

@@ -6,7 +6,7 @@ import logging
 import string
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Iterable
 
 from pydub import AudioSegment
 
@@ -16,6 +16,8 @@ from play import Play
 from play_text_parser import PlayTextParser
 from segment import  MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
 from block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
+from clip import Clip, CalloutClip, ParallelClips, Silence
+from spacing import CALLOUT_SPACING_MS, SEGMENT_SPACING_MS
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -51,6 +53,8 @@ class SegmentVerifier:
     too_short: float = 0.5
     too_long: float = 2.0
     play: Play | None = None
+    part_no: int | None = None
+    include_decorations: bool = False
     paths: paths.PathConfig = field(default_factory=paths.current)
     _plan_start_map: Dict[str, float] = field(init=False, default_factory=dict)
     _offsets_map: Dict[str, Dict[str, str]] = field(init=False, default_factory=dict)
@@ -74,7 +78,8 @@ class SegmentVerifier:
             if role == "_NARRATOR":
                 continue
             for blk in role_obj.blocks:
-                # Skip block if part filter logic is needed; here we include all.
+                if self.part_no is not None and blk.block_id.part_id != self.part_no:
+                    continue
                 seq = 0
                 for seg in blk.segments:
                     text = getattr(seg, "text", "").strip()
@@ -100,6 +105,8 @@ class SegmentVerifier:
             return rows
 
         for blk in self.play.blocks:
+            if self.part_no is not None and blk.block_id.part_id != self.part_no:
+                continue
             if isinstance(blk, (TitleBlock, DescriptionBlock, DirectionBlock)):
                 relevant = blk.segments
             elif isinstance(blk, RoleBlock):
@@ -172,12 +179,14 @@ class SegmentVerifier:
                 act = row["actual_seconds"]
                 if exp:
                     row["percent"] = round((act / exp) * 100.0, 1)
-                    # Apply thresholds; skip warnings if actual is very short.
+                    # Apply thresholds; short clips only warn when far below expected.
                     if act >= 2.0:
                         if act < self.too_short * exp and exp >= 1.0:
                             row["warning"] = "<"
                         elif act > self.too_long * exp:
                             row["warning"] = ">"
+                    elif exp - act > 3.0:
+                        row["warning"] = "<"
                     if row["warning"]:
                         logging.warning(
                             "%s %s duration off: actual %.2fs vs expected %.2fs",
@@ -193,6 +202,9 @@ class SegmentVerifier:
             block = bid if bid is not None else -1
             seg = sid if sid is not None else -1
             return (part, block, seg)
+
+        if self.include_decorations:
+            return self._merge_decorations(rows)
 
         rows.sort(key=sort_key)
         return rows
@@ -257,6 +269,66 @@ class SegmentVerifier:
         secs = seconds - mins * 60
         return f"{mins}:{secs:04.1f}"
 
+    def _merge_decorations(self, rows: List[Dict]) -> List[Dict]:
+        expected_by_id = {row["id"]: row for row in rows}
+        seen: set[str] = set()
+        merged: List[Dict] = []
+        decor_index = 0
+        for clip in self._iter_plan_clips():
+            norm_id = None
+            if clip.clip_id:
+                norm_id = str(clip.clip_id).replace(":", "_")
+            if norm_id and norm_id in expected_by_id:
+                if norm_id in seen:
+                    continue
+                merged.append(expected_by_id[norm_id])
+                seen.add(norm_id)
+                continue
+            decor_index += 1
+            merged.append(self._build_decoration_row(clip, decor_index))
+        for row in rows:
+            if row["id"] not in seen:
+                merged.append(row)
+        return merged
+
+    def _iter_plan_clips(self) -> Iterable[Clip]:
+        for item in self.plan:
+            if isinstance(item, ParallelClips):
+                for clip in item.clips:
+                    if not isinstance(clip, Silence):
+                        yield clip
+                continue
+            if isinstance(item, Clip) and not isinstance(item, Silence):
+                yield item
+
+    def _build_decoration_row(self, clip: Clip, index: int) -> Dict:
+        text = clip.text or ""
+        if not text:
+            if clip.clip_id:
+                text = str(clip.clip_id)
+            elif clip.path is not None:
+                text = clip.path.stem
+        actual_seconds = round(clip.length_ms / 1000.0, 1)
+        start_sec = round(clip.offset_ms / 1000.0, 1)
+        return {
+            "id": f"decor_{index:04d}",
+            "warning": "",
+            "expected_seconds": None,
+            "actual_seconds": actual_seconds,
+            "percent": None,
+            "start": self._format_seconds(start_sec),
+            "src_offset": "",
+            "role": self._decoration_role(clip),
+            "text": text,
+        }
+
+    def _decoration_role(self, clip: Clip) -> str:
+        if isinstance(clip, CalloutClip):
+            return "_CALLER"
+        if clip.path is not None and clip.path.parent.name == "_ANNOUNCER":
+            return "_ANNOUNCER"
+        return clip.role or "_DECOR"
+
 
 if __name__ == "__main__":
     play = PlayTextParser().parse()
@@ -270,11 +342,48 @@ def compute_rows(
         too_short: float = 0.5, 
         too_long: float = 2.0,
         librivox: bool = False,
+        part_no: int | None = None,
+        include_callouts: bool = False,
+        callout_spacing_ms: int = CALLOUT_SPACING_MS,
+        minimal_callouts: bool = False,
+        segment_spacing_ms: int = SEGMENT_SPACING_MS,
+        include_decorations: bool = False,
         paths_config: paths.PathConfig | None = None,
     ) -> List[Dict]:
     cfg = paths_config or paths.current()
     play = PlayTextParser(paths_config=cfg).parse()
-    builder = PlayPlanBuilder(play=play, librivox=librivox, paths=cfg)
-    plan = builder.build_audio_plan()
-    verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play, paths=cfg)
+    from callout_director import (
+        ConversationAwareCalloutDirector,
+        RoleCalloutDirector,
+        NoCalloutDirector,
+    )
+
+    if include_callouts:
+        if minimal_callouts:
+            director = ConversationAwareCalloutDirector(play)
+        else:
+            director = RoleCalloutDirector(play, paths_config=cfg)
+    else:
+        director = NoCalloutDirector(play, paths_config=cfg)
+
+    builder = PlayPlanBuilder(
+        play=play,
+        librivox=librivox,
+        paths=cfg,
+        director=director,
+        segment_spacing_ms=segment_spacing_ms,
+        include_callouts=include_callouts,
+        callout_spacing_ms=callout_spacing_ms,
+        minimal_callouts=minimal_callouts,
+    )
+    plan = builder.build_audio_plan(part_no=part_no)
+    verifier = SegmentVerifier(
+        plan=plan,
+        too_short=too_short,
+        too_long=too_long,
+        play=play,
+        part_no=part_no,
+        include_decorations=include_decorations,
+        paths=cfg,
+    )
     return verifier.compute_rows()

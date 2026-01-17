@@ -17,22 +17,10 @@ class InlineTextDiffer:
     dmp: diff_match_patch = field(default_factory=diff_match_patch)
 
     def diff(self, expected: str, actual: str) -> InlineTextDiff:
-        expected_tokens, expected_types = self._tokenize(expected)
-        actual_tokens, actual_types = self._tokenize(actual)
-        expected_norm = [
-            self._normalize_token(token, token_type)
-            for token, token_type in zip(expected_tokens, expected_types)
-        ]
-        actual_norm = [
-            self._normalize_token(token, token_type)
-            for token, token_type in zip(actual_tokens, actual_types)
-        ]
-        encoded_expected, encoded_actual, id_to_token = self._encode_tokens(
-            expected_norm,
-            actual_norm,
+        diffs, id_to_token, expected_tokens, expected_types, actual_tokens = self._diffs_for_texts(
+            expected,
+            actual,
         )
-        diffs = self.dmp.diff_main(encoded_expected, encoded_actual)
-        self.dmp.diff_cleanupSemantic(diffs)
 
         expected_word_indices = self._build_word_indices(expected_types)
         segments, diff_regions = self._build_segments(
@@ -54,6 +42,59 @@ class InlineTextDiffer:
             inline_diff=inline_diff,
             windowed_diffs=windowed_diffs,
         )
+
+    def count_diffs(self, expected: str, actual: str) -> int:
+        diffs, _id_to_token, _expected_tokens, _expected_types, _actual_tokens = self._diffs_for_texts(
+            expected,
+            actual,
+        )
+        count = 0
+        i = 0
+        while i < len(diffs):
+            op, _text = diffs[i]
+            if op == 0:
+                i += 1
+                continue
+            if op == -1 and i + 1 < len(diffs) and diffs[i + 1][0] == 1:
+                count += 1
+                i += 2
+                continue
+            if op == 1 and i + 1 < len(diffs) and diffs[i + 1][0] == -1:
+                count += 1
+                i += 2
+                continue
+            count += 1
+            i += 1
+        return count
+
+    def _diffs_for_texts(
+        self,
+        expected: str,
+        actual: str,
+    ) -> tuple[
+        list[tuple[int, str]],
+        dict[int, str],
+        list[str],
+        list[str],
+        list[str],
+    ]:
+        expected_tokens, expected_types = self._tokenize(expected)
+        actual_tokens, actual_types = self._tokenize(actual)
+        expected_norm = [
+            self._normalize_token(token, token_type)
+            for token, token_type in zip(expected_tokens, expected_types)
+        ]
+        actual_norm = [
+            self._normalize_token(token, token_type)
+            for token, token_type in zip(actual_tokens, actual_types)
+        ]
+        encoded_expected, encoded_actual, id_to_token = self._encode_tokens(
+            expected_norm,
+            actual_norm,
+        )
+        diffs = self.dmp.diff_main(encoded_expected, encoded_actual)
+        self.dmp.diff_cleanupSemantic(diffs)
+        return diffs, id_to_token, expected_tokens, expected_types, actual_tokens
 
     def _tokenize(self, text: str) -> tuple[list[str], list[str]]:
         tokens: list[str] = []

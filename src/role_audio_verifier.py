@@ -17,6 +17,9 @@ from play_text_parser import PlayTextParser
 from segment import SpeechSegment, SimultaneousSegment, DirectionSegment
 from whisper_model_store import WhisperModelStore
 from inline_text_differ import InlineTextDiffer
+from audio_verifier_diff import AudioVerifierDiff
+from audio_verifier_diff_builder import AudioVerifierDiffBuilder
+from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
 
 
 @dataclass
@@ -24,7 +27,7 @@ class RoleAudioVerifier:
     role: str
     paths: paths.PathConfig = field(default_factory=paths.current)
     play: Play | None = None
-    model_name: str = "base.en" #tiny.em, base.em, small.em, med.em
+    model_name: str = "base.en"
     device: str = "cpu"
     compute_type: str = "int8"
     whisper_store: WhisperModelStore | None = None
@@ -105,6 +108,19 @@ class RoleAudioVerifier:
             len(audio_words),
         )
         return results
+
+    def build_diffs(self, results: dict) -> list[AudioVerifierDiff]:
+        builder = AudioVerifierDiffBuilder(
+            window_before=self.diff_window_before,
+            window_after=self.diff_window_after,
+        )
+        return builder.build(results)
+
+    def write_xlsx(self, results: dict, out_path: Path | None = None) -> Path:
+        target = out_path or (self.paths.audio_out_dir / f"{self.role}_audio_verification.xlsx")
+        diffs = self.build_diffs(results)
+        writer = AudioVerifierXlsxWriter()
+        return writer.write(diffs, target, sheet_name=self.role)
 
     def _load_model(self) -> WhisperModel:
         if self.whisper_store is None:
