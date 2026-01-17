@@ -252,7 +252,9 @@ def verify_audio(
         raise typer.BadParameter(
             f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
         ) from exc
-    for role_name in roles_to_verify:
+    total_roles = len(roles_to_verify)
+    for idx, role_name in enumerate(roles_to_verify, start=1):
+        logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
             role=role_name,
             paths=cfg,
