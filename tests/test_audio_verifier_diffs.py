@@ -14,6 +14,7 @@ from audio_verifier_diff_builder import AudioVerifierDiffBuilder
 from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
+from inline_text_differ import InlineTextDiffer
 
 
 def test_missing_orders_between_matched_segments() -> None:
@@ -109,4 +110,23 @@ def test_rows_include_segment_id() -> None:
     )
     row = diff.to_row()
 
-    assert row["Segment ID"] == "1_2_3"
+    assert row["id"] == "1_2_3"
+
+
+def test_inline_text_differ_ignores_apostrophes_and_case() -> None:
+    differ = InlineTextDiffer()
+    diff = differ.diff("Here’s a Test.", "Here's a test")
+
+    assert diff.inline_diff == "Here’s a Test."
+    assert differ.count_diffs("Here’s a Test.", "Here's a test") == 0
+
+
+def test_inline_text_differ_ignores_punctuation_changes() -> None:
+    differ = InlineTextDiffer()
+    expected = "One, two; three: four."
+    actual = "One two three four"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0

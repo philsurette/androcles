@@ -18,14 +18,14 @@ class AudioVerifierXlsxWriter:
     def __post_init__(self) -> None:
         if self.headers is None:
             self.headers = [
-                "Error",
-                "Segment ID",
-                "Offset ms",
-                "Length ms",
-                "Expected",
-                "Heard",
-                "Diff",
-                "Match Quality",
+                "status",
+                "id",
+                "offset",
+                "len",
+                "dc",
+                "diff",
+                "expected",
+                "heard",
             ]
 
     def write(self, diffs: list[AudioVerifierDiff], out_path: Path, sheet_name: str = "Verification") -> Path:
@@ -45,24 +45,24 @@ class AudioVerifierXlsxWriter:
 
     def _format_columns(self, ws) -> None:
         widths = {
-            "Error": 4,
-            "Segment ID": 10,
-            "Offset ms": 10,
-            "Length ms": 10,
-            "Expected": 70,
-            "Heard": 70,
-            "Diff": 80,
-            "Match Quality": 12,
+            "status": 4,
+            "id": 10,
+            "offset": 10,
+            "len": 8,
+            "dc": 6,
+            "diff": 80,
+            "expected": 70,
+            "heard": 70,
         }
         for idx, header in enumerate(self.headers, start=1):
             col_letter = get_column_letter(idx)
             if header in widths:
                 ws.column_dimensions[col_letter].width = widths[header]
-            if header in {"Offset ms", "Length ms", "Match Quality"}:
+            if header in {"offset", "len", "dc"}:
                 for cell in ws[col_letter]:
                     if cell.row == 1:
                         continue
                     cell.alignment = cell.alignment.copy(horizontal="right")
-            if header == "Error":
+            if header == "status":
                 for cell in ws[col_letter]:
                     cell.alignment = cell.alignment.copy(horizontal="center")

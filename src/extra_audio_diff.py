@@ -16,12 +16,12 @@ class ExtraAudioDiff(AudioVerifierDiff):
 
     def to_row(self) -> dict[str, object]:
         return {
-            "Error": self.error_symbol(),
-            "Segment ID": "",
-            "Offset ms": self.offset_ms or "",
-            "Length ms": self.length_ms or "",
-            "Expected": "",
-            "Heard": self.heard,
-            "Diff": "",
-            "Match Quality": "",
+            "status": self.error_symbol(),
+            "id": "",
+            "offset": self.offset_ms or "",
+            "len": self.length_ms or "",
+            "dc": "",
+            "diff": "",
+            "expected": "",
+            "heard": self.heard,
         }

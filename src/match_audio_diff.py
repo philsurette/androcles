@@ -22,12 +22,12 @@ class MatchAudioDiff(AudioVerifierDiff):
 
     def to_row(self) -> dict[str, object]:
         return {
-            "Error": self.error_symbol(),
-            "Segment ID": self.segment_id,
-            "Offset ms": self.offset_ms or "",
-            "Length ms": self.length_ms or "",
-            "Expected": self.expected,
-            "Heard": self.heard,
-            "Diff": self.diff,
-            "Match Quality": self.match_quality,
+            "status": self.error_symbol(),
+            "id": self.segment_id,
+            "offset": self.offset_ms or "",
+            "len": self.length_ms or "",
+            "dc": self.match_quality,
+            "diff": self.diff,
+            "expected": self.expected,
+            "heard": self.heard,
         }
