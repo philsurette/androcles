@@ -100,7 +100,7 @@ class RoleAudioVerifier:
             word_to_segment,
             alignment,
         )
-        self._logger.info(
+        self._logger.debug(
             "Aligned %d segments for %s (%d script words, %d audio words)",
             len(expected_segments),
             self.role,

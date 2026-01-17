@@ -28,6 +28,9 @@ from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 from whisper_model_store import WhisperModelStore
 from role_audio_verifier import RoleAudioVerifier
+from extra_audio_diff import ExtraAudioDiff
+from match_audio_diff import MatchAudioDiff
+from missing_audio_diff import MissingAudioDiff
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -70,6 +73,14 @@ def setup_logging(paths_config: paths.PathConfig) -> None:
     root.handlers.clear()
     root.addHandler(console)
     root.addHandler(file_handler)
+    for logger_name in (
+        "faster_whisper",
+        "faster_whisper.transcribe",
+        "faster_whisper.vad",
+    ):
+        logger = logging.getLogger(logger_name)
+        logger.setLevel(logging.ERROR)
+        logger.propagate = False
 
 
 @app.callback(invoke_without_command=True)
@@ -207,18 +218,24 @@ def generate_timings(
 
 @app.command("verify-audio")
 def verify_audio(
-    role: str = typer.Option(..., "--role", "-r", help="Role to verify"),
+    role: str | None = typer.Option(None, "--role", "-r", help="Role to verify (omit for all roles)"),
     recording: Path | None = typer.Option(None, "--recording", help="Override recording WAV path"),
     output: Path | None = typer.Option(None, "--out", help="Output XLSX path"),
-    model: str = typer.Option("base", "--model", "-m", help="Whisper model: tiny, base, small, med"),
+    model: str = typer.Option("med", "--model", "-m", help="Whisper model: tiny, base, small, med"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     play_obj = PlayTextParser(paths_config=cfg).parse()
-    valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR"}
-    if role not in valid_roles:
-        raise typer.BadParameter(f"Unknown role: {role}")
+    valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
+    roles_to_verify = [role] if role else sorted(valid_roles)
+    if recording and len(roles_to_verify) > 1:
+        raise typer.BadParameter("Cannot use --recording without --role")
+    if output and len(roles_to_verify) > 1:
+        raise typer.BadParameter("Cannot use --out without --role")
+    for role_name in roles_to_verify:
+        if role_name not in valid_roles:
+            raise typer.BadParameter(f"Unknown role: {role_name}")
     model_key = model.lower().strip()
     if model_key not in MODEL_CHOICES:
         raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
@@ -235,16 +252,39 @@ def verify_audio(
         raise typer.BadParameter(
             f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
         ) from exc
-    verifier = RoleAudioVerifier(
-        role=role,
-        paths=cfg,
-        play=play_obj,
-        model_name=model_name,
-        whisper_store=store,
-    )
-    results = verifier.verify(recording_path=recording)
-    out_path = verifier.write_xlsx(results, out_path=output)
-    logging.info("✅ wrote %s", out_path)
+    for role_name in roles_to_verify:
+        verifier = RoleAudioVerifier(
+            role=role_name,
+            paths=cfg,
+            play=play_obj,
+            model_name=model_name,
+            whisper_store=store,
+        )
+        results = verifier.verify(recording_path=recording)
+        diffs = verifier.build_diffs(results)
+        out_path = verifier.write_xlsx(results, out_path=output)
+        missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
+        extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
+        partial_count = sum(
+            1
+            for diff in diffs
+            if isinstance(diff, MatchAudioDiff) and diff.match_quality > 0
+        )
+        if missing_count:
+            symbol = "❌"
+        elif extra_count:
+            symbol = "⚠️"
+        else:
+            symbol = "✅"
+        logging.info(
+            "%s%s: %d/%d/%d missing/extra/partials ... see %s",
+            symbol,
+            role_name,
+            missing_count,
+            extra_count,
+            partial_count,
+            out_path,
+        )
 
 
 @app.command("whisper-init")
