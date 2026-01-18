@@ -21,6 +21,7 @@ from audio_verifier_diff import AudioVerifierDiff
 from audio_verifier_diff_builder import AudioVerifierDiffBuilder
 from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
 from announcer import LibrivoxAnnouncer
+from vad_config import VadConfig
 from equivalencies import Equivalencies
 
 
@@ -33,6 +34,8 @@ class RoleAudioVerifier:
     device: str = "cpu"
     compute_type: str = "int8"
     whisper_store: WhisperModelStore | None = None
+    vad_filter: bool = True
+    vad_config: VadConfig | None = None
     remove_fillers: bool = True
     filler_words: set[str] = field(
         default_factory=lambda: {
@@ -149,8 +152,9 @@ class RoleAudioVerifier:
         return replacements
 
     def _load_equivalencies(self) -> Equivalencies:
-        path = self.paths.play_dir / "equivalencies.yaml"
-        return Equivalencies.load(path)
+        play_path = self.paths.play_dir / "equivalencies.yaml"
+        role_path = self.paths.recordings_dir / f"{self.role}_substitutions.yaml"
+        return Equivalencies.load_many([play_path, role_path])
 
     def _build_name_tokens(self) -> set[str]:
         tokens: set[str] = set()
@@ -320,10 +324,14 @@ class RoleAudioVerifier:
         return segments
 
     def _transcribe_words(self, path: Path) -> list[dict]:
+        vad_parameters = None
+        if self.vad_filter and self.vad_config is not None:
+            vad_parameters = self.vad_config.to_transcribe_parameters()
         segments, _info = self._model.transcribe(
             str(path),
             word_timestamps=True,
-            vad_filter=True,
+            vad_filter=self.vad_filter,
+            vad_parameters=vad_parameters,
         )
         words: list[dict] = []
         for segment in segments:

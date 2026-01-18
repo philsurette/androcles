@@ -37,6 +37,14 @@ class Equivalencies:
                 inst._add_pair(key, variant, segment_id)
         return inst
 
+    @classmethod
+    def load_many(cls, paths: list[Path]) -> "Equivalencies":
+        merged = cls()
+        for path in paths:
+            loaded = cls.load(path)
+            merged._merge(loaded)
+        return merged
+
     def is_equivalent(self, expected: str, actual: str, segment_id: str | None = None) -> bool:
         expected_norm = self._normalize_text(expected)
         actual_norm = self._normalize_text(actual)
@@ -87,3 +95,11 @@ class Equivalencies:
             if token:
                 words.append(token)
         return " ".join(words)
+
+    def _merge(self, other: "Equivalencies") -> None:
+        for key, values in other.global_map.items():
+            self.global_map.setdefault(key, set()).update(values)
+        for segment_id, scoped in other.scoped_map.items():
+            target = self.scoped_map.setdefault(segment_id, {})
+            for key, values in scoped.items():
+                target.setdefault(key, set()).update(values)
