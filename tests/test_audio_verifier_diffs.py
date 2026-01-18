@@ -250,7 +250,7 @@ def test_inline_text_differ_uses_equivalencies(tmp_path) -> None:
 
 def test_inline_text_differ_uses_scoped_equivalencies(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
-    path.write_text("equivalencies:\n  effected@1_28_2: affected\n", encoding="utf-8")
+    path.write_text("equivalencies:\n  effected@1_28_2: [affected]\n", encoding="utf-8")
     equiv = Equivalencies.load(path)
     differ = InlineTextDiffer(equivalencies=equiv)
 
@@ -261,8 +261,8 @@ def test_inline_text_differ_uses_scoped_equivalencies(tmp_path) -> None:
 def test_equivalencies_merge_multiple_sources(tmp_path) -> None:
     play_path = tmp_path / "substitutions.yaml"
     role_path = tmp_path / "ROLE_substitutions.yaml"
-    play_path.write_text("equivalencies:\n  honourable: honorable\n", encoding="utf-8")
-    role_path.write_text("equivalencies:\n  colour: color\n", encoding="utf-8")
+    play_path.write_text("equivalencies:\n  honourable: [honorable]\n", encoding="utf-8")
+    role_path.write_text("equivalencies:\n  colour: [color]\n", encoding="utf-8")
 
     equiv = Equivalencies.load_many([play_path, role_path])
 
@@ -282,9 +282,20 @@ def test_equivalencies_ignorables(tmp_path) -> None:
     assert not equiv.is_ignorable_extra("Something else entirely")
 
 
+def test_equivalencies_match_within_phrase(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text("equivalencies:\n  Ferrovius: [ferocious]\n", encoding="utf-8")
+    equiv = Equivalencies.load(path)
+    differ = InlineTextDiffer(equivalencies=equiv)
+
+    diff = differ.diff("to Ferrovius", "to ferocious", segment_id="2_97_2")
+
+    assert diff.inline_diff == "to Ferrovius"
+    assert differ.count_diffs("to Ferrovius", "to ferocious", segment_id="2_97_2") == 0
+
 def test_equivalencies_handle_curly_apostrophes(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
-    path.write_text("equivalencies:\n  I’d@2_65_1: I\n", encoding="utf-8")
+    path.write_text("equivalencies:\n  I’d@2_65_1: [I]\n", encoding="utf-8")
     equiv = Equivalencies.load(path)
 
     assert equiv.is_equivalent("I’d", "I", segment_id="2_65_1")

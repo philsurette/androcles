@@ -27,10 +27,7 @@ class UnresolvedDiffs:
         output: dict[str, object] = {}
         for key in sorted(self.entries):
             values = sorted(self.entries[key])
-            if len(values) == 1:
-                output[key] = values[0]
-            else:
-                output[key] = values
+            output[key] = values
         payload: dict[str, object] = {"equivalencies": output} if output else {"equivalencies": {}}
         yml = yaml.YAML(typ="safe", pure=True)
         yml.default_flow_style = False

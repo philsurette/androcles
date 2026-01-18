@@ -8,6 +8,9 @@ equivalencies:
   they are: [they're]
   Pretorian: [Praetorian]
   curs: [kurs]
+  "Call Boy": [cowboy]
+  Megæra: [magara, Megara]
+  Spintho: [spinto]
 ignorables:
   - Insert role
   - Insert reader name

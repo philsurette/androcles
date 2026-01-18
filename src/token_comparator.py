@@ -149,6 +149,8 @@ class TokenComparator:
             for expected_word, actual_word in zip(expected_words, actual_words):
                 if expected_word == actual_word:
                     continue
+                if self._equivalencies_word_match(expected_word, actual_word, segment_id):
+                    continue
                 if self._name_match(expected_word, actual_word):
                     continue
                 if self._spelling_equivalent(expected_word, actual_word):
@@ -191,6 +193,20 @@ class TokenComparator:
         return self.equivalencies.is_equivalent(
             expected_phrase,
             actual_phrase,
+            segment_id=segment_id,
+        )
+
+    def _equivalencies_word_match(
+        self,
+        expected_word: str,
+        actual_word: str,
+        segment_id: str | None,
+    ) -> bool:
+        if self.equivalencies is None:
+            return False
+        return self.equivalencies.is_equivalent(
+            expected_word,
+            actual_word,
             segment_id=segment_id,
         )
 

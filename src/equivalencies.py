@@ -96,8 +96,6 @@ class Equivalencies:
             self.global_map.setdefault(actual_norm, set()).add(expected_norm)
 
     def _coerce_variants(self, value: object, path: Path) -> list[str]:
-        if isinstance(value, str):
-            return [value]
         if isinstance(value, (list, tuple, set)):
             variants = [item for item in value if isinstance(item, str)]
             if len(variants) != len(value):
