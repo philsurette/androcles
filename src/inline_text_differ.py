@@ -13,6 +13,8 @@ from diff_match_patch import diff_match_patch
 
 from inline_text_diff import InlineTextDiff
 from spelling_normalizer import SpellingNormalizer
+from equivalencies import Equivalencies
+from inline_text_replacement import InlineTextReplacement
 
 
 @dataclass
@@ -27,6 +29,7 @@ class InlineTextDiffer:
     name_tokens: set[str] = field(default_factory=set)
     name_similarity: float = 0.85
     spelling_normalizer: SpellingNormalizer | None = None
+    equivalencies: Equivalencies | None = None
     number_re: ClassVar[re.Pattern[str]] = re.compile(r"^(\d+)(?:st|nd|rd|th)?$")
     number_words: ClassVar[dict[str, int]] = {
         "zero": 0,
@@ -92,7 +95,7 @@ class InlineTextDiffer:
         "thousand": 1000,
     }
 
-    def diff(self, expected: str, actual: str) -> InlineTextDiff:
+    def diff(self, expected: str, actual: str, segment_id: str | None = None) -> InlineTextDiff:
         diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types = self._diffs_for_texts(
             expected,
             actual,
@@ -107,6 +110,7 @@ class InlineTextDiffer:
             actual_tokens,
             actual_types,
             expected_word_indices,
+            segment_id,
         )
         inline_diff = "".join(segment["text"] for segment in segments)
         windowed_diffs = self._build_windowed_diffs(
@@ -121,7 +125,7 @@ class InlineTextDiffer:
             windowed_diffs=windowed_diffs,
         )
 
-    def count_diffs(self, expected: str, actual: str) -> int:
+    def count_diffs(self, expected: str, actual: str, segment_id: str | None = None) -> int:
         diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types = self._diffs_for_texts(
             expected,
             actual,
@@ -150,6 +154,7 @@ class InlineTextDiffer:
                     actual_types,
                     act_idx,
                     len(insert_tokens),
+                    segment_id,
                 ):
                     exp_idx += len(delete_tokens)
                     act_idx += len(insert_tokens)
@@ -179,6 +184,7 @@ class InlineTextDiffer:
                     actual_types,
                     act_idx,
                     len(insert_tokens),
+                    segment_id,
                 ):
                     exp_idx += len(delete_tokens)
                     act_idx += len(insert_tokens)
@@ -248,6 +254,124 @@ class InlineTextDiffer:
         diffs = self.dmp.diff_main(encoded_expected, encoded_actual)
         self.dmp.diff_cleanupSemantic(diffs)
         return diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types
+
+    def replacement_pairs(
+        self,
+        expected: str,
+        actual: str,
+        segment_id: str | None = None,
+    ) -> list[InlineTextReplacement]:
+        diffs, id_to_token, expected_tokens, expected_types, actual_tokens, actual_types = self._diffs_for_texts(
+            expected,
+            actual,
+        )
+        replacements: list[InlineTextReplacement] = []
+        i = 0
+        exp_idx = 0
+        act_idx = 0
+        while i < len(diffs):
+            op, _text = diffs[i]
+            if op == 0:
+                tokens = self._decode_tokens(diffs[i][1], id_to_token)
+                exp_idx += len(tokens)
+                act_idx += len(tokens)
+                i += 1
+                continue
+            if op == -1 and i + 1 < len(diffs) and diffs[i + 1][0] == 1:
+                delete_tokens = self._decode_tokens(diffs[i][1], id_to_token)
+                insert_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
+                if self._equivalent_ignoring_punct(
+                    expected_tokens,
+                    expected_types,
+                    exp_idx,
+                    len(delete_tokens),
+                    actual_tokens,
+                    actual_types,
+                    act_idx,
+                    len(insert_tokens),
+                    segment_id,
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
+                if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, len(delete_tokens)) and self._is_ignorable_slice(
+                    actual_tokens, actual_types, act_idx, len(insert_tokens)
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
+                if self._has_word_slice(expected_types, exp_idx, len(delete_tokens)) and self._has_word_slice(
+                    actual_types, act_idx, len(insert_tokens)
+                ):
+                    expected_text = self._slice_tokens(expected_tokens, exp_idx, len(delete_tokens)).strip()
+                    actual_text = self._slice_tokens(actual_tokens, act_idx, len(insert_tokens)).strip()
+                    if expected_text and actual_text:
+                        replacements.append(
+                            InlineTextReplacement(
+                                expected=expected_text,
+                                actual=actual_text,
+                                segment_id=segment_id,
+                            )
+                        )
+                exp_idx += len(delete_tokens)
+                act_idx += len(insert_tokens)
+                i += 2
+                continue
+            if op == 1 and i + 1 < len(diffs) and diffs[i + 1][0] == -1:
+                insert_tokens = self._decode_tokens(diffs[i][1], id_to_token)
+                delete_tokens = self._decode_tokens(diffs[i + 1][1], id_to_token)
+                if self._equivalent_ignoring_punct(
+                    expected_tokens,
+                    expected_types,
+                    exp_idx,
+                    len(delete_tokens),
+                    actual_tokens,
+                    actual_types,
+                    act_idx,
+                    len(insert_tokens),
+                    segment_id,
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
+                if self._is_ignorable_slice(expected_tokens, expected_types, exp_idx, len(delete_tokens)) and self._is_ignorable_slice(
+                    actual_tokens, actual_types, act_idx, len(insert_tokens)
+                ):
+                    exp_idx += len(delete_tokens)
+                    act_idx += len(insert_tokens)
+                    i += 2
+                    continue
+                if self._has_word_slice(expected_types, exp_idx, len(delete_tokens)) and self._has_word_slice(
+                    actual_types, act_idx, len(insert_tokens)
+                ):
+                    expected_text = self._slice_tokens(expected_tokens, exp_idx, len(delete_tokens)).strip()
+                    actual_text = self._slice_tokens(actual_tokens, act_idx, len(insert_tokens)).strip()
+                    if expected_text and actual_text:
+                        replacements.append(
+                            InlineTextReplacement(
+                                expected=expected_text,
+                                actual=actual_text,
+                                segment_id=segment_id,
+                            )
+                        )
+                exp_idx += len(delete_tokens)
+                act_idx += len(insert_tokens)
+                i += 2
+                continue
+            tokens = self._decode_tokens(diffs[i][1], id_to_token)
+            if op == -1:
+                exp_idx += len(tokens)
+                i += 1
+                continue
+            if op == 1:
+                act_idx += len(tokens)
+                i += 1
+                continue
+            i += 1
+        return replacements
 
     def _tokenize(self, text: str) -> tuple[list[str], list[str]]:
         tokens: list[str] = []
@@ -339,6 +463,7 @@ class InlineTextDiffer:
         actual_tokens: list[str],
         actual_types: list[str],
         expected_word_indices: list[int | None],
+        segment_id: str | None,
     ) -> tuple[list[dict], list[tuple[int, int]]]:
         segments: list[dict] = []
         diff_regions: list[tuple[int, int]] = []
@@ -376,6 +501,7 @@ class InlineTextDiffer:
                         actual_types,
                         act_idx,
                         insert_count,
+                        segment_id,
                     ):
                         expected_text = self._slice_tokens(expected_tokens, exp_idx, count)
                         segments.append(
@@ -460,6 +586,7 @@ class InlineTextDiffer:
                         actual_types,
                         act_idx,
                         count,
+                        segment_id,
                     ):
                         expected_text = self._slice_tokens(expected_tokens, exp_idx, delete_count)
                         segments.append(
@@ -555,6 +682,7 @@ class InlineTextDiffer:
         actual_types: list[str],
         actual_start: int,
         actual_count: int,
+        segment_id: str | None,
     ) -> bool:
         expected_words = self._normalized_words(
             expected_tokens[expected_start : expected_start + expected_count],
@@ -565,6 +693,10 @@ class InlineTextDiffer:
             actual_types[actual_start : actual_start + actual_count],
         )
         if expected_words == actual_words:
+            return True
+        if expected_words and actual_words and self._equivalencies_match(
+            expected_words, actual_words, segment_id
+        ):
             return True
         if not expected_words or not actual_words:
             return False
@@ -582,6 +714,22 @@ class InlineTextDiffer:
             ratio = fuzz.ratio("".join(expected_words), "".join(actual_words)) / 100.0
             return ratio >= self.name_similarity
         return False
+
+    def _equivalencies_match(
+        self,
+        expected_words: list[str],
+        actual_words: list[str],
+        segment_id: str | None,
+    ) -> bool:
+        if self.equivalencies is None:
+            return False
+        expected_phrase = " ".join(expected_words)
+        actual_phrase = " ".join(actual_words)
+        return self.equivalencies.is_equivalent(
+            expected_phrase,
+            actual_phrase,
+            segment_id=segment_id,
+        )
 
     def _normalized_words(self, tokens: list[str], types: list[str]) -> list[str]:
         words: list[str] = []
@@ -625,6 +773,12 @@ class InlineTextDiffer:
         if self.spelling_normalizer is None:
             self.spelling_normalizer = SpellingNormalizer.from_breame()
         return self.spelling_normalizer.is_equivalent(expected_word, actual_word)
+
+    def _has_word_slice(self, types: list[str], start: int, count: int) -> bool:
+        for token_type in types[start : start + count]:
+            if token_type == "word":
+                return True
+        return False
 
     def _parse_number_sequence(self, words: list[str], start: int) -> tuple[int | None, int]:
         total = 0

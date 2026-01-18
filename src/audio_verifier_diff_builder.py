@@ -9,6 +9,7 @@ from extra_audio_diff import ExtraAudioDiff
 from inline_text_differ import InlineTextDiffer
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
+from equivalencies import Equivalencies
 
 
 @dataclass
@@ -16,6 +17,7 @@ class AudioVerifierDiffBuilder:
     window_before: int = 3
     window_after: int = 1
     name_tokens: set[str] = field(default_factory=set)
+    equivalencies: Equivalencies | None = None
     differ: InlineTextDiffer = field(init=False)
 
     def __post_init__(self) -> None:
@@ -23,6 +25,7 @@ class AudioVerifierDiffBuilder:
             window_before=self.window_before,
             window_after=self.window_after,
             name_tokens=self.name_tokens,
+            equivalencies=self.equivalencies,
         )
 
     def build(self, results: dict) -> list[AudioVerifierDiff]:
@@ -65,8 +68,16 @@ class AudioVerifierDiffBuilder:
             if status == "matched":
                 inline_diff = segment.get("inline_diff")
                 if inline_diff is None:
-                    inline_diff = self.differ.diff(expected, heard).inline_diff
-                match_quality = self.differ.count_diffs(expected, heard)
+                    inline_diff = self.differ.diff(
+                        expected,
+                        heard,
+                        segment_id=segment_id,
+                    ).inline_diff
+                match_quality = self.differ.count_diffs(
+                    expected,
+                    heard,
+                    segment_id=segment_id,
+                )
                 diff = MatchAudioDiff(
                     segment_id=segment_id,
                     expected=expected,

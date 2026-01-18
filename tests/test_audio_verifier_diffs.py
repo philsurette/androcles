@@ -16,6 +16,7 @@ from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
 from inline_text_differ import InlineTextDiffer
 from spelling_normalizer import SpellingNormalizer
+from equivalencies import Equivalencies
 
 
 def test_missing_orders_between_matched_segments() -> None:
@@ -220,3 +221,27 @@ def test_inline_text_differ_ignores_spelling_variants() -> None:
 
     assert diff.inline_diff == expected
     assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_uses_equivalencies(tmp_path) -> None:
+    path = tmp_path / "equivalencies.yaml"
+    path.write_text("honourable: [honorable]\n", encoding="utf-8")
+    equiv = Equivalencies.load(path)
+    differ = InlineTextDiffer(equivalencies=equiv)
+    expected = "An honourable mention."
+    actual = "An honorable mention."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_uses_scoped_equivalencies(tmp_path) -> None:
+    path = tmp_path / "equivalencies.yaml"
+    path.write_text("effected@1_28_2: affected\n", encoding="utf-8")
+    equiv = Equivalencies.load(path)
+    differ = InlineTextDiffer(equivalencies=equiv)
+
+    assert differ.count_diffs("effected", "affected", segment_id="1_28_2") == 0
+    assert differ.count_diffs("effected", "affected", segment_id="1_28_3") == 1

@@ -21,6 +21,7 @@ from audio_verifier_diff import AudioVerifierDiff
 from audio_verifier_diff_builder import AudioVerifierDiffBuilder
 from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
 from announcer import LibrivoxAnnouncer
+from equivalencies import Equivalencies
 
 
 @dataclass
@@ -64,6 +65,7 @@ class RoleAudioVerifier:
     _model: WhisperModel = field(init=False, repr=False)
     _inline_differ: InlineTextDiffer = field(init=False, repr=False)
     _name_tokens: set[str] = field(init=False, repr=False)
+    _equivalencies: Equivalencies = field(init=False, repr=False)
     _punct_re: re.Pattern[str] = field(init=False, repr=False)
     _space_re: re.Pattern[str] = field(init=False, repr=False)
 
@@ -82,10 +84,12 @@ class RoleAudioVerifier:
             )
         self._model = self._load_model()
         self._name_tokens = self._build_name_tokens()
+        self._equivalencies = self._load_equivalencies()
         self._inline_differ = InlineTextDiffer(
             window_before=self.diff_window_before,
             window_after=self.diff_window_after,
             name_tokens=self._name_tokens,
+            equivalencies=self._equivalencies,
         )
 
     def verify(self, recording_path: Path | None = None) -> dict:
@@ -122,8 +126,31 @@ class RoleAudioVerifier:
             window_before=self.diff_window_before,
             window_after=self.diff_window_after,
             name_tokens=self._name_tokens,
+            equivalencies=self._equivalencies,
         )
         return builder.build(results)
+
+    def unresolved_replacements(self, results: dict) -> list[tuple[str, str, str | None]]:
+        replacements: list[tuple[str, str, str | None]] = []
+        for segment in results.get("segments", []):
+            if segment.get("status") != "matched":
+                continue
+            expected = segment.get("expected_text", "")
+            heard = segment.get("matched_audio_text", "")
+            segment_id = segment.get("segment_id")
+            for replacement in self._inline_differ.replacement_pairs(
+                expected,
+                heard,
+                segment_id=segment_id,
+            ):
+                replacements.append(
+                    (replacement.expected, replacement.actual, replacement.segment_id)
+                )
+        return replacements
+
+    def _load_equivalencies(self) -> Equivalencies:
+        path = self.paths.play_dir / "equivalencies.yaml"
+        return Equivalencies.load(path)
 
     def _build_name_tokens(self) -> set[str]:
         tokens: set[str] = set()
@@ -478,7 +505,11 @@ class RoleAudioVerifier:
                 similarity = 0.0
                 matched_text = ""
                 status = "missing"
-            diff_result = self._inline_differ.diff(segment["expected_text"], matched_text)
+            diff_result = self._inline_differ.diff(
+                segment["expected_text"],
+                matched_text,
+                segment_id=segment["segment_id"],
+            )
             expected_count = segment["expected_word_count"]
             matched_count = len(matched_indices)
             coverage = (matched_count / expected_count) if expected_count else 0.0

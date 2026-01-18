@@ -28,6 +28,7 @@ from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 from whisper_model_store import WhisperModelStore
 from role_audio_verifier import RoleAudioVerifier
+from unresolved_diffs import UnresolvedDiffs
 from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
@@ -262,6 +263,7 @@ def verify_audio(
             f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
         ) from exc
     total_roles = len(roles_to_verify)
+    unresolved = UnresolvedDiffs()
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -272,6 +274,8 @@ def verify_audio(
             whisper_store=store,
         )
         results = verifier.verify(recording_path=recording)
+        for expected, actual, segment_id in verifier.unresolved_replacements(results):
+            unresolved.add(expected, actual, segment_id=segment_id)
         diffs = verifier.build_diffs(results)
         out_path = verifier.write_xlsx(results, out_path=output)
         missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
@@ -299,6 +303,9 @@ def verify_audio(
         if summary:
             renderer = AudioVerifierSummaryRenderer(format=summary_key)
             logging.info("\n%s", renderer.render(results))
+    unresolved_path = cfg.build_dir / "unresolved_diffs.yaml"
+    unresolved.write(unresolved_path)
+    logging.info("Wrote unresolved diffs to %s", unresolved_path)
 
 
 @app.command("whisper-init")
