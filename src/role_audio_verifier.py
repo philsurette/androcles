@@ -90,6 +90,9 @@ class RoleAudioVerifier:
 
     def verify(self, recording_path: Path | None = None) -> dict:
         path = recording_path or (self.paths.recordings_dir / f"{self.role}.wav")
+        project_root = self.paths.root.parent
+        rel_path = path.relative_to(project_root)
+        self._logger.info("Verifying audio file %s", rel_path)
         if not path.exists():
             raise RuntimeError(f"Recording not found for role {self.role}: {path}")
         expected_segments, script_words, word_to_segment = self._build_expected_words()

@@ -31,6 +31,7 @@ from role_audio_verifier import RoleAudioVerifier
 from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
+from audio_verifier_summary_renderer import AudioVerifierSummaryRenderer
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -52,6 +53,7 @@ MODEL_NAME_MAP = {
     "small": "small.en",
     "med": "medium.en",
 }
+SUMMARY_FORMATS = {"text", "yaml"}
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -222,10 +224,17 @@ def verify_audio(
     recording: Path | None = typer.Option(None, "--recording", help="Override recording WAV path"),
     output: Path | None = typer.Option(None, "--out", help="Output XLSX path"),
     model: str = typer.Option("med", "--model", "-m", help="Whisper model: tiny, base, small, med"),
+    summary: bool = typer.Option(True, "--summary/--no-summary", help="Write concise summary to console"),
+    summary_format: str = typer.Option("text", "--summary-format", help="Summary format: text or yaml"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
+    summary_key = summary_format.lower().strip()
+    if summary_key not in SUMMARY_FORMATS:
+        raise typer.BadParameter(
+            f"Unknown summary format: {summary_format}. Choose from {', '.join(sorted(SUMMARY_FORMATS))}."
+        )
     play_obj = PlayTextParser(paths_config=cfg).parse()
     valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
     roles_to_verify = [role] if role else sorted(valid_roles)
@@ -287,6 +296,9 @@ def verify_audio(
             partial_count,
             out_path,
         )
+        if summary:
+            renderer = AudioVerifierSummaryRenderer(format=summary_key)
+            logging.info("\n%s", renderer.render(results))
 
 
 @app.command("whisper-init")
