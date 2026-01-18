@@ -165,10 +165,43 @@ def test_inline_text_differ_ignores_missing_apostrophes() -> None:
     assert differ.count_diffs(expected, actual) == 0
 
 
+def test_inline_text_differ_ignores_spacing_around_hyphen() -> None:
+    differ = InlineTextDiffer()
+    expected = "a well-bred horse"
+    actual = "a well -bred horse"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
 def test_inline_text_differ_relaxes_known_names() -> None:
     differ = InlineTextDiffer(name_tokens={"ferrovius", "call", "boy"})
     expected = "Ferrovius went to the Call Boy."
     actual = "Ferovius went to the Callboy."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_ordinal_numbers() -> None:
+    differ = InlineTextDiffer()
+    expected = "The 10th man arrived."
+    actual = "the tenth man arrived"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_coalesces_number_words() -> None:
+    differ = InlineTextDiffer()
+    expected = "He finished twenty first in the race."
+    actual = "He finished 21st in the race."
 
     diff = differ.diff(expected, actual)
 
