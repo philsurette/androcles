@@ -8,6 +8,8 @@ anyio==4.12.1
     # via httpx
 av==16.1.0
     # via faster-whisper
+breame==0.1.2
+    # via -r requirements.in
 certifi==2026.1.4
     # via
     #   httpcore

@@ -12,6 +12,7 @@ from rapidfuzz import fuzz
 from diff_match_patch import diff_match_patch
 
 from inline_text_diff import InlineTextDiff
+from spelling_normalizer import SpellingNormalizer
 
 
 @dataclass
@@ -25,6 +26,7 @@ class InlineTextDiffer:
     )
     name_tokens: set[str] = field(default_factory=set)
     name_similarity: float = 0.85
+    spelling_normalizer: SpellingNormalizer | None = None
     number_re: ClassVar[re.Pattern[str]] = re.compile(r"^(\d+)(?:st|nd|rd|th)?$")
     number_words: ClassVar[dict[str, int]] = {
         "zero": 0,
@@ -572,6 +574,8 @@ class InlineTextDiffer:
                     continue
                 if self._name_match(expected_word, actual_word):
                     continue
+                if self._spelling_equivalent(expected_word, actual_word):
+                    continue
                 return False
             return True
         if self._all_name_words(expected_words):
@@ -614,6 +618,13 @@ class InlineTextDiffer:
             normalized.append(replacement if replacement is not None else words[idx])
             idx += 1
         return normalized
+
+    def _spelling_equivalent(self, expected_word: str, actual_word: str) -> bool:
+        if expected_word == actual_word:
+            return True
+        if self.spelling_normalizer is None:
+            self.spelling_normalizer = SpellingNormalizer.from_breame()
+        return self.spelling_normalizer.is_equivalent(expected_word, actual_word)
 
     def _parse_number_sequence(self, words: list[str], start: int) -> tuple[int | None, int]:
         total = 0

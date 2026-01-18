@@ -10,5 +10,7 @@ rapidfuzz
 soundfile
 python-Levenshtein
 diff-match-patch
+#word2number-plus - or git+https://github.com/akshaynagpal/w2n.git@3f6a2c9c2b6e8a1e5c1f0c2b9d8a0e6f1c2a9b7
+breame
 # test deps
 pytest

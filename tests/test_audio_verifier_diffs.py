@@ -15,6 +15,7 @@ from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
 from inline_text_differ import InlineTextDiffer
+from spelling_normalizer import SpellingNormalizer
 
 
 def test_missing_orders_between_matched_segments() -> None:
@@ -202,6 +203,18 @@ def test_inline_text_differ_coalesces_number_words() -> None:
     differ = InlineTextDiffer()
     expected = "He finished twenty first in the race."
     actual = "He finished 21st in the race."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_spelling_variants() -> None:
+    normalizer = SpellingNormalizer(variant_map={"honourable": {"honorable"}})
+    differ = InlineTextDiffer(spelling_normalizer=normalizer)
+    expected = "An honourable mention."
+    actual = "An honorable mention."
 
     diff = differ.diff(expected, actual)
 
