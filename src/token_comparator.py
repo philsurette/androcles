@@ -22,6 +22,16 @@ class TokenComparator:
     spelling_normalizer: SpellingNormalizer | None = None
     equivalencies: Equivalencies | None = None
     number_re: ClassVar[re.Pattern[str]] = re.compile(r"^(\d+)(?:st|nd|rd|th)?$")
+    roman_re: ClassVar[re.Pattern[str]] = re.compile(r"^[ivxlcdm]+$")
+    roman_values: ClassVar[dict[str, int]] = {
+        "i": 1,
+        "v": 5,
+        "x": 10,
+        "l": 50,
+        "c": 100,
+        "d": 500,
+        "m": 1000,
+    }
     number_words: ClassVar[dict[str, int]] = {
         "zero": 0,
         "one": 1,
@@ -116,8 +126,15 @@ class TokenComparator:
                 continue
             word = token.lower().replace("\u2019", "'").replace("\u2018", "'")
             word = word.replace("'", "")
+            roman_value = self._roman_to_int(word)
+            if roman_value is not None:
+                words.append(str(roman_value))
+                continue
             digit_match = self.number_re.match(word)
-            words.append(digit_match.group(1) if digit_match else word)
+            if digit_match:
+                words.append(digit_match.group(1))
+                continue
+            words.append(word)
         return self._coalesce_number_words(words)
 
     def raw_words(self, token_slice: TokenSlice) -> list[str]:
@@ -243,6 +260,9 @@ class TokenComparator:
         match = self.number_re.match(token)
         if match:
             return match.group(1)
+        roman_value = self._roman_to_int(token)
+        if roman_value is not None:
+            return str(roman_value)
         if token in self.ordinal_words:
             return str(self.ordinal_words[token])
         if token in self.number_words:
@@ -283,6 +303,11 @@ class TokenComparator:
                 if saw_number:
                     break
                 return int(digit_match.group(1)), 1
+            roman_value = self._roman_to_int(word)
+            if roman_value is not None:
+                if saw_number:
+                    break
+                return roman_value, 1
             if word in self.ordinal_words:
                 current += self.ordinal_words[word]
                 consumed += 1
@@ -310,6 +335,46 @@ class TokenComparator:
             return None, 0
         total += current
         return total, consumed
+
+    def _roman_to_int(self, token: str) -> int | None:
+        if not token or not self.roman_re.match(token):
+            return None
+        total = 0
+        prev = 0
+        for char in reversed(token):
+            value = self.roman_values.get(char)
+            if value is None:
+                return None
+            if value < prev:
+                total -= value
+            else:
+                total += value
+                prev = value
+        if total < 1 or total > 100:
+            return None
+        if self._int_to_roman(total) != token:
+            return None
+        return total
+
+    def _int_to_roman(self, value: int) -> str:
+        mapping = [
+            (100, "c"),
+            (90, "xc"),
+            (50, "l"),
+            (40, "xl"),
+            (10, "x"),
+            (9, "ix"),
+            (5, "v"),
+            (4, "iv"),
+            (1, "i"),
+        ]
+        result = []
+        remaining = value
+        for number, numeral in mapping:
+            while remaining >= number:
+                result.append(numeral)
+                remaining -= number
+        return "".join(result)
 
     def _joined_word_equivalent(
         self,

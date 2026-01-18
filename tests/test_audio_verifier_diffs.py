@@ -332,3 +332,25 @@ def test_inline_text_differ_ignores_anyone() -> None:
 
     assert diff.inline_diff == expected
     assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_roman_numerals() -> None:
+    differ = InlineTextDiffer()
+    expected = "Section IV is next."
+    actual = "Section four is next."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_roman_one_equivalence() -> None:
+    differ = InlineTextDiffer()
+    expected = "I saw one."
+    actual = "1 saw I."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
