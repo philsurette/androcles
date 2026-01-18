@@ -280,3 +280,11 @@ def test_equivalencies_ignorables(tmp_path) -> None:
 
     assert equiv.is_ignorable_extra("Insert role name read by Insert reader name")
     assert not equiv.is_ignorable_extra("Something else entirely")
+
+
+def test_equivalencies_handle_curly_apostrophes(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text("equivalencies:\n  I’d@2_65_1: I\n", encoding="utf-8")
+    equiv = Equivalencies.load(path)
+
+    assert equiv.is_equivalent("I’d", "I", segment_id="2_65_1")

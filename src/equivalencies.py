@@ -106,10 +106,11 @@ class Equivalencies:
         raise RuntimeError(f"Invalid equivalencies value in {path}: {value!r}")
 
     def _normalize_text(self, text: str) -> str:
+        text = text.replace("\u2019", "'").replace("\u2018", "'")
         tokens = self._token_re.findall(text)
         words: list[str] = []
         for token in tokens:
-            token = token.lower().replace("\u2019", "'").replace("\u2018", "'")
+            token = token.lower()
             token = token.replace("'", "")
             if token:
                 words.append(token)
