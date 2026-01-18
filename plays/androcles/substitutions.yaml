@@ -1,0 +1,13 @@
+equivalencies:
+  Coliseum: [Colosseum]
+  Ferrovius: [Farovius, ferocious]
+  Surette: [Surrett.]
+  effected: [affected]
+  Meggy: [Maggie]
+  you are: [you're]
+  they are: [they're]
+  Pretorian: [preatorian]
+  curs: [kurs]
+ignorables:
+  - Insert role
+  - Insert reader name

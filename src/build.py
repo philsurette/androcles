@@ -303,7 +303,6 @@ def verify_audio(
         speech_pad_ms=vad_speech_pad_ms,
     )
     total_roles = len(roles_to_verify)
-    unresolved = UnresolvedDiffs()
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -316,6 +315,7 @@ def verify_audio(
             vad_config=vad_config,
         )
         results = verifier.verify(recording_path=recording)
+        unresolved = UnresolvedDiffs()
         for expected, actual, segment_id in verifier.unresolved_replacements(results):
             unresolved.add(expected, actual, segment_id=segment_id)
         diffs = verifier.build_diffs(results)
@@ -345,9 +345,9 @@ def verify_audio(
         if summary:
             renderer = AudioVerifierSummaryRenderer(format=summary_key)
             logging.info("\n%s", renderer.render(results))
-    unresolved_path = cfg.build_dir / "unresolved_diffs.yaml"
-    unresolved.write(unresolved_path)
-    logging.info("Wrote unresolved diffs to %s", unresolved_path)
+        unresolved_path = cfg.build_dir / f"{role_name}_unresolved_diffs.yaml"
+        unresolved.write(unresolved_path)
+        logging.info("Wrote unresolved diffs to %s", unresolved_path)
 
 
 @app.command("whisper-init")

@@ -31,10 +31,11 @@ class UnresolvedDiffs:
                 output[key] = values[0]
             else:
                 output[key] = values
+        payload: dict[str, object] = {"equivalencies": output} if output else {"equivalencies": {}}
         yml = yaml.YAML(typ="safe", pure=True)
         yml.default_flow_style = False
         with path.open("w", encoding="utf-8") as handle:
-            yml.dump(output, handle)
+            yml.dump(payload, handle)
         return path
 
     def _normalize_phrase(self, text: str) -> str:

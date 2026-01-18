@@ -152,7 +152,7 @@ class RoleAudioVerifier:
         return replacements
 
     def _load_equivalencies(self) -> Equivalencies:
-        play_path = self.paths.play_dir / "equivalencies.yaml"
+        play_path = self.paths.play_dir / "substitutions.yaml"
         role_path = self.paths.recordings_dir / f"{self.role}_substitutions.yaml"
         return Equivalencies.load_many([play_path, role_path])
 
@@ -589,16 +589,22 @@ class RoleAudioVerifier:
             if not current or idx == current[-1] + 1:
                 current.append(idx)
                 continue
-            extra_entries.append(self._extra_entry_for_indices(audio_words, current))
+            entry = self._extra_entry_for_indices(audio_words, current)
+            if entry is not None:
+                extra_entries.append(entry)
             current = [idx]
         if current:
-            extra_entries.append(self._extra_entry_for_indices(audio_words, current))
+            entry = self._extra_entry_for_indices(audio_words, current)
+            if entry is not None:
+                extra_entries.append(entry)
         return extra_entries
 
-    def _extra_entry_for_indices(self, audio_words: list[dict], indices: list[int]) -> dict:
+    def _extra_entry_for_indices(self, audio_words: list[dict], indices: list[int]) -> dict | None:
         start = audio_words[indices[0]]["start"]
         end = audio_words[indices[-1]]["end"]
         recognized_text = " ".join(audio_words[i]["word"] for i in indices)
+        if self._equivalencies.is_ignorable_extra(recognized_text):
+            return None
         return {
             "segment_index": None,
             "segment_id": None,

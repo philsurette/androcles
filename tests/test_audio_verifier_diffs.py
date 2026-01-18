@@ -235,8 +235,8 @@ def test_inline_text_differ_ignores_spelling_variants() -> None:
 
 
 def test_inline_text_differ_uses_equivalencies(tmp_path) -> None:
-    path = tmp_path / "equivalencies.yaml"
-    path.write_text("honourable: [honorable]\n", encoding="utf-8")
+    path = tmp_path / "substitutions.yaml"
+    path.write_text("equivalencies:\n  honourable: [honorable]\n", encoding="utf-8")
     equiv = Equivalencies.load(path)
     differ = InlineTextDiffer(equivalencies=equiv)
     expected = "An honourable mention."
@@ -249,10 +249,34 @@ def test_inline_text_differ_uses_equivalencies(tmp_path) -> None:
 
 
 def test_inline_text_differ_uses_scoped_equivalencies(tmp_path) -> None:
-    path = tmp_path / "equivalencies.yaml"
-    path.write_text("effected@1_28_2: affected\n", encoding="utf-8")
+    path = tmp_path / "substitutions.yaml"
+    path.write_text("equivalencies:\n  effected@1_28_2: affected\n", encoding="utf-8")
     equiv = Equivalencies.load(path)
     differ = InlineTextDiffer(equivalencies=equiv)
 
     assert differ.count_diffs("effected", "affected", segment_id="1_28_2") == 0
     assert differ.count_diffs("effected", "affected", segment_id="1_28_3") == 1
+
+
+def test_equivalencies_merge_multiple_sources(tmp_path) -> None:
+    play_path = tmp_path / "substitutions.yaml"
+    role_path = tmp_path / "ROLE_substitutions.yaml"
+    play_path.write_text("equivalencies:\n  honourable: honorable\n", encoding="utf-8")
+    role_path.write_text("equivalencies:\n  colour: color\n", encoding="utf-8")
+
+    equiv = Equivalencies.load_many([play_path, role_path])
+
+    assert equiv.is_equivalent("honourable", "honorable")
+    assert equiv.is_equivalent("colour", "color")
+
+
+def test_equivalencies_ignorables(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "ignorables:\n  - Insert role\n  - Insert reader name\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.is_ignorable_extra("Insert role name read by Insert reader name")
+    assert not equiv.is_ignorable_extra("Something else entirely")

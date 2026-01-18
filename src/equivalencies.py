@@ -13,6 +13,7 @@ from ruamel import yaml
 class Equivalencies:
     global_map: dict[str, set[str]] = field(default_factory=dict)
     scoped_map: dict[str, dict[str, set[str]]] = field(default_factory=dict)
+    ignorable_extras: set[str] = field(default_factory=set)
     _token_re: re.Pattern[str] = field(default_factory=lambda: re.compile(r"[A-Za-z0-9']+"))
 
     @classmethod
@@ -24,7 +25,16 @@ class Equivalencies:
         if not isinstance(raw, dict):
             raise RuntimeError(f"Invalid equivalencies format in {path}")
         inst = cls()
-        for key, value in raw.items():
+        equivalencies = raw
+        if "equivalencies" in raw or "ignorables" in raw:
+            unexpected = [key for key in raw if key not in {"equivalencies", "ignorables"}]
+            if unexpected:
+                raise RuntimeError(f"Unexpected substitutions keys in {path}: {unexpected}")
+            equivalencies = raw.get("equivalencies") or {}
+            if not isinstance(equivalencies, dict):
+                raise RuntimeError(f"Invalid equivalencies format in {path}")
+            inst._load_ignorables(raw.get("ignorables"), path)
+        for key, value in equivalencies.items():
             if not isinstance(key, str):
                 raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
             segment_id = None
@@ -57,6 +67,15 @@ class Equivalencies:
             if scoped and self._map_contains(scoped, expected_norm, actual_norm):
                 return True
         return self._map_contains(self.global_map, expected_norm, actual_norm)
+
+    def is_ignorable_extra(self, text: str) -> bool:
+        normalized = self._normalize_text(text)
+        if not normalized:
+            return False
+        for ignorable in self.ignorable_extras:
+            if ignorable in normalized:
+                return True
+        return False
 
     def _map_contains(self, mapping: dict[str, set[str]], left: str, right: str) -> bool:
         if right in mapping.get(left, set()):
@@ -103,3 +122,21 @@ class Equivalencies:
             target = self.scoped_map.setdefault(segment_id, {})
             for key, values in scoped.items():
                 target.setdefault(key, set()).update(values)
+        self.ignorable_extras.update(other.ignorable_extras)
+
+    def _load_ignorables(self, raw: object, path: Path) -> None:
+        if raw is None:
+            return
+        values: list[str]
+        if isinstance(raw, str):
+            values = [raw]
+        elif isinstance(raw, (list, tuple, set)):
+            values = [item for item in raw if isinstance(item, str)]
+            if len(values) != len(raw):
+                raise RuntimeError(f"Invalid ignorables in {path}: {raw!r}")
+        else:
+            raise RuntimeError(f"Invalid ignorables in {path}: {raw!r}")
+        for value in values:
+            normalized = self._normalize_text(value)
+            if normalized:
+                self.ignorable_extras.add(normalized)
