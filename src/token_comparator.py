@@ -120,6 +120,17 @@ class TokenComparator:
             words.append(digit_match.group(1) if digit_match else word)
         return self._coalesce_number_words(words)
 
+    def raw_words(self, token_slice: TokenSlice) -> list[str]:
+        words: list[str] = []
+        for token, token_type in token_slice.iter_tokens():
+            if token_type != "word":
+                continue
+            word = token.lower().replace("\u2019", "'").replace("\u2018", "'")
+            word = word.replace("'", "")
+            if word:
+                words.append(word)
+        return words
+
     def slices_equivalent(
         self,
         expected_slice: TokenSlice,
@@ -141,6 +152,11 @@ class TokenComparator:
             actual_slice,
             expected_words,
             actual_words,
+        ):
+            return True
+        if expected_words and actual_words and self._joined_word_equivalent(
+            expected_slice,
+            actual_slice,
         ):
             return True
         if not expected_words or not actual_words:
@@ -294,3 +310,16 @@ class TokenComparator:
             return None, 0
         total += current
         return total, consumed
+
+    def _joined_word_equivalent(
+        self,
+        expected_slice: TokenSlice,
+        actual_slice: TokenSlice,
+    ) -> bool:
+        expected_words = self.raw_words(expected_slice)
+        actual_words = self.raw_words(actual_slice)
+        if len(expected_words) == 1 and len(actual_words) == 2:
+            return expected_words[0] == "".join(actual_words)
+        if len(actual_words) == 1 and len(expected_words) == 2:
+            return actual_words[0] == "".join(expected_words)
+        return False

@@ -310,3 +310,25 @@ def test_inline_text_differ_ignores_narration_delimiters() -> None:
 
     assert diff.inline_diff == expected
     assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_joined_words() -> None:
+    differ = InlineTextDiffer()
+    expected = "The vine wood is strong."
+    actual = "The vinewood is strong."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
+def test_inline_text_differ_ignores_anyone() -> None:
+    differ = InlineTextDiffer()
+    expected = "Did any one see it?"
+    actual = "Did anyone see it?"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
