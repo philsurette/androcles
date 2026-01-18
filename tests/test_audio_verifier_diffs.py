@@ -288,3 +288,14 @@ def test_equivalencies_handle_curly_apostrophes(tmp_path) -> None:
     equiv = Equivalencies.load(path)
 
     assert equiv.is_equivalent("I’d", "I", segment_id="2_65_1")
+
+
+def test_inline_text_differ_ignores_narration_delimiters() -> None:
+    differ = InlineTextDiffer()
+    expected = "(_He rises and again shoulders the bundle._)"
+    actual = "He rises and again shoulders the bundle."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0

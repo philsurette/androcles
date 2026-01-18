@@ -209,7 +209,7 @@ class InlineTextDiffer:
         return tokens, types
 
     def _is_word_char(self, char: str) -> bool:
-        return char.isalnum() or char in ("'", "\u2019", "_")
+        return char.isalnum() or char in ("'", "\u2019")
 
     def _normalize_token(self, token: str, token_type: str) -> str:
         return self._comparator.normalize_token(token, token_type)
