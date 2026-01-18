@@ -178,6 +178,17 @@ def test_inline_text_differ_ignores_spacing_around_hyphen() -> None:
     assert differ.count_diffs(expected, actual) == 0
 
 
+def test_inline_text_differ_ignores_hyphen_joining() -> None:
+    differ = InlineTextDiffer()
+    expected = "The document was counter -signed."
+    actual = "The document was countersigned."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
 def test_inline_text_differ_relaxes_known_names() -> None:
     differ = InlineTextDiffer(name_tokens={"ferrovius", "call", "boy"})
     expected = "Ferrovius went to the Call Boy."

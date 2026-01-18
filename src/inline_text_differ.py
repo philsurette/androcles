@@ -26,6 +26,7 @@ class InlineTextDiffer:
         default_factory=lambda: set(string.punctuation)
         | {"\u201c", "\u201d", "\u2018", "\u2019", "\u2026", "\u2014", "\u2013"}
     )
+    hyphen_chars: ClassVar[set[str]] = {"-", "\u2014", "\u2013"}
     name_tokens: set[str] = field(default_factory=set)
     name_similarity: float = 0.85
     spelling_normalizer: SpellingNormalizer | None = None
@@ -698,6 +699,17 @@ class InlineTextDiffer:
             expected_words, actual_words, segment_id
         ):
             return True
+        if expected_words and actual_words and self._hyphen_join_equivalent(
+            expected_tokens,
+            expected_types,
+            expected_start,
+            expected_count,
+            actual_tokens,
+            actual_types,
+            actual_start,
+            actual_count,
+        ):
+            return True
         if not expected_words or not actual_words:
             return False
         if len(expected_words) == len(actual_words):
@@ -777,6 +789,46 @@ class InlineTextDiffer:
     def _has_word_slice(self, types: list[str], start: int, count: int) -> bool:
         for token_type in types[start : start + count]:
             if token_type == "word":
+                return True
+        return False
+
+    def _hyphen_join_equivalent(
+        self,
+        expected_tokens: list[str],
+        expected_types: list[str],
+        expected_start: int,
+        expected_count: int,
+        actual_tokens: list[str],
+        actual_types: list[str],
+        actual_start: int,
+        actual_count: int,
+    ) -> bool:
+        has_hyphen = self._slice_has_hyphen(expected_tokens, expected_types, expected_start, expected_count)
+        if not has_hyphen:
+            has_hyphen = self._slice_has_hyphen(actual_tokens, actual_types, actual_start, actual_count)
+        if not has_hyphen:
+            return False
+        expected_words = self._normalized_words(
+            expected_tokens[expected_start : expected_start + expected_count],
+            expected_types[expected_start : expected_start + expected_count],
+        )
+        actual_words = self._normalized_words(
+            actual_tokens[actual_start : actual_start + actual_count],
+            actual_types[actual_start : actual_start + actual_count],
+        )
+        if not expected_words or not actual_words:
+            return False
+        return "".join(expected_words) == "".join(actual_words)
+
+    def _slice_has_hyphen(
+        self,
+        tokens: list[str],
+        types: list[str],
+        start: int,
+        count: int,
+    ) -> bool:
+        for token, token_type in zip(tokens[start : start + count], types[start : start + count]):
+            if token_type == "punct" and token in self.hyphen_chars:
                 return True
         return False
 
