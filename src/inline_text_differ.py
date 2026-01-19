@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Iterable
-import string
 
 from diff_match_patch import diff_match_patch
 
@@ -16,6 +15,7 @@ from token_comparator import TokenComparator
 from token_slice import TokenSlice
 from spelling_normalizer import SpellingNormalizer
 from equivalencies import Equivalencies
+from homophone_matcher import HomophoneMatcher
 
 
 @dataclass
@@ -23,30 +23,20 @@ class InlineTextDiffer:
     window_before: int = 3
     window_after: int = 1
     dmp: diff_match_patch = field(default_factory=diff_match_patch)
-    ignorable_punct: set[str] = field(
-        default_factory=lambda: set(string.punctuation)
-        | {"\u201c", "\u201d", "\u2018", "\u2019", "\u2026", "\u2014", "\u2013"}
-    )
     name_tokens: set[str] = field(default_factory=set)
     name_similarity: float = 0.85
     spelling_normalizer: SpellingNormalizer | None = None
     equivalencies: Equivalencies | None = None
-
-    _hyphen_chars: set[str] = field(
-        default_factory=lambda: {"-", "\u2014", "\u2013"},
-        init=False,
-        repr=False,
-    )
+    homophone_max_words: int = 2
     _comparator: TokenComparator = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._comparator = TokenComparator(
-            ignorable_punct=self.ignorable_punct,
-            hyphen_chars=self._hyphen_chars,
             name_tokens=self.name_tokens,
             name_similarity=self.name_similarity,
             spelling_normalizer=self.spelling_normalizer,
             equivalencies=self.equivalencies,
+            homophone_matcher=HomophoneMatcher(max_words=self.homophone_max_words),
         )
 
     def diff(self, expected: str, actual: str, segment_id: str | None = None) -> InlineTextDiff:

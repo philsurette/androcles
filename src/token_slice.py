@@ -27,9 +27,3 @@ class TokenSlice:
             if token_type == "word":
                 return True
         return False
-
-    def has_hyphen(self, hyphen_chars: set[str]) -> bool:
-        for token, token_type in self.iter_tokens():
-            if token_type == "punct" and token in hyphen_chars:
-                return True
-        return False

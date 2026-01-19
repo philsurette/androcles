@@ -257,6 +257,11 @@ def verify_audio(
         "--vad-speech-pad-ms",
         help="Padding added to each side of speech chunks (default: 400)",
     ),
+    homophone_max_words: int = typer.Option(
+        2,
+        "--homophone-max-words",
+        help="Maximum words per homophone phrase (default: 2)",
+    ),
     summary: bool = typer.Option(True, "--summary/--no-summary", help="Write concise summary to console"),
     summary_format: str = typer.Option("text", "--summary-format", help="Summary format: text or yaml"),
     play: str | None = PLAY_OPTION,
@@ -313,6 +318,7 @@ def verify_audio(
             whisper_store=store,
             vad_filter=vad_filter,
             vad_config=vad_config,
+            homophone_max_words=homophone_max_words,
         )
         results = verifier.verify(recording_path=recording)
         unresolved = UnresolvedDiffs()

@@ -18,6 +18,7 @@ class AudioVerifierDiffBuilder:
     window_after: int = 1
     name_tokens: set[str] = field(default_factory=set)
     equivalencies: Equivalencies | None = None
+    homophone_max_words: int = 2
     differ: InlineTextDiffer = field(init=False)
 
     def __post_init__(self) -> None:
@@ -26,6 +27,7 @@ class AudioVerifierDiffBuilder:
             window_after=self.window_after,
             name_tokens=self.name_tokens,
             equivalencies=self.equivalencies,
+            homophone_max_words=self.homophone_max_words,
         )
 
     def build(self, results: dict) -> list[AudioVerifierDiff]:

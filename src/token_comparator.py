@@ -10,17 +10,17 @@ from rapidfuzz import fuzz
 
 from spelling_normalizer import SpellingNormalizer
 from equivalencies import Equivalencies
+from homophone_matcher import HomophoneMatcher
 from token_slice import TokenSlice
 
 
 @dataclass
 class TokenComparator:
-    ignorable_punct: set[str]
-    hyphen_chars: set[str]
     name_tokens: set[str] = field(default_factory=set)
     name_similarity: float = 0.85
     spelling_normalizer: SpellingNormalizer | None = None
     equivalencies: Equivalencies | None = None
+    homophone_matcher: HomophoneMatcher | None = None
     number_re: ClassVar[re.Pattern[str]] = re.compile(r"^(\d+)(?:st|nd|rd|th)?$")
     roman_re: ClassVar[re.Pattern[str]] = re.compile(r"^[ivxlcdm]+$")
     roman_values: ClassVar[dict[str, int]] = {
@@ -113,7 +113,7 @@ class TokenComparator:
             if token_type == "space":
                 has_ignorable = True
                 continue
-            if token_type == "punct" and token in self.ignorable_punct:
+            if token_type == "punct":
                 has_ignorable = True
                 continue
             return False
@@ -164,12 +164,7 @@ class TokenComparator:
             segment_id,
         ):
             return True
-        if expected_words and actual_words and self._hyphen_join_equivalent(
-            expected_slice,
-            actual_slice,
-            expected_words,
-            actual_words,
-        ):
+        if expected_words and actual_words and self._homophone_match(expected_words, actual_words):
             return True
         if expected_words and actual_words and self._joined_word_equivalent(
             expected_slice,
@@ -185,6 +180,8 @@ class TokenComparator:
                 if self._equivalencies_word_match(expected_word, actual_word, segment_id):
                     continue
                 if self._name_match(expected_word, actual_word):
+                    continue
+                if self._homophone_word_match(expected_word, actual_word):
                     continue
                 if self._spelling_equivalent(expected_word, actual_word):
                     continue
@@ -212,6 +209,18 @@ class TokenComparator:
         if self.spelling_normalizer is None:
             self.spelling_normalizer = SpellingNormalizer.from_breame()
         return self.spelling_normalizer.is_equivalent(expected_word, actual_word)
+
+    def _homophone_match(self, expected_words: list[str], actual_words: list[str]) -> bool:
+        if self.homophone_matcher is None:
+            return False
+        return self.homophone_matcher.is_homophone(expected_words, actual_words)
+
+    def _homophone_word_match(self, expected_word: str, actual_word: str) -> bool:
+        if expected_word == actual_word:
+            return True
+        if self.homophone_matcher is None:
+            return False
+        return self.homophone_matcher.is_homophone([expected_word], [actual_word])
 
     def _equivalencies_match(
         self,
@@ -242,19 +251,6 @@ class TokenComparator:
             actual_word,
             segment_id=segment_id,
         )
-
-    def _hyphen_join_equivalent(
-        self,
-        expected_slice: TokenSlice,
-        actual_slice: TokenSlice,
-        expected_words: list[str],
-        actual_words: list[str],
-    ) -> bool:
-        if not expected_slice.has_hyphen(self.hyphen_chars) and not actual_slice.has_hyphen(
-            self.hyphen_chars
-        ):
-            return False
-        return "".join(expected_words) == "".join(actual_words)
 
     def _normalize_number_token(self, token: str) -> str | None:
         match = self.number_re.match(token)

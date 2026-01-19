@@ -63,6 +63,7 @@ class RoleAudioVerifier:
     diff_window_before: int = 3
     diff_window_after: int = 1
     extra_audio_padding_ms: int = 150
+    homophone_max_words: int = 2
 
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel = field(init=False, repr=False)
@@ -93,6 +94,7 @@ class RoleAudioVerifier:
             window_after=self.diff_window_after,
             name_tokens=self._name_tokens,
             equivalencies=self._equivalencies,
+            homophone_max_words=self.homophone_max_words,
         )
 
     def verify(self, recording_path: Path | None = None) -> dict:
@@ -130,6 +132,7 @@ class RoleAudioVerifier:
             window_after=self.diff_window_after,
             name_tokens=self._name_tokens,
             equivalencies=self._equivalencies,
+            homophone_max_words=self.homophone_max_words,
         )
         return builder.build(results)
 
