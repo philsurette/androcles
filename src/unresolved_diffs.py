@@ -6,7 +6,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import re
 
-from ruamel import yaml
+from ruamel.yaml import YAML
+from ruamel.yaml.comments import CommentedMap, CommentedSeq
 
 
 @dataclass
@@ -24,15 +25,18 @@ class UnresolvedDiffs:
 
     def write(self, path: Path) -> Path:
         path.parent.mkdir(parents=True, exist_ok=True)
-        output: dict[str, object] = {}
+        output = CommentedMap()
+        equivalencies = CommentedMap()
         for key in sorted(self.entries):
             values = sorted(self.entries[key])
-            output[key] = values
-        payload: dict[str, object] = {"equivalencies": output} if output else {"equivalencies": {}}
-        yml = yaml.YAML(typ="safe", pure=True)
+            seq = CommentedSeq(values)
+            seq.fa.set_flow_style()
+            equivalencies[key] = seq
+        output["equivalencies"] = equivalencies
+        yml = YAML()
         yml.default_flow_style = False
         with path.open("w", encoding="utf-8") as handle:
-            yml.dump(payload, handle)
+            yml.dump(output, handle)
         return path
 
     def _normalize_phrase(self, text: str) -> str:
