@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -332,6 +333,7 @@ class RoleAudioVerifier:
         return segments
 
     def _transcribe_words(self, path: Path) -> list[dict]:
+        start_time = time.perf_counter()
         vad_parameters = None
         if self.vad_filter and self.vad_config is not None:
             vad_parameters = self.vad_config.to_transcribe_parameters()
@@ -339,6 +341,13 @@ class RoleAudioVerifier:
         if self.transcription_cache is not None:
             cached = self.transcription_cache.load(cache_key, path)
             if cached is not None:
+                elapsed = time.perf_counter() - start_time
+                self._logger.info(
+                    "Transcription cache hit for %s (%d words) in %.2fs",
+                    self.role,
+                    len(cached),
+                    elapsed,
+                )
                 return cached
         model = self._load_model()
         segments, _info = model.transcribe(
@@ -364,9 +373,17 @@ class RoleAudioVerifier:
                 )
         if self.transcription_cache is not None:
             self.transcription_cache.save(cache_key, path, words)
+        elapsed = time.perf_counter() - start_time
+        self._logger.info(
+            "Transcribed %s (%d words) in %.2fs",
+            self.role,
+            len(words),
+            elapsed,
+        )
         return words
 
     def _align_words(self, script_words: list[str], audio_words: list[dict]) -> list[dict]:
+        start_time = time.perf_counter()
         script_len = len(script_words)
         audio_len = len(audio_words)
         dp = [[0.0] * (audio_len + 1) for _ in range(script_len + 1)]
@@ -439,6 +456,13 @@ class RoleAudioVerifier:
             else:
                 raise RuntimeError("Alignment backtrack failed")
         steps.reverse()
+        elapsed = time.perf_counter() - start_time
+        self._logger.info(
+            "Aligned %d script words with %d audio words in %.2fs",
+            script_len,
+            audio_len,
+            elapsed,
+        )
         return steps
 
     def _build_results(

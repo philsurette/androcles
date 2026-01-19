@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
+import time
 
 from audio_verifier_diff import AudioVerifierDiff
 from extra_audio_diff import ExtraAudioDiff
@@ -20,8 +22,10 @@ class AudioVerifierDiffBuilder:
     equivalencies: Equivalencies | None = None
     homophone_max_words: int = 2
     differ: InlineTextDiffer = field(init=False)
+    _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
+        self._logger = logging.getLogger(__name__)
         self.differ = InlineTextDiffer(
             window_before=self.window_before,
             window_after=self.window_after,
@@ -31,6 +35,7 @@ class AudioVerifierDiffBuilder:
         )
 
     def build(self, results: dict) -> list[AudioVerifierDiff]:
+        start_time = time.perf_counter()
         diff_entries: list[dict[str, object]] = []
         segments = results.get("segments", [])
         prev_offsets, next_offsets = self._segment_anchor_offsets(segments)
@@ -122,7 +127,10 @@ class AudioVerifierDiffBuilder:
             )
             order_index += 1
 
-        return self._sort_by_audio_position(diff_entries)
+        diffs = self._sort_by_audio_position(diff_entries)
+        elapsed = time.perf_counter() - start_time
+        self._logger.info("Built %d diff rows in %.2fs", len(diffs), elapsed)
+        return diffs
 
     def _to_ms(self, seconds: float | None) -> int | None:
         if seconds is None:

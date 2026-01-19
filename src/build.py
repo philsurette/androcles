@@ -5,6 +5,7 @@ import logging
 import sys
 import shlex
 from datetime import datetime
+import time
 
 import paths
 import typer
@@ -334,7 +335,10 @@ def verify_audio(
         diffs = verifier.build_diffs(results)
         if role is None:
             combined_diffs[role_name] = diffs
+        write_start = time.perf_counter()
         out_path = verifier.write_xlsx(results, out_path=output)
+        write_elapsed = time.perf_counter() - write_start
+        logging.info("Wrote %s in %.2fs", out_path, write_elapsed)
         missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
         extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
         partial_count = sum(
@@ -366,8 +370,14 @@ def verify_audio(
     if role is None:
         combined_path = cfg.audio_out_dir / "audio-verifier.xlsx"
         writer = AudioVerifierWorkbookWriter()
+        combined_start = time.perf_counter()
         writer.write(combined_diffs, combined_path, role_order=roles_to_verify)
-        logging.info("Wrote combined audio verification workbook to %s", combined_path)
+        combined_elapsed = time.perf_counter() - combined_start
+        logging.info(
+            "Wrote combined audio verification workbook to %s in %.2fs",
+            combined_path,
+            combined_elapsed,
+        )
 
 
 @app.command("whisper-init")
