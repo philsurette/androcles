@@ -33,6 +33,7 @@ from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
 from missing_audio_diff import MissingAudioDiff
 from audio_verifier_summary_renderer import AudioVerifierSummaryRenderer
+from audio_verifier_workbook_writer import AudioVerifierWorkbookWriter
 from vad_config import VadConfig
 from huggingface_hub.errors import LocalEntryNotFoundError
 
@@ -262,6 +263,11 @@ def verify_audio(
         "--homophone-max-words",
         help="Maximum words per homophone phrase (default: 2)",
     ),
+    remove_fillers: bool = typer.Option(
+        False,
+        "--remove-fillers/--keep-fillers",
+        help="Drop filler words like 'um' and 'uh' during alignment",
+    ),
     summary: bool = typer.Option(True, "--summary/--no-summary", help="Write concise summary to console"),
     summary_format: str = typer.Option("text", "--summary-format", help="Summary format: text or yaml"),
     play: str | None = PLAY_OPTION,
@@ -308,6 +314,7 @@ def verify_audio(
         speech_pad_ms=vad_speech_pad_ms,
     )
     total_roles = len(roles_to_verify)
+    combined_diffs: dict[str, list] = {}
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -319,12 +326,15 @@ def verify_audio(
             vad_filter=vad_filter,
             vad_config=vad_config,
             homophone_max_words=homophone_max_words,
+            remove_fillers=remove_fillers,
         )
         results = verifier.verify(recording_path=recording)
         unresolved = UnresolvedDiffs()
         for expected, actual, segment_id in verifier.unresolved_replacements(results):
             unresolved.add(expected, actual, segment_id=segment_id)
         diffs = verifier.build_diffs(results)
+        if role is None:
+            combined_diffs[role_name] = diffs
         out_path = verifier.write_xlsx(results, out_path=output)
         missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
         extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
@@ -354,6 +364,11 @@ def verify_audio(
         unresolved_path = cfg.build_dir / f"{role_name}_unresolved_diffs.yaml"
         unresolved.write(unresolved_path)
         logging.info("Wrote unresolved diffs to %s", unresolved_path)
+    if role is None:
+        combined_path = cfg.audio_out_dir / ".audio-verifier.xlsx"
+        writer = AudioVerifierWorkbookWriter()
+        writer.write(combined_diffs, combined_path, role_order=roles_to_verify)
+        logging.info("Wrote combined audio verification workbook to %s", combined_path)
 
 
 @app.command("whisper-init")

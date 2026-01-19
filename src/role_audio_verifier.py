@@ -38,7 +38,7 @@ class RoleAudioVerifier:
     vad_filter: bool = True
     vad_config: VadConfig | None = None
     transcription_cache: WhisperTranscriptionCache | None = None
-    remove_fillers: bool = True
+    remove_fillers: bool = False
     filler_words: set[str] = field(
         default_factory=lambda: {
             "uh",

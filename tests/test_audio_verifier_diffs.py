@@ -348,6 +348,17 @@ def test_inline_text_differ_ignores_anyone() -> None:
     assert differ.count_diffs(expected, actual) == 0
 
 
+def test_inline_text_differ_ignores_homophone_numbers() -> None:
+    differ = InlineTextDiffer()
+    expected = "I went to town."
+    actual = "I went two town."
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
 def test_inline_text_differ_roman_numerals() -> None:
     differ = InlineTextDiffer()
     expected = "Section IV is next."

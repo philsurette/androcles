@@ -156,6 +156,8 @@ class TokenComparator:
     ) -> bool:
         expected_words = self.normalized_words(expected_slice)
         actual_words = self.normalized_words(actual_slice)
+        expected_raw = self.raw_words(expected_slice)
+        actual_raw = self.raw_words(actual_slice)
         if expected_words == actual_words:
             return True
         if expected_words and actual_words and self._equivalencies_match(
@@ -163,6 +165,8 @@ class TokenComparator:
             actual_words,
             segment_id,
         ):
+            return True
+        if expected_raw and actual_raw and self._homophone_match(expected_raw, actual_raw):
             return True
         if expected_words and actual_words and self._homophone_match(expected_words, actual_words):
             return True
