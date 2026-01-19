@@ -9,6 +9,8 @@ from typing import ClassVar
 @dataclass
 class HomophoneMatcher:
     max_words: int = 2
+    allow_schwa_deletion: bool = True
+    schwa_phones: set[str] = field(default_factory=lambda: {"AH0"})
     _word_cache: dict[str, set[tuple[str, ...]]] = field(default_factory=dict, init=False)
     _phrase_cache: dict[tuple[str, ...], set[tuple[str, ...]]] = field(
         default_factory=dict, init=False
@@ -26,7 +28,7 @@ class HomophoneMatcher:
         actual_prons = self._phrase_pronunciations(actual_words)
         if not actual_prons:
             return False
-        return not expected_prons.isdisjoint(actual_prons)
+        return self._pronunciations_equivalent(expected_prons, actual_prons)
 
     def _phrase_pronunciations(self, words: list[str]) -> set[tuple[str, ...]]:
         key = tuple(words)
@@ -58,6 +60,28 @@ class HomophoneMatcher:
         result = {tuple(phones) for phones in pronunciations}
         self._word_cache[key] = result
         return result
+
+    def _pronunciations_equivalent(
+        self,
+        expected_prons: set[tuple[str, ...]],
+        actual_prons: set[tuple[str, ...]],
+    ) -> bool:
+        if not expected_prons.isdisjoint(actual_prons):
+            return True
+        if not self.allow_schwa_deletion:
+            return False
+        expected_stripped = {self._strip_schwa(pron) for pron in expected_prons}
+        actual_stripped = {self._strip_schwa(pron) for pron in actual_prons}
+        if not expected_stripped.isdisjoint(actual_prons):
+            return True
+        if not actual_stripped.isdisjoint(expected_prons):
+            return True
+        return not expected_stripped.isdisjoint(actual_stripped)
+
+    def _strip_schwa(self, pronunciation: tuple[str, ...]) -> tuple[str, ...]:
+        if not pronunciation:
+            return pronunciation
+        return tuple(phone for phone in pronunciation if phone not in self.schwa_phones)
 
     @classmethod
     def _get_cmudict(cls) -> dict[str, list[list[str]]]:
