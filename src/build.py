@@ -299,12 +299,6 @@ def verify_audio(
         compute_type="int8",
         local_files_only=True,
     )
-    try:
-        store.load(model_name)
-    except LocalEntryNotFoundError as exc:
-        raise typer.BadParameter(
-            f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
-        ) from exc
     vad_config = VadConfig.from_overrides(
         threshold=vad_threshold,
         neg_threshold=vad_neg_threshold,
@@ -328,7 +322,12 @@ def verify_audio(
             homophone_max_words=homophone_max_words,
             remove_fillers=remove_fillers,
         )
-        results = verifier.verify(recording_path=recording)
+        try:
+            results = verifier.verify(recording_path=recording)
+        except LocalEntryNotFoundError as exc:
+            raise typer.BadParameter(
+                f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
+            ) from exc
         unresolved = UnresolvedDiffs()
         for expected, actual, segment_id in verifier.unresolved_replacements(results):
             unresolved.add(expected, actual, segment_id=segment_id)

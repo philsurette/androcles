@@ -68,7 +68,7 @@ class RoleAudioVerifier:
     homophone_max_words: int = 2
 
     _logger: logging.Logger = field(init=False, repr=False)
-    _model: WhisperModel = field(init=False, repr=False)
+    _model: WhisperModel | None = field(init=False, repr=False, default=None)
     _inline_differ: InlineTextDiffer = field(init=False, repr=False)
     _name_tokens: set[str] = field(init=False, repr=False)
     _equivalencies: Equivalencies = field(init=False, repr=False)
@@ -90,7 +90,6 @@ class RoleAudioVerifier:
             )
         if self.transcription_cache is None:
             self.transcription_cache = WhisperTranscriptionCache(paths=self.paths)
-        self._model = self._load_model()
         self._name_tokens = self._build_name_tokens()
         self._equivalencies = self._load_equivalencies()
         self._inline_differ = InlineTextDiffer(
@@ -195,7 +194,10 @@ class RoleAudioVerifier:
     def _load_model(self) -> WhisperModel:
         if self.whisper_store is None:
             raise RuntimeError("Whisper model store is not configured")
-        return self.whisper_store.load(self.model_name)
+        if self._model is None:
+            self._logger.info("Loading whisper model %s", self.model_name)
+            self._model = self.whisper_store.load(self.model_name)
+        return self._model
 
     def _build_expected_words(self) -> tuple[list[dict], list[str], list[int]]:
         expected_segments = self._collect_expected_segments()
@@ -339,7 +341,8 @@ class RoleAudioVerifier:
             cached = self.transcription_cache.load(cache_key, path)
             if cached is not None:
                 return cached
-        segments, _info = self._model.transcribe(
+        model = self._load_model()
+        segments, _info = model.transcribe(
             str(path),
             word_timestamps=True,
             vad_filter=self.vad_filter,
