@@ -23,6 +23,7 @@ from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
 from announcer import LibrivoxAnnouncer
 from vad_config import VadConfig
 from equivalencies import Equivalencies
+from whisper_transcription_cache import WhisperTranscriptionCache
 
 
 @dataclass
@@ -36,6 +37,7 @@ class RoleAudioVerifier:
     whisper_store: WhisperModelStore | None = None
     vad_filter: bool = True
     vad_config: VadConfig | None = None
+    transcription_cache: WhisperTranscriptionCache | None = None
     remove_fillers: bool = True
     filler_words: set[str] = field(
         default_factory=lambda: {
@@ -86,6 +88,8 @@ class RoleAudioVerifier:
                 compute_type=self.compute_type,
                 local_files_only=True,
             )
+        if self.transcription_cache is None:
+            self.transcription_cache = WhisperTranscriptionCache(paths=self.paths)
         self._model = self._load_model()
         self._name_tokens = self._build_name_tokens()
         self._equivalencies = self._load_equivalencies()
@@ -330,6 +334,11 @@ class RoleAudioVerifier:
         vad_parameters = None
         if self.vad_filter and self.vad_config is not None:
             vad_parameters = self.vad_config.to_transcribe_parameters()
+        cache_key = self._build_transcription_cache_key(path, vad_parameters)
+        if self.transcription_cache is not None:
+            cached = self.transcription_cache.load(cache_key, path)
+            if cached is not None:
+                return cached
         segments, _info = self._model.transcribe(
             str(path),
             word_timestamps=True,
@@ -351,6 +360,8 @@ class RoleAudioVerifier:
                         "end": float(word.end),
                     }
                 )
+        if self.transcription_cache is not None:
+            self.transcription_cache.save(cache_key, path, words)
         return words
 
     def _align_words(self, script_words: list[str], audio_words: list[dict]) -> list[dict]:
@@ -644,6 +655,23 @@ class RoleAudioVerifier:
         if self.remove_fillers and token in self.filler_words:
             return ""
         return token
+
+    def _build_transcription_cache_key(
+        self,
+        path: Path,
+        vad_parameters: dict[str, float | int | None] | None,
+    ) -> dict[str, object]:
+        return {
+            "cache_version": "1",
+            "audio_path": str(path.resolve()),
+            "model_name": self.model_name,
+            "compute_type": self.compute_type,
+            "vad_filter": self.vad_filter,
+            "vad_parameters": vad_parameters,
+            "remove_fillers": self.remove_fillers,
+            "filler_words": sorted(self.filler_words),
+            "transcriber": "faster_whisper",
+        }
 
     def _similarity(self, expected: str, actual: str) -> float:
         return float(fuzz.token_set_ratio(expected, actual))

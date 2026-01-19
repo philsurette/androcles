@@ -2,11 +2,12 @@ equivalencies:
   "Call Boy": [cowboy]
   Coliseum: [Colosseum]
   effected: [affected]
-  Ferrovius: [Ferovias, Farovius, ferocious, ferovious, Ferobius]
+  Ferrovius: [Ferobiate, Varovius, Ferovias, Farovius, ferocious, ferovious, Ferobius]
   Meggy: [Maggie]
   curs: [kurs]
   lion: [line]
   Megæra: [magara, Megara, Magyara]
+  Megaera: [magara, Megara, Magyara]
   piteously: [pitiously]
   Pretorian: [Praetorian]
   Spintho: [spinto]
@@ -14,6 +15,7 @@ equivalencies:
   they are: [they're]
   yah: [yeah]
   you are: [you're]
+  your@0_31_1: [you're]
 ignorables:
   - Insert role
   - Insert reader name
