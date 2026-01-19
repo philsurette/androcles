@@ -301,6 +301,20 @@ def test_equivalencies_handle_curly_apostrophes(tmp_path) -> None:
     assert equiv.is_equivalent("I’d", "I", segment_id="2_65_1")
 
 
+def test_inline_text_differ_equivalencies_handle_possessive(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text("equivalencies:\n  Spintho: [spinto]\n", encoding="utf-8")
+    equiv = Equivalencies.load(path)
+    differ = InlineTextDiffer(equivalencies=equiv)
+    expected = "the neck of Spintho’s tunic"
+    actual = "the neck of spinto's tunic"
+
+    diff = differ.diff(expected, actual)
+
+    assert diff.inline_diff == expected
+    assert differ.count_diffs(expected, actual) == 0
+
+
 def test_inline_text_differ_ignores_narration_delimiters() -> None:
     differ = InlineTextDiffer()
     expected = "(_He rises and again shoulders the bundle._)"

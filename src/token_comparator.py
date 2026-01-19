@@ -246,11 +246,22 @@ class TokenComparator:
     ) -> bool:
         if self.equivalencies is None:
             return False
-        return self.equivalencies.is_equivalent(
+        if self.equivalencies.is_equivalent(
             expected_word,
             actual_word,
             segment_id=segment_id,
-        )
+        ):
+            return True
+        if expected_word.endswith("s") and actual_word.endswith("s"):
+            expected_base = expected_word[:-1]
+            actual_base = actual_word[:-1]
+            if expected_base and actual_base:
+                return self.equivalencies.is_equivalent(
+                    expected_base,
+                    actual_base,
+                    segment_id=segment_id,
+                )
+        return False
 
     def _normalize_number_token(self, token: str) -> str | None:
         match = self.number_re.match(token)
