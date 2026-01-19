@@ -10,6 +10,7 @@ from openpyxl import Workbook
 from audio_verifier_diff import AudioVerifierDiff
 from audio_verifier_sheet_builder import AudioVerifierSheetBuilder
 from audio_verifier_summary_sheet_builder import AudioVerifierSummarySheetBuilder
+from audio_verifier_problems_sheet_builder import AudioVerifierProblemsSheetBuilder
 
 
 @dataclass
@@ -17,6 +18,9 @@ class AudioVerifierWorkbookWriter:
     sheet_builder: AudioVerifierSheetBuilder = field(default_factory=AudioVerifierSheetBuilder)
     summary_builder: AudioVerifierSummarySheetBuilder = field(
         default_factory=AudioVerifierSummarySheetBuilder
+    )
+    problems_builder: AudioVerifierProblemsSheetBuilder = field(
+        default_factory=AudioVerifierProblemsSheetBuilder
     )
 
     def write(
@@ -29,6 +33,9 @@ class AudioVerifierWorkbookWriter:
         summary_ws = wb.active
         summary_ws.title = "Summary"
         self.summary_builder.write_sheet(summary_ws, diffs_by_role, role_order=role_order)
+
+        problems_ws = wb.create_sheet("Problems")
+        self.problems_builder.write_sheet(problems_ws, diffs_by_role, role_order=role_order)
 
         order = role_order if role_order is not None else sorted(diffs_by_role)
         for role in order:

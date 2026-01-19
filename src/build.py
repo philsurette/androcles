@@ -364,7 +364,7 @@ def verify_audio(
         unresolved.write(unresolved_path)
         logging.info("Wrote unresolved diffs to %s", unresolved_path)
     if role is None:
-        combined_path = cfg.audio_out_dir / ".audio-verifier.xlsx"
+        combined_path = cfg.audio_out_dir / "audio-verifier.xlsx"
         writer = AudioVerifierWorkbookWriter()
         writer.write(combined_diffs, combined_path, role_order=roles_to_verify)
         logging.info("Wrote combined audio verification workbook to %s", combined_path)

@@ -195,7 +195,6 @@ class RoleAudioVerifier:
         if self.whisper_store is None:
             raise RuntimeError("Whisper model store is not configured")
         if self._model is None:
-            self._logger.info("Loading whisper model %s", self.model_name)
             self._model = self.whisper_store.load(self.model_name)
         return self._model
 
