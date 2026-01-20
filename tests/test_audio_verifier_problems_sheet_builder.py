@@ -163,6 +163,57 @@ def test_problems_builder_filters_ignored_ids() -> None:
     ]
 
 
+def test_problems_builder_filters_problems_ids() -> None:
+    diffs_by_role = {
+        "ROLE1": [
+            MatchAudioDiff(0, 100, "1_1", "exp", "heard", "[heard/exp]", 1),
+            MissingAudioDiff(None, None, "1_3", "missing"),
+            ExtraAudioDiff(None, None, "1_3@extra", "extra words"),
+        ],
+    }
+    problems_ids = {"ROLE1": {"1_1"}}
+    builder = AudioVerifierProblemsSheetBuilder()
+
+    unprocessed = builder.build_rows(diffs_by_role, problems_ids_by_role=problems_ids)
+    problems = builder.build_rows(
+        diffs_by_role,
+        problems_ids_by_role=problems_ids,
+        include_problems=True,
+    )
+
+    assert unprocessed == [
+        {
+            "ROLE": "ROLE1",
+            "type": "-",
+            "id": "1_3",
+            "offset": "",
+            "len": "",
+            "dc": "",
+            "diff": "-missing",
+        },
+        {
+            "ROLE": "ROLE1",
+            "type": "+",
+            "id": "1_3@extra",
+            "offset": "",
+            "len": "",
+            "dc": "",
+            "diff": "+extra words",
+        },
+    ]
+    assert problems == [
+        {
+            "ROLE": "ROLE1",
+            "type": "/",
+            "id": "1_1",
+            "offset": "",
+            "len": 100,
+            "dc": 1,
+            "diff": "[heard/exp]",
+        },
+    ]
+
+
 def test_problems_builder_uses_problem_diff() -> None:
     diffs_by_role = {
         "ROLE1": [

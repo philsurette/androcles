@@ -345,6 +345,7 @@ def verify_audio(
     combined_diffs: dict[str, list] = {}
     vetted_ids_by_role: dict[str, set[str]] = {}
     ignored_ids_by_role: dict[str, set[str]] = {}
+    problems_ids_by_role: dict[str, set[str]] = {}
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -364,6 +365,7 @@ def verify_audio(
         )
         vetted_ids_by_role[role_name] = verifier.vetted_ids()
         ignored_ids_by_role[role_name] = verifier.ignored_ids()
+        problems_ids_by_role[role_name] = verifier.problems_ids()
         try:
             results = verifier.verify(recording_path=recording)
         except LocalEntryNotFoundError as exc:
@@ -417,6 +419,7 @@ def verify_audio(
             role_order=roles_to_verify,
             vetted_ids_by_role=vetted_ids_by_role,
             ignored_ids_by_role=ignored_ids_by_role,
+            problems_ids_by_role=problems_ids_by_role,
         )
         combined_elapsed = time.perf_counter() - combined_start
         logging.info(

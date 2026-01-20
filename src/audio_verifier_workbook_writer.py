@@ -30,6 +30,7 @@ class AudioVerifierWorkbookWriter:
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
         ignored_ids_by_role: dict[str, set[str]] | None = None,
+        problems_ids_by_role: dict[str, set[str]] | None = None,
     ) -> Path:
         wb = Workbook()
         summary_ws = wb.active
@@ -44,13 +45,23 @@ class AudioVerifierWorkbookWriter:
 
         vetted_lookup = vetted_ids_by_role or {}
         ignored_lookup = ignored_ids_by_role or {}
-        problems_ws = wb.create_sheet("Problems")
+        problems_lookup = problems_ids_by_role or {}
+        unprocessed_ws = wb.create_sheet("unprocessed")
         self.problems_builder.write_sheet(
-            problems_ws,
+            unprocessed_ws,
             diffs_by_role,
             role_order=role_order,
             vetted_ids_by_role=vetted_lookup,
             ignored_ids_by_role=ignored_lookup,
+            problems_ids_by_role=problems_lookup,
+        )
+        problems_ws = wb.create_sheet("problems")
+        self.problems_builder.write_sheet(
+            problems_ws,
+            diffs_by_role,
+            role_order=role_order,
+            problems_ids_by_role=problems_lookup,
+            include_problems=True,
         )
         vetted_ws = wb.create_sheet("vetted")
         self.problems_builder.write_sheet(

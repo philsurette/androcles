@@ -16,6 +16,7 @@ class Equivalencies:
     ignorable_extras: set[str] = field(default_factory=set)
     vetted_ids: set[str] = field(default_factory=set)
     ignored_ids: set[str] = field(default_factory=set)
+    problems_ids: set[str] = field(default_factory=set)
     _token_re: re.Pattern[str] = field(default_factory=lambda: re.compile(r"[A-Za-z0-9']+"))
 
     @classmethod
@@ -49,6 +50,7 @@ class Equivalencies:
             inst._load_ignorables(raw.get("ignorables"), path)
             inst._load_vetted(raw.get("vetted"), path, text)
             inst._load_ignored(raw.get("ignored"), path, text)
+            inst._load_problems(raw.get("problems"), path, text)
         for key, value in equivalencies.items():
             if not isinstance(key, str):
                 raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
@@ -141,6 +143,7 @@ class Equivalencies:
         self.ignorable_extras.update(other.ignorable_extras)
         self.vetted_ids.update(other.vetted_ids)
         self.ignored_ids.update(other.ignored_ids)
+        self.problems_ids.update(other.problems_ids)
 
     def _load_ignorables(self, raw: object, path: Path) -> None:
         if raw is None:
@@ -175,6 +178,15 @@ class Equivalencies:
             text,
             key="ignored",
             target=self.ignored_ids,
+        )
+
+    def _load_problems(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="problems",
+            target=self.problems_ids,
         )
 
     def _load_status_list(

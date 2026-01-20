@@ -304,6 +304,17 @@ def test_equivalencies_loads_ignored_ids(tmp_path) -> None:
     assert equiv.ignored_ids == {"1_2", "2_3_4"}
 
 
+def test_equivalencies_loads_problems_ids(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "problems:\n  - 1_2\n  - 2_3_4\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.problems_ids == {"1_2", "2_3_4"}
+
+
 def test_equivalencies_preserves_vetted_underscores(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
     path.write_text(
@@ -324,6 +335,17 @@ def test_equivalencies_preserves_ignored_underscores(tmp_path) -> None:
     equiv = Equivalencies.load(path)
 
     assert equiv.ignored_ids == {"0_45_2", "2_86_1"}
+
+
+def test_equivalencies_preserves_problems_underscores(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "problems:\n  - 0_45_2\n  - 2_86_1\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.problems_ids == {"0_45_2", "2_86_1"}
 
 
 def test_equivalencies_rejects_overlapping_statuses(tmp_path) -> None:
@@ -361,6 +383,17 @@ def test_equivalencies_accepts_ignored_comments(tmp_path) -> None:
     equiv = Equivalencies.load(path)
 
     assert equiv.ignored_ids == {"1_2", "2_3_4"}
+
+
+def test_equivalencies_accepts_problems_comments(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "problems:\n  - 1_2: Halt!\n  - 2_3_4: Note\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.problems_ids == {"1_2", "2_3_4"}
 
 
 def test_equivalencies_preserves_underscores_in_comment_keys(tmp_path) -> None:

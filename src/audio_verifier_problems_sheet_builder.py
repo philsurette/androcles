@@ -26,20 +26,25 @@ class AudioVerifierProblemsSheetBuilder:
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
         ignored_ids_by_role: dict[str, set[str]] | None = None,
+        problems_ids_by_role: dict[str, set[str]] | None = None,
         include_vetted: bool = False,
         include_ignored: bool = False,
+        include_problems: bool = False,
     ) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
         order = role_order if role_order is not None else sorted(diffs_by_role)
         vetted_lookup = vetted_ids_by_role or {}
         ignored_lookup = ignored_ids_by_role or {}
-        if include_vetted and include_ignored:
-            raise RuntimeError("Cannot include both vetted and ignored rows")
+        problems_lookup = problems_ids_by_role or {}
+        include_flags = sum([include_vetted, include_ignored, include_problems])
+        if include_flags > 1:
+            raise RuntimeError("Cannot include multiple status filters")
         for role in order:
             if role not in diffs_by_role:
                 raise RuntimeError(f"Missing diffs for role {role}")
             vetted_ids = vetted_lookup.get(role, set())
             ignored_ids = ignored_lookup.get(role, set())
+            problems_ids = problems_lookup.get(role, set())
             for diff in diffs_by_role[role]:
                 diff_type = self._diff_type(diff)
                 if diff_type is None:
@@ -48,14 +53,18 @@ class AudioVerifierProblemsSheetBuilder:
                 row_id = row.get("id", "")
                 is_vetted = bool(row_id) and row_id in vetted_ids
                 is_ignored = bool(row_id) and row_id in ignored_ids
+                is_problem = bool(row_id) and row_id in problems_ids
                 if include_vetted:
                     if not is_vetted:
                         continue
                 elif include_ignored:
                     if not is_ignored:
                         continue
+                elif include_problems:
+                    if not is_problem:
+                        continue
                 else:
-                    if is_vetted or is_ignored:
+                    if is_vetted or is_ignored or is_problem:
                         continue
                 rows.append(
                     {
@@ -77,8 +86,10 @@ class AudioVerifierProblemsSheetBuilder:
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
         ignored_ids_by_role: dict[str, set[str]] | None = None,
+        problems_ids_by_role: dict[str, set[str]] | None = None,
         include_vetted: bool = False,
         include_ignored: bool = False,
+        include_problems: bool = False,
     ) -> None:
         ws.append(self.headers)
         rows = self.build_rows(
@@ -88,6 +99,8 @@ class AudioVerifierProblemsSheetBuilder:
             ignored_ids_by_role=ignored_ids_by_role,
             include_vetted=include_vetted,
             include_ignored=include_ignored,
+            problems_ids_by_role=problems_ids_by_role,
+            include_problems=include_problems,
         )
         for row in rows:
             ws.append([row.get(header, "") for header in self.headers])
