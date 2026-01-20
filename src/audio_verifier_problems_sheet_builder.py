@@ -25,15 +25,21 @@ class AudioVerifierProblemsSheetBuilder:
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
+        ignored_ids_by_role: dict[str, set[str]] | None = None,
         include_vetted: bool = False,
+        include_ignored: bool = False,
     ) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
         order = role_order if role_order is not None else sorted(diffs_by_role)
         vetted_lookup = vetted_ids_by_role or {}
+        ignored_lookup = ignored_ids_by_role or {}
+        if include_vetted and include_ignored:
+            raise RuntimeError("Cannot include both vetted and ignored rows")
         for role in order:
             if role not in diffs_by_role:
                 raise RuntimeError(f"Missing diffs for role {role}")
             vetted_ids = vetted_lookup.get(role, set())
+            ignored_ids = ignored_lookup.get(role, set())
             for diff in diffs_by_role[role]:
                 diff_type = self._diff_type(diff)
                 if diff_type is None:
@@ -41,10 +47,16 @@ class AudioVerifierProblemsSheetBuilder:
                 row = diff.to_row()
                 row_id = row.get("id", "")
                 is_vetted = bool(row_id) and row_id in vetted_ids
-                if include_vetted and not is_vetted:
-                    continue
-                if not include_vetted and is_vetted:
-                    continue
+                is_ignored = bool(row_id) and row_id in ignored_ids
+                if include_vetted:
+                    if not is_vetted:
+                        continue
+                elif include_ignored:
+                    if not is_ignored:
+                        continue
+                else:
+                    if is_vetted or is_ignored:
+                        continue
                 rows.append(
                     {
                         "ROLE": role,
@@ -64,14 +76,18 @@ class AudioVerifierProblemsSheetBuilder:
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
+        ignored_ids_by_role: dict[str, set[str]] | None = None,
         include_vetted: bool = False,
+        include_ignored: bool = False,
     ) -> None:
         ws.append(self.headers)
         rows = self.build_rows(
             diffs_by_role,
             role_order=role_order,
             vetted_ids_by_role=vetted_ids_by_role,
+            ignored_ids_by_role=ignored_ids_by_role,
             include_vetted=include_vetted,
+            include_ignored=include_ignored,
         )
         for row in rows:
             ws.append([row.get(header, "") for header in self.headers])

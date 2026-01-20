@@ -18,37 +18,57 @@ class AudioVerifierSummarySheetBuilder:
 
     def __post_init__(self) -> None:
         if not self.headers:
-            self.headers = ["role", "match", "delete", "extra", "inline_diffs", "vetted", "unvetted"]
+            self.headers = [
+                "role",
+                "match",
+                "delete",
+                "extra",
+                "inline_diffs",
+                "vetted",
+                "ignored",
+                "unvetted",
+                "outstanding",
+            ]
 
     def build_rows(
         self,
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
+        ignored_ids_by_role: dict[str, set[str]] | None = None,
     ) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
         order = role_order if role_order is not None else sorted(diffs_by_role)
         vetted_lookup = vetted_ids_by_role or {}
+        ignored_lookup = ignored_ids_by_role or {}
         for role in order:
             if role not in diffs_by_role:
                 raise RuntimeError(f"Missing diffs for role {role}")
             diffs = diffs_by_role[role]
             vetted_ids = vetted_lookup.get(role, set())
+            ignored_ids = ignored_lookup.get(role, set())
             match_count = sum(isinstance(diff, MatchAudioDiff) for diff in diffs)
             delete_count = 0
             extra_count = 0
             inline_diff_count = 0
             vetted_count = 0
+            ignored_count = 0
+            total_problems = 0
             for diff in diffs:
                 is_missing = isinstance(diff, MissingAudioDiff)
                 is_extra = isinstance(diff, ExtraAudioDiff)
                 is_mismatch = isinstance(diff, MatchAudioDiff) and diff.match_quality > 0
                 if not (is_missing or is_extra or is_mismatch):
                     continue
+                total_problems += 1
                 diff_id = self._diff_id(diff)
                 is_vetted = bool(diff_id) and diff_id in vetted_ids
+                is_ignored = bool(diff_id) and diff_id in ignored_ids
                 if is_vetted:
                     vetted_count += 1
+                    continue
+                if is_ignored:
+                    ignored_count += 1
                     continue
                 if is_missing:
                     delete_count += 1
@@ -56,6 +76,8 @@ class AudioVerifierSummarySheetBuilder:
                     extra_count += 1
                 elif is_mismatch:
                     inline_diff_count += 1
+            unvetted_count = max(0, total_problems - vetted_count)
+            outstanding_count = max(0, total_problems - vetted_count - ignored_count)
             rows.append(
                 {
                     "role": role,
@@ -64,7 +86,9 @@ class AudioVerifierSummarySheetBuilder:
                     "extra": extra_count,
                     "inline_diffs": inline_diff_count,
                     "vetted": vetted_count,
-                    "unvetted": delete_count + extra_count + inline_diff_count,
+                    "ignored": ignored_count,
+                    "unvetted": unvetted_count,
+                    "outstanding": outstanding_count,
                 }
             )
         if rows:
@@ -75,7 +99,9 @@ class AudioVerifierSummarySheetBuilder:
                 "extra": sum(row["extra"] for row in rows),
                 "inline_diffs": sum(row["inline_diffs"] for row in rows),
                 "vetted": sum(row["vetted"] for row in rows),
+                "ignored": sum(row["ignored"] for row in rows),
                 "unvetted": sum(row["unvetted"] for row in rows),
+                "outstanding": sum(row["outstanding"] for row in rows),
             }
             rows.append(totals)
         return rows
@@ -86,12 +112,14 @@ class AudioVerifierSummarySheetBuilder:
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
         vetted_ids_by_role: dict[str, set[str]] | None = None,
+        ignored_ids_by_role: dict[str, set[str]] | None = None,
     ) -> None:
         ws.append(self.headers)
         rows = self.build_rows(
             diffs_by_role,
             role_order=role_order,
             vetted_ids_by_role=vetted_ids_by_role,
+            ignored_ids_by_role=ignored_ids_by_role,
         )
         for row in rows:
             ws.append([row.get(header, "") for header in self.headers])
@@ -105,7 +133,9 @@ class AudioVerifierSummarySheetBuilder:
             "extra": 8,
             "inline_diffs": 12,
             "vetted": 8,
+            "ignored": 8,
             "unvetted": 10,
+            "outstanding": 12,
         }
         for idx, header in enumerate(self.headers, start=1):
             col_letter = get_column_letter(idx)

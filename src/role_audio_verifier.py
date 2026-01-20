@@ -170,6 +170,9 @@ class RoleAudioVerifier:
     def vetted_ids(self) -> set[str]:
         return set(self._equivalencies.vetted_ids)
 
+    def ignored_ids(self) -> set[str]:
+        return set(self._equivalencies.ignored_ids)
+
     def _build_name_tokens(self) -> set[str]:
         tokens: set[str] = set()
         if self.play is None:

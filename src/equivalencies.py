@@ -15,6 +15,7 @@ class Equivalencies:
     scoped_map: dict[str, dict[str, set[str]]] = field(default_factory=dict)
     ignorable_extras: set[str] = field(default_factory=set)
     vetted_ids: set[str] = field(default_factory=set)
+    ignored_ids: set[str] = field(default_factory=set)
     _token_re: re.Pattern[str] = field(default_factory=lambda: re.compile(r"[A-Za-z0-9']+"))
 
     @classmethod
@@ -28,9 +29,11 @@ class Equivalencies:
             raise RuntimeError(f"Invalid equivalencies format in {path}")
         inst = cls()
         equivalencies = raw
-        if "equivalencies" in raw or "ignorables" in raw or "vetted" in raw:
+        if "equivalencies" in raw or "ignorables" in raw or "vetted" in raw or "ignored" in raw:
             unexpected = [
-                key for key in raw if key not in {"equivalencies", "ignorables", "vetted"}
+                key
+                for key in raw
+                if key not in {"equivalencies", "ignorables", "vetted", "ignored"}
             ]
             if unexpected:
                 raise RuntimeError(f"Unexpected substitutions keys in {path}: {unexpected}")
@@ -39,6 +42,7 @@ class Equivalencies:
                 raise RuntimeError(f"Invalid equivalencies format in {path}")
             inst._load_ignorables(raw.get("ignorables"), path)
             inst._load_vetted(raw.get("vetted"), path, text)
+            inst._load_ignored(raw.get("ignored"), path, text)
         for key, value in equivalencies.items():
             if not isinstance(key, str):
                 raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
@@ -50,6 +54,7 @@ class Equivalencies:
             variants = inst._coerce_variants(value, path)
             for variant in variants:
                 inst._add_pair(key, variant, segment_id)
+        inst._validate_statuses(str(path))
         return inst
 
     @classmethod
@@ -58,6 +63,7 @@ class Equivalencies:
         for path in paths:
             loaded = cls.load(path)
             merged._merge(loaded)
+        merged._validate_statuses()
         return merged
 
     def is_equivalent(self, expected: str, actual: str, segment_id: str | None = None) -> bool:
@@ -128,6 +134,7 @@ class Equivalencies:
                 target.setdefault(key, set()).update(values)
         self.ignorable_extras.update(other.ignorable_extras)
         self.vetted_ids.update(other.vetted_ids)
+        self.ignored_ids.update(other.ignored_ids)
 
     def _load_ignorables(self, raw: object, path: Path) -> None:
         if raw is None:
@@ -147,6 +154,31 @@ class Equivalencies:
                 self.ignorable_extras.add(normalized)
 
     def _load_vetted(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="vetted",
+            target=self.vetted_ids,
+        )
+
+    def _load_ignored(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="ignored",
+            target=self.ignored_ids,
+        )
+
+    def _load_status_list(
+        self,
+        raw: object,
+        path: Path,
+        text: str | None,
+        key: str,
+        target: set[str],
+    ) -> None:
         if raw is None:
             return
         values: list[str]
@@ -156,33 +188,33 @@ class Equivalencies:
             values = [item for item in raw if isinstance(item, str)]
             if len(values) != len(raw):
                 if text is None:
-                    raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
-                parsed = self._parse_vetted_tokens(text)
+                    raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
+                parsed = self._parse_status_tokens(text, key)
                 if parsed:
                     values = parsed
                 else:
                     values = [str(item) for item in raw]
         else:
-            raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
+            raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
         for value in values:
             cleaned = value.strip()
             if cleaned:
-                self.vetted_ids.add(cleaned)
+                target.add(cleaned)
 
-    def _parse_vetted_tokens(self, text: str) -> list[str]:
+    def _parse_status_tokens(self, text: str, key: str) -> list[str]:
         lines = text.splitlines()
         for idx, line in enumerate(lines):
             stripped = line.lstrip()
             if not stripped or stripped.startswith("#"):
                 continue
-            if not stripped.startswith("vetted:"):
+            if not stripped.startswith(f"{key}:"):
                 continue
             indent = len(line) - len(stripped)
-            remainder = stripped[len("vetted:") :].strip()
+            remainder = stripped[len(key) + 1 :].strip()
             if remainder:
                 if remainder.startswith("[") and remainder.endswith("]"):
                     inner = remainder[1:-1]
-                    return self._split_vetted_flow(inner)
+                    return self._split_status_flow(inner)
                 return [self._strip_yaml_scalar(remainder)]
             tokens: list[str] = []
             for next_line in lines[idx + 1 :]:
@@ -206,7 +238,7 @@ class Equivalencies:
             return tokens
         return []
 
-    def _split_vetted_flow(self, inner: str) -> list[str]:
+    def _split_status_flow(self, inner: str) -> list[str]:
         tokens: list[str] = []
         for part in inner.split(","):
             item = part.strip()
@@ -224,3 +256,9 @@ class Equivalencies:
         ):
             return value[1:-1].strip()
         return value.strip()
+
+    def _validate_statuses(self, context: str | None = None) -> None:
+        overlap = self.vetted_ids & self.ignored_ids
+        if overlap:
+            label = f" in {context}" if context else ""
+            raise RuntimeError(f"Vetted and ignored ids overlap{label}: {sorted(overlap)}")

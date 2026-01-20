@@ -293,6 +293,17 @@ def test_equivalencies_loads_vetted_ids(tmp_path) -> None:
     assert equiv.vetted_ids == {"1_2", "2_3_4"}
 
 
+def test_equivalencies_loads_ignored_ids(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "ignored:\n  - 1_2\n  - 2_3_4\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.ignored_ids == {"1_2", "2_3_4"}
+
+
 def test_equivalencies_preserves_vetted_underscores(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
     path.write_text(
@@ -302,6 +313,32 @@ def test_equivalencies_preserves_vetted_underscores(tmp_path) -> None:
     equiv = Equivalencies.load(path)
 
     assert equiv.vetted_ids == {"0_45_2", "2_86_1"}
+
+
+def test_equivalencies_preserves_ignored_underscores(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "ignored:\n  - 0_45_2\n  - 2_86_1\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.ignored_ids == {"0_45_2", "2_86_1"}
+
+
+def test_equivalencies_rejects_overlapping_statuses(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "vetted:\n  - 1_2\nignored:\n  - 1_2\n",
+        encoding="utf-8",
+    )
+
+    try:
+        Equivalencies.load(path)
+    except RuntimeError as exc:
+        assert "overlap" in str(exc).lower()
+    else:
+        raise AssertionError("Expected overlap error")
 
 
 def test_equivalencies_match_within_phrase(tmp_path) -> None:

@@ -38,7 +38,9 @@ def test_summary_builder_counts() -> None:
             "extra": 1,
             "inline_diffs": 1,
             "vetted": 0,
+            "ignored": 0,
             "unvetted": 3,
+            "outstanding": 3,
         },
         {
             "role": "ROLE2",
@@ -47,7 +49,9 @@ def test_summary_builder_counts() -> None:
             "extra": 0,
             "inline_diffs": 0,
             "vetted": 0,
+            "ignored": 0,
             "unvetted": 0,
+            "outstanding": 0,
         },
         {
             "role": "TOTAL",
@@ -56,7 +60,9 @@ def test_summary_builder_counts() -> None:
             "extra": 1,
             "inline_diffs": 1,
             "vetted": 0,
+            "ignored": 0,
             "unvetted": 3,
+            "outstanding": 3,
         },
     ]
 
@@ -69,10 +75,15 @@ def test_summary_builder_vetted_counts() -> None:
             ExtraAudioDiff(None, None, "1_3@extra", "extra"),
         ],
     }
-    vetted = {"ROLE1": {"1_1", "1_3@extra"}}
+    vetted = {"ROLE1": {"1_1"}}
+    ignored = {"ROLE1": {"1_3@extra"}}
     builder = AudioVerifierSummarySheetBuilder()
 
-    rows = builder.build_rows(diffs_by_role, vetted_ids_by_role=vetted)
+    rows = builder.build_rows(
+        diffs_by_role,
+        vetted_ids_by_role=vetted,
+        ignored_ids_by_role=ignored,
+    )
 
     assert rows == [
         {
@@ -81,8 +92,10 @@ def test_summary_builder_vetted_counts() -> None:
             "delete": 1,
             "extra": 0,
             "inline_diffs": 0,
-            "vetted": 2,
-            "unvetted": 1,
+            "vetted": 1,
+            "ignored": 1,
+            "unvetted": 2,
+            "outstanding": 1,
         },
         {
             "role": "TOTAL",
@@ -90,7 +103,9 @@ def test_summary_builder_vetted_counts() -> None:
             "delete": 1,
             "extra": 0,
             "inline_diffs": 0,
-            "vetted": 2,
-            "unvetted": 1,
+            "vetted": 1,
+            "ignored": 1,
+            "unvetted": 2,
+            "outstanding": 1,
         },
     ]
