@@ -39,6 +39,7 @@ from audio_verifier_workbook_writer import AudioVerifierWorkbookWriter
 from vad_config import VadConfig
 from whisper_cache_cleaner import WhisperCacheCleaner
 from audio_check import AudioCheck
+from segment_audio_player import SegmentAudioPlayer
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -338,6 +339,7 @@ def verify_audio(
     total_roles = len(roles_to_verify)
     combined_diffs: dict[str, list] = {}
     vetted_ids_by_role: dict[str, set[str]] = {}
+    ignored_ids_by_role: dict[str, set[str]] = {}
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -356,6 +358,7 @@ def verify_audio(
             remove_fillers=remove_fillers,
         )
         vetted_ids_by_role[role_name] = verifier.vetted_ids()
+        ignored_ids_by_role[role_name] = verifier.ignored_ids()
         try:
             results = verifier.verify(recording_path=recording)
         except LocalEntryNotFoundError as exc:
@@ -408,6 +411,7 @@ def verify_audio(
             combined_path,
             role_order=roles_to_verify,
             vetted_ids_by_role=vetted_ids_by_role,
+            ignored_ids_by_role=ignored_ids_by_role,
         )
         combined_elapsed = time.perf_counter() - combined_start
         logging.info(
@@ -538,8 +542,16 @@ def clear_whisper_cache(
 
 @app.command("play")
 def play_audio(
-    role: str = typer.Argument(..., metavar="ROLE", help="Role name to play"),
-    offset_ms: int = typer.Argument(..., metavar="OFFSET-MS", help="Start offset in milliseconds"),
+    target: str = typer.Argument(
+        ...,
+        metavar="TARGET",
+        help="Role name or segment id to play (segment ids look like 1_17_3)",
+    ),
+    offset_ms: int = typer.Argument(
+        0,
+        metavar="OFFSET-MS",
+        help="Start offset in milliseconds (default: 0)",
+    ),
     continue_play: bool = typer.Option(
         False,
         "--continue",
@@ -555,8 +567,17 @@ def play_audio(
     """Play a role recording from an offset until the next silence."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
+    if _is_segment_id(target):
+        player = SegmentAudioPlayer(paths=cfg)
+        if player.play(target):
+            return
+        logging.info(
+            "segment %s not found... have you run the 'segments' command?",
+            target,
+        )
+        raise typer.Exit(code=1)
     checker = AudioCheck(base_dir=cfg.root.parent)
-    raise SystemExit(checker.run(role, offset_ms, continue_play, offset_mod))
+    raise SystemExit(checker.run(target, offset_ms, continue_play, offset_mod))
 
 
 @app.command("whisper-init")
@@ -583,6 +604,11 @@ def whisper_init(
 
 @app.command()
 def audioplay(
+    target: str | None = typer.Argument(
+        None,
+        metavar="TARGET",
+        help="Role name or segment id to play (segment ids look like 1_17_3)",
+    ),
     part: str = typer.Option(None, help="Part number to assemble, '_' for preamble, omit for all parts"),
     segment_spacing_ms: int = typer.Option(SEGMENT_SPACING_MS, help="Silence (ms) to insert between segments"),
     callouts: bool = typer.Option(True, help="Prepend each role line with its callout audio"),
@@ -599,6 +625,19 @@ def audioplay(
     """Assemble final audio play output for a part or full play."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
+    if target:
+        play_obj = PlayTextParser(paths_config=cfg).parse()
+        valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
+        if target not in valid_roles:
+            if _is_segment_id(target):
+                player = SegmentAudioPlayer(paths=cfg)
+                if player.play(target):
+                    return
+                logging.info(
+                    "segment %s not found... have you run the 'segments' command?",
+                    target,
+                )
+                raise typer.Exit(code=1)
     run_audioplay(
         part=part,
         segment_spacing_ms=segment_spacing_ms,
@@ -905,6 +944,13 @@ def run_cues(
     roles = [role] if role else [r.name for r in play.roles] + ["_NARRATOR"]
     for r in roles:
         builder.build_cues(r)
+
+
+def _is_segment_id(value: str) -> bool:
+    parts = value.split("_")
+    if len(parts) != 3:
+        return False
+    return all(part.isdigit() for part in parts)
 
 
 
