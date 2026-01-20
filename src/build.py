@@ -48,6 +48,10 @@ from spacing import (
 )
 
 app = typer.Typer(add_completion=False)
+text_app = typer.Typer(add_completion=False, help="Build markdown artifacts")
+whisper_app = typer.Typer(add_completion=False, help="Whisper transcription tools")
+app.add_typer(text_app, name="text", rich_help_panel="build")
+app.add_typer(whisper_app, name="whisper", rich_help_panel="utility")
 PLAY_OPTION = typer.Option(
     None,
     "--play",
@@ -102,15 +106,16 @@ def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
         typer.echo("use 'audioplay --prepare' to build the audioplay or '--help' to see a list of commands")
         raise typer.Exit(code=1)
 
-@app.command()
-def text(play: str | None = PLAY_OPTION) -> None:
+@text_app.callback(invoke_without_command=True)
+def text(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
-    run_text(paths_config=cfg)
+    if ctx.invoked_subcommand is None:
+        run_text(paths_config=cfg)
 
 
-@app.command()
+@text_app.command("write-play", hidden=True)
 def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
     play: str | None = PLAY_OPTION,
@@ -120,7 +125,7 @@ def write_play(
     setup_logging(cfg)
     run_write_play(line_no_prefix, paths_config=cfg)
 
-@app.command()
+@text_app.command("write-roles", hidden=True)
 def write_roles(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
     play: str | None = PLAY_OPTION,
@@ -131,14 +136,14 @@ def write_roles(
     run_write_roles(line_no_prefix, paths_config=cfg)
 
 
-@app.command("write-cues")
+@text_app.command("write-cues", hidden=True)
 def write_cues(play: str | None = PLAY_OPTION) -> None:
     """Generate role cue text files into build/roles."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_write_cues(paths_config=cfg)
 
-@app.command()
+@app.command("segments", rich_help_panel="build")
 def segments(
     role: str = typer.Option(None, help="Limit to a specific role"),
     part: str = typer.Option(None, help="Limit to a specific part id (use '_' for no-part narration entries)"),
@@ -172,7 +177,7 @@ def segments(
         paths_config=cfg,
     )
 
-@app.command()
+@app.command("verify", rich_help_panel="verify")
 def verify(
     too_short: float = typer.Option(0.5, help="Lower bound ratio of actual/expected"),
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
@@ -193,7 +198,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
     verifier.verify_segments()
 
 
-@app.command()
+@app.command("check-recording", rich_help_panel="verify")
 def check_recording(play: str | None = PLAY_OPTION) -> None:
     """Check recordings against timings.csv to find missing segments."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
@@ -201,7 +206,7 @@ def check_recording(play: str | None = PLAY_OPTION) -> None:
     run_check_recording(paths_config=cfg)
 
 
-@app.command("generate-timings")
+@app.command("generate-timings", rich_help_panel="verify")
 def generate_timings(
     play: str | None = PLAY_OPTION,
     librivox: bool = typer.Option(False, help="Use Librivox preamble/epilog when computing timings"),
@@ -229,7 +234,7 @@ def generate_timings(
     )
 
 
-@app.command("verify-audio")
+@app.command("verify-audio", rich_help_panel="verify")
 def verify_audio(
     role: str | None = typer.Option(None, "--role", "-r", help="Role to verify (omit for all roles)"),
     recording: Path | None = typer.Option(None, "--recording", help="Override recording WAV path"),
@@ -421,8 +426,9 @@ def verify_audio(
         )
 
 
-@app.command("whisper")
+@whisper_app.callback(invoke_without_command=True)
 def whisper(
+    ctx: typer.Context,
     role: str = typer.Option(..., "--role", "-r", help="Role to transcribe"),
     model: str = typer.Option("med", "--model", "-m", help="Whisper model: tiny, base, small, med"),
     vad_filter: bool = typer.Option(True, "--vad-filter/--no-vad-filter", help="Enable Silero VAD filtering"),
@@ -489,6 +495,8 @@ def whisper(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Run a raw Whisper transcription for a role recording."""
+    if ctx.invoked_subcommand is not None:
+        return
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     model_key = model.lower().strip()
@@ -524,7 +532,7 @@ def whisper(
         ) from exc
 
 
-@app.command("clear-whisper-cache")
+@whisper_app.command("clear-whisper-cache", hidden=True)
 def clear_whisper_cache(
     role: str | None = typer.Option(None, "--role", "-r", help="Role to clear (omit for all roles)"),
     play: str | None = PLAY_OPTION,
@@ -540,7 +548,7 @@ def clear_whisper_cache(
         logging.info("Cleared %d cached transcription(s)", removed)
 
 
-@app.command("play")
+@app.command("play", rich_help_panel="utility")
 def play_audio(
     target: str = typer.Argument(
         ...,
@@ -580,7 +588,7 @@ def play_audio(
     raise SystemExit(checker.run(target, offset_ms, continue_play, offset_mod))
 
 
-@app.command("whisper-init")
+@whisper_app.command("whisper-init", hidden=True)
 def whisper_init(
     model: list[str] = typer.Option(None, "--model", "-m", help="Whisper model name(s) to cache"),
     device: str = typer.Option("cpu", help="Device to load the model for caching"),
@@ -602,7 +610,7 @@ def whisper_init(
     logging.info("✅ cached whisper model(s) in %s", store.cache_dir)
 
 
-@app.command()
+@app.command("audioplay", hidden=True, rich_help_panel="build")
 def audioplay(
     target: str | None = typer.Argument(
         None,
@@ -654,7 +662,7 @@ def audioplay(
     )
 
 
-@app.command()
+@app.command("normalize", rich_help_panel="utility")
 def normalize(
     src: Path = typer.Argument(
         ...,
@@ -676,7 +684,7 @@ def normalize(
     typer.echo(result.render())
 
 
-@app.command()
+@app.command("cues", rich_help_panel="build")
 def cues(
     role: str = typer.Option(None, help="Role to build cues for; default builds all roles"),
     response_delay_ms: int = typer.Option(2000, help="Silence (ms) between cue and response"),
