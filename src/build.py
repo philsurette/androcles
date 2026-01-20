@@ -40,6 +40,7 @@ from vad_config import VadConfig
 from whisper_cache_cleaner import WhisperCacheCleaner
 from audio_check import AudioCheck
 from segment_audio_player import SegmentAudioPlayer
+from audacity_recording_exporter import AudacityRecordingExporter
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -323,6 +324,7 @@ def verify_audio(
     for role_name in roles_to_verify:
         if role_name not in valid_roles:
             raise typer.BadParameter(f"Unknown role: {role_name}")
+    AudacityRecordingExporter(paths=cfg).export_recordings()
     model_key = model.lower().strip()
     if model_key not in MODEL_CHOICES:
         raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
@@ -808,6 +810,7 @@ def run_segments(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
+    AudacityRecordingExporter(paths=cfg).export_recordings()
     play = PlayTextParser(paths_config=cfg).parse()
     splitter = PlaySplitter(
         play=play,
