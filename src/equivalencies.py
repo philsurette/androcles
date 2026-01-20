@@ -192,6 +192,7 @@ class Equivalencies:
             values = [raw]
         elif isinstance(raw, (list, tuple, set)):
             parsed_mapping = False
+            needs_text_parse = False
             values = []
             for item in raw:
                 if isinstance(item, str):
@@ -203,13 +204,18 @@ class Equivalencies:
                         if isinstance(entry_key, str):
                             values.append(entry_key)
                         else:
-                            raise RuntimeError(f"Invalid {key} id in {path}: {entry_key!r}")
+                            needs_text_parse = True
                     continue
+                needs_text_parse = True
+            if needs_text_parse:
                 if text is None:
                     raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
-                values = []
-                break
-            if not values or (len(values) != len(raw) and not parsed_mapping):
+                parsed = self._parse_status_tokens(text, key)
+                if parsed:
+                    values = parsed
+                else:
+                    values = [str(item) for item in raw]
+            elif not values or (len(values) != len(raw) and not parsed_mapping):
                 if text is None:
                     raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
                 parsed = self._parse_status_tokens(text, key)
@@ -257,7 +263,7 @@ class Equivalencies:
                 item = item.split("#", 1)[0].strip()
                 if not item:
                     continue
-                tokens.append(self._strip_yaml_scalar(item))
+                tokens.append(self._extract_status_id(item))
             return tokens
         return []
 
@@ -270,8 +276,21 @@ class Equivalencies:
             item = item.split("#", 1)[0].strip()
             if not item:
                 continue
-            tokens.append(self._strip_yaml_scalar(item))
+            tokens.append(self._extract_status_id(item))
         return tokens
+
+    def _extract_status_id(self, value: str) -> str:
+        raw = value.strip()
+        if not raw:
+            return raw
+        if raw.startswith(("'", '"')):
+            quote = raw[0]
+            end_idx = raw.find(quote, 1)
+            if end_idx != -1:
+                return self._strip_yaml_scalar(raw[: end_idx + 1])
+        if ":" in raw:
+            raw = raw.split(":", 1)[0].strip()
+        return self._strip_yaml_scalar(raw)
 
     def _strip_yaml_scalar(self, value: str) -> str:
         if (value.startswith("'") and value.endswith("'")) or (

@@ -363,6 +363,17 @@ def test_equivalencies_accepts_ignored_comments(tmp_path) -> None:
     assert equiv.ignored_ids == {"1_2", "2_3_4"}
 
 
+def test_equivalencies_preserves_underscores_in_comment_keys(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "vetted:\n  - 0_43_2: Halt!\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.vetted_ids == {"0_43_2"}
+
+
 def test_equivalencies_match_within_phrase(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
     path.write_text("equivalencies:\n  Ferrovius: [ferocious]\n", encoding="utf-8")
