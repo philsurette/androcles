@@ -38,6 +38,7 @@ from audio_verifier_summary_renderer import AudioVerifierSummaryRenderer
 from audio_verifier_workbook_writer import AudioVerifierWorkbookWriter
 from vad_config import VadConfig
 from whisper_cache_cleaner import WhisperCacheCleaner
+from audio_check import AudioCheck
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -527,6 +528,28 @@ def clear_whisper_cache(
         logging.info("Cleared %d cached transcription(s) for %s", removed, role)
     else:
         logging.info("Cleared %d cached transcription(s)", removed)
+
+
+@app.command("audiocheck")
+def audiocheck(
+    role: str = typer.Argument(..., metavar="ROLE"),
+    offset_ms: int = typer.Argument(..., metavar="OFFSET-MS"),
+    continue_play: bool = typer.Option(
+        False,
+        "--continue",
+        help="Keep playing past the detected silence",
+    ),
+    offset_mod: float = typer.Option(
+        0.0,
+        "--offset-mod",
+        help="Seconds to adjust the start time (negative for earlier)",
+    ),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    checker = AudioCheck(base_dir=cfg.root.parent)
+    raise SystemExit(checker.run(role, offset_ms, continue_play, offset_mod))
 
 
 @app.command("whisper-init")

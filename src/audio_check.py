@@ -7,14 +7,6 @@ import logging
 from pathlib import Path
 import re
 import subprocess
-import sys
-
-import typer
-
-ROOT = Path(__file__).resolve().parent
-SRC = ROOT / "src"
-if str(SRC) not in sys.path:
-    sys.path.insert(0, str(SRC))
 
 from play_config import PlayConfig
 
@@ -25,25 +17,8 @@ class AudioCheck:
     min_silence_ms: int = 1500
     silence_db: float = -35.0
     _silence_start_re: re.Pattern[str] = field(
-        default_factory=lambda: re.compile(r"silence_start:\\s*(\\d+(?:\\.\\d+)?)")
+        default_factory=lambda: re.compile(r"silence_start:\s*(\d+(?:\.\d+)?)")
     )
-
-    def command(
-        self,
-        role: str = typer.Argument(..., metavar="ROLE"),
-        offset_ms: int = typer.Argument(..., metavar="OFFSET-MS"),
-        continue_play: bool = typer.Option(
-            False,
-            "--continue",
-            help="Keep playing past the detected silence",
-        ),
-        offset_mod: float = typer.Option(
-            0.0,
-            "--offset-mod",
-            help="Seconds to adjust the start time (negative for earlier)",
-        ),
-    ) -> None:
-        raise SystemExit(self.run(role, offset_ms, continue_play, offset_mod))
 
     def run(
         self,
@@ -133,14 +108,3 @@ class AudioCheck:
             proc.terminate()
         proc.wait()
         return silence_start
-
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO, format="%(message)s")
-    app = typer.Typer(add_completion=False)
-    checker = AudioCheck(base_dir=ROOT)
-    app.command()(checker.command)
-    try:
-        app()
-    except KeyboardInterrupt:
-        raise SystemExit(130)
