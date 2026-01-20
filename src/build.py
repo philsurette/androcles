@@ -332,6 +332,7 @@ def verify_audio(
     )
     total_roles = len(roles_to_verify)
     combined_diffs: dict[str, list] = {}
+    vetted_ids_by_role: dict[str, set[str]] = {}
     for idx, role_name in enumerate(roles_to_verify, start=1):
         logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
         verifier = RoleAudioVerifier(
@@ -349,6 +350,7 @@ def verify_audio(
             homophone_max_words=homophone_max_words,
             remove_fillers=remove_fillers,
         )
+        vetted_ids_by_role[role_name] = verifier.vetted_ids()
         try:
             results = verifier.verify(recording_path=recording)
         except LocalEntryNotFoundError as exc:
@@ -396,7 +398,12 @@ def verify_audio(
         combined_path = cfg.audio_out_dir / "audio-verifier.xlsx"
         writer = AudioVerifierWorkbookWriter()
         combined_start = time.perf_counter()
-        writer.write(combined_diffs, combined_path, role_order=roles_to_verify)
+        writer.write(
+            combined_diffs,
+            combined_path,
+            role_order=roles_to_verify,
+            vetted_ids_by_role=vetted_ids_by_role,
+        )
         combined_elapsed = time.perf_counter() - combined_start
         logging.info(
             "Wrote combined audio verification workbook to %s in %.2fs",

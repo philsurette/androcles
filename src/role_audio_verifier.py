@@ -167,6 +167,9 @@ class RoleAudioVerifier:
         role_path = self.paths.recordings_dir / f"{self.role}_substitutions.yaml"
         return Equivalencies.load_many([play_path, role_path])
 
+    def vetted_ids(self) -> set[str]:
+        return set(self._equivalencies.vetted_ids)
+
     def _build_name_tokens(self) -> set[str]:
         tokens: set[str] = set()
         if self.play is None:

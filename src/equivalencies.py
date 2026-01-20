@@ -14,6 +14,7 @@ class Equivalencies:
     global_map: dict[str, set[str]] = field(default_factory=dict)
     scoped_map: dict[str, dict[str, set[str]]] = field(default_factory=dict)
     ignorable_extras: set[str] = field(default_factory=set)
+    vetted_ids: set[str] = field(default_factory=set)
     _token_re: re.Pattern[str] = field(default_factory=lambda: re.compile(r"[A-Za-z0-9']+"))
 
     @classmethod
@@ -26,14 +27,17 @@ class Equivalencies:
             raise RuntimeError(f"Invalid equivalencies format in {path}")
         inst = cls()
         equivalencies = raw
-        if "equivalencies" in raw or "ignorables" in raw:
-            unexpected = [key for key in raw if key not in {"equivalencies", "ignorables"}]
+        if "equivalencies" in raw or "ignorables" in raw or "vetted" in raw:
+            unexpected = [
+                key for key in raw if key not in {"equivalencies", "ignorables", "vetted"}
+            ]
             if unexpected:
                 raise RuntimeError(f"Unexpected substitutions keys in {path}: {unexpected}")
             equivalencies = raw.get("equivalencies") or {}
             if not isinstance(equivalencies, dict):
                 raise RuntimeError(f"Invalid equivalencies format in {path}")
             inst._load_ignorables(raw.get("ignorables"), path)
+            inst._load_vetted(raw.get("vetted"), path)
         for key, value in equivalencies.items():
             if not isinstance(key, str):
                 raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
@@ -122,6 +126,7 @@ class Equivalencies:
             for key, values in scoped.items():
                 target.setdefault(key, set()).update(values)
         self.ignorable_extras.update(other.ignorable_extras)
+        self.vetted_ids.update(other.vetted_ids)
 
     def _load_ignorables(self, raw: object, path: Path) -> None:
         if raw is None:
@@ -139,3 +144,20 @@ class Equivalencies:
             normalized = self._normalize_text(value)
             if normalized:
                 self.ignorable_extras.add(normalized)
+
+    def _load_vetted(self, raw: object, path: Path) -> None:
+        if raw is None:
+            return
+        values: list[str]
+        if isinstance(raw, str):
+            values = [raw]
+        elif isinstance(raw, (list, tuple, set)):
+            values = [item for item in raw if isinstance(item, str)]
+            if len(values) != len(raw):
+                raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
+        else:
+            raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
+        for value in values:
+            cleaned = value.strip()
+            if cleaned:
+                self.vetted_ids.add(cleaned)

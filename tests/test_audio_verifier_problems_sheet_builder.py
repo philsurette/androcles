@@ -37,6 +37,7 @@ def test_problems_builder_rows() -> None:
             "id": "1_1",
             "offset": "",
             "len": 100,
+            "dc": 1,
             "diff": "[heard/exp]",
             "heard": "heard",
             "expected": "exp",
@@ -47,6 +48,7 @@ def test_problems_builder_rows() -> None:
             "id": "1_3",
             "offset": "",
             "len": "",
+            "dc": "",
             "diff": "",
             "heard": "",
             "expected": "missing",
@@ -57,8 +59,66 @@ def test_problems_builder_rows() -> None:
             "id": "",
             "offset": "",
             "len": "",
+            "dc": "",
             "diff": "",
             "heard": "extra words",
             "expected": "",
+        },
+    ]
+
+
+def test_problems_builder_filters_vetted_ids() -> None:
+    diffs_by_role = {
+        "ROLE1": [
+            MatchAudioDiff(0, 100, "1_1", "exp", "heard", "[heard/exp]", 1),
+            MissingAudioDiff(None, None, "1_3", "missing"),
+            ExtraAudioDiff(None, None, "extra words"),
+        ],
+    }
+    vetted_ids = {"ROLE1": {"1_1", "1_3"}}
+    builder = AudioVerifierProblemsSheetBuilder()
+
+    problems = builder.build_rows(diffs_by_role, vetted_ids_by_role=vetted_ids)
+    vetted = builder.build_rows(
+        diffs_by_role,
+        vetted_ids_by_role=vetted_ids,
+        include_vetted=True,
+    )
+
+    assert problems == [
+        {
+            "ROLE": "ROLE1",
+            "type": "+",
+            "id": "",
+            "offset": "",
+            "len": "",
+            "dc": "",
+            "diff": "",
+            "heard": "extra words",
+            "expected": "",
+        },
+    ]
+    assert vetted == [
+        {
+            "ROLE": "ROLE1",
+            "type": "/",
+            "id": "1_1",
+            "offset": "",
+            "len": 100,
+            "dc": 1,
+            "diff": "[heard/exp]",
+            "heard": "heard",
+            "expected": "exp",
+        },
+        {
+            "ROLE": "ROLE1",
+            "type": "-",
+            "id": "1_3",
+            "offset": "",
+            "len": "",
+            "dc": "",
+            "diff": "",
+            "heard": "",
+            "expected": "missing",
         },
     ]

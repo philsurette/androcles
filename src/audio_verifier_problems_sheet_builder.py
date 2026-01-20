@@ -18,23 +18,33 @@ class AudioVerifierProblemsSheetBuilder:
 
     def __post_init__(self) -> None:
         if not self.headers:
-            self.headers = ["ROLE", "type", "id", "offset", "len", "diff", "heard", "expected"]
+            self.headers = ["ROLE", "type", "id", "offset", "len", "dc", "diff", "heard", "expected"]
 
     def build_rows(
         self,
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
+        vetted_ids_by_role: dict[str, set[str]] | None = None,
+        include_vetted: bool = False,
     ) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
         order = role_order if role_order is not None else sorted(diffs_by_role)
+        vetted_lookup = vetted_ids_by_role or {}
         for role in order:
             if role not in diffs_by_role:
                 raise RuntimeError(f"Missing diffs for role {role}")
+            vetted_ids = vetted_lookup.get(role, set())
             for diff in diffs_by_role[role]:
                 diff_type = self._diff_type(diff)
                 if diff_type is None:
                     continue
                 row = diff.to_row()
+                row_id = row.get("id", "")
+                is_vetted = bool(row_id) and row_id in vetted_ids
+                if include_vetted and not is_vetted:
+                    continue
+                if not include_vetted and is_vetted:
+                    continue
                 rows.append(
                     {
                         "ROLE": role,
@@ -42,6 +52,7 @@ class AudioVerifierProblemsSheetBuilder:
                         "id": row.get("id", ""),
                         "offset": row.get("offset", ""),
                         "len": row.get("len", ""),
+                        "dc": row.get("dc", ""),
                         "diff": row.get("diff", ""),
                         "heard": row.get("heard", ""),
                         "expected": row.get("expected", ""),
@@ -54,9 +65,16 @@ class AudioVerifierProblemsSheetBuilder:
         ws,
         diffs_by_role: dict[str, list[AudioVerifierDiff]],
         role_order: list[str] | None = None,
+        vetted_ids_by_role: dict[str, set[str]] | None = None,
+        include_vetted: bool = False,
     ) -> None:
         ws.append(self.headers)
-        rows = self.build_rows(diffs_by_role, role_order=role_order)
+        rows = self.build_rows(
+            diffs_by_role,
+            role_order=role_order,
+            vetted_ids_by_role=vetted_ids_by_role,
+            include_vetted=include_vetted,
+        )
         for row in rows:
             ws.append([row.get(header, "") for header in self.headers])
         self._format_columns(ws)
@@ -77,6 +95,7 @@ class AudioVerifierProblemsSheetBuilder:
             "id": 10,
             "offset": 10,
             "len": 8,
+            "dc": 5,
             "diff": 36,
             "heard": 36,
             "expected": 36,
@@ -85,7 +104,7 @@ class AudioVerifierProblemsSheetBuilder:
             col_letter = get_column_letter(idx)
             if header in widths:
                 ws.column_dimensions[col_letter].width = widths[header]
-            if header in {"offset", "len"}:
+            if header in {"offset", "len", "dc"}:
                 for cell in ws[col_letter]:
                     if cell.row == 1:
                         continue
