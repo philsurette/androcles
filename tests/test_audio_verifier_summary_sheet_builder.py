@@ -38,6 +38,7 @@ def test_summary_builder_counts() -> None:
             "extra": 1,
             "inline_diffs": 1,
             "vetted": 0,
+            "unvetted": 3,
         },
         {
             "role": "ROLE2",
@@ -46,6 +47,7 @@ def test_summary_builder_counts() -> None:
             "extra": 0,
             "inline_diffs": 0,
             "vetted": 0,
+            "unvetted": 0,
         },
         {
             "role": "TOTAL",
@@ -54,6 +56,7 @@ def test_summary_builder_counts() -> None:
             "extra": 1,
             "inline_diffs": 1,
             "vetted": 0,
+            "unvetted": 3,
         },
     ]
 
@@ -79,6 +82,7 @@ def test_summary_builder_vetted_counts() -> None:
             "extra": 0,
             "inline_diffs": 0,
             "vetted": 2,
+            "unvetted": 1,
         },
         {
             "role": "TOTAL",
@@ -87,5 +91,6 @@ def test_summary_builder_vetted_counts() -> None:
             "extra": 0,
             "inline_diffs": 0,
             "vetted": 2,
+            "unvetted": 1,
         },
     ]

@@ -18,7 +18,7 @@ class AudioVerifierSummarySheetBuilder:
 
     def __post_init__(self) -> None:
         if not self.headers:
-            self.headers = ["role", "match", "delete", "extra", "inline_diffs", "vetted"]
+            self.headers = ["role", "match", "delete", "extra", "inline_diffs", "vetted", "unvetted"]
 
     def build_rows(
         self,
@@ -64,6 +64,7 @@ class AudioVerifierSummarySheetBuilder:
                     "extra": extra_count,
                     "inline_diffs": inline_diff_count,
                     "vetted": vetted_count,
+                    "unvetted": delete_count + extra_count + inline_diff_count,
                 }
             )
         if rows:
@@ -74,6 +75,7 @@ class AudioVerifierSummarySheetBuilder:
                 "extra": sum(row["extra"] for row in rows),
                 "inline_diffs": sum(row["inline_diffs"] for row in rows),
                 "vetted": sum(row["vetted"] for row in rows),
+                "unvetted": sum(row["unvetted"] for row in rows),
             }
             rows.append(totals)
         return rows
@@ -103,6 +105,7 @@ class AudioVerifierSummarySheetBuilder:
             "extra": 8,
             "inline_diffs": 12,
             "vetted": 8,
+            "unvetted": 10,
         }
         for idx, header in enumerate(self.headers, start=1):
             col_letter = get_column_letter(idx)
