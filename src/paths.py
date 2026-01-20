@@ -5,9 +5,10 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 from pydub import AudioSegment
+from play_config import PlayConfig
 
 ROOT = Path(__file__).resolve().parent
-DEFAULT_PLAY_NAME = "androcles"
+DEFAULT_PLAY_NAME = PlayConfig.load().play_id
 
 
 @dataclass

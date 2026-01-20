@@ -38,6 +38,10 @@ class RoleAudioVerifier:
     whisper_store: WhisperModelStore | None = None
     vad_filter: bool = True
     vad_config: VadConfig | None = None
+    no_speech_threshold: float | None = None
+    log_prob_threshold: float | None = None
+    condition_on_previous_text: bool = True
+    initial_prompt: str | None = None
     transcription_cache: WhisperTranscriptionCache | None = None
     remove_fillers: bool = False
     filler_words: set[str] = field(
@@ -337,49 +341,81 @@ class RoleAudioVerifier:
         vad_parameters = None
         if self.vad_filter and self.vad_config is not None:
             vad_parameters = self.vad_config.to_transcribe_parameters()
+        vad_label = self._format_vad_label(vad_parameters)
         cache_key = self._build_transcription_cache_key(path, vad_parameters)
         if self.transcription_cache is not None:
             cached = self.transcription_cache.load(cache_key, path)
             if cached is not None:
+                words = self._normalize_transcribed_words(cached)
                 elapsed = time.perf_counter() - start_time
                 self._logger.info(
-                    "Transcription cache hit for %s (%d words) in %.2fs",
+                    "Transcription cache hit for %s (%d raw words, %d normalized) in %.2fs (%s)",
                     self.role,
                     len(cached),
+                    len(words),
                     elapsed,
+                    vad_label,
                 )
-                return cached
+                return words
         model = self._load_model()
+        transcribe_kwargs = {
+            "word_timestamps": True,
+            "vad_filter": self.vad_filter,
+            "vad_parameters": vad_parameters,
+            "condition_on_previous_text": self.condition_on_previous_text,
+        }
+        if self.no_speech_threshold is not None:
+            transcribe_kwargs["no_speech_threshold"] = self.no_speech_threshold
+        if self.log_prob_threshold is not None:
+            transcribe_kwargs["log_prob_threshold"] = self.log_prob_threshold
+        if self.initial_prompt is not None:
+            transcribe_kwargs["initial_prompt"] = self.initial_prompt
         segments, _info = model.transcribe(
             str(path),
-            word_timestamps=True,
-            vad_filter=self.vad_filter,
-            vad_parameters=vad_parameters,
+            **transcribe_kwargs,
         )
-        words: list[dict] = []
+        raw_words: list[dict] = []
         for segment in segments:
             for word in segment.words:
                 raw = word.word.strip()
-                normalized = self._normalize_token(raw)
-                if not normalized:
+                if not raw:
                     continue
-                words.append(
+                raw_words.append(
                     {
                         "word": raw,
-                        "norm": normalized,
                         "start": float(word.start),
                         "end": float(word.end),
                     }
                 )
+        words = self._normalize_transcribed_words(raw_words)
         if self.transcription_cache is not None:
-            self.transcription_cache.save(cache_key, path, words)
+            self.transcription_cache.save(cache_key, path, raw_words)
         elapsed = time.perf_counter() - start_time
         self._logger.info(
-            "Transcribed %s (%d words) in %.2fs",
+            "Transcribed %s (%d raw words, %d normalized) in %.2fs (%s)",
             self.role,
+            len(raw_words),
             len(words),
             elapsed,
+            vad_label,
         )
+        return words
+
+    def _normalize_transcribed_words(self, raw_words: list[dict]) -> list[dict]:
+        words: list[dict] = []
+        for entry in raw_words:
+            raw = entry.get("word", "").strip()
+            normalized = self._normalize_token(raw)
+            if not normalized:
+                continue
+            words.append(
+                {
+                    "word": raw,
+                    "norm": normalized,
+                    "start": float(entry["start"]),
+                    "end": float(entry["end"]),
+                }
+            )
         return words
 
     def _align_words(self, script_words: list[str], audio_words: list[dict]) -> list[dict]:
@@ -497,21 +533,39 @@ class RoleAudioVerifier:
         segment_windows: list[dict] = []
         if skipped_audio_indices:
             pad_seconds = self.extra_audio_padding_ms / 1000.0
+            missing_flags = [
+                not segment_matches[idx]["matched_audio_indices"]
+                for idx in range(len(expected_segments))
+            ]
+            missing_prefix = [0]
+            for flag in missing_flags:
+                missing_prefix.append(missing_prefix[-1] + (1 if flag else 0))
+            prev_matched_index: int | None = None
             for segment in expected_segments:
-                match_info = segment_matches[segment["segment_index"]]
+                segment_index = segment["segment_index"]
+                match_info = segment_matches[segment_index]
                 matched_indices = match_info["matched_audio_indices"]
                 if not matched_indices:
                     continue
                 start = min(audio_words[i]["start"] for i in matched_indices)
                 end = max(audio_words[i]["end"] for i in matched_indices)
+                if prev_matched_index is None:
+                    missing_between = missing_prefix[segment_index] > 0
+                else:
+                    missing_between = (
+                        missing_prefix[segment_index] - missing_prefix[prev_matched_index + 1]
+                    ) > 0
                 segment_windows.append(
                     {
-                        "segment_index": segment["segment_index"],
+                        "segment_index": segment_index,
                         "start": start - pad_seconds,
                         "end": end + pad_seconds,
                         "mid": (start + end) / 2.0,
+                        "first_audio_index": min(matched_indices),
+                        "block_before_first_match": missing_between,
                     }
                 )
+                prev_matched_index = segment_index
 
         segment_extra_indices: dict[int, list[int]] = {}
         reassigned_audio_indices: set[int] = set()
@@ -523,6 +577,10 @@ class RoleAudioVerifier:
                     window
                     for window in segment_windows
                     if window["start"] <= word_mid <= window["end"]
+                    and not (
+                        window["block_before_first_match"]
+                        and audio_index < window["first_audio_index"]
+                    )
                 ]
                 if not candidates:
                     continue
@@ -682,6 +740,13 @@ class RoleAudioVerifier:
             return ""
         return token
 
+    def _format_vad_label(self, vad_parameters: dict[str, float | int | None] | None) -> str:
+        if not self.vad_filter:
+            return "vad_filter=off"
+        if vad_parameters:
+            return f"vad_filter=on, vad_params={vad_parameters}"
+        return "vad_filter=on, vad_params=default"
+
     def _build_transcription_cache_key(
         self,
         path: Path,
@@ -696,6 +761,10 @@ class RoleAudioVerifier:
             "vad_parameters": vad_parameters,
             "remove_fillers": self.remove_fillers,
             "filler_words": sorted(self.filler_words),
+            "initial_prompt": self.initial_prompt,
+            "no_speech_threshold": self.no_speech_threshold,
+            "log_prob_threshold": self.log_prob_threshold,
+            "condition_on_previous_text": self.condition_on_previous_text,
             "transcriber": "faster_whisper",
         }
 

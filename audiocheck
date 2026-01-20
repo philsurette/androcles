@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Play a role recording from 1s before a given offset."""
+"""Play a role recording from a time offset relative to a given position."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,26 +8,42 @@ from pathlib import Path
 import subprocess
 import sys
 
+ROOT = Path(__file__).resolve().parent
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+from play_config import PlayConfig
 
 @dataclass
 class AudioCheck:
     role: str
     offset_ms: int
+    adjust_seconds: float
     base_dir: Path
 
     def run(self) -> int:
         if self.offset_ms < 0:
             raise RuntimeError("Offset must be a non-negative integer (ms)")
-        start_ms = max(0, self.offset_ms - 1000)
+        adjust_ms = int(round(self.adjust_seconds * 1000))
+        start_ms = max(0, self.offset_ms + adjust_ms)
         start_seconds = start_ms / 1000.0
-        audio_path = self.base_dir / "plays" / "androcles" / "recordings" / f"{self.role}.wav"
+        config = PlayConfig.load(self.base_dir)
+        audio_path = (
+            self.base_dir
+            / "plays"
+            / config.play_id
+            / "recordings"
+            / f"{self.role}.wav"
+        )
         if not audio_path.exists():
             raise RuntimeError(f"Recording not found: {audio_path}")
         logging.info(
-            "Starting ffplay for %s at %dms (offset %dms)",
+            "Starting ffplay for %s at %dms (offset %dms, adjust %.3fs)",
             audio_path,
             start_ms,
             self.offset_ms,
+            self.adjust_seconds,
         )
         return subprocess.call(
             [
@@ -45,12 +61,18 @@ class AudioCheck:
 
     @classmethod
     def from_argv(cls, argv: list[str]) -> "AudioCheck":
-        if len(argv) != 2:
-            raise RuntimeError("Usage: audiocheck ROLE OFFSET_MS")
+        if len(argv) not in (2, 3):
+            raise RuntimeError("Usage: audiocheck ROLE OFFSET_MS [ADJUST_SECONDS]")
         role = argv[0]
         offset_ms = int(argv[1])
-        base_dir = Path(__file__).resolve().parent
-        return cls(role=role, offset_ms=offset_ms, base_dir=base_dir)
+        adjust_seconds = float(argv[2]) if len(argv) == 3 else -1.0
+        base_dir = ROOT
+        return cls(
+            role=role,
+            offset_ms=offset_ms,
+            adjust_seconds=adjust_seconds,
+            base_dir=base_dir,
+        )
 
 
 if __name__ == "__main__":

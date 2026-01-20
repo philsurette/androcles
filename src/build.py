@@ -29,6 +29,7 @@ from play_plan_builder import PlayPlanBuilder
 from segment_verifier import SegmentVerifier
 from whisper_model_store import WhisperModelStore
 from role_audio_verifier import RoleAudioVerifier
+from role_whisper_transcriber import RoleWhisperTranscriber
 from unresolved_diffs import UnresolvedDiffs
 from extra_audio_diff import ExtraAudioDiff
 from match_audio_diff import MatchAudioDiff
@@ -36,6 +37,7 @@ from missing_audio_diff import MissingAudioDiff
 from audio_verifier_summary_renderer import AudioVerifierSummaryRenderer
 from audio_verifier_workbook_writer import AudioVerifierWorkbookWriter
 from vad_config import VadConfig
+from whisper_cache_cleaner import WhisperCacheCleaner
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -259,6 +261,26 @@ def verify_audio(
         "--vad-speech-pad-ms",
         help="Padding added to each side of speech chunks (default: 400)",
     ),
+    no_speech_threshold: float | None = typer.Option(
+        None,
+        "--no-speech-threshold",
+        help="Drop segments with speech probability below this (default: model)",
+    ),
+    log_prob_threshold: float | None = typer.Option(
+        None,
+        "--log-prob-threshold",
+        help="Drop segments with average log prob below this (default: model)",
+    ),
+    condition_on_previous_text: bool = typer.Option(
+        True,
+        "--condition-on-previous-text/--no-condition-on-previous-text",
+        help="Condition on previous text during decoding",
+    ),
+    initial_prompt: str | None = typer.Option(
+        None,
+        "--initial-prompt",
+        help="Initial prompt to bias Whisper transcription",
+    ),
     homophone_max_words: int = typer.Option(
         2,
         "--homophone-max-words",
@@ -320,6 +342,10 @@ def verify_audio(
             whisper_store=store,
             vad_filter=vad_filter,
             vad_config=vad_config,
+            no_speech_threshold=no_speech_threshold,
+            log_prob_threshold=log_prob_threshold,
+            condition_on_previous_text=condition_on_previous_text,
+            initial_prompt=initial_prompt,
             homophone_max_words=homophone_max_words,
             remove_fillers=remove_fillers,
         )
@@ -366,7 +392,6 @@ def verify_audio(
             logging.info("\n%s", renderer.render(results))
         unresolved_path = cfg.build_dir / f"{role_name}_unresolved_diffs.yaml"
         unresolved.write(unresolved_path)
-        logging.info("Wrote unresolved diffs to %s", unresolved_path)
     if role is None:
         combined_path = cfg.audio_out_dir / "audio-verifier.xlsx"
         writer = AudioVerifierWorkbookWriter()
@@ -378,6 +403,123 @@ def verify_audio(
             combined_path,
             combined_elapsed,
         )
+
+
+@app.command("whisper")
+def whisper(
+    role: str = typer.Option(..., "--role", "-r", help="Role to transcribe"),
+    model: str = typer.Option("med", "--model", "-m", help="Whisper model: tiny, base, small, med"),
+    vad_filter: bool = typer.Option(True, "--vad-filter/--no-vad-filter", help="Enable Silero VAD filtering"),
+    clip_from_ms: int = typer.Option(
+        0,
+        "--clip-from-ms",
+        help="Start offset in ms for clipping (default: 0)",
+    ),
+    clip_length_ms: int | None = typer.Option(
+        None,
+        "--clip-length-ms",
+        help="Clip duration in ms (default: full length)",
+    ),
+    vad_threshold: float | None = typer.Option(
+        None,
+        "--vad-threshold",
+        help="Speech probability threshold (default: 0.5)",
+    ),
+    vad_neg_threshold: float | None = typer.Option(
+        None,
+        "--vad-neg-threshold",
+        help="End-of-speech threshold (default: max(vad-threshold - 0.15, 0.01))",
+    ),
+    vad_min_speech_duration_ms: int | None = typer.Option(
+        None,
+        "--vad-min-speech-duration-ms",
+        help="Drop speech chunks shorter than this duration (default: 0)",
+    ),
+    vad_max_speech_duration_s: float | None = typer.Option(
+        None,
+        "--vad-max-speech-duration-s",
+        help="Split speech chunks longer than this duration (default: model chunk length)",
+    ),
+    vad_min_silence_duration_ms: int | None = typer.Option(
+        None,
+        "--vad-min-silence-duration-ms",
+        help="Required silence before splitting chunks (default: 160)",
+    ),
+    vad_speech_pad_ms: int | None = typer.Option(
+        None,
+        "--vad-speech-pad-ms",
+        help="Padding added to each side of speech chunks (default: 400)",
+    ),
+    no_speech_threshold: float | None = typer.Option(
+        None,
+        "--no-speech-threshold",
+        help="Drop segments with speech probability below this (default: model)",
+    ),
+    log_prob_threshold: float | None = typer.Option(
+        None,
+        "--log-prob-threshold",
+        help="Drop segments with average log prob below this (default: model)",
+    ),
+    condition_on_previous_text: bool = typer.Option(
+        True,
+        "--condition-on-previous-text/--no-condition-on-previous-text",
+        help="Condition on previous text during decoding",
+    ),
+    initial_prompt: str | None = typer.Option(
+        None,
+        "--initial-prompt",
+        help="Initial prompt to bias Whisper transcription",
+    ),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    model_key = model.lower().strip()
+    if model_key not in MODEL_CHOICES:
+        raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
+    model_name = MODEL_NAME_MAP[model_key]
+    vad_config = VadConfig.from_overrides(
+        threshold=vad_threshold,
+        neg_threshold=vad_neg_threshold,
+        min_speech_duration_ms=vad_min_speech_duration_ms,
+        max_speech_duration_s=vad_max_speech_duration_s,
+        min_silence_duration_ms=vad_min_silence_duration_ms,
+        speech_pad_ms=vad_speech_pad_ms,
+    )
+    transcriber = RoleWhisperTranscriber(
+        role=role,
+        paths=cfg,
+        model_name=model_name,
+        vad_filter=vad_filter,
+        vad_config=vad_config,
+        no_speech_threshold=no_speech_threshold,
+        log_prob_threshold=log_prob_threshold,
+        condition_on_previous_text=condition_on_previous_text,
+        initial_prompt=initial_prompt,
+        clip_from_ms=clip_from_ms,
+        clip_length_ms=clip_length_ms,
+    )
+    try:
+        transcriber.transcribe()
+    except LocalEntryNotFoundError as exc:
+        raise typer.BadParameter(
+            f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
+        ) from exc
+
+
+@app.command("clear-whisper-cache")
+def clear_whisper_cache(
+    role: str | None = typer.Option(None, "--role", "-r", help="Role to clear (omit for all roles)"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    cleaner = WhisperCacheCleaner(paths=cfg)
+    removed = cleaner.clear(role)
+    if role:
+        logging.info("Cleared %d cached transcription(s) for %s", removed, role)
+    else:
+        logging.info("Cleared %d cached transcription(s)", removed)
 
 
 @app.command("whisper-init")
