@@ -643,6 +643,8 @@ class RoleAudioVerifier:
         extra_entries = self._build_extra_audio_entries(
             audio_words,
             alignment,
+            word_to_segment,
+            expected_segments,
             reassigned_audio_indices,
         )
         avg_similarity = (
@@ -674,8 +676,15 @@ class RoleAudioVerifier:
         self,
         audio_words: list[dict],
         alignment: list[dict],
+        word_to_segment: list[int],
+        expected_segments: list[dict],
         excluded_indices: set[int] | None = None,
     ) -> list[dict]:
+        prev_segment_ids = self._extra_audio_predecessors(
+            alignment,
+            word_to_segment,
+            expected_segments,
+        )
         extra_indices = [
             step["audio_index"]
             for step in alignment
@@ -690,22 +699,37 @@ class RoleAudioVerifier:
             if not current or idx == current[-1] + 1:
                 current.append(idx)
                 continue
-            entry = self._extra_entry_for_indices(audio_words, current)
+            entry = self._extra_entry_for_indices(
+                audio_words,
+                current,
+                prev_segment_ids.get(current[0]),
+            )
             if entry is not None:
                 extra_entries.append(entry)
             current = [idx]
         if current:
-            entry = self._extra_entry_for_indices(audio_words, current)
+            entry = self._extra_entry_for_indices(
+                audio_words,
+                current,
+                prev_segment_ids.get(current[0]),
+            )
             if entry is not None:
                 extra_entries.append(entry)
         return extra_entries
 
-    def _extra_entry_for_indices(self, audio_words: list[dict], indices: list[int]) -> dict | None:
+    def _extra_entry_for_indices(
+        self,
+        audio_words: list[dict],
+        indices: list[int],
+        preceding_segment_id: str | None,
+    ) -> dict | None:
         start = audio_words[indices[0]]["start"]
         end = audio_words[indices[-1]]["end"]
         recognized_text = " ".join(audio_words[i]["word"] for i in indices)
         if self._equivalencies.is_ignorable_extra(recognized_text):
             return None
+        first_word = audio_words[indices[0]].get("norm") or audio_words[indices[0]].get("word") or ""
+        extra_id = self._extra_audio_id(preceding_segment_id, first_word)
         return {
             "segment_index": None,
             "segment_id": None,
@@ -715,8 +739,36 @@ class RoleAudioVerifier:
             "similarity_score": 0.0,
             "status": "extra",
             "recognized_text": recognized_text,
+            "extra_id": extra_id,
             "matched_word_count": len(indices),
         }
+
+    def _extra_audio_predecessors(
+        self,
+        alignment: list[dict],
+        word_to_segment: list[int],
+        expected_segments: list[dict],
+    ) -> dict[int, str | None]:
+        prev_segment_ids: dict[int, str | None] = {}
+        last_segment_id: str | None = None
+        for step in alignment:
+            script_index = step.get("script_index")
+            if script_index is not None:
+                segment_index = word_to_segment[script_index]
+                if 0 <= segment_index < len(expected_segments):
+                    last_segment_id = expected_segments[segment_index].get("segment_id")
+            if step.get("op") == "skip_audio":
+                audio_index = step.get("audio_index")
+                if audio_index is not None:
+                    prev_segment_ids[audio_index] = last_segment_id
+        return prev_segment_ids
+
+    def _extra_audio_id(self, preceding_segment_id: str | None, first_word: str) -> str:
+        prefix = preceding_segment_id or "START"
+        word = first_word.strip()
+        if not word:
+            word = "audio"
+        return f">{prefix}@{word}"
 
     def _normalize_text_to_words(self, text: str) -> list[str]:
         normalized = self._normalize_text(text)

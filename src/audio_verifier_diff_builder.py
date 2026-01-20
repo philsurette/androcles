@@ -108,12 +108,14 @@ class AudioVerifierDiffBuilder:
         extra_audio = results.get("extra_audio", [])
         for entry in extra_audio:
             heard = entry.get("recognized_text", "")
+            extra_id = entry.get("extra_id") or ""
             offset_ms = self._to_ms(entry.get("matched_audio_start"))
             length_ms = self._length_ms(
                 entry.get("matched_audio_start"),
                 entry.get("matched_audio_end"),
             )
             diff = ExtraAudioDiff(
+                extra_id=extra_id,
                 heard=heard,
                 offset_ms=offset_ms,
                 length_ms=length_ms,

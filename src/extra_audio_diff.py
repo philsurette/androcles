@@ -9,6 +9,7 @@ from audio_verifier_diff import AudioVerifierDiff
 
 @dataclass
 class ExtraAudioDiff(AudioVerifierDiff):
+    extra_id: str
     heard: str
 
     def error_symbol(self) -> str:
@@ -17,7 +18,7 @@ class ExtraAudioDiff(AudioVerifierDiff):
     def to_row(self) -> dict[str, object]:
         return {
             "status": self.error_symbol(),
-            "id": "",
+            "id": self.extra_id,
             "offset": self.offset_ms or "",
             "len": self.length_ms or "",
             "dc": "",

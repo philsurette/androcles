@@ -20,7 +20,7 @@ def test_problems_builder_rows() -> None:
             MatchAudioDiff(0, 100, "1_1", "exp", "heard", "[heard/exp]", 1),
             MatchAudioDiff(0, 100, "1_2", "exp", "exp", "exp", 0),
             MissingAudioDiff(None, None, "1_3", "missing"),
-            ExtraAudioDiff(None, None, "extra words"),
+            ExtraAudioDiff(None, None, ">1_3@extra", "extra words"),
         ],
         "ROLE2": [
             MatchAudioDiff(0, 100, "2_1", "exp", "exp", "exp", 0),
@@ -56,7 +56,7 @@ def test_problems_builder_rows() -> None:
         {
             "ROLE": "ROLE1",
             "type": "+",
-            "id": "",
+            "id": ">1_3@extra",
             "offset": "",
             "len": "",
             "dc": "",
@@ -72,7 +72,7 @@ def test_problems_builder_filters_vetted_ids() -> None:
         "ROLE1": [
             MatchAudioDiff(0, 100, "1_1", "exp", "heard", "[heard/exp]", 1),
             MissingAudioDiff(None, None, "1_3", "missing"),
-            ExtraAudioDiff(None, None, "extra words"),
+            ExtraAudioDiff(None, None, ">1_3@extra", "extra words"),
         ],
     }
     vetted_ids = {"ROLE1": {"1_1", "1_3"}}
@@ -89,7 +89,7 @@ def test_problems_builder_filters_vetted_ids() -> None:
         {
             "ROLE": "ROLE1",
             "type": "+",
-            "id": "",
+            "id": ">1_3@extra",
             "offset": "",
             "len": "",
             "dc": "",
