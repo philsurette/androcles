@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Play a role recording from a time offset relative to a given position."""
+"""Play a role recording from an offset until the next silence."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -8,25 +8,52 @@ from pathlib import Path
 import subprocess
 import sys
 
+import typer
+
 ROOT = Path(__file__).resolve().parent
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
 from play_config import PlayConfig
+from pydub import AudioSegment
+from pydub.silence import detect_silence
+
 
 @dataclass
 class AudioCheck:
-    role: str
-    offset_ms: int
-    adjust_seconds: float
     base_dir: Path
+    min_silence_ms: int = 1500
+    silence_delta_db: float = 16.0
 
-    def run(self) -> int:
-        if self.offset_ms < 0:
+    def command(
+        self,
+        role: str = typer.Argument(..., metavar="ROLE"),
+        offset_ms: int = typer.Argument(..., metavar="OFFSET-MS"),
+        continue_play: bool = typer.Option(
+            False,
+            "--continue",
+            help="Keep playing past the detected silence",
+        ),
+        offset_mod: float = typer.Option(
+            0.0,
+            "--offset-mod",
+            help="Seconds to adjust the start time (negative for earlier)",
+        ),
+    ) -> None:
+        raise SystemExit(self.run(role, offset_ms, continue_play, offset_mod))
+
+    def run(
+        self,
+        role: str,
+        offset_ms: int,
+        continue_play: bool,
+        offset_mod: float,
+    ) -> int:
+        if offset_ms < 0:
             raise RuntimeError("Offset must be a non-negative integer (ms)")
-        adjust_ms = int(round(self.adjust_seconds * 1000))
-        start_ms = max(0, self.offset_ms + adjust_ms)
+        offset_mod_ms = int(round(offset_mod * 1000))
+        start_ms = max(0, offset_ms + offset_mod_ms)
         start_seconds = start_ms / 1000.0
         config = PlayConfig.load(self.base_dir)
         audio_path = (
@@ -34,51 +61,62 @@ class AudioCheck:
             / "plays"
             / config.play_id
             / "recordings"
-            / f"{self.role}.wav"
+            / f"{role}.wav"
         )
         if not audio_path.exists():
             raise RuntimeError(f"Recording not found: {audio_path}")
+        audio = AudioSegment.from_file(audio_path)
+        if start_ms >= len(audio):
+            raise RuntimeError("Offset is beyond the end of the recording")
+        stop_ms = None
+        if not continue_play:
+            silence_start = self._find_next_silence_start(audio, start_ms)
+            stop_ms = min(len(audio), silence_start + 1000)
         logging.info(
-            "Starting ffplay for %s at %dms (offset %dms, adjust %.3fs)",
+            "Starting ffplay for %s at %dms%s",
             audio_path,
             start_ms,
-            self.offset_ms,
-            self.adjust_seconds,
+            "" if stop_ms is None else f" (stops at {stop_ms}ms)",
         )
-        return subprocess.call(
-            [
-                "ffplay",
-                "-nodisp",
-                "-autoexit",
-                "-loglevel",
-                "error",
-                "-ss",
-                f"{start_seconds:.3f}",
-                "-i",
-                str(audio_path),
-            ]
-        )
+        command = [
+            "ffplay",
+            "-nodisp",
+            "-loglevel",
+            "error",
+            "-ss",
+            f"{start_seconds:.3f}",
+        ]
+        if stop_ms is not None:
+            duration_ms = max(0, stop_ms - start_ms)
+            duration_seconds = duration_ms / 1000.0
+            command.extend(["-t", f"{duration_seconds:.3f}", "-autoexit"])
+        command.extend(["-i", str(audio_path)])
+        return subprocess.call(command)
 
-    @classmethod
-    def from_argv(cls, argv: list[str]) -> "AudioCheck":
-        if len(argv) not in (2, 3):
-            raise RuntimeError("Usage: audiocheck ROLE OFFSET_MS [ADJUST_SECONDS]")
-        role = argv[0]
-        offset_ms = int(argv[1])
-        adjust_seconds = float(argv[2]) if len(argv) == 3 else -1.0
-        base_dir = ROOT
-        return cls(
-            role=role,
-            offset_ms=offset_ms,
-            adjust_seconds=adjust_seconds,
-            base_dir=base_dir,
+    def _find_next_silence_start(self, audio: AudioSegment, start_ms: int) -> int:
+        silence_thresh = self._silence_threshold(audio)
+        segment = audio[start_ms:]
+        silences = detect_silence(
+            segment,
+            min_silence_len=self.min_silence_ms,
+            silence_thresh=silence_thresh,
         )
+        if silences:
+            return start_ms + silences[0][0]
+        return len(audio)
+
+    def _silence_threshold(self, audio: AudioSegment) -> float:
+        if audio.dBFS == float("-inf"):
+            return -60.0
+        return audio.dBFS - self.silence_delta_db
 
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO, format="%(message)s")
+    app = typer.Typer(add_completion=False)
+    checker = AudioCheck(base_dir=ROOT)
+    app.command()(checker.command)
     try:
-        checker = AudioCheck.from_argv(sys.argv[1:])
-        raise SystemExit(checker.run())
+        app()
     except KeyboardInterrupt:
         raise SystemExit(130)
