@@ -22,7 +22,8 @@ class Equivalencies:
         if not path.exists():
             return cls()
         yml = yaml.YAML(typ="safe", pure=True)
-        raw = yml.load(path.read_text(encoding="utf-8")) or {}
+        text = path.read_text(encoding="utf-8")
+        raw = yml.load(text) or {}
         if not isinstance(raw, dict):
             raise RuntimeError(f"Invalid equivalencies format in {path}")
         inst = cls()
@@ -37,7 +38,7 @@ class Equivalencies:
             if not isinstance(equivalencies, dict):
                 raise RuntimeError(f"Invalid equivalencies format in {path}")
             inst._load_ignorables(raw.get("ignorables"), path)
-            inst._load_vetted(raw.get("vetted"), path)
+            inst._load_vetted(raw.get("vetted"), path, text)
         for key, value in equivalencies.items():
             if not isinstance(key, str):
                 raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
@@ -145,7 +146,7 @@ class Equivalencies:
             if normalized:
                 self.ignorable_extras.add(normalized)
 
-    def _load_vetted(self, raw: object, path: Path) -> None:
+    def _load_vetted(self, raw: object, path: Path, text: str | None = None) -> None:
         if raw is None:
             return
         values: list[str]
@@ -154,10 +155,72 @@ class Equivalencies:
         elif isinstance(raw, (list, tuple, set)):
             values = [item for item in raw if isinstance(item, str)]
             if len(values) != len(raw):
-                raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
+                if text is None:
+                    raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
+                parsed = self._parse_vetted_tokens(text)
+                if parsed:
+                    values = parsed
+                else:
+                    values = [str(item) for item in raw]
         else:
             raise RuntimeError(f"Invalid vetted ids in {path}: {raw!r}")
         for value in values:
             cleaned = value.strip()
             if cleaned:
                 self.vetted_ids.add(cleaned)
+
+    def _parse_vetted_tokens(self, text: str) -> list[str]:
+        lines = text.splitlines()
+        for idx, line in enumerate(lines):
+            stripped = line.lstrip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if not stripped.startswith("vetted:"):
+                continue
+            indent = len(line) - len(stripped)
+            remainder = stripped[len("vetted:") :].strip()
+            if remainder:
+                if remainder.startswith("[") and remainder.endswith("]"):
+                    inner = remainder[1:-1]
+                    return self._split_vetted_flow(inner)
+                return [self._strip_yaml_scalar(remainder)]
+            tokens: list[str] = []
+            for next_line in lines[idx + 1 :]:
+                next_stripped = next_line.lstrip()
+                if not next_stripped or next_stripped.startswith("#"):
+                    continue
+                next_indent = len(next_line) - len(next_stripped)
+                if next_indent <= indent and ":" in next_stripped.split("#", 1)[0]:
+                    break
+                if not next_stripped.startswith("-"):
+                    if next_indent <= indent:
+                        break
+                    continue
+                item = next_stripped[1:].strip()
+                if not item:
+                    continue
+                item = item.split("#", 1)[0].strip()
+                if not item:
+                    continue
+                tokens.append(self._strip_yaml_scalar(item))
+            return tokens
+        return []
+
+    def _split_vetted_flow(self, inner: str) -> list[str]:
+        tokens: list[str] = []
+        for part in inner.split(","):
+            item = part.strip()
+            if not item:
+                continue
+            item = item.split("#", 1)[0].strip()
+            if not item:
+                continue
+            tokens.append(self._strip_yaml_scalar(item))
+        return tokens
+
+    def _strip_yaml_scalar(self, value: str) -> str:
+        if (value.startswith("'") and value.endswith("'")) or (
+            value.startswith('"') and value.endswith('"')
+        ):
+            return value[1:-1].strip()
+        return value.strip()

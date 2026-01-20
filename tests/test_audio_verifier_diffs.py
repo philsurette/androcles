@@ -293,6 +293,17 @@ def test_equivalencies_loads_vetted_ids(tmp_path) -> None:
     assert equiv.vetted_ids == {"1_2", "2_3_4"}
 
 
+def test_equivalencies_preserves_vetted_underscores(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "vetted:\n  - 0_45_2\n  - 2_86_1\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.vetted_ids == {"0_45_2", "2_86_1"}
+
+
 def test_equivalencies_match_within_phrase(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
     path.write_text("equivalencies:\n  Ferrovius: [ferocious]\n", encoding="utf-8")
