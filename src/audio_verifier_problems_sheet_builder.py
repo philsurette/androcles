@@ -18,7 +18,7 @@ class AudioVerifierProblemsSheetBuilder:
 
     def __post_init__(self) -> None:
         if not self.headers:
-            self.headers = ["ROLE", "type", "id", "offset", "len", "dc", "diff", "heard", "expected"]
+            self.headers = ["ROLE", "type", "id", "offset", "len", "dc", "diff"]
 
     def build_rows(
         self,
@@ -54,8 +54,6 @@ class AudioVerifierProblemsSheetBuilder:
                         "len": row.get("len", ""),
                         "dc": row.get("dc", ""),
                         "diff": self._diff_text(diff, row),
-                        "heard": row.get("heard", ""),
-                        "expected": row.get("expected", ""),
                     }
                 )
         return rows
@@ -93,6 +91,13 @@ class AudioVerifierProblemsSheetBuilder:
             problem_diff = diff.problem_diff.strip()
             if problem_diff:
                 return problem_diff
+            return str(row.get("diff", ""))
+        if isinstance(diff, MissingAudioDiff):
+            expected = str(row.get("expected", "")).strip()
+            return f"-{expected}" if expected else ""
+        if isinstance(diff, ExtraAudioDiff):
+            heard = str(row.get("heard", "")).strip()
+            return f"+{heard}" if heard else ""
         return str(row.get("diff", ""))
 
     def _format_columns(self, ws) -> None:
@@ -103,9 +108,7 @@ class AudioVerifierProblemsSheetBuilder:
             "offset": 10,
             "len": 8,
             "dc": 5,
-            "diff": 36,
-            "heard": 36,
-            "expected": 36,
+            "diff": 72,
         }
         for idx, header in enumerate(self.headers, start=1):
             col_letter = get_column_letter(idx)
@@ -121,7 +124,7 @@ class AudioVerifierProblemsSheetBuilder:
                     if cell.row == 1:
                         continue
                     cell.alignment = cell.alignment.copy(horizontal="center")
-            if header in {"diff", "heard", "expected"}:
+            if header == "diff":
                 for cell in ws[col_letter]:
                     if cell.row == 1:
                         continue

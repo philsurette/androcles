@@ -766,7 +766,7 @@ class RoleAudioVerifier:
         word = first_word.strip()
         if not word:
             word = "audio"
-        return f">{prefix}@{word}"
+        return f"{prefix}@{word}"
 
     def _normalize_text_to_words(self, text: str) -> list[str]:
         normalized = self._normalize_text(text)

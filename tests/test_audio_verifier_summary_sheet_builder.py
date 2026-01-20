@@ -20,7 +20,7 @@ def test_summary_builder_counts() -> None:
             MatchAudioDiff(0, 100, "1_1", "a", "a", "a", 0),
             MatchAudioDiff(0, 100, "1_2", "a", "b", "[b/a]", 1),
             MissingAudioDiff(None, None, "1_3", "missing"),
-            ExtraAudioDiff(None, None, ">1_3@extra", "extra"),
+            ExtraAudioDiff(None, None, "1_3@extra", "extra"),
         ],
         "ROLE2": [
             MatchAudioDiff(0, 100, "2_1", "x", "x", "x", 0),
@@ -63,10 +63,10 @@ def test_summary_builder_vetted_counts() -> None:
         "ROLE1": [
             MatchAudioDiff(0, 100, "1_1", "a", "b", "[b/a]", 1),
             MissingAudioDiff(None, None, "1_3", "missing"),
-            ExtraAudioDiff(None, None, ">1_3@extra", "extra"),
+            ExtraAudioDiff(None, None, "1_3@extra", "extra"),
         ],
     }
-    vetted = {"ROLE1": {"1_1", ">1_3@extra"}}
+    vetted = {"ROLE1": {"1_1", "1_3@extra"}}
     builder = AudioVerifierSummarySheetBuilder()
 
     rows = builder.build_rows(diffs_by_role, vetted_ids_by_role=vetted)
