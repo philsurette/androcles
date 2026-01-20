@@ -122,3 +122,28 @@ def test_problems_builder_filters_vetted_ids() -> None:
             "expected": "missing",
         },
     ]
+
+
+def test_problems_builder_uses_problem_diff() -> None:
+    diffs_by_role = {
+        "ROLE1": [
+            MatchAudioDiff(0, 100, "1_1", "exp", "heard", "[heard/exp]", 1, problem_diff="ctx"),
+        ],
+    }
+    builder = AudioVerifierProblemsSheetBuilder()
+
+    rows = builder.build_rows(diffs_by_role)
+
+    assert rows == [
+        {
+            "ROLE": "ROLE1",
+            "type": "/",
+            "id": "1_1",
+            "offset": "",
+            "len": 100,
+            "dc": 1,
+            "diff": "ctx",
+            "heard": "heard",
+            "expected": "exp",
+        },
+    ]

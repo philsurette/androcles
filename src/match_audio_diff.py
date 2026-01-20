@@ -14,6 +14,7 @@ class MatchAudioDiff(AudioVerifierDiff):
     heard: str
     diff: str
     match_quality: int
+    problem_diff: str = ""
 
     def error_symbol(self) -> str:
         if self.match_quality == 0:

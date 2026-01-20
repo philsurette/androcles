@@ -47,6 +47,7 @@ class InlineTextDiffer:
             segments,
             diff_regions,
             context.expected_word_indices,
+            max_gap=1,
         )
         return InlineTextDiff(
             expected=expected,
@@ -82,6 +83,22 @@ class InlineTextDiffer:
                 continue
             raise RuntimeError(f"Unexpected diff event: {event.op}")
         return count
+
+    def windowed_diffs(
+        self,
+        expected: str,
+        actual: str,
+        segment_id: str | None = None,
+        max_gap: int = 1,
+    ) -> list[str]:
+        context = self._build_context(expected, actual, segment_id)
+        segments, diff_regions = self._build_segments(context)
+        return self._build_windowed_diffs(
+            segments,
+            diff_regions,
+            context.expected_word_indices,
+            max_gap=max_gap,
+        )
 
     def replacement_pairs(
         self,
@@ -429,12 +446,13 @@ class InlineTextDiffer:
         segments: list[dict],
         diff_regions: list[tuple[int, int]],
         expected_word_indices: list[int | None],
+        max_gap: int = 1,
     ) -> list[str]:
         word_count = self._word_count(expected_word_indices)
         if word_count == 0:
             return []
         windows = self._expand_windows(diff_regions, word_count)
-        merged = self._merge_windows(windows)
+        merged = self._merge_windows(windows, max_gap=max_gap)
         windowed_diffs: list[str] = []
         for window_start, window_end in merged:
             token_start, token_end = self._token_range_for_window(
@@ -464,14 +482,14 @@ class InlineTextDiffer:
             windows.append((window_start, window_end))
         return windows
 
-    def _merge_windows(self, windows: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    def _merge_windows(self, windows: list[tuple[int, int]], max_gap: int = 1) -> list[tuple[int, int]]:
         if not windows:
             return []
         windows.sort()
         merged = [windows[0]]
         for start, end in windows[1:]:
             prev_start, prev_end = merged[-1]
-            if start <= prev_end + 1:
+            if start <= prev_end + max_gap:
                 merged[-1] = (prev_start, max(prev_end, end))
             else:
                 merged.append((start, end))

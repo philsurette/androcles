@@ -53,7 +53,7 @@ class AudioVerifierProblemsSheetBuilder:
                         "offset": row.get("offset", ""),
                         "len": row.get("len", ""),
                         "dc": row.get("dc", ""),
-                        "diff": row.get("diff", ""),
+                        "diff": self._diff_text(diff, row),
                         "heard": row.get("heard", ""),
                         "expected": row.get("expected", ""),
                     }
@@ -87,6 +87,13 @@ class AudioVerifierProblemsSheetBuilder:
         if isinstance(diff, MatchAudioDiff) and diff.match_quality > 0:
             return "/"
         return None
+
+    def _diff_text(self, diff: AudioVerifierDiff, row: dict[str, object]) -> str:
+        if isinstance(diff, MatchAudioDiff):
+            problem_diff = diff.problem_diff.strip()
+            if problem_diff:
+                return problem_diff
+        return str(row.get("diff", ""))
 
     def _format_columns(self, ws) -> None:
         widths = {

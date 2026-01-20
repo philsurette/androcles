@@ -21,7 +21,11 @@ class AudioVerifierDiffBuilder:
     name_tokens: set[str] = field(default_factory=set)
     equivalencies: Equivalencies | None = None
     homophone_max_words: int = 2
+    problems_window_before: int = 2
+    problems_window_after: int = 2
+    problems_gap_words: int = 4
     differ: InlineTextDiffer = field(init=False)
+    problems_differ: InlineTextDiffer = field(init=False)
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -29,6 +33,13 @@ class AudioVerifierDiffBuilder:
         self.differ = InlineTextDiffer(
             window_before=self.window_before,
             window_after=self.window_after,
+            name_tokens=self.name_tokens,
+            equivalencies=self.equivalencies,
+            homophone_max_words=self.homophone_max_words,
+        )
+        self.problems_differ = InlineTextDiffer(
+            window_before=self.problems_window_before,
+            window_after=self.problems_window_after,
             name_tokens=self.name_tokens,
             equivalencies=self.equivalencies,
             homophone_max_words=self.homophone_max_words,
@@ -85,12 +96,23 @@ class AudioVerifierDiffBuilder:
                     heard,
                     segment_id=segment_id,
                 )
+                problem_diff = ""
+                if match_quality > 0:
+                    windows = self.problems_differ.windowed_diffs(
+                        expected,
+                        heard,
+                        segment_id=segment_id,
+                        max_gap=self.problems_gap_words,
+                    )
+                    if windows:
+                        problem_diff = " ... ".join(windows)
                 diff = MatchAudioDiff(
                     segment_id=segment_id,
                     expected=expected,
                     heard=heard,
                     diff=inline_diff,
                     match_quality=match_quality,
+                    problem_diff=problem_diff,
                     offset_ms=offset_ms,
                     length_ms=length_ms,
                 )
