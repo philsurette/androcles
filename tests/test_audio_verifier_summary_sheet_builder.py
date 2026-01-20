@@ -37,6 +37,7 @@ def test_summary_builder_counts() -> None:
             "delete": 1,
             "extra": 1,
             "inline_diffs": 1,
+            "vetted": 0,
         },
         {
             "role": "ROLE2",
@@ -44,5 +45,47 @@ def test_summary_builder_counts() -> None:
             "delete": 0,
             "extra": 0,
             "inline_diffs": 0,
+            "vetted": 0,
+        },
+        {
+            "role": "TOTAL",
+            "match": 3,
+            "delete": 1,
+            "extra": 1,
+            "inline_diffs": 1,
+            "vetted": 0,
+        },
+    ]
+
+
+def test_summary_builder_vetted_counts() -> None:
+    diffs_by_role = {
+        "ROLE1": [
+            MatchAudioDiff(0, 100, "1_1", "a", "b", "[b/a]", 1),
+            MissingAudioDiff(None, None, "1_3", "missing"),
+            ExtraAudioDiff(None, None, ">1_3@extra", "extra"),
+        ],
+    }
+    vetted = {"ROLE1": {"1_1", ">1_3@extra"}}
+    builder = AudioVerifierSummarySheetBuilder()
+
+    rows = builder.build_rows(diffs_by_role, vetted_ids_by_role=vetted)
+
+    assert rows == [
+        {
+            "role": "ROLE1",
+            "match": 1,
+            "delete": 1,
+            "extra": 0,
+            "inline_diffs": 0,
+            "vetted": 2,
+        },
+        {
+            "role": "TOTAL",
+            "match": 1,
+            "delete": 1,
+            "extra": 0,
+            "inline_diffs": 0,
+            "vetted": 2,
         },
     ]

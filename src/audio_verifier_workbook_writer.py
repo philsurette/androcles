@@ -33,7 +33,12 @@ class AudioVerifierWorkbookWriter:
         wb = Workbook()
         summary_ws = wb.active
         summary_ws.title = "Summary"
-        self.summary_builder.write_sheet(summary_ws, diffs_by_role, role_order=role_order)
+        self.summary_builder.write_sheet(
+            summary_ws,
+            diffs_by_role,
+            role_order=role_order,
+            vetted_ids_by_role=vetted_ids_by_role,
+        )
 
         vetted_lookup = vetted_ids_by_role or {}
         problems_ws = wb.create_sheet("Problems")
