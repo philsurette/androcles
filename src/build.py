@@ -151,6 +151,7 @@ def segments(
     force: bool = typer.Option(False, "--force/--no-force", help="Force re-splitting even if outputs are newer"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Split role recordings into segments using silence detection."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     if role:
@@ -177,6 +178,7 @@ def verify(
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Verify split segments against expected durations."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     _run_verify(too_short, too_long, paths_config=cfg)
@@ -193,6 +195,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
 
 @app.command()
 def check_recording(play: str | None = PLAY_OPTION) -> None:
+    """Check recordings against timings.csv to find missing segments."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_check_recording(paths_config=cfg)
@@ -212,6 +215,7 @@ def generate_timings(
         help="Include callouts and announcer clips in timings output",
     ),
     ) -> None:
+    """Generate timings spreadsheets for the current play."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_generate_timings(
@@ -296,6 +300,7 @@ def verify_audio(
     summary_format: str = typer.Option("text", "--summary-format", help="Summary format: text or yaml"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Transcribe and compare role audio to script text, outputting diffs."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     summary_key = summary_format.lower().strip()
@@ -480,6 +485,7 @@ def whisper(
     ),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Run a raw Whisper transcription for a role recording."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     model_key = model.lower().strip()
@@ -520,6 +526,7 @@ def clear_whisper_cache(
     role: str | None = typer.Option(None, "--role", "-r", help="Role to clear (omit for all roles)"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Clear cached Whisper transcriptions for the current play."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     cleaner = WhisperCacheCleaner(paths=cfg)
@@ -532,8 +539,8 @@ def clear_whisper_cache(
 
 @app.command("audiocheck")
 def audiocheck(
-    role: str = typer.Argument(..., metavar="ROLE"),
-    offset_ms: int = typer.Argument(..., metavar="OFFSET-MS"),
+    role: str = typer.Argument(..., metavar="ROLE", help="Role name to play"),
+    offset_ms: int = typer.Argument(..., metavar="OFFSET-MS", help="Start offset in milliseconds"),
     continue_play: bool = typer.Option(
         False,
         "--continue",
@@ -546,6 +553,7 @@ def audiocheck(
     ),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Play a role recording from an offset until the next silence."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     checker = AudioCheck(base_dir=cfg.root.parent)
@@ -559,6 +567,7 @@ def whisper_init(
     compute_type: str = typer.Option("int8", help="Compute type for loading cached models"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Download and cache Whisper model weights for offline use."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     model_names = model if model else ["tiny.en"]
@@ -588,6 +597,7 @@ def audioplay(
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Assemble final audio play output for a part or full play."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_audioplay(
@@ -608,7 +618,15 @@ def audioplay(
 
 @app.command()
 def normalize(
-    src: Path = typer.Argument(..., exists=True, file_okay=True, dir_okay=False, readable=True, resolve_path=True),
+    src: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help="Audio file to normalize",
+    ),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """
@@ -629,6 +647,7 @@ def cues(
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
     play: str | None = PLAY_OPTION,
 ) -> None:
+    """Generate cue audio snippets for roles."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     run_cues(
