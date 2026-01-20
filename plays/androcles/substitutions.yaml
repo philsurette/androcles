@@ -19,6 +19,22 @@ equivalencies:
   yah: [yeah]
   you are: [you're]
   your@0_31_1: [you're]
-ignorables:
-  - Insert role
-  - Insert reader name
+ignored:
+  - ANDROCLES_reader
+  - ANDROCLES_reader@phil
+  - CENTURION_reader
+  - CENTURION_reader@phil
+  - EDITOR_reader
+  - EDITOR_reader@phil
+  - FERROVIUS_reader
+  - FERROVIUS_reader@phil
+  - GLADIATOR-1_reader
+  - LAVINIA_reader
+  - MEGAERA_reader
+  - METEULLUS_reader
+  - RETIARIUS_reader
+  - SLAVE-1_reader
+  - _ANNOUNCER_reader
+  - _ANNOUNCER_reader@phil
+  - _CALLER_reader
+  - _CALLER_reader@phil

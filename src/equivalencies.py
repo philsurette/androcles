@@ -29,11 +29,17 @@ class Equivalencies:
             raise RuntimeError(f"Invalid equivalencies format in {path}")
         inst = cls()
         equivalencies = raw
-        if "equivalencies" in raw or "ignorables" in raw or "vetted" in raw or "ignored" in raw:
+        if (
+            "equivalencies" in raw
+            or "ignorables" in raw
+            or "vetted" in raw
+            or "ignored" in raw
+            or "problems" in raw
+        ):
             unexpected = [
                 key
                 for key in raw
-                if key not in {"equivalencies", "ignorables", "vetted", "ignored"}
+                if key not in {"equivalencies", "ignorables", "vetted", "ignored", "problems"}
             ]
             if unexpected:
                 raise RuntimeError(f"Unexpected substitutions keys in {path}: {unexpected}")
@@ -185,8 +191,25 @@ class Equivalencies:
         if isinstance(raw, str):
             values = [raw]
         elif isinstance(raw, (list, tuple, set)):
-            values = [item for item in raw if isinstance(item, str)]
-            if len(values) != len(raw):
+            parsed_mapping = False
+            values = []
+            for item in raw:
+                if isinstance(item, str):
+                    values.append(item)
+                    continue
+                if isinstance(item, dict):
+                    parsed_mapping = True
+                    for entry_key in item.keys():
+                        if isinstance(entry_key, str):
+                            values.append(entry_key)
+                        else:
+                            raise RuntimeError(f"Invalid {key} id in {path}: {entry_key!r}")
+                    continue
+                if text is None:
+                    raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
+                values = []
+                break
+            if not values or (len(values) != len(raw) and not parsed_mapping):
                 if text is None:
                     raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
                 parsed = self._parse_status_tokens(text, key)

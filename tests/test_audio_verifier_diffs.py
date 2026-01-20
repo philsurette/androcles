@@ -341,6 +341,28 @@ def test_equivalencies_rejects_overlapping_statuses(tmp_path) -> None:
         raise AssertionError("Expected overlap error")
 
 
+def test_equivalencies_accepts_vetted_comments(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "vetted:\n  - 1_2: Halt!\n  - 2_3_4: Note\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.vetted_ids == {"1_2", "2_3_4"}
+
+
+def test_equivalencies_accepts_ignored_comments(tmp_path) -> None:
+    path = tmp_path / "substitutions.yaml"
+    path.write_text(
+        "ignored:\n  - 1_2: Halt!\n  - 2_3_4: Note\n",
+        encoding="utf-8",
+    )
+    equiv = Equivalencies.load(path)
+
+    assert equiv.ignored_ids == {"1_2", "2_3_4"}
+
+
 def test_equivalencies_match_within_phrase(tmp_path) -> None:
     path = tmp_path / "substitutions.yaml"
     path.write_text("equivalencies:\n  Ferrovius: [ferocious]\n", encoding="utf-8")
