@@ -98,9 +98,8 @@ def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
     cfg = paths.PathConfig(play_name)
     setup_logging(cfg)
     if ctx.invoked_subcommand is None:
-        run_segments(paths_config=cfg)
-        run_text(paths_config=cfg)
-        run_audioplay(paths_config=cfg)
+        typer.echo("use 'audioplay --prepare' to build the audioplay or '--help' to see a list of commands")
+        raise typer.Exit(code=1)
 
 @app.command()
 def text(play: str | None = PLAY_OPTION) -> None:
@@ -537,8 +536,8 @@ def clear_whisper_cache(
         logging.info("Cleared %d cached transcription(s)", removed)
 
 
-@app.command("audiocheck")
-def audiocheck(
+@app.command("play")
+def play_audio(
     role: str = typer.Argument(..., metavar="ROLE", help="Role name to play"),
     offset_ms: int = typer.Argument(..., metavar="OFFSET-MS", help="Start offset in milliseconds"),
     continue_play: bool = typer.Option(
