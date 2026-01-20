@@ -214,8 +214,6 @@ class RoleAudioVerifier:
 
         for segment in expected_segments:
             tokens = self._normalize_text_to_words(segment["expected_text"])
-            if not tokens:
-                continue
             segment_index = len(segments_out)
             word_start = len(script_words)
             for token in tokens:
@@ -256,7 +254,7 @@ class RoleAudioVerifier:
         for blk in role_obj.blocks:
             for seg in blk.segments:
                 text = getattr(seg, "text", "").strip()
-                if not text or text in {".", ",", ":", ";"}:
+                if not text:
                     continue
                 if isinstance(seg, SpeechSegment) and seg.role == self.role:
                     segments.append({"segment_id": str(seg.segment_id), "expected_text": text})
@@ -282,7 +280,7 @@ class RoleAudioVerifier:
                 continue
             for seg in relevant:
                 text = getattr(seg, "text", "").strip()
-                if not text or text in {".", ",", ":", ";"}:
+                if not text:
                     continue
                 segments.append({"segment_id": str(seg.segment_id), "expected_text": text})
         return segments
