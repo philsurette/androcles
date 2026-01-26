@@ -86,19 +86,17 @@ class SegmentSplitter(ABC):
         aup3_mtime = aup3.stat().st_mtime if aup3.exists() else None
         reference_mtime = max(src_mtime, aup3_mtime or src_mtime)
 
-        if aup3_mtime and outputs:
-            newest_out_ns = max(f.stat().st_mtime_ns for f in outputs)
-            aup3_ns = aup3.stat().st_mtime_ns
-            if newest_out_ns < aup3_ns:
-                def fmt(ts_ns: int) -> str:
-                    return datetime.fromtimestamp(ts_ns / 1e9, tz=timezone.utc).isoformat()
-                logging.warning(
-                    "⚠️  %s is newer than existing exports for %s (aup3 %s vs newest export %s); consider re-exporting",
-                    aup3.name,
-                    self.role,
-                    fmt(aup3_ns),
-                    fmt(newest_out_ns),
-                )
+        if aup3_mtime and src_mtime < aup3_mtime:
+            def fmt(ts: float) -> str:
+                return datetime.fromtimestamp(ts, tz=timezone.utc).isoformat()
+            logging.warning(
+                "⚠️  %s is newer than %s for %s (aup3 %s vs wav %s); consider re-exporting",
+                aup3.name,
+                src_path.name,
+                self.role,
+                fmt(aup3_mtime),
+                fmt(src_mtime),
+            )
 
         if not self.force and outputs:
             oldest_out = min(f.stat().st_mtime for f in outputs)

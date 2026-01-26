@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from audacityctl.exporter import Exporter, ExportContext
-from audacityctl.project import AudacityProject
+from audacity_ctl.audacity import Audacity
+from audacity_ctl.project import AudacityProject
 
 import paths
 
@@ -14,14 +15,15 @@ class AudacityRecordingExporter:
     """Export Audacity projects in a play's recordings folder to WAV files."""
 
     paths: paths.PathConfig = field(default_factory=paths.current)
-    export_extension: str = ".wav"
-    exporter: Exporter | None = None
+    export_extension: str = "wav"
+    audacity: Audacity | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
-        if self.exporter is None:
-            self.exporter = Exporter(export_extension=self.export_extension)
+        self.export_extension = self.export_extension.lstrip(".")
+        if self.audacity is None:
+            self.audacity = Audacity()
 
     def export_recordings(self) -> None:
         recordings_dir = self.paths.recordings_dir
@@ -29,39 +31,62 @@ class AudacityRecordingExporter:
             "Checking Audacity exports in %s",
             recordings_dir,
         )
-        context = ExportContext(
-            root_folder=str(recordings_dir),
-            export_extension=self.export_extension,
-            export_folder_name="",
-        )
-        self.exporter.identify_needed_exports(context)
+        exported: list[Path] = []
+        skipped: list[Path] = []
+        errors: list[tuple[Path, Exception]] = []
         try:
-            self._export_context(context)
+            aup3_paths = self._collect_projects(recordings_dir=recordings_dir)
+            if not aup3_paths:
+                self._logger.info("No Audacity projects found in %s", recordings_dir)
+                return
+            exportable_projects: list[AudacityProject] = []
+            for aup3_path in aup3_paths:
+                project = AudacityProject(
+                    path=aup3_path,
+                    export_extension=self.export_extension,
+                )
+                if project.export_is_up_to_date():
+                    skipped.append(aup3_path)
+                else:
+                    exportable_projects.append(project)
+            if not exportable_projects:
+                self._logger.info("All exports are up to date")
+                return
+            with self.audacity.open() as client:
+                for project in exportable_projects:
+                    try:
+                        with client.open_project(project=project):
+                            client.export_project()
+                        exported.append(project.path)
+                    except RuntimeError as exc:
+                        errors.append((project.path, exc))
+                        self._logger.error("Unable to export %s", project.path)
+                        raise
         finally:
-            context.log_summary()
+            self._log_summary(
+                exported=exported,
+                skipped=skipped,
+                errors=errors,
+            )
 
-    def _export_context(self, context: ExportContext) -> None:
-        if context.dry_run:
-            for aup3_path in context.get_exportable_paths():
-                context.add_exported(aup3_path)
+    def _collect_projects(self, recordings_dir: Path) -> list[Path]:
+        return sorted(
+            path
+            for path in recordings_dir.iterdir()
+            if path.is_file() and path.suffix.lower() == ".aup3"
+        )
+
+    def _log_summary(
+        self,
+        exported: list[Path],
+        skipped: list[Path],
+        errors: list[tuple[Path, Exception]],
+    ) -> None:
+        if not exported and not skipped and not errors:
             return
-        exportables = context.get_exportable_paths()
-        if not exportables:
-            self._logger.info("All exports are up to date")
-            return
-        with self.exporter.manager.open_client() as client:
-            for aup3_path in exportables:
-                try:
-                    with client.open_project(
-                        AudacityProject(
-                            path=aup3_path,
-                            export_folder_name=context.export_folder_name,
-                            export_extension=context.export_extension,
-                        )
-                    ):
-                        client.export_open_project()
-                    context.add_exported(aup3_path)
-                except RuntimeError as exc:
-                    context.add_error(aup3_path, exc)
-                    self._logger.error("Unable to export %s", aup3_path)
-                    raise
+        self._logger.info(
+            "Audacity export summary: %s exported, %s skipped, %s errors",
+            len(exported),
+            len(skipped),
+            len(errors),
+        )

@@ -194,7 +194,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
     cfg = paths_config or paths.current()
     play = PlayTextParser(paths_config=cfg).parse()
     builder = PlayPlanBuilder(play=play, paths=cfg)
-    plan = builder.build_audio_plan(parts=builder.list_parts())
+    plan = builder.build_audio_plan()
     verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play, paths=cfg)
     verifier.verify_segments()
 
