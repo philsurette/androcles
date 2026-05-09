@@ -148,9 +148,7 @@ class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
     REGEX = re.compile(r"^(/?[A-Z][A-Z0-9 '()/:,-]*?)\.\s*(.*)$")
-    MULTI_ROLE_RE = re.compile(r"^((?:[A-Z][A-Z0-9 '()-]*?\.\s*){2,})(.+)$")
     GROUP_ROLE_RE = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\s*\[(.+?)\]\s*[.:]?\s*(.*)$")
-    ROLE_NAME_RE = re.compile(r"([A-Z][A-Z0-9 '()-]*?)\.\s*")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
     role_names: List[str] = field(default_factory=list)
@@ -233,28 +231,6 @@ class RoleBlock(Block):
                 segments=[segment],
             )
             return block
-
-        multi_match = cls.MULTI_ROLE_RE.match(paragraph)
-        if multi_match:
-            roles_chunk, speech = multi_match.groups()
-            roles = [r.strip() for r in cls.ROLE_NAME_RE.findall(roles_chunk) if r.strip()]
-            speech = speech.strip()
-            if roles and speech:
-                block_counter += 1
-                block_id = BlockId(current_part, block_counter)
-                segment = SimultaneousSegment(
-                    segment_id=SegmentId(block_id, 1),
-                    text=speech,
-                    roles=roles,
-                )
-                block = cls(
-                    block_id=block_id,
-                    role_names=roles,
-                    callout=roles[0],
-                    text=speech,
-                    segments=[segment],
-                )
-                return block
 
         role_match = cls.REGEX.match(paragraph)
         if not role_match:

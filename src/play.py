@@ -240,7 +240,7 @@ class Play:
             if role.meta:
                 continue
             reader = self.reading_metadata.reader_for_id(role.name)
-            role_label = reader.role_name
+            role_label = reader.role_name or role.name
             reader_name = reader.reader if reader.reader else self.reading_metadata.default_reader.reader
             role.reader_block = ReaderBlock.build(role_label=role_label, reader_name=reader_name)
 

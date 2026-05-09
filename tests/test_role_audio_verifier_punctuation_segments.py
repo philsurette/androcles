@@ -53,8 +53,11 @@ def test_punctuation_only_segments_are_kept() -> None:
 
     segments, script_words, word_to_segment = verifier._build_expected_words()
 
-    assert len(segments) == 1
-    assert segments[0]["expected_text"] == "!!!"
-    assert segments[0]["expected_word_count"] == 0
-    assert script_words == []
-    assert word_to_segment == []
+    assert len(segments) == 2
+    assert segments[0]["segment_id"] == "ANDROCLES_reader"
+    assert segments[0]["expected_text"] == "ANDROCLES, read by Reader"
+    assert segments[0]["expected_word_count"] == 4
+    assert segments[1]["expected_text"] == "!!!"
+    assert segments[1]["expected_word_count"] == 0
+    assert script_words == ["androcles", "read", "by", "reader"]
+    assert word_to_segment == [0, 0, 0, 0]
