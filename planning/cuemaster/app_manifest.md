@@ -2,7 +2,7 @@
 
 This document defines the first app-facing export contract for Cuemaster, an actor rehearsal app. The goal is to give Cuemaster a stable, versioned Playbook to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
 
-`planning/cueline-design.md` describes Cuemaster product behavior. This document is the source of truth for the Stager-generated manifest and Playbook structure consumed by Cuemaster.
+`planning/cuemaster/product_design.md` describes Cuemaster product behavior. This document is the source of truth for the Stager-generated manifest and Playbook structure consumed by Cuemaster.
 
 ## Intended Consumer
 
@@ -190,7 +190,7 @@ Cue rules:
 - Cue text may be shortened for rehearsal display, but the manifest should preserve enough metadata to support future full-text display.
 - Narrator audio for direction-only cues should be optional in schema version 1 unless the selected Playbook mode explicitly requires complete playable cues.
 
-Open decision for `planning/cue_generation.md`: whether the manifest should include both `full_text` and `display_text` for cues.
+Open decision for `planning/cuemaster/cue_generation.md`: whether the manifest should include both `full_text` and `display_text` for cues.
 
 ## Response Payload
 
@@ -313,7 +313,7 @@ Default policy:
 
 The manifest should not silently include paths to missing required files.
 
-Open decision for `planning/missing_audio_policy.md`: exact exception class and Stager CLI flag name for diagnostic Playbook generation.
+Open decision for `planning/stager/missing_audio_policy.md`: exact exception class and Stager CLI flag name for diagnostic Playbook generation.
 
 ## Example Minimal Manifest
 
