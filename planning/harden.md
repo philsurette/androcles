@@ -31,15 +31,16 @@ This plan prepares the current CLI codebase for reliable actor-rehearsal app ass
 Create these design documents before changing production behavior. Keep them short and concrete.
 
 - [x] Create `planning/app_manifest.md`.
-- [ ] Document the intended consumer: actor rehearsal app, offline-first, per-role package.
-- [ ] Define manifest versioning, e.g. `"schema_version": 1`.
-- [ ] Define package layout, e.g. `build/<play>/app/manifest.json`, `build/<play>/app/audio/...`.
-- [ ] Define role payloads: role id, display name, reader, part list, cue/line sequence.
-- [ ] Define line item fields: block id, segment ids, speaker, cue text, response text, direction text, audio paths, duration ms, offsets if applicable.
-- [ ] Define how simultaneous lines are represented.
-- [ ] Define how narrator, caller, and announcer are represented or excluded for actor rehearsal.
-- [ ] Define whether app package paths are relative to the manifest.
-- [ ] Define compatibility behavior for missing optional audio versus missing required response audio.
+- [x] Document the intended consumer: actor rehearsal app, offline-first, per-role package.
+- [x] Define manifest versioning, e.g. `"schema_version": 1`.
+- [x] Define package layout, e.g. `build/<play>/app/manifest.json`, `build/<play>/app/audio/...`.
+- [x] Define role payloads: role id, display name, reader, part list, cue/line sequence.
+- [x] Define line item fields: block id, segment ids, speaker, cue text, response text, direction text, audio paths, duration ms, offsets if applicable.
+- [x] Define how simultaneous lines are represented.
+- [x] Define how narrator, caller, and announcer are represented or excluded for actor rehearsal.
+- [x] Define whether app package paths are relative to the manifest.
+- [x] Define compatibility behavior for missing optional audio versus missing required response audio.
+- [x] Align `planning/cueline-design.md` with the Androcles manifest and package design.
 
 - [ ] Create `planning/cue_generation.md`.
 - [ ] Document current cue behavior: previous speech block as prompt, optional callout, cropped cue audio, response delay, expected response playback.

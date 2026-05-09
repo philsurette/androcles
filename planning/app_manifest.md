@@ -2,6 +2,8 @@
 
 This document defines the first app-facing export contract for an actor rehearsal app. The goal is to give an iPhone/Android app a stable, versioned package to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
 
+`planning/cueline-design.md` describes the mobile app product behavior. This document is the source of truth for the Androcles-generated manifest and package structure consumed by that app.
+
 ## Intended Consumer
 
 The primary consumer is an offline-first actor rehearsal app.
