@@ -17,7 +17,7 @@ from play_builder import PlayBuilder
 from play import Play, Part
 from play_text_parser import PlayTextParser
 from announcer_script_writer import AnnouncerScriptWriter
-from announcer import LibrivoxAnnouncer
+from announcer import select_announcer
 from play_markdown_writer import PlayMarkdownWriter
 from role_markdown_writer import RoleMarkdownWriter
 from narrator_markdown_writer import NarratorMarkdownWriter
@@ -41,6 +41,7 @@ from whisper_cache_cleaner import WhisperCacheCleaner
 from audio_check import AudioCheck
 from segment_audio_player import SegmentAudioPlayer
 from audacity_recording_exporter import AudacityRecordingExporter
+from build_type_resolver import BuildTypeResolver
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from spacing import (
@@ -108,12 +109,17 @@ def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
         raise typer.Exit(code=1)
 
 @text_app.callback(invoke_without_command=True)
-def text(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
+def text(
+    ctx: typer.Context,
+    play: str | None = PLAY_OPTION,
+    librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
+) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
     setup_logging(cfg)
     if ctx.invoked_subcommand is None:
-        run_text(paths_config=cfg)
+        build_type = BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve()
+        run_text(paths_config=cfg, build_type=build_type)
 
 
 @text_app.command("write-play", hidden=True)
@@ -155,6 +161,7 @@ def segments(
     chunk_exports: bool = typer.Option(True, "--chunk-exports/--no-chunk-exports", help="Export in batches"),
     chunk_export_size: int = typer.Option(25, "--chunk-export-size", help="Batch size when chunking exports"),
     force: bool = typer.Option(False, "--force/--no-force", help="Force re-splitting even if outputs are newer"),
+    librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer splitting"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Split role recordings into segments using silence detection."""
@@ -176,6 +183,7 @@ def segments(
         chunk_export_size=chunk_export_size,
         force=force,
         paths_config=cfg,
+        build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
     )
 
 @app.command("verify", rich_help_panel="verify")
@@ -210,7 +218,7 @@ def check_recording(play: str | None = PLAY_OPTION) -> None:
 @app.command("generate-timings", rich_help_panel="verify")
 def generate_timings(
     play: str | None = PLAY_OPTION,
-    librivox: bool = typer.Option(False, help="Use Librivox preamble/epilog when computing timings"),
+    librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Use Librivox preamble/epilog when computing timings"),
     segment_spacing_ms: int = typer.Option(SEGMENT_SPACING_MS, "--segment-spacing-ms", help="Silence (ms) between segments"),
     callouts: bool = typer.Option(True, help="Include callout audio when computing timings"),
     callout_spacing_ms: int = typer.Option(CALLOUT_SPACING_MS, "--callout-spacing-ms", help="Silence (ms) between callout and line"),
@@ -329,6 +337,7 @@ def verify_audio(
     if model_key not in MODEL_CHOICES:
         raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
     model_name = MODEL_NAME_MAP[model_key]
+    effective_build_type = BuildTypeResolver(paths_config=cfg).resolve()
     store = WhisperModelStore(
         paths=cfg,
         device="cpu",
@@ -355,6 +364,7 @@ def verify_audio(
             paths=cfg,
             play=play_obj,
             model_name=model_name,
+            build_type=effective_build_type,
             whisper_store=store,
             vad_filter=vad_filter,
             vad_config=vad_config,
@@ -629,7 +639,7 @@ def audioplay(
     minimal_callouts: bool = typer.Option(False, help="Reduce callouts during alternating two-person dialogue"),
     captions: bool = typer.Option(True, help="Generate captions (WebVTT) and mux into mp4 when possible"),
     generate_audio: bool = typer.Option(True, help="Write rendered audio (disable to only emit audio_plan.txt)"),
-    librivox: bool = typer.Option(False, help="Generate Librivox-style mp3s (one per part, no prelude)"),
+    librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Generate Librivox-style mp3s (one per part, no prelude)"),
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
@@ -713,14 +723,22 @@ def cues(
 
 # Helper functions (non-Typer) -----------------------------------------------
 
-def run_text(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None) -> None:
+def run_text(
+    line_no_prefix: bool = True,
+    paths_config: paths.PathConfig | None = None,
+    build_type: str | None = None,
+) -> None:
     cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        explicit_build_type=build_type,
+    ).resolve()
     run_write_play(line_no_prefix, paths_config=cfg)
     run_write_roles(line_no_prefix, paths_config=cfg)
     run_write_callouts(paths_config=cfg)
     run_write_callout_script(paths_config=cfg)
     run_write_callouts(paths_config=cfg)
-    run_write_announcer(paths_config=cfg)
+    run_write_announcer(paths_config=cfg, build_type=effective_build_type)
 
 
 def run_write_play(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
@@ -776,10 +794,17 @@ def run_write_callout_script(paths_config: paths.PathConfig | None = None):
     logging.info("✅ wrote %s", path)
     return path
 
-def run_write_announcer(paths_config: paths.PathConfig | None = None):
+def run_write_announcer(
+    paths_config: paths.PathConfig | None = None,
+    build_type: str | None = None,
+):
     cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        explicit_build_type=build_type,
+    ).resolve()
     play = PlayTextParser(paths_config=cfg).parse()
-    announcer = LibrivoxAnnouncer(play)
+    announcer = select_announcer(play, build_type=effective_build_type)
     writer = AnnouncerScriptWriter(announcer=announcer, paths=cfg)
     path = writer.to_markdown()
     logging.info("✅ wrote %s", path)
@@ -808,13 +833,19 @@ def run_segments(
     chunk_export_size: int = 25,
     force: bool = False,
     paths_config: paths.PathConfig | None = None,
+    build_type: str | None = None,
 ):
     cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        explicit_build_type=build_type,
+    ).resolve()
     AudacityRecordingExporter(paths=cfg).export_recordings()
     play = PlayTextParser(paths_config=cfg).parse()
     splitter = PlaySplitter(
         play=play,
         paths=cfg,
+        build_type=effective_build_type,
         force=force,
         min_silence_ms=separator_len_ms,
         silence_thresh=silence_thresh,
@@ -837,7 +868,7 @@ def run_check_recording(paths_config: paths.PathConfig | None = None):
 
 
 def run_generate_timings(
-    librivox: bool,
+    librivox: bool | None,
     segment_spacing_ms: int = SEGMENT_SPACING_MS,
     callouts: bool = True,
     callout_spacing_ms: int = CALLOUT_SPACING_MS,
@@ -846,12 +877,17 @@ def run_generate_timings(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        librivox_override=librivox,
+    ).resolve()
+    effective_librivox = effective_build_type == "librivox"
     play = PlayTextParser(paths_config=cfg).parse()
     part_ids = [p.part_no for p in play.parts if p.part_no is not None]
-    if librivox and len(part_ids) > 1:
+    if effective_librivox and len(part_ids) > 1:
         for part_no in part_ids:
             generate_xlsx(
-                librivox=librivox,
+                librivox=effective_librivox,
                 part_no=part_no,
                 include_callouts=callouts,
                 callout_spacing_ms=callout_spacing_ms,
@@ -862,7 +898,7 @@ def run_generate_timings(
             )
         return
     generate_xlsx(
-        librivox=librivox,
+        librivox=effective_librivox,
         include_callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
@@ -881,7 +917,7 @@ def run_audioplay(
     minimal_callouts: bool = True,
     captions: bool = True,
     generate_audio: bool = True,
-    librivox: bool = False,
+    librivox: bool | None = None,
     audio_format: str = "mp4",
     normalize_output: bool = True,
     prepare: bool = True,
@@ -890,10 +926,15 @@ def run_audioplay(
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        librivox_override=librivox,
+    ).resolve()
+    effective_librivox = effective_build_type == "librivox"
     if prepare:
         logging.info("Preparing text artifacts and split segments before audioplay")
-        run_text(line_no_prefix=True, paths_config=cfg)
-        run_segments(paths_config=cfg)
+        run_text(line_no_prefix=True, paths_config=cfg, build_type=effective_build_type)
+        run_segments(paths_config=cfg, build_type=effective_build_type)
     play: Play = PlayTextParser(paths_config=cfg).parse()
     if part is None:
         part_no = None
@@ -909,7 +950,7 @@ def run_audioplay(
         part_gap_ms=2000,
         generate_audio=generate_audio,
         generate_captions=captions,
-        librivox=librivox,
+        librivox=effective_librivox,
         play=play,
         paths=cfg,
     )

@@ -8,7 +8,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 DEFAULT_PLAY_ID = "androcles"
-DEFAULT_BUILD_TYPE = "librivox"
+DEFAULT_BUILD_TYPE = "custom"
 
 
 @dataclass

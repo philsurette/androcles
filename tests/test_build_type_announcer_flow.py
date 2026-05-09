@@ -1,0 +1,118 @@
+from __future__ import annotations
+
+import pathlib
+import sys
+import textwrap
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = pathlib.Path(__file__).resolve().parents[1]
+SRC = ROOT / "src"
+if str(SRC) not in sys.path:
+    sys.path.insert(0, str(SRC))
+
+import paths
+from announcer_splitter import AnnouncerSplitter
+from build import run_audioplay, run_write_announcer
+from play import Play, ReadingMetadata, SourceTextMetadata
+
+
+def _config(tmp_path: Path, build_type: str = "custom") -> paths.PathConfig:
+    (tmp_path / "play-config.yaml").write_text(
+        f"play_id: test\nbuild_type: {build_type}\n",
+        encoding="utf-8",
+    )
+    cfg = paths.PathConfig(
+        play_name="test",
+        root=tmp_path / "src",
+        build_root=tmp_path / "build",
+        plays_dir=tmp_path / "plays",
+        snippets_dir=tmp_path / "snippets",
+    )
+    cfg.play_dir.mkdir(parents=True, exist_ok=True)
+    cfg.play_text.write_text(
+        textwrap.dedent(
+            """
+            ## 1: First ##
+
+            ANDROCLES. Hello
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
+    return cfg
+
+
+def test_run_write_announcer_uses_configured_librivox_build_type(tmp_path: Path) -> None:
+    cfg = _config(tmp_path, build_type="librivox")
+
+    path = run_write_announcer(paths_config=cfg)
+
+    content = path.read_text(encoding="utf-8")
+    assert "This is a Librivox Recording." in content
+    assert "section 1" in content
+
+
+def test_run_write_announcer_can_be_forced_to_custom(tmp_path: Path) -> None:
+    cfg = _config(tmp_path, build_type="librivox")
+
+    path = run_write_announcer(paths_config=cfg, build_type="custom")
+
+    content = path.read_text(encoding="utf-8")
+    assert "This is a Librivox Recording." not in content
+    assert "End of" in content
+
+
+def test_announcer_splitter_uses_librivox_build_type() -> None:
+    play = Play(
+        reading_metadata=ReadingMetadata(),
+        source_text_metadata=SourceTextMetadata(title="The Play", authors=["Author"]),
+    )
+    splitter = AnnouncerSplitter(play=play, build_type="librivox")
+
+    expected_ids = splitter.expected_ids()
+
+    assert "librivox-this_is_a_librivox_recording" in expected_ids
+
+
+def test_run_audioplay_passes_librivox_build_type_to_preparation(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cfg = _config(tmp_path, build_type="custom")
+    calls: list[tuple[str, str | None]] = []
+
+    def fake_run_text(*, line_no_prefix: bool, paths_config: paths.PathConfig, build_type: str) -> None:
+        calls.append(("text", build_type))
+
+    def fake_run_segments(*, paths_config: paths.PathConfig, build_type: str) -> None:
+        calls.append(("segments", build_type))
+
+    @dataclass
+    class FakePlayBuilder:
+        librivox: bool
+
+        def __init__(self, **kwargs):
+            self.librivox = kwargs["librivox"]
+
+        def build_audio(self, part_no: int | None):
+            calls.append(("builder", "librivox" if self.librivox else "custom"))
+            return []
+
+    monkeypatch.setattr("build.run_text", fake_run_text)
+    monkeypatch.setattr("build.run_segments", fake_run_segments)
+    monkeypatch.setattr("build.PlayBuilder", FakePlayBuilder)
+
+    run_audioplay(
+        paths_config=cfg,
+        librivox=True,
+        generate_audio=False,
+        normalize_output=False,
+    )
+
+    assert calls == [
+        ("text", "librivox"),
+        ("segments", "librivox"),
+        ("builder", "librivox"),
+    ]

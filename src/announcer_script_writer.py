@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import paths
-from announcer import Announcer, LibrivoxAnnouncer
+from announcer import Announcer
 
 
 @dataclass

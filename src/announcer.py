@@ -131,4 +131,8 @@ class LibrivoxAnnouncer(Announcer):
             self.section_end_suffix(),
         ]
         return base_announcements + librivox_announcements + self.section_announcements()
-    
+
+
+def select_announcer(play: Play, build_type: str = "custom") -> Announcer:
+    normalized_build_type = build_type.strip().lower()
+    return LibrivoxAnnouncer(play) if normalized_build_type == "librivox" else Announcer(play)

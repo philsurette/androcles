@@ -93,6 +93,7 @@ def test_collect_expected_segments_for_announcer() -> None:
     verifier = RoleAudioVerifier(
         role="_ANNOUNCER",
         play=play,
+        build_type="librivox",
         whisper_store=DummyWhisperStore(),
     )
     segments = verifier._collect_expected_segments()

@@ -13,13 +13,13 @@ import paths
 from role_splitter import RoleSplitter, CalloutSplitter
 from narrator_splitter import NarratorSplitter
 from announcer_splitter import AnnouncerSplitter
-from announcer import Announcer, LibrivoxAnnouncer
 
 
 @dataclass
 class PlaySplitter:
     play: Play
     paths: paths.PathConfig = None
+    build_type: str = "custom"
     force: bool = False
     min_silence_ms: int = 1700
     silence_thresh: int = -45
@@ -80,6 +80,7 @@ class PlaySplitter:
         splitter = AnnouncerSplitter(
             play=self.play,
             paths=self.paths,
+            build_type=self.build_type,
             force=self.force,
             min_silence_ms=self.min_silence_ms,
             silence_thresh=self.silence_thresh,

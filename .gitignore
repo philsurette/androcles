@@ -12,4 +12,6 @@
 .whisper/
 build/
 plays/androcles-no-appendix
+plays/fairies
+play-config.yaml
 recordings/

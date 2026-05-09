@@ -21,7 +21,7 @@ from inline_text_differ import InlineTextDiffer
 from audio_verifier_diff import AudioVerifierDiff
 from audio_verifier_diff_builder import AudioVerifierDiffBuilder
 from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
-from announcer import LibrivoxAnnouncer
+from announcer import select_announcer
 from vad_config import VadConfig
 from equivalencies import Equivalencies
 from whisper_transcription_cache import WhisperTranscriptionCache
@@ -71,6 +71,7 @@ class RoleAudioVerifier:
     diff_window_after: int = 1
     extra_audio_padding_ms: int = 150
     homophone_max_words: int = 2
+    build_type: str = "custom"
 
     _logger: logging.Logger = field(init=False, repr=False)
     _model: WhisperModel | None = field(init=False, repr=False, default=None)
@@ -333,7 +334,7 @@ class RoleAudioVerifier:
                 "expected_text": f"announcements read by {reader_name}",
             }
         ]
-        announcer = LibrivoxAnnouncer(self.play)
+        announcer = select_announcer(self.play, build_type=self.build_type)
         for announcement in announcer.announcements():
             segments.append(
                 {

@@ -7,13 +7,14 @@ from pathlib import Path
 import logging
 
 from segment_splitter import SegmentSplitter
-from announcer import Announcer, LibrivoxAnnouncer
+from announcer import Announcer, select_announcer
 import paths
 
 
 @dataclass
 class AnnouncerSplitter(SegmentSplitter):
     announcer: Announcer = None
+    build_type: str = "custom"
     role: str = "_ANNOUNCER"
 
     def extra_outputs(self):
@@ -23,7 +24,7 @@ class AnnouncerSplitter(SegmentSplitter):
     def __post_init__(self) -> None:
         super().__post_init__()
         if self.announcer is None:
-            self.announcer = LibrivoxAnnouncer(self.play) 
+            self.announcer = select_announcer(self.play, build_type=self.build_type)
 
     def expected_ids(self, part_filter: str | None = None) -> list[str]:
         return [a.key_as_filename() for a in self.announcer.announcements()]

@@ -106,7 +106,7 @@ class Reader:
 
 @dataclass
 class ReadingMetadata:
-    target: str = field(default='librivox')
+    target: str = field(default='custom')
     reading_type: str = field(default='solo')
     readers: List[Reader] = field(default_factory=list)
     id_to_reader: Dict[str, Reader] = field(init=False)
