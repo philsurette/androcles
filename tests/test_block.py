@@ -81,6 +81,18 @@ def test_roleblock_parse_keeps_leading_i_ellipsis_as_speech() -> None:
     assert block.segments[0].text == "I... I've had such a wonderful time."
 
 
+def test_roleblock_markdown_includes_rendered_block_id_prefix() -> None:
+    block = RoleBlock.parse(
+        "CHRISTINE. This is Christine Canfield.",
+        current_part=0,
+        block_counter=1,
+        meta_counters={},
+    )
+
+    assert isinstance(block, RoleBlock)
+    assert block.to_markdown(render_id=True) == "0.2 **CHRISTINE**: This is Christine Canfield."
+
+
 def test_roleblock_parse_explicit_comma_roles_as_simultaneous() -> None:
     block = RoleBlock.parse(
         "ANDROCLES,MEGAERA. Together now",

@@ -291,7 +291,7 @@ class RoleBlock(Block):
             names = f"{self.callout}/{speakers}"
         else:
             names = speakers
-        return f"**{names}**: {self.text}"
+        return f"{prefix}**{names}**: {self.text}"
 
     def to_markdown_for_role(self, role: str, prefix: str | None) -> str:
         """
