@@ -1,16 +1,16 @@
 # App Manifest Design
 
-This document defines the first app-facing export contract for an actor rehearsal app. The goal is to give an iPhone/Android app a stable, versioned package to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
+This document defines the first app-facing export contract for Cuemaster, an actor rehearsal app. The goal is to give Cuemaster a stable, versioned Playbook to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
 
-`planning/cueline-design.md` describes the mobile app product behavior. This document is the source of truth for the Androcles-generated manifest and package structure consumed by that app.
+`planning/cueline-design.md` describes Cuemaster product behavior. This document is the source of truth for the Stager-generated manifest and Playbook structure consumed by Cuemaster.
 
 ## Intended Consumer
 
-The primary consumer is an offline-first actor rehearsal app.
+The primary consumer is Cuemaster, an offline-first actor rehearsal app.
 
-The app should support:
+Cuemaster should support:
 
-- Selecting a play package.
+- Selecting a Playbook.
 - Selecting one or more roles to rehearse.
 - Showing cue text before each expected response.
 - Playing cue audio when available.
@@ -18,11 +18,11 @@ The app should support:
 - Showing stage directions and contextual text separately from spoken response text.
 - Navigating by part, scene, block, or line.
 
-The app should not need to understand the source play text format or the build system internals.
+Cuemaster should not need to understand the source play text format or Stager internals.
 
 ## Package Layout
 
-The app package should be generated under:
+The Playbook should be generated under:
 
 ```text
 build/<play_id>/app/
@@ -43,7 +43,7 @@ build/<play_id>/app/
 
 All paths inside `manifest.json` are relative to the directory containing `manifest.json`.
 
-The package should be self-contained where practical. The app should be able to copy `build/<play_id>/app/` onto a device or into a mobile bundle without needing other files from `build/<play_id>/`.
+The Playbook should be self-contained where practical. Cuemaster should be able to copy `build/<play_id>/app/` onto a device or into a mobile bundle without needing other files from `build/<play_id>/`.
 
 ## Schema Version
 
@@ -59,7 +59,7 @@ Compatibility rules:
 
 - Increment `schema_version` for breaking changes.
 - Additive fields may keep the same schema version if existing fields retain their meaning.
-- The app should reject unsupported schema versions explicitly.
+- Cuemaster should reject unsupported schema versions explicitly.
 
 ## Root Manifest Shape
 
@@ -89,7 +89,7 @@ Root fields:
 - `play`: Source text metadata needed for display.
 - `reading`: Reading metadata that affects generated assets.
 - `roles`: Rehearsable role payloads.
-- `assets`: Optional package-wide asset index.
+- `assets`: Optional Playbook-wide asset index.
 
 ## Role Payload
 
@@ -115,7 +115,7 @@ Role fields:
 - `parts`: Optional summary of parts where the role appears.
 - `lines`: Ordered rehearsal line items for this role.
 
-Initial app export should include normal actor roles by default. `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` should be excluded from role selection unless a CLI option or later design explicitly includes meta roles.
+Initial Stager Playbook export should include normal actor roles by default. `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` should be excluded from role selection unless a Stager CLI option or later design explicitly includes meta roles.
 
 ## Line Item
 
@@ -156,7 +156,7 @@ Each line item describes one expected response opportunity for one role.
 
 Line fields:
 
-- `id`: Stable app line id. It should include block identity and role id.
+- `id`: Stable Cuemaster line id. It should include block identity and role id.
 - `part_id`: Numeric play part id, or `null` for no-part preamble material.
 - `block_id`: Human-readable block id using dot format, e.g. `0.2`.
 - `role`: Role being rehearsed.
@@ -188,7 +188,7 @@ Cue rules:
 - If the preceding block contains only directions, use direction text as context and attach narrator audio when available.
 - If there is no preceding cue, `cue` may be `null`.
 - Cue text may be shortened for rehearsal display, but the manifest should preserve enough metadata to support future full-text display.
-- Narrator audio for direction-only cues should be optional in schema version 1 unless the selected package mode explicitly requires complete playable cues.
+- Narrator audio for direction-only cues should be optional in schema version 1 unless the selected Playbook mode explicitly requires complete playable cues.
 
 Open decision for `planning/cue_generation.md`: whether the manifest should include both `full_text` and `display_text` for cues.
 
@@ -208,7 +208,7 @@ Rules:
 - `response.text` is the concatenated expected spoken text for the selected role in the block.
 - `response.segments` preserves segment-level identity and audio assets.
 - For inline directions, directions should not be merged into spoken response text.
-- Missing required response audio should fail app package generation by default.
+- Missing required response audio should fail Playbook generation by default.
 
 ## Audio Asset
 
@@ -226,9 +226,9 @@ Fields:
 
 - `path`: Relative path from `manifest.json`.
 - `duration_ms`: Audio length in milliseconds.
-- `required`: Whether package generation should fail if the asset is missing.
+- `required`: Whether Playbook generation should fail if the asset is missing.
 
-For schema version 1, audio format should remain WAV for segment assets unless a later app packaging design chooses compressed assets.
+For schema version 1, audio format should remain WAV for segment assets unless a later Playbook packaging design chooses compressed assets.
 
 ## Stage Directions
 
@@ -284,11 +284,11 @@ Rules:
 - Each rehearsable owner gets its own role line item.
 - The segment records all owners.
 - The role-specific audio path uses the selected role's segment file.
-- The app may later choose to play other simultaneous owners as context, but schema version 1 does not require that behavior.
+- Cuemaster may later choose to play other simultaneous owners as context, but schema version 1 does not require that behavior.
 
 ## Special Roles
 
-Default app-package behavior:
+Default Playbook behavior:
 
 - `_NARRATOR`: Excluded as a rehearsable role, but top-level and inline directions may appear as context.
 - `_CALLER`: Excluded from role selection. Callout audio may be used as optional cue/prompt audio if available.
@@ -300,20 +300,20 @@ Future options may include:
 - `--include-caller`
 - `--include-announcer`
 
-Those options should not be added until there is an app use case for them.
+Those options should not be added until there is a Cuemaster use case for them.
 
 ## Missing Audio Compatibility
 
 Default policy:
 
-- Missing required response audio fails package generation.
-- Missing optional cue audio does not fail package generation if cue text is present.
+- Missing required response audio fails Playbook generation.
+- Missing optional cue audio does not fail Playbook generation if cue text is present.
 - Narrator audio for direction-only cues is used when present, but is not required by default.
 - Missing optional callout audio does not fail unless callouts are explicitly required by the selected mode.
 
 The manifest should not silently include paths to missing required files.
 
-Open decision for `planning/missing_audio_policy.md`: exact exception class and CLI flag name for diagnostic package generation.
+Open decision for `planning/missing_audio_policy.md`: exact exception class and Stager CLI flag name for diagnostic Playbook generation.
 
 ## Example Minimal Manifest
 
@@ -378,7 +378,7 @@ Open decision for `planning/missing_audio_policy.md`: exact exception class and 
 
 - Build manifest records from the parsed `Play` model, not from markdown output.
 - Use existing `BlockId` and `SegmentId` semantics for stable ids.
-- Keep manifest-writing code out of `src/build.py`; the CLI should delegate to an app package builder.
+- Keep manifest-writing code out of `src/build.py`; the Stager CLI should delegate to a Playbook builder.
 - Use dataclasses for manifest model classes.
 - Prefer one primary class per new file.
-- Add tests against in-memory `Play` fixtures before wiring the CLI.
+- Add tests against in-memory `Play` fixtures before wiring the Stager CLI.
