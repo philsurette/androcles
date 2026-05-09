@@ -141,12 +141,12 @@ class CalloutSplitter(SegmentSplitter):
                 if normalize(line).startswith("callouts read by "):
                     header_line = line
                     break
-        if header_line is None:
-            raise RuntimeError(f"Missing callout header '{expected_header}' in {paths.display_path(path)}")
-        if normalize(header_line) != expected_norm:
-            raise RuntimeError(
-                f"Unexpected callout header '{header_line}' in {paths.display_path(path)} (expected '{expected_header}')"
-            )
+            if header_line is None:
+                raise RuntimeError(f"Missing callout header '{expected_header}' in {paths.display_path(path)}")
+            if normalize(header_line) != expected_norm:
+                raise RuntimeError(
+                    f"Unexpected callout header '{header_line}' in {paths.display_path(path)} (expected '{expected_header}')"
+                )
             header_index = lines.index(header_line)
             lines = lines[header_index + 1 :]
         ids: List[str] = []
