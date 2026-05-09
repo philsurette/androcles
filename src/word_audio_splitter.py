@@ -13,6 +13,8 @@ from typing import List, Tuple
 
 from pydub import AudioSegment, silence
 
+import paths
+
 
 @dataclass
 class WordAudioSplitter:
@@ -88,7 +90,7 @@ if __name__ == "__main__":
     splitter = WordAudioSplitter(min_silence_ms=args.min_silence, silence_thresh_db=args.silence_thresh)
     spans = splitter.find_silence_spans(args.audio)
     points = splitter.boundary_points(args.audio)
-    print(f"Detected {len(points)} candidate boundaries in {args.audio}")
+    print(f"Detected {len(points)} candidate boundaries in {paths.display_path(args.audio)}")
     for (start, end), mid in zip(spans, points):
         print(f"{start:>6}-{end:<6} ms -> {mid:>6} ms")
     if args.target is not None:

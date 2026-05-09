@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from play import RoleBlock, SpeechSegment, SimultaneousSegment
 from segment_splitter import SegmentSplitter
 from paths import Path
+import paths
 
 
 @dataclass
@@ -99,7 +100,7 @@ class CalloutSplitter(SegmentSplitter):
         """Callout ids are the callout names listed in _CALLER.md."""
         path = self.paths.markdown_roles_dir / "_CALLER.md"
         if not path.exists():
-            raise RuntimeError(f"Missing callout script: {path}")
+            raise RuntimeError(f"Missing callout script: {paths.display_path(path)}")
         reader = self.play.reading_metadata.reader_for_id("_CALLER")
         reader_name = reader.reader if reader else None
         if not reader_name:
@@ -126,7 +127,7 @@ class CalloutSplitter(SegmentSplitter):
         raw_lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
         lines = [line for line in raw_lines if line]
         if not lines:
-            raise RuntimeError(f"Empty callout script: {path}")
+            raise RuntimeError(f"Empty callout script: {paths.display_path(path)}")
 
         def normalize(text: str) -> str:
             return " ".join(text.strip().lower().split())
@@ -140,12 +141,12 @@ class CalloutSplitter(SegmentSplitter):
                 if normalize(line).startswith("callouts read by "):
                     header_line = line
                     break
-            if header_line is None:
-                raise RuntimeError(f"Missing callout header '{expected_header}' in {path}")
-            if normalize(header_line) != expected_norm:
-                raise RuntimeError(
-                    f"Unexpected callout header '{header_line}' in {path} (expected '{expected_header}')"
-                )
+        if header_line is None:
+            raise RuntimeError(f"Missing callout header '{expected_header}' in {paths.display_path(path)}")
+        if normalize(header_line) != expected_norm:
+            raise RuntimeError(
+                f"Unexpected callout header '{header_line}' in {paths.display_path(path)} (expected '{expected_header}')"
+            )
             header_index = lines.index(header_line)
             lines = lines[header_index + 1 :]
         ids: List[str] = []
@@ -160,7 +161,7 @@ class CalloutSplitter(SegmentSplitter):
                 continue
             callout_id = spoken_to_id.get(line)
             if not callout_id:
-                raise RuntimeError(f"Unknown callout '{line}' in {path}")
+                raise RuntimeError(f"Unknown callout '{line}' in {paths.display_path(path)}")
             ids.append(callout_id)
         return ids
 

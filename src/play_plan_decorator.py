@@ -43,7 +43,7 @@ class PlayPlanDecorator(ABC):
         base = self.paths.segments_dir / "_ANNOUNCER"
         path = base / f"{file_name}.wav"
         if not path.exists():
-            raise RuntimeError(f"Announcer recording not found at {path}")
+            raise RuntimeError(f"Announcer recording not found at {paths.display_path(path)}")
 
         self.plan.addClip(
             SegmentClip(

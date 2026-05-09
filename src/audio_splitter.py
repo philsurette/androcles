@@ -79,7 +79,10 @@ class AudioSplitter:
         load_time = perf_counter() - t0
         if self.verbose:
             logging.getLogger(__name__).info(
-                "Loaded audio %s (%.2fs) in %.3fs", audio_path, len(audio) / 1000.0, load_time
+                "Loaded audio %s (%.2fs) in %.3fs",
+                paths.display_path(audio_path),
+                len(audio) / 1000.0,
+                load_time,
             )
         if not chunk_duration_ms or chunk_duration_ms <= 0:
             t1 = perf_counter()

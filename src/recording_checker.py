@@ -48,7 +48,7 @@ def main(paths_config: paths.PathConfig | None = None) -> None:
     cfg = paths_config or paths.current()
     timings_path = cfg.audio_out_dir / "timings.csv"
     if not timings_path.exists():
-        print(f"timings.csv not found at {timings_path}")
+        print(f"timings.csv not found at {paths.display_path(timings_path)}")
         return
     for line in summarize(timings_path):
         print(line)

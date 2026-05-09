@@ -5,27 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 from pathlib import Path
-import os
 
 import paths
-
-
-PROJECT_ROOT = paths.ROOT.parent
-
-
-def _rel_path(path: Path) -> Path:
-    """Return path relative to project root when possible."""
-    base = PROJECT_ROOT
-    if hasattr(Path, "is_relative_to"):
-        try:
-            if path.is_relative_to(base):
-                return path.relative_to(base)
-        except Exception:
-            pass
-    try:
-        return path.relative_to(base)
-    except ValueError:
-        return Path(os.path.relpath(path, base))
 
 
 @dataclass
@@ -52,7 +33,7 @@ class CalloutClip(Clip):
     def __str__(self) -> str:
         if self.path is None:
             raise RuntimeError(f"callout missing: {self.path}")
-        rel = _rel_path(self.path)
+        rel = paths.display_path(self.path)
         return f"{rel}: {self.clip_id}"
 
 
@@ -65,7 +46,7 @@ class SegmentClip(Clip):
     def __str__(self) -> str:
         if self.path is None:
             raise RuntimeError(f"segment missing: {self.path}")
-        rel = _rel_path(self.path)
+        rel = paths.display_path(self.path)
         clip_id = f"{self.clip_id}:" if self.clip_id is not None else ''
         role = f"{self.role} - " if self.role is not None else ''
         return f"{rel}: {clip_id}{role}{self.text}"

@@ -8,6 +8,8 @@ import re
 
 from ruamel import yaml
 
+import paths
+
 
 @dataclass
 class Equivalencies:
@@ -23,11 +25,12 @@ class Equivalencies:
     def load(cls, path: Path) -> "Equivalencies":
         if not path.exists():
             return cls()
+        display_path = paths.display_path(path)
         yml = yaml.YAML(typ="safe", pure=True)
         text = path.read_text(encoding="utf-8")
         raw = yml.load(text) or {}
         if not isinstance(raw, dict):
-            raise RuntimeError(f"Invalid equivalencies format in {path}")
+            raise RuntimeError(f"Invalid equivalencies format in {display_path}")
         inst = cls()
         equivalencies = raw
         if (
@@ -43,17 +46,17 @@ class Equivalencies:
                 if key not in {"equivalencies", "ignorables", "vetted", "ignored", "problems"}
             ]
             if unexpected:
-                raise RuntimeError(f"Unexpected substitutions keys in {path}: {unexpected}")
+                raise RuntimeError(f"Unexpected substitutions keys in {display_path}: {unexpected}")
             equivalencies = raw.get("equivalencies") or {}
             if not isinstance(equivalencies, dict):
-                raise RuntimeError(f"Invalid equivalencies format in {path}")
+                raise RuntimeError(f"Invalid equivalencies format in {display_path}")
             inst._load_ignorables(raw.get("ignorables"), path)
             inst._load_vetted(raw.get("vetted"), path, text)
             inst._load_ignored(raw.get("ignored"), path, text)
             inst._load_problems(raw.get("problems"), path, text)
         for key, value in equivalencies.items():
             if not isinstance(key, str):
-                raise RuntimeError(f"Invalid equivalencies key in {path}: {key!r}")
+                raise RuntimeError(f"Invalid equivalencies key in {display_path}: {key!r}")
             segment_id = None
             if "@" in key:
                 base, segment = key.split("@", 1)
@@ -118,9 +121,9 @@ class Equivalencies:
         if isinstance(value, (list, tuple, set)):
             variants = [item for item in value if isinstance(item, str)]
             if len(variants) != len(value):
-                raise RuntimeError(f"Invalid equivalencies value in {path}: {value!r}")
+                raise RuntimeError(f"Invalid equivalencies value in {paths.display_path(path)}: {value!r}")
             return variants
-        raise RuntimeError(f"Invalid equivalencies value in {path}: {value!r}")
+        raise RuntimeError(f"Invalid equivalencies value in {paths.display_path(path)}: {value!r}")
 
     def _normalize_text(self, text: str) -> str:
         text = text.replace("\u2019", "'").replace("\u2018", "'")
@@ -154,9 +157,9 @@ class Equivalencies:
         elif isinstance(raw, (list, tuple, set)):
             values = [item for item in raw if isinstance(item, str)]
             if len(values) != len(raw):
-                raise RuntimeError(f"Invalid ignorables in {path}: {raw!r}")
+                raise RuntimeError(f"Invalid ignorables in {paths.display_path(path)}: {raw!r}")
         else:
-            raise RuntimeError(f"Invalid ignorables in {path}: {raw!r}")
+            raise RuntimeError(f"Invalid ignorables in {paths.display_path(path)}: {raw!r}")
         for value in values:
             normalized = self._normalize_text(value)
             if normalized:
@@ -221,7 +224,7 @@ class Equivalencies:
                 needs_text_parse = True
             if needs_text_parse:
                 if text is None:
-                    raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
+                    raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
                 parsed = self._parse_status_tokens(text, key)
                 if parsed:
                     values = parsed
@@ -229,14 +232,14 @@ class Equivalencies:
                     values = [str(item) for item in raw]
             elif not values or (len(values) != len(raw) and not parsed_mapping):
                 if text is None:
-                    raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
+                    raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
                 parsed = self._parse_status_tokens(text, key)
                 if parsed:
                     values = parsed
                 else:
                     values = [str(item) for item in raw]
         else:
-            raise RuntimeError(f"Invalid {key} ids in {path}: {raw!r}")
+            raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
         for value in values:
             cleaned = value.strip()
             if cleaned:

@@ -29,7 +29,7 @@ class AudacityRecordingExporter:
         recordings_dir = self.paths.recordings_dir
         self._logger.info(
             "Checking Audacity exports in %s",
-            recordings_dir,
+            paths.display_path(recordings_dir),
         )
         exported: list[Path] = []
         skipped: list[Path] = []
@@ -37,7 +37,7 @@ class AudacityRecordingExporter:
         try:
             aup3_paths = self._collect_projects(recordings_dir=recordings_dir)
             if not aup3_paths:
-                self._logger.info("No Audacity projects found in %s", recordings_dir)
+                self._logger.info("No Audacity projects found in %s", paths.display_path(recordings_dir))
                 return
             exportable_projects: list[AudacityProject] = []
             for aup3_path in aup3_paths:
@@ -60,7 +60,7 @@ class AudacityRecordingExporter:
                         exported.append(project.path)
                     except RuntimeError as exc:
                         errors.append((project.path, exc))
-                        self._logger.error("Unable to export %s", project.path)
+                        self._logger.error("Unable to export %s", paths.display_path(project.path))
                         raise
         finally:
             self._log_summary(

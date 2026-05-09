@@ -9,6 +9,7 @@ import re
 import subprocess
 
 from play_config import PlayConfig
+import paths
 
 
 @dataclass
@@ -41,7 +42,7 @@ class AudioCheck:
             / f"{role}.wav"
         )
         if not audio_path.exists():
-            raise RuntimeError(f"Recording not found: {audio_path}")
+            raise RuntimeError(f"Recording not found: {paths.display_path(audio_path)}")
         stop_ms = None
         if not continue_play:
             silence_start = self._find_silence_start(audio_path, start_seconds)
@@ -49,7 +50,7 @@ class AudioCheck:
                 stop_ms = start_ms + int(round(silence_start * 1000)) + 1000
         logging.info(
             "Starting ffplay for %s at %dms%s",
-            audio_path,
+            paths.display_path(audio_path),
             start_ms,
             "" if stop_ms is None else f" (stops at {stop_ms}ms)",
         )

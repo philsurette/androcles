@@ -392,7 +392,7 @@ def verify_audio(
         write_start = time.perf_counter()
         out_path = verifier.write_xlsx(results, out_path=output)
         write_elapsed = time.perf_counter() - write_start
-        logging.info("Wrote %s in %.2fs", out_path, write_elapsed)
+        logging.info("Wrote %s in %.2fs", paths.display_path(out_path), write_elapsed)
         missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
         extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
         partial_count = sum(
@@ -413,7 +413,7 @@ def verify_audio(
             missing_count,
             extra_count,
             partial_count,
-            out_path,
+            paths.display_path(out_path),
         )
         if summary:
             renderer = AudioVerifierSummaryRenderer(format=summary_key)
@@ -435,7 +435,7 @@ def verify_audio(
         combined_elapsed = time.perf_counter() - combined_start
         logging.info(
             "Wrote combined audio verification workbook to %s in %.2fs",
-            combined_path,
+            paths.display_path(combined_path),
             combined_elapsed,
         )
 
@@ -621,7 +621,7 @@ def whisper_init(
     )
     for model_name in model_names:
         store.load(model_name)
-    logging.info("✅ cached whisper model(s) in %s", store.cache_dir)
+    logging.info("✅ cached whisper model(s) in %s", paths.display_path(store.cache_dir))
 
 
 @app.command("audioplay", hidden=True, rich_help_panel="build")
@@ -743,7 +743,7 @@ def run_write_play(line_no_prefix: bool = True, paths_config: paths.PathConfig |
     play = PlayTextParser(paths_config=cfg).parse()
     writer = PlayMarkdownWriter(play, paths=cfg, prefix_line_nos=line_no_prefix)
     path = writer.to_markdown()
-    logging.info("✅ wrote %s", path)
+    logging.info("✅ wrote %s", paths.display_path(path))
     return path
 
 
@@ -760,7 +760,7 @@ def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig 
         )
         path = writer.to_markdown()
         written_paths.append(path)
-        logging.debug("✅ wrote %s", path)
+        logging.debug("✅ wrote %s", paths.display_path(path))
     narrator_path = NarratorMarkdownWriter(
         play,
         reading_metadata=getattr(play, "reading_metadata", None),
@@ -770,7 +770,11 @@ def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig 
     written_paths.append(narrator_path)
     if written_paths:
         role_names = [r.name for r in play.roles] + ["_NARRATOR"]
-        logging.info("✅ created .md files in %s for %s", written_paths[0].parent, ",".join(role_names))
+        logging.info(
+            "✅ created .md files in %s for %s",
+            paths.display_path(written_paths[0].parent),
+            ",".join(role_names),
+        )
     return written_paths
 
 
@@ -779,7 +783,7 @@ def run_write_callout_script(paths_config: paths.PathConfig | None = None):
     play = PlayTextParser(paths_config=cfg).parse()
     writer = CalloutScriptWriter(play, paths=cfg)
     path = writer.to_markdown()
-    logging.info("✅ wrote %s", path)
+    logging.info("✅ wrote %s", paths.display_path(path))
     return path
 
 def run_write_announcer(
@@ -795,7 +799,7 @@ def run_write_announcer(
     announcer = select_announcer(play, build_type=effective_build_type)
     writer = AnnouncerScriptWriter(announcer=announcer, paths=cfg)
     path = writer.to_markdown()
-    logging.info("✅ wrote %s", path)
+    logging.info("✅ wrote %s", paths.display_path(path))
     return path
 
 
@@ -849,7 +853,7 @@ def run_check_recording(paths_config: paths.PathConfig | None = None):
     cfg = paths_config or paths.current()
     timings_path = cfg.audio_out_dir / "timings.csv"
     if not timings_path.exists():
-        typer.echo(f"{timings_path} not found; run verify first.")
+        typer.echo(f"{paths.display_path(timings_path)} not found; run verify first.")
         raise typer.Exit(code=1)
     for line in summarize_recordings(timings_path):
         typer.echo(line)
@@ -949,7 +953,7 @@ def run_audioplay(
             target_dir = out_path.parent / "normalized"
             target_dir.mkdir(parents=True, exist_ok=True)
             norm_path = target_dir / out_path.name
-            logging.info("Normalizing audioplay to %s", norm_path)
+            logging.info("Normalizing audioplay to %s", paths.display_path(norm_path))
             normalizer.normalize(str(out_path), str(norm_path))
     elif normalize_output and not generate_audio:
         logging.info("Skipping normalization because audio rendering was skipped.")

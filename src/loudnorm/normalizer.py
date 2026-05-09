@@ -9,6 +9,7 @@ from loudnorm.measurements_parser import MeasurementsParser
 from loudnorm.measurements import Measurements, Phase
 from loudnorm.metric import Metrics
 from loudnorm.score import Score
+import paths
 logger = logging.getLogger(__name__)    
 
 EXECUTABLE="ffmpeg"
@@ -112,7 +113,7 @@ class NormalizationResult:
 
     def render(self):
         r = [self.normalized_measurements.score.checkmark]
-        r.append(f"{self.normalized_path}←{self.input_path}")
+        r.append(f"{paths.display_path(self.normalized_path)}←{paths.display_path(self.input_path)}")
         for m in self.normalized_measurements.values():
             r.append(f"{m.score.checkmark}{m.metric.abbrev}:{m.value}")
         if not self.normalized_measurements.normalizable:

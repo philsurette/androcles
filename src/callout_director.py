@@ -36,7 +36,7 @@ class CalloutDirector(ABC):
         # Expect callout clips to be split from recordings/_CALLER.wav into build/audio/callouts/<callout>.wav
         path = self.paths.build_dir / "audio" / "callouts" / f"{role}.wav"
         if not path.exists():
-            logging.warning("Callout missing for role %s (expected in %s)", role, path)
+            logging.warning("Callout missing for role %s (expected in %s)", role, paths.display_path(path))
             return None
         length_ms = self._load_length_ms(path)
         return CalloutClip(

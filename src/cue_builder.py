@@ -45,7 +45,7 @@ class CueBuilder:
         """Return the callout clip for a role if it exists."""
         path = self.paths.build_dir / "audio" / "callouts" / f"{role}_callout.wav"
         if not path.exists():
-            raise RuntimeError(f"Callout missing for role {role} at {path}")
+            raise RuntimeError(f"Callout missing for role {role} at {paths.display_path(path)}")
         return AudioSegment.from_file(path)
 
     @staticmethod
@@ -182,7 +182,7 @@ class CueBuilder:
             audio = audio[:total]
         out_path = self.paths.audio_out_dir / "cues" / f"{role}_cue.mp4"
         self._export_mp4(audio, chapters, out_path)
-        logging.info("Wrote cue file %s with %d chapters", out_path, len(chapters))
+        logging.info("Wrote cue file %s with %d chapters", paths.display_path(out_path), len(chapters))
         return out_path
 
 

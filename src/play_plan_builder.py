@@ -271,7 +271,7 @@ class PlayPlanBuilder:
         if path in cache:
             return cache[path]
         if not path.exists():
-            raise RuntimeError("Audio file missing: %s", path)
+            raise RuntimeError(f"Audio file missing: {paths.display_path(path)}")
         audio = AudioSegment.from_file(path)
         cache[path] = audio
         return audio
@@ -282,7 +282,7 @@ class PlayPlanBuilder:
         if path in cache:
             return cache[path]
         if not path.exists():
-            logging.warning("Audio file missing: %s", path)
+            logging.warning("Audio file missing: %s", paths.display_path(path))
             cache[path] = 0
             return 0
         length = len(AudioSegment.from_file(path))

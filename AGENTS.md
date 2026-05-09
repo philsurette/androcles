@@ -43,6 +43,10 @@ Avoid adding new uses of the backwards-compatible path aliases in `paths.py` suc
 
 Use `play-config.yaml` and the existing `--play/-p` CLI convention for selecting a play.
 
+When logging, printing, or raising user-facing diagnostics that include repository paths, format paths relative to the project root with `paths.display_path()`. Use absolute paths only for files outside the repository.
+
+When reporting source locations, use `paths.display_location(path, line_no, col)` so diagnostics render as `file:line` or `file:line:col` and are clickable in VS Code terminals.
+
 ## CLI
 The main user-facing CLI wrapper is `./main`, which invokes `.venv/bin/python src/build.py`.
 

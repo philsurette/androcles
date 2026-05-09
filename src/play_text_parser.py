@@ -25,23 +25,23 @@ class PlayTextParser:
         """Load source text metadata from YAML adjacent to play.txt."""
         meta_path = self.source_path.with_name("source_text_metadata.yaml")
         if not meta_path.exists():
-            logging.warning(f"could not find source text metadata at {meta_path}")
+            logging.warning("could not find source text metadata at %s", paths.display_path(meta_path))
             return SourceTextMetadata()
         yml = yaml.YAML(typ='safe', pure=True)
         raw = yml.load(meta_path.read_text(encoding="utf-8")) or {}
         if not isinstance(raw, dict):
-            raise RuntimeError(f"Invalid metadata format in {meta_path}")
+            raise RuntimeError(f"Invalid metadata format in {paths.display_path(meta_path)}")
         return SourceTextMetadata(**raw)
     
     def _load_reading_metadata(self) -> ReadingMetadata:
         meta_path = self.source_path.with_name("reading_metadata.yaml")
         if not meta_path.exists():
-            logging.warning(f"could not find reading metadata at {meta_path}")
+            logging.warning("could not find reading metadata at %s", paths.display_path(meta_path))
             return ReadingMetadata()
         yml = yaml.YAML(typ='safe', pure=True)
         raw = yml.load(meta_path.read_text(encoding="utf-8")) or {}
         if not isinstance(raw, dict):
-            raise RuntimeError(f"Invalid metadata format in {meta_path}")
+            raise RuntimeError(f"Invalid metadata format in {paths.display_path(meta_path)}")
         readers: list[Reader] = []
         for entry in raw.get("readers", []) or []:
             if isinstance(entry, dict):
@@ -49,7 +49,7 @@ class PlayTextParser:
             elif isinstance(entry, Reader):
                 readers.append(entry)
             else:
-                logging.warning("Skipping unexpected reader entry %r in %s", entry, meta_path)
+                logging.warning("Skipping unexpected reader entry %r in %s", entry, paths.display_path(meta_path))
 
         meta_kwargs = dict(raw)
         meta_kwargs["readers"] = readers

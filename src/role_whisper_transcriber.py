@@ -48,7 +48,7 @@ class RoleWhisperTranscriber:
     def transcribe(self, recording_path: Path | None = None, out_path: Path | None = None) -> Path:
         path = recording_path or (self.paths.recordings_dir / f"{self.role}.wav")
         if not path.exists():
-            raise RuntimeError(f"Recording not found for role {self.role}: {path}")
+            raise RuntimeError(f"Recording not found for role {self.role}: {paths.display_path(path)}")
         clip_path = self._clip_audio(path)
         if clip_path is not None:
             path = clip_path
@@ -83,7 +83,7 @@ class RoleWhisperTranscriber:
         target = out_path or (self.paths.audio_out_dir / f"{self.role}_nlp.txt")
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-        self._logger.info("Wrote whisper transcript to %s (%s)", target, vad_label)
+        self._logger.info("Wrote whisper transcript to %s (%s)", paths.display_path(target), vad_label)
         return target
 
     def _load_model(self) -> WhisperModel:

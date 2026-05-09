@@ -59,16 +59,16 @@ class PlayBuilder:
         plan_path = self.paths.build_dir / "audio_plan.txt"
         plan_path.parent.mkdir(parents=True, exist_ok=True)
         write_plan(plan, plan_path)
-        logging.info("Wrote audio plan to %s", plan_path)
+        logging.info("Wrote audio plan to %s", paths.display_path(plan_path))
         captions_path: Path | None = None
         if self.generate_captions:
             captions_path = self.paths.build_dir / "captions.vtt"
             CaptionBuilder(plan, include_callouts=self.include_callouts).build(captions_path)
-            logging.info("Wrote captions to %s", captions_path)
+            logging.info("Wrote captions to %s", paths.display_path(captions_path))
         if self.generate_audio:
-            logging.info("Generating audioplay to %s", out_path)
+            logging.info("Generating audioplay to %s", paths.display_path(out_path))
             audio_builder.instantiate_plan(plan, out_path, audio_format=self.audio_format, captions_path=captions_path)
-            logging.info("Wrote %s", out_path)
+            logging.info("Wrote %s", paths.display_path(out_path))
         else:
             logging.info("Skipping audio rendering (generate-audio=false)")
         return [out_path]
@@ -117,7 +117,7 @@ class PlayBuilder:
             plan_path = self.paths.build_dir / f"audio_plan_part_{part_no}.txt"
             plan_path.parent.mkdir(parents=True, exist_ok=True)
             write_plan(plan, plan_path)
-            logging.info("Wrote audio plan to %s", plan_path)
+            logging.info("Wrote audio plan to %s", paths.display_path(plan_path))
             if self.generate_audio:
                 self.audio_builder.instantiate_plan(
                     plan,
@@ -128,7 +128,7 @@ class PlayBuilder:
                     append_paths=[],
                     metadata=metadata,
                 )
-                logging.info("Wrote %s", out_path)
+                logging.info("Wrote %s", paths.display_path(out_path))
             else:
                 logging.info("Skipping audio rendering (generate-audio=false)")
         return outputs

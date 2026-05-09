@@ -11,6 +11,13 @@ DEFAULT_PLAY_ID = "androcles"
 DEFAULT_BUILD_TYPE = "custom"
 
 
+def _display_path(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(Path(__file__).resolve().parent.parent).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
 @dataclass
 class PlayConfig:
     play_id: str
@@ -29,11 +36,11 @@ class PlayConfig:
         yml = YAML(typ="safe", pure=True)
         data = yml.load(config_path.read_text(encoding="utf-8")) or {}
         if not isinstance(data, dict):
-            raise RuntimeError(f"Invalid play-config.yaml format: {config_path}")
+            raise RuntimeError(f"Invalid play-config.yaml format: {_display_path(config_path)}")
         play_id = data.get("play_id", DEFAULT_PLAY_ID)
         build_type = data.get("build_type", DEFAULT_BUILD_TYPE)
         if not isinstance(play_id, str):
-            raise RuntimeError(f"Invalid play_id in {config_path}: {play_id!r}")
+            raise RuntimeError(f"Invalid play_id in {_display_path(config_path)}: {play_id!r}")
         if not isinstance(build_type, str):
-            raise RuntimeError(f"Invalid build_type in {config_path}: {build_type!r}")
+            raise RuntimeError(f"Invalid build_type in {_display_path(config_path)}: {build_type!r}")
         return cls(play_id=play_id, build_type=build_type)

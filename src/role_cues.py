@@ -152,7 +152,7 @@ class RoleCues:
             if content:
                 content += "\n"
             path.write_text(content, encoding="utf-8")
-            logging.info("✅ wrote %s", path)
+            logging.info("✅ wrote %s", paths.display_path(path))
 
 
 if __name__ == "__main__":

@@ -11,6 +11,28 @@ ROOT = Path(__file__).resolve().parent
 DEFAULT_PLAY_NAME = PlayConfig.load().play_id
 
 
+def project_root() -> Path:
+    return ROOT.parent
+
+
+def display_path(path: Path | str) -> str:
+    path = Path(path)
+    root = project_root().resolve()
+    try:
+        return path.resolve().relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def display_location(path: Path | str, line_no: int | None = None, col: int | None = None) -> str:
+    location = display_path(path)
+    if line_no is not None:
+        location = f"{location}:{line_no}"
+    if col is not None:
+        location = f"{location}:{col}"
+    return location
+
+
 @dataclass
 class PathConfig:
     """Resolved paths for a given play."""
@@ -48,7 +70,7 @@ class PathConfig:
         if path in self.cache:
             return self.cache[path]
         if not path.exists():
-            raise RuntimeError(f"Audio file missing: {path}")
+            raise RuntimeError(f"Audio file missing: {display_path(path)}")
         length = len(AudioSegment.from_file(path))
         self.cache[path] = length
         return length

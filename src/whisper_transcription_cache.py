@@ -43,8 +43,8 @@ class WhisperTranscriptionCache:
         if words is None:
             words = payload.get("words")
         if words is None:
-            raise RuntimeError(f"Missing cached transcription in {entry_path}")
-        self._logger.debug("Using cached transcription for %s", audio_path)
+            raise RuntimeError(f"Missing cached transcription in {paths.display_path(entry_path)}")
+        self._logger.debug("Using cached transcription for %s", paths.display_path(audio_path))
         return words
 
     def save(self, cache_key: dict, audio_path: Path, raw_words: list[dict]) -> None:
@@ -60,7 +60,7 @@ class WhisperTranscriptionCache:
         self._cache_dir.mkdir(parents=True, exist_ok=True)
         entry_path = self._cache_paths(cache_key)[0]
         entry_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
-        self._logger.debug("Saved transcription cache %s", entry_path)
+        self._logger.debug("Saved transcription cache %s", paths.display_path(entry_path))
 
     def _cache_paths(self, cache_key: dict) -> list[Path]:
         encoded = json.dumps(cache_key, sort_keys=True, separators=(",", ":"))

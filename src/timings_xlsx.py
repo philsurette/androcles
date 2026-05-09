@@ -149,5 +149,5 @@ def generate_xlsx(
         out_path = cfg.audio_out_dir / f"timings_part_{part_no}.xlsx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
-    print(f"Wrote {out_path}")
+    print(f"Wrote {paths.display_path(out_path)}")
     return out_path

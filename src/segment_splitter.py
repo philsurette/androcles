@@ -2,8 +2,6 @@
 """Abstract splitter for roles and narrator recordings."""
 from __future__ import annotations
 
-import os
-import sys
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -74,7 +72,7 @@ class SegmentSplitter(ABC):
     def split(self, part_filter: str | None = None) -> float | None:
         src_path = self.recording_path()
         if not src_path or not src_path.exists():
-            logging.error(f"Recording not found for role {self.role}", file=sys.stderr)
+            logging.error("Recording not found for role %s: %s", self.role, paths.display_path(src_path))
             return None
 
         out_dir = self.output_dir()
@@ -123,7 +121,7 @@ class SegmentSplitter(ABC):
                 len(spans),
                 len(expected_ids),
                 total_time,
-                os.path.relpath(str(src_path), str(Path.cwd())),
+                paths.display_path(src_path),
             )
         else:
             logging.info(
@@ -131,6 +129,6 @@ class SegmentSplitter(ABC):
                 len(spans),
                 len(expected_ids),
                 total_time,
-                os.path.relpath(str(src_path), str(Path.cwd())),
+                paths.display_path(src_path),
             )
         return total_time

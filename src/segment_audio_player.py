@@ -18,7 +18,7 @@ class SegmentAudioPlayer:
         path = self._find_segment_path(segment_id)
         if path is None:
             return False
-        logging.info("Playing segment %s (%s)", segment_id, path)
+        logging.info("Playing segment %s (%s)", segment_id, paths.display_path(path))
         return_code = subprocess.call(
             [
                 "ffplay",

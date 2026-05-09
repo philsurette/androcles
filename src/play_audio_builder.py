@@ -12,6 +12,7 @@ from pydub import AudioSegment
 from play_plan_builder import PlanItem, Silence, Chapter, PlayPlanBuilder
 from clip import CalloutClip, SegmentClip, ParallelClips
 from audio_mixer import AudioMixer
+import paths
 
 @dataclass
 class PlayAudioBuilder:
@@ -157,7 +158,7 @@ class PlayAudioBuilder:
                 cmd += ["-c:s", "mov_text", "-metadata:s:s:0", "language=eng"]
             cmd += map_args
             cmd += ["-shortest", "-c:v", "libx264", "-c:a", "copy", str(tmp_out)]
-            logging.info("Muxing video (and captions if present) into %s", out_path)
+            logging.info("Muxing video (and captions if present) into %s", paths.display_path(out_path))
             subprocess.run(cmd, check=True)
             tmp_out.replace(out_path)
 
