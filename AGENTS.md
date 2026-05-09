@@ -44,7 +44,17 @@ Avoid adding new uses of the backwards-compatible path aliases in `paths.py` suc
 Use `play-config.yaml` and the existing `--play/-p` CLI convention for selecting a play.
 
 ## CLI
-The main CLI is Typer-based in `src/build.py`. Add new CLI commands there unless there is a strong reason to create a separate script.
+The main user-facing CLI wrapper is `./main`, which invokes `.venv/bin/python src/build.py`.
+
+Use `./main <command>` for normal CLI runs, for example:
+
+```sh
+./main text
+./main segments
+./main audioplay
+```
+
+The Typer app implementation lives in `src/build.py`. Add new CLI commands there unless there is a strong reason to create a separate script.
 
 For play-specific commands, support the existing `--play/-p` option.
 
