@@ -1,0 +1,382 @@
+# App Manifest Design
+
+This document defines the first app-facing export contract for an actor rehearsal app. The goal is to give an iPhone/Android app a stable, versioned package to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
+
+## Intended Consumer
+
+The primary consumer is an offline-first actor rehearsal app.
+
+The app should support:
+
+- Selecting a play package.
+- Selecting one or more roles to rehearse.
+- Showing cue text before each expected response.
+- Playing cue audio when available.
+- Playing the actor's expected response audio when available.
+- Showing stage directions and contextual text separately from spoken response text.
+- Navigating by part, scene, block, or line.
+
+The app should not need to understand the source play text format or the build system internals.
+
+## Package Layout
+
+The app package should be generated under:
+
+```text
+build/<play_id>/app/
+```
+
+Initial layout:
+
+```text
+build/<play_id>/app/
+  manifest.json
+  audio/
+    segments/
+      <ROLE>/
+        <segment_id>.wav
+    callouts/
+      <ROLE>_callout.wav
+```
+
+All paths inside `manifest.json` are relative to the directory containing `manifest.json`.
+
+The package should be self-contained where practical. The app should be able to copy `build/<play_id>/app/` onto a device or into a mobile bundle without needing other files from `build/<play_id>/`.
+
+## Schema Version
+
+The root object includes a numeric schema version:
+
+```json
+{
+  "schema_version": 1
+}
+```
+
+Compatibility rules:
+
+- Increment `schema_version` for breaking changes.
+- Additive fields may keep the same schema version if existing fields retain their meaning.
+- The app should reject unsupported schema versions explicitly.
+
+## Root Manifest Shape
+
+Proposed root shape:
+
+```json
+{
+  "schema_version": 1,
+  "play": {
+    "id": "fairies",
+    "title": "The Curious Case of the Cottingley Fairies",
+    "authors": [],
+    "source": null
+  },
+  "reading": {
+    "type": "solo",
+    "build_type": "custom"
+  },
+  "roles": [],
+  "assets": []
+}
+```
+
+Root fields:
+
+- `schema_version`: Manifest schema version.
+- `play`: Source text metadata needed for display.
+- `reading`: Reading metadata that affects generated assets.
+- `roles`: Rehearsable role payloads.
+- `assets`: Optional package-wide asset index.
+
+## Role Payload
+
+Each role entry represents one rehearsable role.
+
+```json
+{
+  "id": "CHRISTINE",
+  "display_name": "Christine",
+  "reader": "Phil Surette",
+  "meta": false,
+  "parts": [],
+  "lines": []
+}
+```
+
+Role fields:
+
+- `id`: Stable role id from the play model, e.g. `CHRISTINE`.
+- `display_name`: Human-facing role name. Prefer reader metadata `role_name` when available, otherwise normalize the role id for display.
+- `reader`: Reader name when known.
+- `meta`: `true` for special/meta roles if exported.
+- `parts`: Optional summary of parts where the role appears.
+- `lines`: Ordered rehearsal line items for this role.
+
+Initial app export should include normal actor roles by default. `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` should be excluded from role selection unless a CLI option or later design explicitly includes meta roles.
+
+## Line Item
+
+Each line item describes one expected response opportunity for one role.
+
+```json
+{
+  "id": "0_2_CHRISTINE",
+  "part_id": 0,
+  "block_id": "0.2",
+  "role": "CHRISTINE",
+  "speaker": "CHRISTINE",
+  "cue": {
+    "speaker": "_NARRATOR",
+    "text": "1966.",
+    "audio": null
+  },
+  "response": {
+    "text": "This is Christine Canfield with the London Sun...",
+    "segments": [
+      {
+        "id": "0_2_1",
+        "text": "This is Christine Canfield with the London Sun...",
+        "audio": {
+          "path": "audio/segments/CHRISTINE/0_2_1.wav",
+          "duration_ms": 2430,
+          "required": true
+        }
+      }
+    ]
+  },
+  "directions": [],
+  "previous_roles": [
+    "_NARRATOR"
+  ]
+}
+```
+
+Line fields:
+
+- `id`: Stable app line id. It should include block identity and role id.
+- `part_id`: Numeric play part id, or `null` for no-part preamble material.
+- `block_id`: Human-readable block id using dot format, e.g. `0.2`.
+- `role`: Role being rehearsed.
+- `speaker`: Speaker label for this block. This may differ from `role` if callout/group behavior is involved.
+- `cue`: Prompt shown or played before the response.
+- `response`: Expected actor response for this role.
+- `directions`: Stage directions associated with the response block.
+- `previous_roles`: Useful display/context hint, matching the play model's preceding-role concept.
+
+## Cue Payload
+
+Cue payloads should be text-first. Audio is optional.
+
+```json
+{
+  "speaker": "LILLIAN",
+  "text": "No. I'll never forget it as long as I live.",
+  "audio": {
+    "path": "audio/segments/LILLIAN/1_9_1.wav",
+    "duration_ms": 2100,
+    "required": false
+  }
+}
+```
+
+Cue rules:
+
+- The default cue is the preceding non-meta speech block.
+- If the preceding block contains only directions, use direction text as context and attach narrator audio when available.
+- If there is no preceding cue, `cue` may be `null`.
+- Cue text may be shortened for rehearsal display, but the manifest should preserve enough metadata to support future full-text display.
+- Narrator audio for direction-only cues should be optional in schema version 1 unless the selected package mode explicitly requires complete playable cues.
+
+Open decision for `planning/cue_generation.md`: whether the manifest should include both `full_text` and `display_text` for cues.
+
+## Response Payload
+
+Response payloads are required for rehearsable lines.
+
+```json
+{
+  "text": "I'm Lillian Barnes.",
+  "segments": []
+}
+```
+
+Rules:
+
+- `response.text` is the concatenated expected spoken text for the selected role in the block.
+- `response.segments` preserves segment-level identity and audio assets.
+- For inline directions, directions should not be merged into spoken response text.
+- Missing required response audio should fail app package generation by default.
+
+## Audio Asset
+
+Audio assets are represented consistently anywhere they appear:
+
+```json
+{
+  "path": "audio/segments/CHRISTINE/0_2_1.wav",
+  "duration_ms": 2430,
+  "required": true
+}
+```
+
+Fields:
+
+- `path`: Relative path from `manifest.json`.
+- `duration_ms`: Audio length in milliseconds.
+- `required`: Whether package generation should fail if the asset is missing.
+
+For schema version 1, audio format should remain WAV for segment assets unless a later app packaging design chooses compressed assets.
+
+## Stage Directions
+
+Stage directions should be represented as structured text, not hidden inside response text.
+
+```json
+{
+  "segment_id": "4_1_2",
+  "text": "(_CHRISTINE shows LILLIAN a letter_)",
+  "placement": "inline"
+}
+```
+
+Fields:
+
+- `segment_id`: Segment id when available.
+- `text`: Direction text exactly as produced by the parser.
+- `placement`: `top_level`, `inline`, or `description`.
+
+For actor rehearsal, directions are display/context by default. Direction audio is optional unless a later mode rehearses narrator tracks.
+
+## Simultaneous Lines
+
+Simultaneous speech should preserve the shared segment id and all owners.
+
+```json
+{
+  "id": "2_73_GLADIATOR-1",
+  "block_id": "2.73",
+  "role": "GLADIATOR-1",
+  "speaker": "GLADIATORS",
+  "simultaneous": true,
+  "response": {
+    "text": "Hail, Caesar!",
+    "segments": [
+      {
+        "id": "2_73_1",
+        "owners": ["GLADIATOR-1", "GLADIATOR-2"],
+        "text": "Hail, Caesar!",
+        "audio": {
+          "path": "audio/segments/GLADIATOR-1/2_73_1.wav",
+          "duration_ms": 1200,
+          "required": true
+        }
+      }
+    ]
+  }
+}
+```
+
+Rules:
+
+- Each rehearsable owner gets its own role line item.
+- The segment records all owners.
+- The role-specific audio path uses the selected role's segment file.
+- The app may later choose to play other simultaneous owners as context, but schema version 1 does not require that behavior.
+
+## Special Roles
+
+Default app-package behavior:
+
+- `_NARRATOR`: Excluded as a rehearsable role, but top-level and inline directions may appear as context.
+- `_CALLER`: Excluded from role selection. Callout audio may be used as optional cue/prompt audio if available.
+- `_ANNOUNCER`: Excluded from actor rehearsal packages.
+
+Future options may include:
+
+- `--include-narrator-role`
+- `--include-caller`
+- `--include-announcer`
+
+Those options should not be added until there is an app use case for them.
+
+## Missing Audio Compatibility
+
+Default policy:
+
+- Missing required response audio fails package generation.
+- Missing optional cue audio does not fail package generation if cue text is present.
+- Narrator audio for direction-only cues is used when present, but is not required by default.
+- Missing optional callout audio does not fail unless callouts are explicitly required by the selected mode.
+
+The manifest should not silently include paths to missing required files.
+
+Open decision for `planning/missing_audio_policy.md`: exact exception class and CLI flag name for diagnostic package generation.
+
+## Example Minimal Manifest
+
+```json
+{
+  "schema_version": 1,
+  "play": {
+    "id": "fairies",
+    "title": "The Curious Case of the Cottingley Fairies",
+    "authors": [],
+    "source": null
+  },
+  "reading": {
+    "type": "solo",
+    "build_type": "custom"
+  },
+  "roles": [
+    {
+      "id": "CHRISTINE",
+      "display_name": "Christine",
+      "reader": "Phil Surette",
+      "meta": false,
+      "parts": [0, 1, 2, 3, 4, 5],
+      "lines": [
+        {
+          "id": "0_2_CHRISTINE",
+          "part_id": 0,
+          "block_id": "0.2",
+          "role": "CHRISTINE",
+          "speaker": "CHRISTINE",
+          "cue": {
+            "speaker": "_NARRATOR",
+            "text": "1966.",
+            "audio": null
+          },
+          "response": {
+            "text": "This is Christine Canfield with the London Sun; it's three o'clock in the afternoon on May fifteenth, 1966.",
+            "segments": [
+              {
+                "id": "0_2_1",
+                "owners": ["CHRISTINE"],
+                "text": "This is Christine Canfield with the London Sun; it's three o'clock in the afternoon on May fifteenth, 1966.",
+                "audio": {
+                  "path": "audio/segments/CHRISTINE/0_2_1.wav",
+                  "duration_ms": 4200,
+                  "required": true
+                }
+              }
+            ]
+          },
+          "directions": [],
+          "previous_roles": ["_NARRATOR"]
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
+```
+
+## Implementation Notes
+
+- Build manifest records from the parsed `Play` model, not from markdown output.
+- Use existing `BlockId` and `SegmentId` semantics for stable ids.
+- Keep manifest-writing code out of `src/build.py`; the CLI should delegate to an app package builder.
+- Use dataclasses for manifest model classes.
+- Prefer one primary class per new file.
+- Add tests against in-memory `Play` fixtures before wiring the CLI.
