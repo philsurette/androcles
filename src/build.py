@@ -48,9 +48,17 @@ from spacing import (
   SEGMENT_SPACING_MS
 )
 
-app = typer.Typer(add_completion=False)
-text_app = typer.Typer(add_completion=False, help="Build markdown artifacts")
-whisper_app = typer.Typer(add_completion=False, help="Whisper transcription tools")
+app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+text_app = typer.Typer(
+    add_completion=False,
+    help="Build markdown artifacts",
+    pretty_exceptions_enable=False,
+)
+whisper_app = typer.Typer(
+    add_completion=False,
+    help="Whisper transcription tools",
+    pretty_exceptions_enable=False,
+)
 app.add_typer(text_app, name="text", rich_help_panel="build")
 app.add_typer(whisper_app, name="whisper", rich_help_panel="utility")
 PLAY_OPTION = typer.Option(
@@ -104,7 +112,7 @@ def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
     cfg = paths.PathConfig(play_name)
     setup_logging(cfg)
     if ctx.invoked_subcommand is None:
-        typer.echo("use 'audioplay --prepare' to build the audioplay or '--help' to see a list of commands")
+        typer.echo("use './main audioplay --prepare' to build the audioplay or './main --help' to see a list of commands")
         raise typer.Exit(code=1)
 
 @text_app.callback(invoke_without_command=True)
@@ -624,7 +632,7 @@ def whisper_init(
     logging.info("✅ cached whisper model(s) in %s", paths.display_path(store.cache_dir))
 
 
-@app.command("audioplay", hidden=True, rich_help_panel="build")
+@app.command("audioplay", rich_help_panel="build")
 def audioplay(
     target: str | None = typer.Argument(
         None,
