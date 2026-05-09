@@ -21,7 +21,6 @@ from announcer import select_announcer
 from play_markdown_writer import PlayMarkdownWriter
 from role_markdown_writer import RoleMarkdownWriter
 from narrator_markdown_writer import NarratorMarkdownWriter
-from callouts_markdown_writer import CalloutsMarkdownWriter
 from callout_script_writer import CalloutScriptWriter
 from loudnorm.normalizer import Normalizer
 from cue_builder import CueBuilder
@@ -735,9 +734,7 @@ def run_text(
     ).resolve()
     run_write_play(line_no_prefix, paths_config=cfg)
     run_write_roles(line_no_prefix, paths_config=cfg)
-    run_write_callouts(paths_config=cfg)
     run_write_callout_script(paths_config=cfg)
-    run_write_callouts(paths_config=cfg)
     run_write_announcer(paths_config=cfg, build_type=effective_build_type)
 
 
@@ -775,15 +772,6 @@ def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig 
         role_names = [r.name for r in play.roles] + ["_NARRATOR"]
         logging.info("✅ created .md files in %s for %s", written_paths[0].parent, ",".join(role_names))
     return written_paths
-
-
-def run_write_callouts(paths_config: paths.PathConfig | None = None):
-    cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
-    writer = CalloutsMarkdownWriter(play, paths=cfg)
-    path = writer.to_markdown()
-    logging.info("✅ wrote %s", path)
-    return path
 
 
 def run_write_callout_script(paths_config: paths.PathConfig | None = None):

@@ -13,7 +13,7 @@ if str(SRC) not in sys.path:
 
 import paths
 from announcer_splitter import AnnouncerSplitter
-from build import run_audioplay, run_write_announcer
+from build import run_audioplay, run_text, run_write_announcer
 from play import Play, ReadingMetadata, SourceTextMetadata
 
 
@@ -62,6 +62,15 @@ def test_run_write_announcer_can_be_forced_to_custom(tmp_path: Path) -> None:
     content = path.read_text(encoding="utf-8")
     assert "This is a Librivox Recording." not in content
     assert "End of" in content
+
+
+def test_run_text_writes_caller_script_but_not_callouts_index(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+
+    run_text(paths_config=cfg)
+
+    assert (cfg.markdown_roles_dir / "_CALLER.md").exists()
+    assert not (cfg.markdown_dir / "_CALLOUTS.md").exists()
 
 
 def test_announcer_splitter_uses_librivox_build_type() -> None:
