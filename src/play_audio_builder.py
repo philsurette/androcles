@@ -109,12 +109,12 @@ class PlayAudioBuilder:
             if isinstance(item, ParallelClips):
                 if not item.clips:
                     continue
-                paths: List[Path] = []
+                parallel_paths: List[Path] = []
                 for clip in item.clips:
                     if clip.path is None:
                         continue
-                    paths.append(clip.path)
-                mixed = mixer.mix_parallel(paths)
+                    parallel_paths.append(clip.path)
+                mixed = mixer.mix_parallel(parallel_paths)
                 if mixed:
                     audio += mixed
                 continue
