@@ -18,6 +18,8 @@ class AnnouncerSplitter(SegmentSplitter):
     role: str = "_ANNOUNCER"
 
     def extra_outputs(self):
+        if not self.play.reading_metadata.dramatic_reading:
+            return []
         readers_dir = self.paths.build_dir / "audio" / "readers"
         return list(readers_dir.glob(f"{self.role}*.wav")) if readers_dir.exists() else []
 
@@ -31,7 +33,9 @@ class AnnouncerSplitter(SegmentSplitter):
 
     def pre_export_spans(self, spans, expected_ids, source_path: Path):
         if not spans:
-            logging.warning("Expected announcer intro but found no spans to split")
+            logging.warning("Expected announcer spans but found none")
+            return spans
+        if not self.play.reading_metadata.dramatic_reading:
             return spans
         # First span is the reader intro
         readers_dir = self.paths.build_dir / "audio" / "readers"

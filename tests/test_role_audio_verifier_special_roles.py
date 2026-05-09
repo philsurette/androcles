@@ -63,6 +63,35 @@ def test_collect_expected_segments_for_caller() -> None:
     assert [seg["expected_text"] for seg in segments[1:]] == ["CALL BOY", "LAVINIA"]
 
 
+def test_collect_expected_segments_for_solo_caller_omits_reader_intro() -> None:
+    blocks = [
+        RoleBlock(
+            block_id=BlockId(0, 1),
+            text="line",
+            role_names=["KEEPER"],
+            callout="KEEPER",
+        ),
+    ]
+    play = Play(
+        reading_metadata=ReadingMetadata(
+            reading_type="solo",
+            readers=[Reader(id="_DEFAULT", reader="Reader Name")],
+        ),
+        source_text_metadata=SourceTextMetadata(
+            title="Play",
+            authors=["Author"],
+        ),
+        blocks=blocks,
+    )
+    verifier = RoleAudioVerifier(
+        role="_CALLER",
+        play=play,
+        whisper_store=DummyWhisperStore(),
+    )
+    segments = verifier._collect_expected_segments()
+    assert [seg["segment_id"] for seg in segments] == ["KEEPER"]
+
+
 def test_collect_expected_segments_for_announcer() -> None:
     blocks = [
         RoleBlock(
@@ -107,3 +136,25 @@ def test_collect_expected_segments_for_announcer() -> None:
         "section 1",
         "end of section 1",
     ]
+
+
+def test_collect_expected_segments_for_solo_announcer_omits_reader_intro() -> None:
+    play = Play(
+        reading_metadata=ReadingMetadata(
+            reading_type="solo",
+            readers=[Reader(id="_DEFAULT", reader="Reader Name")],
+        ),
+        source_text_metadata=SourceTextMetadata(
+            title="The Play",
+            authors=["Author"],
+            original_publication_year="1912",
+        ),
+    )
+    verifier = RoleAudioVerifier(
+        role="_ANNOUNCER",
+        play=play,
+        whisper_store=DummyWhisperStore(),
+    )
+    segments = verifier._collect_expected_segments()
+    assert segments[0]["segment_id"] == "title"
+    assert segments[0]["expected_text"] == "The Play, by Author."

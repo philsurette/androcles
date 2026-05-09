@@ -36,7 +36,9 @@ class CalloutScriptWriter:
             callouts.append(blk.callout)
 
         reader_name = self.play.reading_metadata.reader_for_id("_CALLER").reader
-        paragraphs: list[str] = [f"callouts read by {reader_name}"]
+        paragraphs: list[str] = []
+        if self.play.reading_metadata.dramatic_reading:
+            paragraphs.append(f"callouts read by {reader_name}")
         for name in sorted(callouts):
             paragraphs.append(name.replace("-", " "))
 

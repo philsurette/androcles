@@ -297,12 +297,14 @@ class RoleAudioVerifier:
             raise RuntimeError("Play is not loaded")
         reader = self.play.reading_metadata.reader_for_id("_CALLER")
         reader_name = reader.reader
-        segments: list[dict] = [
-            {
-                "segment_id": f"{self.role}_reader",
-                "expected_text": f"callouts read by {reader_name}",
-            }
-        ]
+        segments: list[dict] = []
+        if self.play.reading_metadata.dramatic_reading:
+            segments.append(
+                {
+                    "segment_id": f"{self.role}_reader",
+                    "expected_text": f"callouts read by {reader_name}",
+                }
+            )
         callouts: list[str] = []
         seen: set[str] = set()
         for blk in self.play.blocks:
@@ -328,12 +330,14 @@ class RoleAudioVerifier:
             raise RuntimeError("Play is not loaded")
         reader = self.play.reading_metadata.reader_for_id("_ANNOUNCER")
         reader_name = reader.reader or "<name>"
-        segments: list[dict] = [
-            {
-                "segment_id": f"{self.role}_reader",
-                "expected_text": f"announcements read by {reader_name}",
-            }
-        ]
+        segments: list[dict] = []
+        if self.play.reading_metadata.dramatic_reading:
+            segments.append(
+                {
+                    "segment_id": f"{self.role}_reader",
+                    "expected_text": f"announcements read by {reader_name}",
+                }
+            )
         announcer = select_announcer(self.play, build_type=self.build_type)
         for announcement in announcer.announcements():
             segments.append(

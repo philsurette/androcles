@@ -23,8 +23,10 @@ class AnnouncerScriptWriter:
         target = out_path or (self.paths.markdown_roles_dir / "_ANNOUNCER.md")
         target.parent.mkdir(parents=True, exist_ok=True)
         reader = self.announcer.play.reading_metadata.reader_for_id(self.announcer.announcer_role)
-        read_by = [f"announcements read by {reader.reader or '<name>'}\n"]
-        paragraphs = [a.text for a in self.announcer.announcements()]
-        content = "\n\n".join(read_by + paragraphs).rstrip() + "\n"
+        paragraphs: list[str] = []
+        if self.announcer.play.reading_metadata.dramatic_reading:
+            paragraphs.append(f"announcements read by {reader.reader or '<name>'}")
+        paragraphs.extend(a.text for a in self.announcer.announcements())
+        content = "\n\n".join(paragraphs).rstrip() + "\n"
         target.write_text(content, encoding="utf-8")
         return target

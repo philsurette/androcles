@@ -25,7 +25,8 @@ class NarratorMarkdownWriter:
         lines: list[str] = []
 
         narrator_name = self.reading_metadata.reader_for_id("_NARRATOR").reader
-        lines.append(f"Narrated by {narrator_name}\n")
+        verb = "Narrated" if self.reading_metadata.dramatic_reading else "Read"
+        lines.append(f"{verb} by {narrator_name}\n")
 
         for blk in self.play.blocks:
             part_id = blk.block_id.part_id if blk.block_id.part_id is not None else ""

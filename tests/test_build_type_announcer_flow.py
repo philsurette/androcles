@@ -69,7 +69,13 @@ def test_run_text_writes_caller_script_but_not_callouts_index(tmp_path: Path) ->
 
     run_text(paths_config=cfg)
 
-    assert (cfg.markdown_roles_dir / "_CALLER.md").exists()
+    caller_content = (cfg.markdown_roles_dir / "_CALLER.md").read_text(encoding="utf-8")
+    announcer_content = (cfg.markdown_roles_dir / "_ANNOUNCER.md").read_text(encoding="utf-8")
+    narrator_content = (cfg.markdown_roles_dir / "_NARRATOR.md").read_text(encoding="utf-8")
+
+    assert "callouts read by" not in caller_content
+    assert "announcements read by" not in announcer_content
+    assert narrator_content.startswith("Read by Anonymous")
     assert not (cfg.markdown_dir / "_CALLOUTS.md").exists()
 
 
