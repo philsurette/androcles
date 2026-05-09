@@ -1,0 +1,16 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Open selected Audacity project",
+      "type": "shell",
+      "command": "open",
+      "args": [
+        "-a",
+        "Audacity",
+        "${file}"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
