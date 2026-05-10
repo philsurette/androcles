@@ -1,6 +1,6 @@
 # Planning Documentation
 
-This directory contains active design and implementation planning for Stager, Cuemaster, and Playbooks.
+This directory contains active design and implementation planning for Quince, the local-first production suite containing Stager, LineRecorder, Cuemaster, and Playbooks.
 
 ## Canonical Terms
 
@@ -15,6 +15,16 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/package_refactor.md](stager/package_refactor.md): Package layout and migration plan for separating shared, audiobook/cue, and Playbook code.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - Future Stager docs belong in `planning/stager/`.
+
+## LineRecorder
+
+LineRecorder is the actor-facing recording tool that consumes Stager-generated recording packs and exports segment-aware recording packages back to Stager.
+
+- [linerecorder/linerecorder_design.md](linerecorder/linerecorder_design.md): Product and technical design for actor-side recording.
+- [linerecorder/linerecorder_use_cases.md](linerecorder/linerecorder_use_cases.md): Actor, stage-manager, export/import, privacy, and recovery use cases.
+- [linerecorder/recording_package_manifest.md](linerecorder/recording_package_manifest.md): Authoritative recording pack, recording package, and re-record request contracts.
+- [linerecorder/implementation_plan.md](linerecorder/implementation_plan.md): Resumable implementation plan for Stager integration and the browser MVP.
+- Future LineRecorder docs belong in `planning/linerecorder/`.
 
 ## Cuemaster
 
@@ -39,7 +49,9 @@ Examples:
 
 - Do not define the same contract in multiple docs.
 - The manifest/Playbook schema source of truth is `planning/cuemaster/app_manifest.md`.
+- The LineRecorder recording-pack and recording-package schema source of truth is `planning/linerecorder/recording_package_manifest.md`.
 - Product behavior belongs in `planning/cuemaster/product_design.md`.
 - Stager implementation plans belong under `planning/stager/`.
 - Playbook generation is strict: every rehearsable non-meta role line must have cue audio and response audio.
+- LineRecorder may export partial recording packages, but they must be explicitly marked incomplete and Stager must not treat them as complete Playbook-ready audio.
 - Cross-link instead of duplicating schemas or long examples.

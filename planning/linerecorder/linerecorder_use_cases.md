@@ -4,9 +4,11 @@
 
 This document describes the primary use cases for LineRecorder, the actor-facing recording tool in the Quince production system.
 
-LineRecorder helps actors record their role lines one at a time from a Stager-generated recording pack. The actor can review, accept, retry, re-record individual lines, and export a package of audio files for the stage manager or director to import back into Stager.
+LineRecorder helps actors record their role lines one at a time from a Stager-generated recording pack. In the UI these are lines; in package contracts and Stager code they are segment-backed recording items. The actor can review, accept, retry, re-record individual items, and export a package of audio files for the stage manager or director to import back into Stager.
 
 The system must work without server infrastructure. All core workflows are local, offline-capable, and file-based.
+
+The authoritative file contract for recording packs, recording packages, and future re-record requests is [recording_package_manifest.md](recording_package_manifest.md).
 
 ---
 
@@ -14,7 +16,7 @@ The system must work without server infrastructure. All core workflows are local
 
 ### Actor
 
-The primary user. The actor imports a recording pack, records their lines, reviews takes, re-records as needed, and exports the finished or partial recordings.
+The primary user. The actor imports a recording pack, records their lines, reviews takes, re-records as needed, and exports the finished or partial segment recordings.
 
 ### Stage Manager / Director / Production Organizer
 
@@ -39,13 +41,13 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 3. The actor chooses **Import Recording Pack**.
 4. The actor selects the local zip file.
 5. LineRecorder validates the package.
-6. LineRecorder displays the play title, role name, and line count.
+6. LineRecorder displays the play title, role name, and recording item count.
 
 **Notes:**
 
 - The package is local and file-based.
 - No account, server, or hosted service is required.
-- The package should include enough metadata for correct audio filenames.
+- The package should include enough metadata for correct segment audio filenames.
 
 ---
 
@@ -58,7 +60,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 1. The actor opens LineRecorder.
 2. The app shows local recording projects.
 3. The actor selects a project.
-4. LineRecorder restores the line list, accepted takes, and current position.
+4. LineRecorder restores the line list, accepted segment takes, and current position.
 
 **Notes:**
 
@@ -125,7 +127,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 **Notes:**
 
 - Manual start/stop is sufficient for MVP.
-- The app should associate the recording with the correct line ID and segment ID.
+- The app should associate the recording with the correct actor-facing line ID and Stager segment ID.
 
 ---
 
@@ -161,7 +163,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 **Notes:**
 
-- Export should include the accepted take for each line by default.
+- Export should include the accepted take for each segment by default.
 - Older takes may remain locally but should not be exported unless explicitly requested later.
 
 ---
@@ -222,7 +224,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ### UC-011: Re-Record an Accepted Line
 
-**Actor goal:** Replace a line after changing their interpretation.
+**Actor goal:** Replace a segment-backed line after changing their interpretation.
 
 **Scenario:**
 
@@ -231,7 +233,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 3. The actor records a new take.
 4. The actor listens to the new take.
 5. The actor accepts it.
-6. The new take becomes the current accepted recording for that line.
+6. The new take becomes the current accepted recording for that segment.
 
 **Notes:**
 
@@ -242,19 +244,19 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ### UC-012: Re-Record a Line Because the Script Changed
 
-**Actor goal:** Replace a recording for a changed line.
+**Actor goal:** Replace a recording for a changed source line or segment.
 
 **Scenario:**
 
 1. The stage manager sends an updated recording pack or re-record request.
-2. LineRecorder marks changed lines.
-3. The actor records only the changed lines.
+2. LineRecorder marks changed recording items.
+3. The actor records only the changed segment-backed items.
 4. The actor exports a replacement package.
 
 **Notes:**
 
 - Full script-update handling may be later than MVP.
-- The data model should leave room for changed-line status.
+- The data model should leave room for changed-item status.
 
 ---
 
@@ -269,7 +271,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 3. The actor marks the line for re-recording.
 4. Cuemaster exports a local re-record request file.
 5. The actor imports that request into LineRecorder.
-6. LineRecorder opens the requested line or list of lines.
+6. LineRecorder opens the requested line or list of segment-backed recording items.
 7. The actor records replacements.
 8. The actor exports a replacement package.
 
@@ -283,13 +285,13 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ### UC-014: Export Only Replacement Lines
 
-**Actor goal:** Send only the changed or re-recorded lines to the stage manager.
+**Actor goal:** Send only the changed or re-recorded segments to the stage manager.
 
 **Scenario:**
 
-1. The actor re-records one or more lines.
+1. The actor re-records one or more segment-backed items.
 2. The actor chooses **Export Replacements**.
-3. LineRecorder creates a package containing only those lines.
+3. LineRecorder creates a package containing only those segment recordings.
 4. The actor sends the package to the stage manager.
 5. Stager imports and validates the replacements.
 
@@ -310,11 +312,11 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor opens the progress screen.
 2. LineRecorder shows:
-   - total lines,
-   - accepted lines,
-   - missing lines,
-   - needs re-record lines,
-   - changed lines where applicable.
+   - total recording items,
+   - accepted items,
+   - missing items,
+   - needs re-record items,
+   - changed items where applicable.
 
 **Notes:**
 
@@ -331,7 +333,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor opens the line list.
 2. The actor selects a line.
-3. LineRecorder opens that line on the recording screen.
+3. LineRecorder opens that segment-backed line on the recording screen.
 
 **Notes:**
 
@@ -348,7 +350,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor opens the line list.
 2. The actor selects the **Missing** filter.
-3. LineRecorder shows only unrecorded lines.
+3. LineRecorder shows only unrecorded items.
 4. The actor records them.
 
 **Notes:**
@@ -365,7 +367,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor opens the line list.
 2. The actor selects **Needs Re-Record**.
-3. LineRecorder shows only flagged lines.
+3. LineRecorder shows only flagged recording items.
 4. The actor records new takes.
 
 **Notes:**
@@ -384,7 +386,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor finishes recording all lines.
 2. The actor opens the export screen.
-3. LineRecorder confirms all required lines are accepted.
+3. LineRecorder confirms all required segment-backed items are accepted.
 4. The actor exports a zip package.
 5. The actor shares the file by email, USB, AirDrop, shared drive, or another file-transfer method.
 
@@ -403,9 +405,9 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The actor records some lines.
 2. The actor opens export.
-3. LineRecorder warns that some lines are missing.
+3. LineRecorder warns that some recording items are missing.
 4. The actor chooses to export anyway.
-5. The output manifest clearly lists missing lines.
+5. The output manifest clearly lists missing segment IDs.
 
 **Notes:**
 
@@ -459,12 +461,12 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ### UC-023: Export Recording Packs from Stager
 
-**Stage manager goal:** Prepare line lists for actors to record.
+**Stage manager goal:** Prepare segment-backed line lists for actors to record.
 
 **Scenario:**
 
 1. The stage manager curates the play in Stager.
-2. Stager identifies each role's lines and segment IDs.
+2. Stager identifies each role's actor-facing lines and segment IDs.
 3. Stager exports a recording pack for a role.
 4. The stage manager sends the pack to the actor.
 
@@ -483,14 +485,14 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The stage manager receives a role recording package.
 2. The stage manager imports it into Stager.
-3. Stager validates play ID, role ID, line IDs, segment IDs, and audio files.
+3. Stager validates play ID, role ID, segment IDs, optional line IDs, and audio files.
 4. Stager places audio in the correct production asset paths.
 5. Stager reports missing, clipped, silent, or suspicious files.
 
 **Notes:**
 
 - Stager should not rely only on file order.
-- The manifest should map audio files to line and segment IDs.
+- The manifest should map audio files to segment IDs and preserve actor-facing line IDs where useful.
 
 ---
 
@@ -501,11 +503,11 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 **Scenario:**
 
 1. Stager imports a recording package.
-2. Stager compares recordings with the role line list.
+2. Stager compares recordings with the role segment list.
 3. Stager reports:
-   - recorded lines,
-   - missing lines,
-   - extra/unrecognized lines.
+   - recorded segments,
+   - missing segments,
+   - extra/unrecognized segments.
 
 **Notes:**
 
@@ -759,7 +761,7 @@ Good later candidates:
 
 ## Key Product Principles Reinforced by These Use Cases
 
-1. **LineRecorder knows the line identity.** The actor should not manage filenames, order, or silence gaps manually.
+1. **LineRecorder knows the segment identity.** The actor should not manage filenames, order, or silence gaps manually.
 
 2. **Recording should be local and trustworthy.** No account, server, or upload is required.
 
@@ -767,7 +769,7 @@ Good later candidates:
 
 4. **Microphone setup matters.** Preventing bad recordings is more valuable than trying to repair them later.
 
-5. **Stager remains the production source of truth.** LineRecorder captures role audio; Stager validates and integrates it.
+5. **Stager remains the production source of truth.** LineRecorder captures role audio by segment ID; Stager validates and integrates it.
 
 6. **Cuemaster integration should be file-based first.** Re-record requests should move between tools as local files, not through a server.
 

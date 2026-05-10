@@ -4,9 +4,9 @@
 
 LineRecorder is the actor-facing recording tool in the Quince production system.
 
-It helps actors record clean, line-by-line audio for their assigned role without using Audacity, manual silence gaps, or file-renaming workflows. Stager prepares a role-specific recording package; LineRecorder guides the actor through each line; the actor records, reviews, accepts, retries, and later exports a package of recordings that can be imported back into Stager.
+It helps actors record clean, line-by-line audio for their assigned role without using Audacity, manual silence gaps, or file-renaming workflows. Stager prepares a role-specific recording pack; LineRecorder guides the actor through each user-facing line while preserving Stager `segment_id` identity; the actor records, reviews, accepts, retries, and later exports a package of recordings that can be imported back into Stager.
 
-LineRecorder is not intended to be a full audio editor or a studio production tool. Its purpose is to make role-line recording simple, reliable, and line-aware.
+LineRecorder is not intended to be a full audio editor or a studio production tool. Its purpose is to make role recording simple, reliable, and segment-aware while keeping the UI actor-friendly.
 
 The output is used primarily for:
 
@@ -15,7 +15,7 @@ The output is used primarily for:
 - the recording actor's own baseline performance reference,
 - production-managed Playbook generation.
 
-Studio quality is not required. Usability, correct line-to-file mapping, and reliable recording are more important.
+Studio quality is not required. Usability, correct segment-to-file mapping, and reliable recording are more important.
 
 ---
 
@@ -25,7 +25,7 @@ The initial Quince production suite consists of three main tools:
 
 ```text
 Stager        → curate and structure the script
-LineRecorder  → record role-line audio
+LineRecorder  → record role segment audio
 Cuemaster     → rehearse from Playbooks
 ```
 
@@ -36,7 +36,6 @@ Stager is used by the stage manager, director, or production organizer to curate
 Stager is the source of truth for the script and for the mapping between:
 
 - role IDs,
-- line IDs,
 - block IDs,
 - segment IDs,
 - expected audio filenames,
@@ -46,9 +45,9 @@ Stager exports role-specific recording packs for LineRecorder.
 
 ### LineRecorder
 
-LineRecorder consumes a role recording pack from Stager. It presents each line to the actor, records one line at a time, stores accepted takes locally, allows re-recording of individual lines, and exports a recording package.
+LineRecorder consumes a role recording pack from Stager. It presents each recording item to the actor as a line, records one segment-backed item at a time, stores accepted takes locally, allows re-recording of individual items, and exports a recording package.
 
-LineRecorder does not need to understand the full script. It only needs the role-specific line list and the metadata required to name and package each recording correctly.
+LineRecorder does not need to understand the full script. It only needs the role-specific recording item list and the metadata required to name and package each segment recording correctly.
 
 ### Cuemaster
 
@@ -61,8 +60,8 @@ Cuemaster consumes finished Playbooks and helps actors rehearse. Cuemaster may l
 - **No required server.** The Quince production system must work without server infrastructure, accounts, cloud sync, or hosted production services.
 - **File-based handoff.** Stager, LineRecorder, and Cuemaster exchange local files such as zips, manifests, and audio assets.
 - **Browser first, Capacitor later.** LineRecorder is built as a browser web app first. A Capacitor wrapper may be added later, but the core workflow must not depend on it.
-- **Line-aware recording.** The actor records one line at a time, and LineRecorder knows exactly which line and segment ID each recording belongs to.
-- **Easy re-recording.** Actors can replace individual line recordings as their interpretation changes.
+- **Segment-aware recording.** The actor sees lines, but LineRecorder knows exactly which Stager segment ID each recording belongs to.
+- **Easy re-recording.** Actors can replace individual segment recordings as their interpretation changes.
 - **Simple audio expectations.** The goal is useful rehearsal audio, not studio mastering.
 - **No GPL-family dependencies.** The shipped app must avoid GPL, LGPL, AGPL, SSPL, BUSL, unclear-license, and unlicensed dependencies.
 - **Actor-friendly microphone setup.** The tool should detect common microphone problems before the actor records many unusable takes.
@@ -147,7 +146,7 @@ The baseline workflow is fully local and file-based:
 ```text
 1. Stager exports a role recording pack.
 2. Actor imports the pack into LineRecorder.
-3. Actor records and accepts line takes.
+3. Actor records and accepts segment-backed line takes.
 4. Actor exports a role recording package.
 5. Actor shares the package by email, USB stick, AirDrop, shared drive, etc.
 6. Stage manager imports the package into Stager.
@@ -163,128 +162,17 @@ Optional hosted/server workflows may be considered in the future, but they must 
 
 ## Input Package: Role Recording Pack
 
-Stager exports a role-specific recording pack for each actor or role.
+Stager exports a role-specific recording pack for each actor or role. The authoritative contract is [recording_package_manifest.md](recording_package_manifest.md).
 
-A recording pack should be a zip archive, for example:
-
-```text
-CENTURION-recording-pack.zip
-├── manifest.json
-└── optional/
-    └── context files if needed later
-```
-
-The manifest contains enough information for LineRecorder to present the actor's lines and produce correctly named recordings.
-
-### Conceptual Manifest Shape
-
-```json
-{
-  "schema_version": 1,
-  "package_type": "role_recording_pack",
-  "play": {
-    "id": "androcles",
-    "title": "Androcles and the Lion",
-    "version": "2026-05-10"
-  },
-  "role": {
-    "id": "CENTURION",
-    "display_name": "Centurion"
-  },
-  "recording": {
-    "preferred_sample_rate_hz": 48000,
-    "preferred_channels": 1,
-    "source_format": "wav"
-  },
-  "lines": [
-    {
-      "line_id": "0_12_CENTURION",
-      "block_id": "0.12",
-      "segment_id": "0_12_1",
-      "sequence": 1,
-      "text": "Halt! Orders from the Captain.",
-      "cue_text": "A bugle is heard far behind on the road.",
-      "stage_directions": "stopping",
-      "output_path": "audio/segments/CENTURION/0_12_1.wav"
-    }
-  ]
-}
-```
-
-### Required Line Fields
-
-Each line should include:
-
-- `line_id`,
-- `block_id`,
-- `segment_id`,
-- sequence/order value,
-- line text,
-- expected output path.
-
-Optional fields may include:
-
-- cue text,
-- scene/act heading,
-- stage directions,
-- notes from Stager,
-- previous recording metadata,
-- changed-line flag,
-- target delivery duration,
-- target hesitation,
-- simultaneous speech metadata.
+A recording pack is a zip archive with a root `manifest.json`. The manifest contains enough information for LineRecorder to present actor-facing lines and produce correctly named segment recordings. Each recording item maps to a Stager `segment_id`; if a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context.
 
 ---
 
 ## Output Package: Role Recording Package
 
-LineRecorder exports a role recording package that Stager can import.
+LineRecorder exports a role recording package that Stager can import. The authoritative contract is [recording_package_manifest.md](recording_package_manifest.md).
 
-Example:
-
-```text
-CENTURION-recordings.zip
-├── manifest.json
-└── audio/
-    └── segments/
-        └── CENTURION/
-            ├── 0_12_1.wav
-            ├── 0_14_1.wav
-            └── 0_19_1.wav
-```
-
-### Conceptual Output Manifest
-
-```json
-{
-  "schema_version": 1,
-  "package_type": "role_recordings",
-  "play": {
-    "id": "androcles",
-    "title": "Androcles and the Lion",
-    "version": "2026-05-10"
-  },
-  "role": {
-    "id": "CENTURION",
-    "display_name": "Centurion"
-  },
-  "recordings": [
-    {
-      "line_id": "0_12_CENTURION",
-      "block_id": "0.12",
-      "segment_id": "0_12_1",
-      "audio_path": "audio/segments/CENTURION/0_12_1.wav",
-      "recorded_at": "2026-05-10T14:30:00Z",
-      "duration_ms": 1840,
-      "sample_rate_hz": 48000,
-      "channels": 1,
-      "status": "accepted"
-    }
-  ]
-}
-```
-
-The output manifest lets Stager validate completeness, match recordings to script lines, and avoid relying on file order.
+The output manifest lets Stager validate completeness, match recordings to Stager segment IDs, and avoid relying on file order. LineRecorder may export partial packages, but the package must explicitly report missing segment IDs so Stager does not treat partial input as complete Playbook-ready audio.
 
 ---
 
@@ -410,8 +298,8 @@ Local state should include:
 
 - imported recording pack manifest,
 - current role,
-- current line,
-- accepted take per line,
+- current recording item,
+- accepted take per segment,
 - rejected/replaced take metadata if retained,
 - recording settings,
 - microphone preference where possible,
@@ -424,7 +312,7 @@ The app should not assume network access or cloud sync.
 
 ## Line Status Model
 
-Each line should have a clear status:
+Each actor-facing line or recording item should have a clear status:
 
 ```text
 Not recorded
@@ -443,10 +331,10 @@ Accepted
 
 But the data model should leave room for richer statuses.
 
-### Per-Line Recording State
+### Per-Segment Recording State
 
 ```ts
-type LineRecordingState = {
+type SegmentRecordingState = {
   lineId: string;
   segmentId: string;
   status: "missing" | "recorded" | "accepted" | "needs_rerecord" | "changed";
@@ -488,7 +376,7 @@ Displays:
 
 - play title,
 - role name,
-- number of lines,
+- number of recording items,
 - package version,
 - any warnings.
 
@@ -540,10 +428,10 @@ Shows all lines with status.
 Functions:
 
 - jump to any line,
-- filter missing lines,
-- filter accepted lines,
-- filter needs re-record,
-- show changed lines,
+- filter missing recording items,
+- filter accepted recording items,
+- filter needs re-record items,
+- show changed items,
 - show export readiness.
 
 ### 6. Export Screen
@@ -553,29 +441,29 @@ Shows package completeness and export options.
 Displays:
 
 - total lines,
-- accepted lines,
-- missing lines,
+- accepted recording items,
+- missing recording items,
 - warnings,
 - export role recordings zip.
 
-MVP should allow export even if some lines are missing, but the package should clearly report missing lines in the manifest.
+MVP should allow export even if some recording items are missing, but the package should clearly report missing segment IDs in the manifest.
 
 ---
 
 ## Re-Recording Model
 
-Actors should be able to re-record individual lines at any time.
+Actors should be able to re-record individual segment-backed lines at any time.
 
 Reasons include:
 
 - actor fumbled the line,
 - actor changed their interpretation,
 - actor wants different emphasis,
-- line changed during rehearsal,
+- source line changed during rehearsal,
 - original recording is too quiet/clipped/noisy,
 - Cuemaster revealed that the reference recording is wrong or out of date.
 
-Re-recording should replace the accepted take for that line, but the app may retain older takes locally until export or cleanup.
+Re-recording should replace the accepted take for that segment, but the app may retain older takes locally until export or cleanup.
 
 ### Re-Recording Flow
 
@@ -604,7 +492,7 @@ Actor finds a bad/outdated recording
 Actor marks line for re-recording
 Cuemaster exports a re-record request file
 LineRecorder imports the request
-Actor records replacement lines
+Actor records replacement segments
 LineRecorder exports replacement package
 Stager imports replacement package
 Stager rebuilds Playbook
@@ -612,32 +500,7 @@ Stager rebuilds Playbook
 
 ### Re-Recording Request File
 
-Conceptual shape:
-
-```json
-{
-  "schema_version": 1,
-  "package_type": "rerecord_request",
-  "playbook_id": "androcles",
-  "playbook_version": "2026-05-10",
-  "role": {
-    "id": "CENTURION",
-    "display_name": "Centurion"
-  },
-  "lines": [
-    {
-      "line_id": "0_12_CENTURION",
-      "block_id": "0.12",
-      "segment_id": "0_12_1",
-      "text": "Halt! Orders from the Captain.",
-      "reason": "outdated",
-      "note": "Take should be faster and less angry."
-    }
-  ]
-}
-```
-
-LineRecorder should eventually import these files and open directly to the requested line set.
+The authoritative future contract is [recording_package_manifest.md](recording_package_manifest.md). LineRecorder should eventually import these files and open directly to the requested segment-backed recording items.
 
 ---
 
@@ -667,14 +530,13 @@ When Stager imports a LineRecorder package, it should validate:
 - play ID matches,
 - play version if required,
 - role ID matches,
-- line IDs exist,
 - segment IDs exist,
 - required audio files are present,
 - audio files are readable,
 - durations are plausible,
 - files are not silent,
 - files are not clipped beyond acceptable limits,
-- package may be partial if production allows it.
+- package may be partial if production allows it and the manifest marks it incomplete.
 
 Stager should produce a clear report:
 
@@ -693,7 +555,7 @@ LineRecorder MVP should include:
 
 - import role recording pack,
 - microphone setup,
-- record one line at a time,
+- record one segment-backed line at a time,
 - playback current take,
 - accept/retry,
 - move next/back,
@@ -701,7 +563,7 @@ LineRecorder MVP should include:
 - re-record accepted lines,
 - persist draft recordings locally,
 - export WAV recording package,
-- show missing-line checklist,
+- show missing-item checklist,
 - no server dependency.
 
 MVP should not include:
@@ -745,7 +607,7 @@ Potential future features:
 1. **WAV encoding path:** Implement app-owned WAV encoding from AudioWorklet PCM, or use a small permissively licensed helper?
 2. **Sample rate:** Prefer 48kHz mono, but should LineRecorder preserve the device sample rate and let Stager resample?
 3. **Noise suppression default:** Should Clean Recording Mode or Noisy Room Mode be default?
-4. **Partial exports:** Should actors be allowed to export incomplete packages? Initial answer: yes, with clear missing-line metadata.
+4. **Partial exports:** Should actors be allowed to export incomplete packages? Initial answer: yes, with clear missing-segment metadata.
 5. **Take retention:** Should old takes be retained after a line is re-recorded? Initial answer: locally yes, exported no.
 6. **Changed lines:** How should Stager communicate changed lines to an actor after a recording pack has already been started?
 7. **MP3 export:** Should this be built into LineRecorder or left to Stager?
@@ -759,18 +621,18 @@ Potential future features:
 LineRecorder MVP is complete when:
 
 - [ ] A user can import a role recording pack from Stager.
-- [ ] The app validates and displays the role line list.
+- [ ] The app validates and displays the role recording item list.
 - [ ] The user can select and test a microphone.
 - [ ] The app warns about no signal, too-quiet input, and clipping.
 - [ ] The user can record a line.
 - [ ] The user can play back the recorded take.
 - [ ] The user can accept or retry the take.
-- [ ] The user can advance through the role line list.
+- [ ] The user can advance through the role recording item list.
 - [ ] The user can jump back and re-record an accepted line.
 - [ ] Accepted recordings persist locally after reload.
 - [ ] The user can export a role recording package as a zip.
 - [ ] Exported audio files are named according to Stager segment IDs.
-- [ ] Exported manifest maps recordings to line IDs and segment IDs.
+- [ ] Exported manifest maps recordings to segment IDs and preserves actor-facing line IDs where useful.
 - [ ] Stager can import and validate the package.
 - [ ] No server is required.
 - [ ] No GPL-family runtime dependency is included.
