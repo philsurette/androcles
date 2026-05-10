@@ -6,7 +6,7 @@ Cuemaster is a mobile-first rehearsal app for actors learning lines. It is, at i
 
 The key distinction from existing apps is that Cuemaster does **not** require the actor to record anything. Instead, a **Playbook** — a zip archive containing professional audio recordings of every line, cue, and direction, plus a structured JSON manifest — is prepared by the production and distributed to the cast. The actor downloads it and begins rehearsing immediately.
 
-Cuemaster is suitable for theatre companies, drama schools, film productions, and publishers that want to supply a polished rehearsal resource alongside a script.
+Cuemaster is suitable for theatre companies, drama schools, film productions, and publishers that want to supply a polished rehearsal resource alongside a script. It is also a **tempo-training tool**: because the Playbook contains target-paced audio, the app can help actors identify late pickups, slow deliveries, rushed deliveries, and inconsistent timing without transcribing or judging their performance.
 
 ---
 
@@ -31,7 +31,10 @@ Use `planning/cuemaster/app_manifest.md` as the authoritative manifest schema. T
 
 - **Audio-first, eyes-free.** The primary use case is rehearsal while driving, walking, exercising, or doing other tasks. All essential functions must be reachable without looking at the screen.
 - **No backend required at runtime.** After the Playbook is downloaded, the app operates entirely offline. No accounts, no sync, no required API, no network dependency.
-- **Self-assessment, not algorithmic scoring.** The actor hears their cue, speaks their line, then optionally hears the correct version to judge themselves. The app does not evaluate performance.
+- **Self-assessment, not algorithmic scoring.** The actor hears their cue, speaks their line, then optionally hears the correct version to judge themselves. The app does not evaluate acting quality or textual correctness.
+- **Timing feedback, not performance scoring.** Tempo training measures hesitation and delivery pace only. It does not decide whether the actor gave a good performance.
+- **Cues stay at performance speed.** Cue audio is always played at 1.0x so the actor learns real entrances. Only the selected actor role's own response audio supports variable-speed playback.
+- **Narrow, transparent microphone use.** Microphone access is used only for explicitly enabled features: voice commands and voice-activity timing. Tempo timing does not record, save, transcribe, upload, or score audio.
 - **Simple state machine.** The app walks a flat, ordered list of rehearsal lines for the selected role. Navigation is the primary complexity; playback is deliberately straightforward.
 - **Web app first, mobile wrapper second.** The app is built first as a browser-based React web app, then packaged for mobile using Capacitor.
 - **Preserve commercial and open-source flexibility.** The shipped app must avoid GPL-family and other restrictive dependencies so it can be released as permissive open source, source-available, freeware, or paid software later.
@@ -88,12 +91,14 @@ Prescribed stack:
 - **Zustand** for app/session state.
 - **Plain CSS or CSS modules** for styling.
 - **HTMLAudioElement** for audio playback behind an app-owned `AudioPlayer` abstraction.
+- **HTMLMediaElement.playbackRate** for variable-speed playback of actor role lines only.
+- **Browser microphone APIs plus a small voice-activity detector** for tempo timing.
 - **Browser File API** for importing `.zip` Playbooks.
 - **fflate** for zip extraction.
 - **Web Worker** for Playbook extraction so large zips do not block the UI.
 - **IndexedDB** for browser-side Playbook storage.
 
-Phase 1 does not include voice commands or hardware media controls. All interaction is via on-screen controls.
+Phase 1 does not include wake-word voice commands or hardware media controls. All navigation interaction is via on-screen controls. Phase 1 may include microphone-based tempo timing because it does not require speech recognition; it only requires voice activity detection.
 
 The Phase 1 web app is a shippable product in its own right, not merely a prototype. It should work for actors rehearsing at a desk or on a laptop before the mobile wrapper is finished.
 
@@ -122,7 +127,8 @@ Before committing deeply to Phase 2, build a small Capacitor spike that verifies
 5. Bluetooth headset media controls.
 6. Steering-wheel media control behavior where test hardware is available.
 7. Audio interruption handling for phone calls, notifications, and competing audio apps.
-8. Licensing status of every plugin used in the spike.
+8. Microphone permission and voice-activity timing behavior on device.
+9. Licensing status of every plugin used in the spike.
 
 The spike must use only license-approved dependencies. The previously considered `@jofr/capacitor-media-session` is **not approved** because GPL-family licensing is incompatible with Cuemaster's distribution goals.
 
@@ -140,6 +146,8 @@ The spike must use only license-approved dependencies. The previously considered
 | State management | Zustand | Approved | Simple global state without Redux ceremony. |
 | Styling | Plain CSS or CSS modules | Approved | Keeps UI simple and avoids large styling dependencies. |
 | Audio playback | `HTMLAudioElement` behind `AudioPlayer` abstraction | Approved for Phase 1 | Good fit for sequential playback of pre-recorded files. |
+| Variable-speed playback | `HTMLMediaElement.playbackRate` | Approved for actor response audio | Supports role-line speeds from 0.4x to 1.3x in 0.1x increments. |
+| Tempo timing | Browser microphone APIs + app-owned voice activity detection | Approved for Phase 1 spike | Measures hesitation and delivery pace without transcription or recording. |
 | Zip extraction | `fflate` | Approved | Small, fast, permissively licensed zip/decompression library. |
 | Zip execution model | Web Worker | Required | Prevents large Playbook imports from freezing the UI. |
 | Browser storage | IndexedDB | Required | Suitable for manifests and large extracted Playbook assets. |
@@ -158,7 +166,7 @@ Do not use these for v1:
 - **React Native** — conflicts with the web-app-first strategy.
 - **Ionic UI as the main UI framework** — Capacitor is allowed; Ionic UI components are not needed for the custom rehearsal interface.
 - **Redux** — too much ceremony for the current state model.
-- **Web Audio API as the default** — use only if `HTMLAudioElement` proves insufficient.
+- **Web Audio API as the default playback engine** — use `HTMLAudioElement` for playback. Web Audio APIs may be used narrowly for microphone voice-activity detection.
 - **JSZip** — use `fflate` unless a specific blocker is found.
 - **localStorage as primary storage** — too limited and fragile for Playbook data.
 - **GPL-family Capacitor plugins** — prohibited.
@@ -172,6 +180,7 @@ The following choices are intentionally deferred until technical and license spi
 - Vosk integration path: native plugin bridge vs. WASM.
 - Exact Vosk English model.
 - Any audio plugin beyond browser `HTMLAudioElement`.
+- Whether voice-activity detection is implemented with a simple app-owned analyser, an AudioWorklet, or a permissively licensed VAD package.
 
 ---
 
@@ -190,12 +199,19 @@ src/
     playbook.ts
     rehearsalSession.ts
     playbackState.ts
+    tempo.ts
     ids.ts
 
   audio/
     AudioPlayer.ts
     AudioQueue.ts
     audioTypes.ts
+
+  tempo/
+    VoiceActivityTimer.ts
+    TempoAttempt.ts
+    tempoAnalysis.ts
+    tempoTypes.ts
 
   storage/
     storageTypes.ts
@@ -306,6 +322,9 @@ The mobile app consumes roles and rehearsal line items, not a single flat `snipp
                 }
               }
             ]
+          },
+          "timing": {
+            "target_hesitation_ms": 500
           }
         }
       ]
@@ -322,6 +341,9 @@ Important manifest rules:
 - Required cue audio and response audio are expected to exist for every rehearsable non-meta role line.
 - Missing required audio should fail Playbook generation.
 - Callout audio is a separate playback asset. Cuemaster may let users choose whether callouts are played, but callouts do not replace cue audio.
+- Response segment `duration_ms` values are the target delivery durations for tempo training. If a line has multiple response segments, the target delivery duration is the sum of the required response segment durations.
+- `timing.target_hesitation_ms` is optional. When absent, the app uses the default target hesitation of 500ms.
+- Future manifest versions may support richer timing metadata, but v1 needs only optional line-specific target hesitation.
 
 The app derives a flat session sequence from `roles[].lines` after the actor selects a role.
 
@@ -338,13 +360,18 @@ selectedRole: string;             // e.g. "MEGAERA"
 cueDepth: number;                 // how many preceding cue items to play; default 1
 includeDirections: boolean;       // whether narrator/stage direction cues are played
 startLineId: string;              // where to begin
+roleLinePlaybackSpeed: number;    // actor response/reference speed; default 1.0, range 0.4-1.3
+speakAlongEnabled: boolean;       // play actor reference line for shadowing practice
+tempoTimingEnabled: boolean;      // enable hesitation and delivery timing
+defaultTargetHesitationMs: number;// default 500ms unless line-specific manifest value exists
 ```
 
 ### Session State
 
 ```ts
 currentLineId: string;            // the actor's next line to attempt
-playbackMode: PlaybackMode;       // CUE_PLAYING | WAITING | REFERENCE_PLAYING | PAUSED
+playbackMode: PlaybackMode;       // CUE_PLAYING | WAITING | REFERENCE_PLAYING | SPEAK_ALONG_PLAYING | TIMING_ARMED | TIMING_DELIVERY | PAUSED
+lastTempoAttempt?: TempoAttempt;  // latest hesitation/delivery measurement for current line
 ```
 
 ### Playback Mode
@@ -354,8 +381,37 @@ type PlaybackMode =
   | "CUE_PLAYING"
   | "WAITING"
   | "REFERENCE_PLAYING"
+  | "SPEAK_ALONG_PLAYING"
+  | "TIMING_ARMED"
+  | "TIMING_DELIVERY"
   | "PAUSED";
 ```
+
+### Tempo Attempt
+
+```ts
+type TempoAttempt = {
+  lineId: string;
+  attemptedAt: string;
+
+  cueEndedAtMs: number;
+  firstSpeechAtMs: number;
+  finalSpeechAtMs: number;
+
+  hesitationMs: number;
+  targetHesitationMs: number;
+
+  deliveryMs: number;
+  targetDeliveryMs: number;
+
+  paceRatio: number;      // targetDeliveryMs / deliveryMs; 1.0 means target pace
+  durationRatio: number;  // deliveryMs / targetDeliveryMs; 1.0 means target duration
+
+  detectionMode: "voice_activity";
+};
+```
+
+Persist tempo attempts locally per Playbook, role, and line. Timing history is a rehearsal aid, not a performance score.
 
 ### Derived Values
 
@@ -363,21 +419,31 @@ type PlaybackMode =
 - **Cue for line N**: required cue payloads attached to the selected line, optionally expanded by `cueDepth` if the manifest includes enough preceding context.
 - **Next/previous**: movement through the selected role's line array.
 - **Session progress**: current role-line index and scene/part position where available.
+- **Target hesitation**: `line.timing.target_hesitation_ms` when present; otherwise `defaultTargetHesitationMs`.
+- **Target delivery duration**: sum of response segment `duration_ms` values for the current line.
+- **Tempo classification**: derived from hesitation and delivery ratios using configurable thresholds.
 
 ---
 
 ## Session Flow
 
+### Standard Rehearsal Flow
+
 ```text
 START
   │
   ▼
-Play cue(s)                  ← one or more audio files played sequentially
+Play cue(s) at 1.0x          ← one or more cue files played sequentially
   │
   ▼
-WAITING                      ← silence; actor speaks their line from memory
+WAITING                      ← actor speaks their line from memory
   │                            app waits for tap/hardware/voice command
-  ├── "hear my line"  ──────► Play reference audio for current line
+  ├── "hear my line"  ──────► Play actor reference audio at selected role-line speed
+  │                              │
+  │                              └── returns to WAITING
+  │
+  ├── "speak along" ─────────► Play actor reference audio at selected role-line speed
+  │                              while actor shadows the recording
   │                              │
   │                              └── returns to WAITING
   │
@@ -392,7 +458,79 @@ WAITING                      ← silence; actor speaks their line from memory
   └── "stop" / "pause" ─────► PAUSED; session state saved
 ```
 
-The app **never auto-advances**. It always waits for an explicit command before moving on. There is no timeout.
+The app **never auto-advances** in the standard rehearsal flow. It always waits for an explicit command before moving on. There is no timeout.
+
+### Tempo Timing Flow
+
+Tempo timing adds measurement to the waiting state. It measures two separate values:
+
+1. **Hesitation** — time from cue end to first detected speech.
+2. **Delivery pace** — time from first detected speech to final detected speech, compared with the Playbook target duration.
+
+```text
+Play cue(s) at 1.0x
+  │
+  ▼
+Cue ends
+  │
+  ▼
+Open microphone immediately
+Start hesitation timer immediately
+  │
+  ▼
+First speech-like audio detected
+  │
+  ├── Stop hesitation timer
+  └── Start delivery timer
+        │
+        ▼
+Continue through speech and short internal pauses
+        │
+        ▼
+Long silence detected
+        │
+        ├── Stop delivery timer
+        ├── Subtract final ending silence
+        └── Show separate pickup and delivery feedback
+```
+
+Tempo timing does not transcribe speech, record audio, judge correctness, or score acting quality. It uses voice activity detection only.
+
+Default timing targets:
+
+```ts
+defaultTargetHesitationMs = 500;
+```
+
+Line-specific Playbook timing metadata overrides the default target hesitation.
+
+Initial internal timing thresholds:
+
+```ts
+internalPauseGraceMs = 750;  // short pauses treated as part of delivery
+endOfLineSilenceMs = 1500;   // longer silence ends the attempt
+```
+
+These thresholds must be tuned with real rehearsal audio. The final silence that triggers end-of-line detection is subtracted from the measured delivery time.
+
+### Speak-Along Flow
+
+Speak-along mode is a practice aid, not a timing mode.
+
+```text
+Play cue(s) at 1.0x
+  │
+  ▼
+Play actor reference line at selected role-line speed
+  │
+  ▼
+Actor speaks along with the recording
+  │
+  ▼
+Return to WAITING
+```
+
+Speak-along and automatic tempo timing should not run simultaneously in v1, because the microphone would hear the reference audio from the speaker.
 
 ---
 
@@ -427,6 +565,44 @@ Rules:
 The Phase 2 audio layer may remain `HTMLAudioElement` inside the WebView if the technical spike proves it works for background audio and media controls. If not, implement a native-backed audio adapter behind the same `AudioPlayer` interface.
 
 Do not choose a native audio plugin until license and behavior are verified.
+
+### Variable-Speed Role-Line Playback
+
+Only the selected actor role's own response/reference audio supports variable-speed playback. Cue audio always plays at 1.0x.
+
+Supported initial speed range:
+
+```text
+0.4x to 1.3x in 0.1x increments
+```
+
+Implementation rules:
+
+- Use `HTMLMediaElement.playbackRate` for browser playback.
+- Preserve pitch where supported by the browser or platform.
+- Apply speed changes only to actor response/reference audio.
+- Do not slow down cues, narrator cues, other-role cue lines, or stage directions.
+- Store the selected role-line playback speed in session configuration.
+
+### Tempo Timing Architecture
+
+Tempo timing uses microphone input for voice activity detection. It must not use cloud speech recognition, full transcription, or recording storage.
+
+Recommended Phase 1 approach:
+
+- Use `navigator.mediaDevices.getUserMedia({ audio: true })` after explicit user action and permission.
+- Feed the microphone stream into a small app-owned voice activity detector.
+- Use Web Audio APIs narrowly for microphone analysis, not as the default playback engine.
+- Detect speech start, short internal pauses, and final long silence.
+- Emit a `TempoAttempt` object for the current line.
+
+Implementation rules:
+
+- Microphone permission is requested only when tempo timing or voice commands are enabled.
+- The UI must explain that tempo timing listens for speech/silence only.
+- Audio must not be saved, uploaded, or transcribed.
+- Tempo timing must degrade gracefully when microphone permission is denied.
+- Echo cancellation should be enabled where available, but v1 avoids simultaneous reference playback and timing.
 
 ---
 
@@ -550,9 +726,24 @@ Implementation note:
 - GPL-family media-session plugins are prohibited.
 - If no suitable permissive plugin exists, write a small app-owned Capacitor plugin for the required media-session behavior.
 
-### 3. Wake Word + Voice Commands
+### 3. Microphone Tempo Timing
 
-Phase: 2, after core playback and hardware controls are stable.
+Phase: 1 technical spike; v1 if reliable enough.
+
+Tempo timing opens the microphone immediately after cue playback ends and listens for voice activity. It measures hesitation and delivery duration without transcription. This feature is separate from wake-word voice commands and should be usable from the browser app.
+
+Actions:
+
+- Enable or disable tempo timing in Session Setup.
+- Start a timed line by playing the cue.
+- Display pickup and delivery feedback after the actor finishes speaking.
+- Store timing attempts locally for line history and later drill modes.
+
+If microphone permission is denied, the app continues to function without tempo timing.
+
+### 4. Wake Word + Voice Commands
+
+Phase: 2, after core playback, tempo timing, and hardware controls are stable.
 
 Voice commands use a two-phase detection model to avoid false positives from the actor speaking their lines.
 
@@ -578,6 +769,10 @@ This architecture means:
 | "Quince… next" / "go" / "continue" | Advance to next actor line and play cue. |
 | "Quince… again" / "repeat" | Replay current cue without advancing. |
 | "Quince… line" / "hear my line" | Play reference audio for current line. |
+| "Quince… speak along" | Play actor reference audio for shadowing at selected speed. |
+| "Quince… slower" | Decrease actor role-line playback speed. |
+| "Quince… faster" | Increase actor role-line playback speed. |
+| "Quince… normal speed" | Return actor role-line playback speed to 1.0x. |
 | "Quince… back" / "previous" | Go to previous actor line and play cue. |
 | "Quince… skip" | Advance without playing reference. |
 | "Quince… scene [N]" | Jump to beginning of scene N. |
@@ -651,6 +846,10 @@ Settings:
 - **Cue depth**: how many preceding lines to hear as cue; default 1, range 1-5.
 - **Include stage directions in cue**: default on.
 - **Start position**: From beginning, Resume, Choose scene, or Bookmark.
+- **Role-line playback speed**: default 1.0x; range 0.4x-1.3x in 0.1x increments.
+- **Speak-along mode**: off by default.
+- **Tempo timing**: off by default; requires microphone permission.
+- **Default target hesitation**: default 500ms, used when the Playbook does not specify a line-specific target.
 
 Primary action:
 
@@ -671,9 +870,24 @@ Controls:
 ```text
 [ Back ]   [ Repeat cue ]   [ Skip ]
 
-          [ Hear my line ]
+ [ Hear my line ]   [ Speak along ]
 
               [ Next ]
+```
+
+When tempo timing is enabled, the session screen also shows a compact result after each timed attempt:
+
+```text
+Pickup
+  You: 1.3s
+  Target: 0.5s
+  Result: late
+
+Delivery
+  You: 5.8s
+  Playbook: 4.2s
+  Pace: 72% of target
+  Result: slow
 ```
 
 Session screen requirements:
@@ -693,8 +907,25 @@ Shows:
 - Current session position.
 - Bookmarks.
 - Progress indicators for rehearsed sections.
+- Timing indicators when tempo history exists.
+- Optional filters for late pickups, slow delivery, rushed delivery, inconsistent timing, and bookmarks.
 
-Tapping any scene or bookmark jumps to that line.
+Tapping any scene, bookmark, or timing-problem line jumps to that line.
+
+### 6. Tempo Review
+
+Accessible from Session or Script Browser after timing attempts exist.
+
+Shows:
+
+- Lines with late pickups.
+- Lines with slow delivery.
+- Lines with rushed delivery.
+- Lines with inconsistent timing.
+- Recent attempts for the selected line.
+- Average hesitation and delivery pace by line.
+
+This screen is a rehearsal diagnostic, not a performance report. It should avoid grades, scores, stars, or moral condemnation. The actor needs useful information, not a tiny robot drama critic.
 
 ---
 
@@ -743,6 +974,9 @@ Use Vitest for:
 - Next/previous navigation.
 - Bookmark behavior.
 - Storage adapter logic where practical.
+- Tempo attempt calculations.
+- Hesitation target fallback and line-specific overrides.
+- Delivery pace ratios and classifications.
 
 ### Browser Flow Tests
 
@@ -755,6 +989,10 @@ Use Playwright for:
 - Hear my line.
 - Next/back/skip.
 - Resume session.
+- Variable-speed role-line playback.
+- Speak-along mode.
+- Tempo timing permission flow.
+- Tempo feedback display.
 - Delete Playbook.
 
 ### Mobile Spike Tests
@@ -767,6 +1005,9 @@ Before Phase 2 implementation, manually verify:
 - Steering-wheel controls if available.
 - Audio interruption behavior.
 - File import and storage.
+- Microphone permission.
+- Voice-activity timing after cue playback.
+- Tempo timing with background noise.
 
 ---
 
@@ -789,7 +1030,9 @@ Stager is the initial Playbook authoring tool. A web-based authoring app could b
 
 The following are deliberate exclusions:
 
-- Line scoring or speech analysis.
+- Textual correctness scoring.
+- Acting-quality scoring.
+- Full speech transcription of actor attempts.
 - Cloud sync or multi-device sync.
 - Social or cast-sharing features.
 - In-app Playbook store or payments.
@@ -799,6 +1042,7 @@ The following are deliberate exclusions:
 - Server accounts or user profiles.
 - React Native implementation.
 - GPL-family plugin adoption.
+- Simultaneous speak-along playback and microphone timing in v1.
 
 ---
 
@@ -813,6 +1057,10 @@ The following are deliberate exclusions:
 | State | Zustand. |
 | Styling | Plain CSS or CSS modules. |
 | Audio Phase 1 | `HTMLAudioElement` via `AudioPlayer` abstraction. |
+| Role-line speed | `HTMLMediaElement.playbackRate`, 0.4x-1.3x in 0.1x increments. |
+| Cue speed | Always 1.0x. |
+| Tempo timing | Microphone voice activity detection; no transcription or recording. |
+| Target hesitation | Default 500ms; optional line-specific Playbook override. |
 | Zip | `fflate` in a Web Worker. |
 | Browser storage | IndexedDB. |
 | Native packaging | Capacitor. |
@@ -826,11 +1074,13 @@ The following are deliberate exclusions:
 
 ## Open Questions for Implementation
 
-1. **Capacitor audio/media spike**: Which permissively licensed implementation provides reliable background audio and media controls on both iOS and Android?
-2. **Vosk integration path**: Should voice commands use a native Vosk bridge or Vosk WASM inside the WebView?
-3. **Vosk model license**: Which English model is small enough, accurate enough, and permissively licensed for bundling?
-4. **Playbook size limits**: Should 500MB be a hard warning threshold, a soft warning, or configurable?
-5. **Playbook versioning**: What manifest fields identify package version, source, build date, and compatibility?
-6. **Audio format migration**: When should Stager add an app-optimized M4A/AAC packaging step?
-7. **Accessibility acceptance criteria**: What exact VoiceOver/TalkBack flows must pass before v1 release?
-8. **PWA packaging**: Should Phase 1 include a service worker and install prompt, or remain a plain browser app until the core loop stabilizes?
+1. **Tempo timing thresholds**: What internal pause and end-of-line silence thresholds work best with real actors and real rehearsal spaces?
+2. **Voice activity implementation**: Should v1 use a simple app-owned energy-based detector, an AudioWorklet, or a permissively licensed VAD package?
+3. **Capacitor audio/media spike**: Which permissively licensed implementation provides reliable background audio and media controls on both iOS and Android?
+4. **Vosk integration path**: Should voice commands use a native Vosk bridge or Vosk WASM inside the WebView?
+5. **Vosk model license**: Which English model is small enough, accurate enough, and permissively licensed for bundling?
+6. **Playbook size limits**: Should 500MB be a hard warning threshold, a soft warning, or configurable?
+7. **Playbook versioning**: What manifest fields identify package version, source, build date, and compatibility?
+8. **Audio format migration**: When should Stager add an app-optimized M4A/AAC packaging step?
+9. **Accessibility acceptance criteria**: What exact VoiceOver/TalkBack flows must pass before v1 release?
+10. **PWA packaging**: Should Phase 1 include a service worker and install prompt, or remain a plain browser app until the core loop stabilizes?
