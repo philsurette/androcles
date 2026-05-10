@@ -5,10 +5,14 @@ from dataclasses import dataclass, field
 from typing import Dict
 
 from pydub import AudioSegment
-from stager.shared.play_config import PlayConfig
+from stager.shared.play_config import DEFAULT_PLAY_ID, PlayConfig
 
 ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_PLAY_NAME = PlayConfig.load().play_id
+DEFAULT_PLAY_NAME = DEFAULT_PLAY_ID
+
+
+def default_play_name() -> str:
+    return PlayConfig.load().play_id
 
 
 def project_root() -> Path:
@@ -76,37 +80,41 @@ class PathConfig:
         return length
 
 
-_CURRENT = PathConfig(DEFAULT_PLAY_NAME)
+_CURRENT: PathConfig | None = None
 
 
 def set_play_name(play_name: str | None = None) -> PathConfig:
     """Update the current path config (legacy helper)."""
     global _CURRENT
-    _CURRENT = PathConfig(play_name or DEFAULT_PLAY_NAME)
+    _CURRENT = PathConfig(play_name or default_play_name())
     return _CURRENT
 
 
 def current() -> PathConfig:
+    global _CURRENT
+    if _CURRENT is None:
+        _CURRENT = PathConfig(default_play_name())
     return _CURRENT
 
 
 # Backwards-compatible aliases (avoid in new code)
-DEFAULT_PLAY = _CURRENT.play_text
-BUILD_DIR = _CURRENT.build_dir
-PARAGRAPHS_PATH = _CURRENT.paragraphs_path
-BLOCKS_DIR = _CURRENT.blocks_dir
-ROLES_DIR = _CURRENT.roles_dir
-INDEX_PATH = _CURRENT.index_path
-AUDIO_OUT_DIR = _CURRENT.audio_out_dir
-AUDIO_PLAY_DIR = _CURRENT.audio_play_dir
-SEGMENTS_DIR = _CURRENT.segments_dir
-RECORDINGS_DIR = _CURRENT.recordings_dir
-CALLOUTS_DIR = _CURRENT.callouts_dir
-MARKDOWN_DIR = _CURRENT.markdown_dir
-MARKDOWN_ROLES_DIR = _CURRENT.markdown_roles_dir
-SNIPPETS_DIR = _CURRENT.snippets_dir
-GENERAL_SNIPPETS_DIR = _CURRENT.general_snippets_dir
-LIBRIVOX_SNIPPETS_DIR = _CURRENT.librivox_snippets_dir
-LOGS_DIR = _CURRENT.logs_dir
-TARGET_DIRS = _CURRENT.target_dirs
-EXTRA_FILES = _CURRENT.extra_files
+_ALIASES = PathConfig(DEFAULT_PLAY_NAME)
+DEFAULT_PLAY = _ALIASES.play_text
+BUILD_DIR = _ALIASES.build_dir
+PARAGRAPHS_PATH = _ALIASES.paragraphs_path
+BLOCKS_DIR = _ALIASES.blocks_dir
+ROLES_DIR = _ALIASES.roles_dir
+INDEX_PATH = _ALIASES.index_path
+AUDIO_OUT_DIR = _ALIASES.audio_out_dir
+AUDIO_PLAY_DIR = _ALIASES.audio_play_dir
+SEGMENTS_DIR = _ALIASES.segments_dir
+RECORDINGS_DIR = _ALIASES.recordings_dir
+CALLOUTS_DIR = _ALIASES.callouts_dir
+MARKDOWN_DIR = _ALIASES.markdown_dir
+MARKDOWN_ROLES_DIR = _ALIASES.markdown_roles_dir
+SNIPPETS_DIR = _ALIASES.snippets_dir
+GENERAL_SNIPPETS_DIR = _ALIASES.general_snippets_dir
+LIBRIVOX_SNIPPETS_DIR = _ALIASES.librivox_snippets_dir
+LOGS_DIR = _ALIASES.logs_dir
+TARGET_DIRS = _ALIASES.target_dirs
+EXTRA_FILES = _ALIASES.extra_files

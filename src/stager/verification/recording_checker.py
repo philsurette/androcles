@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import csv
+import logging
 from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List
 
 from stager.shared import paths
+
+logger = logging.getLogger(__name__)
 
 
 def load_timings(path: Path) -> List[Dict]:
@@ -48,10 +51,10 @@ def main(paths_config: paths.PathConfig | None = None) -> None:
     cfg = paths_config or paths.current()
     timings_path = cfg.audio_out_dir / "timings.csv"
     if not timings_path.exists():
-        print(f"timings.csv not found at {paths.display_path(timings_path)}")
+        logger.info("timings.csv not found at %s", paths.display_path(timings_path))
         return
     for line in summarize(timings_path):
-        print(line)
+        logger.info("%s", line)
 
 
 if __name__ == "__main__":

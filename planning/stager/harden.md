@@ -216,7 +216,7 @@ Target outcome: Cuemaster/Playbook-oriented services and tests do not depend on 
 - [x] Replace `paths.current()` in newly extracted services with required `PathConfig` constructor arguments.
 - [x] Keep legacy aliases in `paths.py` only for existing compatibility.
 - [x] Avoid adding new imports of `BUILD_DIR`, `SEGMENTS_DIR`, `RECORDINGS_DIR`, or similar aliases.
-- [ ] Consider changing `DEFAULT_PLAY_NAME = PlayConfig.load().play_id` to a function if import-time config becomes a test or app-packaging problem.
+- [x] Consider changing `DEFAULT_PLAY_NAME = PlayConfig.load().play_id` to a function if import-time config becomes a test or app-packaging problem.
 - [x] Add tests that construct two `PathConfig` instances for different plays in the same process and verify no cross-contamination in Playbook export.
 - [x] Run full tests.
 
@@ -224,24 +224,24 @@ Target outcome: Cuemaster/Playbook-oriented services and tests do not depend on 
 
 Target outcome: reusable code does not print directly.
 
-- [ ] Review remaining `print()` calls.
-- [ ] Keep `typer.echo()` in Stager CLI code for deliberate user-facing output.
-- [ ] Convert library `print()` calls to logging or returned strings.
-- [ ] Update tests or add tests for returned summaries where needed.
-- [ ] Review warning/error logging that should become exceptions under the missing-audio policy.
-- [ ] Run full tests.
+- [x] Review remaining `print()` calls.
+- [x] Keep `typer.echo()` in Stager CLI code for deliberate user-facing output.
+- [x] Convert library `print()` calls to logging or returned strings.
+- [x] Update tests or add tests for returned summaries where needed.
+- [x] Review warning/error logging that should become exceptions under the missing-audio policy.
+- [x] Run full tests.
 
 ## Phase 9: Documentation And Developer Workflow
 
 Target outcome: future work can resume without rediscovering conventions.
 
-- [ ] Update `AGENTS.md` if new commands are added.
-- [ ] Add Stager CLI examples for Playbook generation.
-- [ ] Add a short `planning/stager/playbook_usage.md` or update an existing user-facing doc with generated Playbook layout.
-- [ ] Document the test command for Playbook fixtures.
-- [ ] Document any expected external dependencies for Playbook generation, such as ffmpeg if audio transcoding is used.
-- [ ] Run `./main text` for the configured play if text output behavior changes.
-- [ ] Run any new Playbook command against the configured play if fixture audio is available.
+- [x] Update `AGENTS.md` if new commands are added.
+- [x] Add Stager CLI examples for Playbook generation.
+- [x] Add a short `planning/stager/playbook_usage.md` or update an existing user-facing doc with generated Playbook layout.
+- [x] Document the test command for Playbook fixtures.
+- [x] Document any expected external dependencies for Playbook generation, such as ffmpeg if audio transcoding is used.
+- [x] `./main text` not required; text output behavior did not change in Phase 9.
+- [x] Configured-play Playbook run not required; Phase 9 only documented the existing command and no fixture-audio behavior changed.
 
 ## Suggested Commit Slices
 

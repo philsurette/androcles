@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import sys
 from typing import List, Tuple
 
 from pydub import AudioSegment, silence
@@ -76,6 +77,17 @@ class WordAudioSplitter:
             return None
         return min(points, key=lambda p: abs(p - target_ms))
 
+    def render_report(self, audio_path: Path, target_ms: int | None = None) -> List[str]:
+        spans = self.find_silence_spans(audio_path)
+        points = [start + (end - start) // 2 for start, end in spans]
+        lines = [f"Detected {len(points)} candidate boundaries in {paths.display_path(audio_path)}"]
+        for (start, end), mid in zip(spans, points):
+            lines.append(f"{start:>6}-{end:<6} ms -> {mid:>6} ms")
+        if target_ms is not None:
+            best = min(points, key=lambda point: abs(point - target_ms)) if points else None
+            lines.append(f"Closest to {target_ms} ms: {best} ms" if best is not None else "No candidate boundary found")
+        return lines
+
 
 if __name__ == "__main__":
     import argparse
@@ -88,11 +100,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     splitter = WordAudioSplitter(min_silence_ms=args.min_silence, silence_thresh_db=args.silence_thresh)
-    spans = splitter.find_silence_spans(args.audio)
-    points = splitter.boundary_points(args.audio)
-    print(f"Detected {len(points)} candidate boundaries in {paths.display_path(args.audio)}")
-    for (start, end), mid in zip(spans, points):
-        print(f"{start:>6}-{end:<6} ms -> {mid:>6} ms")
-    if args.target is not None:
-        best = splitter.best_boundary_near(args.audio, args.target)
-        print(f"Closest to {args.target} ms: {best} ms" if best is not None else "No candidate boundary found")
+    for line in splitter.render_report(args.audio, target_ms=args.target):
+        sys.stdout.write(f"{line}\n")

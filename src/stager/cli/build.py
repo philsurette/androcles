@@ -61,7 +61,7 @@ PLAY_OPTION = typer.Option(
     None,
     "--play",
     "-p",
-    help=f"Play directory name under plays/ (default: {paths.DEFAULT_PLAY_NAME})",
+    help="Play directory name under plays/ (default: play-config.yaml play_id)",
 )
 MODEL_CHOICES = ("tiny", "base", "small", "med")
 MODEL_NAME_MAP = {
@@ -104,7 +104,7 @@ def setup_logging(paths_config: paths.PathConfig) -> None:
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
-    play_name = play or paths.DEFAULT_PLAY_NAME
+    play_name = play or paths.default_play_name()
     cfg = paths.PathConfig(play_name)
     setup_logging(cfg)
     if ctx.invoked_subcommand is None:
@@ -118,7 +118,7 @@ def text(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
 ) -> None:
     """Build markdown artifacts."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if ctx.invoked_subcommand is None:
         build_type = BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve()
@@ -131,7 +131,7 @@ def write_play(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<play>.md"""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_write_play(line_no_prefix, paths_config=cfg)
 
@@ -141,7 +141,7 @@ def write_roles(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Write build/text/<role>.md - all blocks for each role"""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_write_roles(line_no_prefix, paths_config=cfg)
 
@@ -149,7 +149,7 @@ def write_roles(
 @text_app.command("write-cues", hidden=True)
 def write_cues(play: str | None = PLAY_OPTION) -> None:
     """Generate role cue text files into build/roles."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_write_cues(paths_config=cfg)
 
@@ -168,7 +168,7 @@ def segments(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Split role recordings into segments using silence detection."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if role:
         play_obj = PlayTextParser(paths_config=cfg).parse()
@@ -196,7 +196,7 @@ def verify(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Verify split segments against expected durations."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     _run_verify(too_short, too_long, paths_config=cfg)
 
@@ -213,7 +213,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
 @app.command("check-recording", rich_help_panel="verify")
 def check_recording(play: str | None = PLAY_OPTION) -> None:
     """Check recordings against timings.csv to find missing segments."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_check_recording(paths_config=cfg)
 
@@ -233,7 +233,7 @@ def generate_timings(
     ),
     ) -> None:
     """Generate timings spreadsheets for the current play."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_generate_timings(
         librivox=librivox,
@@ -318,7 +318,7 @@ def verify_audio(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Transcribe and compare role audio to script text, outputting diffs."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     summary_key = summary_format.lower().strip()
     if summary_key not in SUMMARY_FORMATS:
@@ -515,7 +515,7 @@ def whisper(
     """Run a raw Whisper transcription for a role recording."""
     if ctx.invoked_subcommand is not None:
         return
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     model_key = model.lower().strip()
     if model_key not in MODEL_CHOICES:
@@ -556,7 +556,7 @@ def clear_whisper_cache(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Clear cached Whisper transcriptions for the current play."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     cleaner = WhisperCacheCleaner(paths=cfg)
     removed = cleaner.clear(role)
@@ -591,7 +591,7 @@ def play_audio(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Play a role recording from an offset until the next silence."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if _is_segment_id(target):
         player = SegmentAudioPlayer(paths=cfg)
@@ -614,7 +614,7 @@ def whisper_init(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Download and cache Whisper model weights for offline use."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     model_names = model if model else ["tiny.en"]
     store = WhisperModelStore(
@@ -649,7 +649,7 @@ def audioplay(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Assemble final audio play output for a part or full play."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if target:
         play_obj = PlayTextParser(paths_config=cfg).parse()
@@ -696,7 +696,7 @@ def normalize(
     """
     Normalize an audio file using ffmpeg loudnorm. Writes to a sibling 'normalized' folder.
     """
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     result = run_normalize(src)
     typer.echo(result.render())
@@ -712,7 +712,7 @@ def cues(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Generate cue audio snippets for roles."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_cues(
         role=role,
@@ -730,7 +730,7 @@ def playbook(
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Build a Cuemaster Playbook manifest and package."""
-    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     manifest_path = run_playbook(
         paths_config=cfg,

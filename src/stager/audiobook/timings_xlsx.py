@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import logging
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
@@ -11,6 +12,8 @@ from openpyxl.styles import PatternFill
 from stager.shared import paths
 from stager.verification.segment_verifier import compute_rows
 from stager.audio.spacing import CALLOUT_SPACING_MS, SEGMENT_SPACING_MS
+
+logger = logging.getLogger(__name__)
 
 
 def safe_sheet_name(name: str, existing: set[str]) -> str:
@@ -149,5 +152,5 @@ def generate_xlsx(
         out_path = cfg.audio_out_dir / f"timings_part_{part_no}.xlsx"
     out_path.parent.mkdir(parents=True, exist_ok=True)
     wb.save(out_path)
-    print(f"Wrote {paths.display_path(out_path)}")
+    logger.info("Wrote %s", paths.display_path(out_path))
     return out_path
