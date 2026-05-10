@@ -237,7 +237,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Remove temporary top-level compatibility wrappers after all imports use package paths.
 - [x] Run `.venv/bin/python run_tests.py`.
 - [x] Run `./main --help`.
-- [ ] Run a representative safe CLI command such as `./main text`.
+- [x] Run a representative safe CLI command such as `./main text`.
 
 ## Commit Slices
 
