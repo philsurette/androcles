@@ -28,7 +28,7 @@ Use `planning/decisions/` for short ADR-style records when a decision should not
 Examples:
 
 - Playbook paths are relative to `manifest.json`.
-- Required response audio fails Playbook generation by default.
+- Required cue or response audio fails Playbook generation by default.
 - Stager CLI commands delegate to service classes.
 
 ## Rules
@@ -37,4 +37,5 @@ Examples:
 - The manifest/Playbook schema source of truth is `planning/cuemaster/app_manifest.md`.
 - Product behavior belongs in `planning/cuemaster/product_design.md`.
 - Stager implementation plans belong under `planning/stager/`.
+- Playbook generation is strict: every rehearsable non-meta role line must have cue audio and response audio.
 - Cross-link instead of duplicating schemas or long examples.

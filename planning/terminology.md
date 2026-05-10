@@ -13,7 +13,7 @@
 - **Part**: A top-level section of a play, represented by `Part` and `BlockId.part_id`.
 - **Block**: A parsed source-text block with a stable `BlockId`, such as `0.2`.
 - **Segment**: A speakable or narratable unit within a block with a stable `SegmentId`, such as `0_2_1`.
-- **Cue**: Text and optional audio that prompts an actor before their expected response.
+- **Cue**: Text and required audio that prompts an actor before their expected response in a Playbook.
 - **Line**: A Cuemaster rehearsal item for a selected role. A line includes cue context and expected response segments.
 - **Response**: The actor's expected spoken line or segment group.
 - **Manifest**: `manifest.json` inside a Playbook. It is the structured contract Cuemaster consumes.
@@ -24,4 +24,5 @@
 - Use **Cuemaster** when referring to the mobile app or its runtime behavior.
 - Use **Playbook** for generated portable packages, not `scriptpack`, `app package`, or `play package`.
 - Use **manifest** for the JSON contract inside a Playbook.
+- Treat Playbooks as strict artifacts: required cue and response audio must exist for every rehearsable non-meta role line.
 - Keep `Androcles` only when referring to the sample/source play, not the tool.

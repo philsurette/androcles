@@ -28,6 +28,8 @@ Use `planning/decisions/` for ADR-style decisions that should not drift across d
 
 Do not define the same contract in multiple docs. The Playbook manifest/schema source of truth is `planning/cuemaster/app_manifest.md`; product behavior belongs in `planning/cuemaster/product_design.md`; Stager hardening and implementation plans belong under `planning/stager/`.
 
+Playbook generation must be strict. A generated Playbook should be complete by construction: every rehearsable non-meta role line must have cue audio and response audio, and missing required data should raise an exception rather than being logged or represented as optional. Meta roles such as `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` are not rehearsable roles by default. Callout audio is a separate playback asset and must not be treated as a substitute for cue audio.
+
 ## Development workflow
 Always use the repository virtualenv Python at `.venv/bin/python` instead of attempting to use the global Python.
 

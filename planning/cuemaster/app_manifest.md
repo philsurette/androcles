@@ -13,8 +13,8 @@ Cuemaster should support:
 - Selecting a Playbook.
 - Selecting one or more roles to rehearse.
 - Showing cue text before each expected response.
-- Playing cue audio when available.
-- Playing the actor's expected response audio when available.
+- Playing cue audio.
+- Playing the actor's expected response audio.
 - Showing stage directions and contextual text separately from spoken response text.
 - Navigating by part, scene, block, or line.
 
@@ -69,10 +69,10 @@ Proposed root shape:
 {
   "schema_version": 1,
   "play": {
-    "id": "fairies",
-    "title": "The Curious Case of the Cottingley Fairies",
-    "authors": [],
-    "source": null
+    "id": "androcles",
+    "title": "Androcles and the Lion",
+    "authors": ["George Bernard Shaw"],
+    "source": "Project Gutenberg"
   },
   "reading": {
     "type": "solo",
@@ -97,9 +97,9 @@ Each role entry represents one rehearsable role.
 
 ```json
 {
-  "id": "CHRISTINE",
-  "display_name": "Christine",
-  "reader": "Phil Surette",
+  "id": "MEGAERA",
+  "display_name": "Megæra",
+  "reader": "Anonymous",
   "meta": false,
   "parts": [],
   "lines": []
@@ -108,7 +108,7 @@ Each role entry represents one rehearsable role.
 
 Role fields:
 
-- `id`: Stable role id from the play model, e.g. `CHRISTINE`.
+- `id`: Stable role id from the play model, e.g. `MEGAERA`.
 - `display_name`: Human-facing role name. Prefer reader metadata `role_name` when available, otherwise normalize the role id for display.
 - `reader`: Reader name when known.
 - `meta`: `true` for special/meta roles if exported.
@@ -123,24 +123,28 @@ Each line item describes one expected response opportunity for one role.
 
 ```json
 {
-  "id": "0_2_CHRISTINE",
+  "id": "0_5_MEGAERA",
   "part_id": 0,
-  "block_id": "0.2",
-  "role": "CHRISTINE",
-  "speaker": "CHRISTINE",
+  "block_id": "0.5",
+  "role": "MEGAERA",
+  "speaker": "MEGAERA",
   "cue": {
     "speaker": "_NARRATOR",
-    "text": "1966.",
-    "audio": null
+    "text": "Androcles and Megæra come along the path.",
+    "audio": {
+      "path": "audio/segments/_NARRATOR/0_4_1.wav",
+      "duration_ms": 3600,
+      "required": true
+    }
   },
   "response": {
-    "text": "This is Christine Canfield with the London Sun...",
+    "text": "I won’t go another step.",
     "segments": [
       {
-        "id": "0_2_1",
-        "text": "This is Christine Canfield with the London Sun...",
+        "id": "0_5_2",
+        "text": "I won’t go another step.",
         "audio": {
-          "path": "audio/segments/CHRISTINE/0_2_1.wav",
+          "path": "audio/segments/MEGAERA/0_5_2.wav",
           "duration_ms": 2430,
           "required": true
         }
@@ -168,16 +172,16 @@ Line fields:
 
 ## Cue Payload
 
-Cue payloads should be text-first. Audio is optional.
+Cue payloads are required for every rehearsable non-meta role line. Cue text is used for display; cue audio is used for playback.
 
 ```json
 {
-  "speaker": "LILLIAN",
-  "text": "No. I'll never forget it as long as I live.",
+  "speaker": "ANDROCLES",
+  "text": "Well, dear, do you want to see one?",
   "audio": {
-    "path": "audio/segments/LILLIAN/1_9_1.wav",
+    "path": "audio/segments/ANDROCLES/0_8_1.wav",
     "duration_ms": 2100,
-    "required": false
+    "required": true
   }
 }
 ```
@@ -185,10 +189,11 @@ Cue payloads should be text-first. Audio is optional.
 Cue rules:
 
 - The default cue is the preceding non-meta speech block.
-- If the preceding block contains only directions, use direction text as context and attach narrator audio when available.
-- If there is no preceding cue, `cue` may be `null`.
+- If the preceding block contains only directions, use direction text as context and attach narrator audio.
+- Rehearsable role lines must not have `cue: null` in a generated Playbook.
 - Cue text may be shortened for rehearsal display, but the manifest should preserve enough metadata to support future full-text display.
-- Narrator audio for direction-only cues should be optional in schema version 1 unless the selected Playbook mode explicitly requires complete playable cues.
+- Narrator audio for direction-only cues is required when the direction is used as the cue for a rehearsable line.
+- Caller/callout audio is a separate playback asset. Cuemaster may expose a UI preference to play or skip callouts, but callout audio is not a substitute for required cue audio.
 
 Open decision for `planning/cuemaster/cue_generation.md`: whether the manifest should include both `full_text` and `display_text` for cues.
 
@@ -198,7 +203,7 @@ Response payloads are required for rehearsable lines.
 
 ```json
 {
-  "text": "I'm Lillian Barnes.",
+  "text": "I won’t go another step.",
   "segments": []
 }
 ```
@@ -208,7 +213,7 @@ Rules:
 - `response.text` is the concatenated expected spoken text for the selected role in the block.
 - `response.segments` preserves segment-level identity and audio assets.
 - For inline directions, directions should not be merged into spoken response text.
-- Missing required response audio should fail Playbook generation by default.
+- Missing response audio should fail Playbook generation.
 
 ## Audio Asset
 
@@ -216,7 +221,7 @@ Audio assets are represented consistently anywhere they appear:
 
 ```json
 {
-  "path": "audio/segments/CHRISTINE/0_2_1.wav",
+  "path": "audio/segments/MEGAERA/0_5_2.wav",
   "duration_ms": 2430,
   "required": true
 }
@@ -237,7 +242,7 @@ Stage directions should be represented as structured text, not hidden inside res
 ```json
 {
   "segment_id": "4_1_2",
-  "text": "(_CHRISTINE shows LILLIAN a letter_)",
+  "text": "(_suddenly throwing down her stick_)",
   "placement": "inline"
 }
 ```
@@ -248,7 +253,7 @@ Fields:
 - `text`: Direction text exactly as produced by the parser.
 - `placement`: `top_level`, `inline`, or `description`.
 
-For actor rehearsal, directions are display/context by default. Direction audio is optional unless a later mode rehearses narrator tracks.
+For actor rehearsal, directions are display/context by default. If a direction is used as the cue for a rehearsable line, its narrator audio is required.
 
 ## Simultaneous Lines
 
@@ -291,7 +296,7 @@ Rules:
 Default Playbook behavior:
 
 - `_NARRATOR`: Excluded as a rehearsable role, but top-level and inline directions may appear as context.
-- `_CALLER`: Excluded from role selection. Callout audio may be used as optional cue/prompt audio if available.
+- `_CALLER`: Excluded from role selection. Callout audio may be included as a separate playback asset and controlled by a Cuemaster UI preference.
 - `_ANNOUNCER`: Excluded from actor rehearsal packages.
 
 Future options may include:
@@ -307,9 +312,9 @@ Those options should not be added until there is a Cuemaster use case for them.
 Default policy:
 
 - Missing required response audio fails Playbook generation.
-- Missing optional cue audio does not fail Playbook generation if cue text is present.
-- Narrator audio for direction-only cues is used when present, but is not required by default.
-- Missing optional callout audio does not fail unless callouts are explicitly required by the selected mode.
+- Missing required cue audio fails Playbook generation.
+- Narrator audio for direction-only cues is required when the direction is used as a cue.
+- Missing callout audio fails only if the Playbook manifest references that callout asset.
 
 The manifest should not silently include paths to missing required files.
 
@@ -321,10 +326,10 @@ Open decision for `planning/stager/missing_audio_policy.md`: exact exception cla
 {
   "schema_version": 1,
   "play": {
-    "id": "fairies",
-    "title": "The Curious Case of the Cottingley Fairies",
-    "authors": [],
-    "source": null
+    "id": "androcles",
+    "title": "Androcles and the Lion",
+    "authors": ["George Bernard Shaw"],
+    "source": "Project Gutenberg"
   },
   "reading": {
     "type": "solo",
@@ -332,32 +337,36 @@ Open decision for `planning/stager/missing_audio_policy.md`: exact exception cla
   },
   "roles": [
     {
-      "id": "CHRISTINE",
-      "display_name": "Christine",
-      "reader": "Phil Surette",
+      "id": "MEGAERA",
+      "display_name": "Megæra",
+      "reader": "Anonymous",
       "meta": false,
-      "parts": [0, 1, 2, 3, 4, 5],
+      "parts": [0],
       "lines": [
         {
-          "id": "0_2_CHRISTINE",
+          "id": "0_5_MEGAERA",
           "part_id": 0,
-          "block_id": "0.2",
-          "role": "CHRISTINE",
-          "speaker": "CHRISTINE",
+          "block_id": "0.5",
+          "role": "MEGAERA",
+          "speaker": "MEGAERA",
           "cue": {
             "speaker": "_NARRATOR",
-            "text": "1966.",
-            "audio": null
+            "text": "Androcles and Megæra come along the path.",
+            "audio": {
+              "path": "audio/segments/_NARRATOR/0_4_1.wav",
+              "duration_ms": 3600,
+              "required": true
+            }
           },
           "response": {
-            "text": "This is Christine Canfield with the London Sun; it's three o'clock in the afternoon on May fifteenth, 1966.",
+            "text": "I won’t go another step.",
             "segments": [
               {
-                "id": "0_2_1",
-                "owners": ["CHRISTINE"],
-                "text": "This is Christine Canfield with the London Sun; it's three o'clock in the afternoon on May fifteenth, 1966.",
+                "id": "0_5_2",
+                "owners": ["MEGAERA"],
+                "text": "I won’t go another step.",
                 "audio": {
-                  "path": "audio/segments/CHRISTINE/0_2_1.wav",
+                  "path": "audio/segments/MEGAERA/0_5_2.wav",
                   "duration_ms": 4200,
                   "required": true
                 }

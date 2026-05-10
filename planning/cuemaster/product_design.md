@@ -63,14 +63,14 @@ A Playbook is a `.zip` file distributed by the production. The actor downloads i
 ├── manifest.json
 └── audio/
     ├── segments/
-    │   ├── CHRISTINE/
+    │   ├── MEGAERA/
     │   │   ├── 0_2_1.wav
     │   │   └── ...
     │   └── _NARRATOR/
     │       ├── 0_1_1.wav
     │       └── ...
     └── callouts/
-        ├── CHRISTINE_callout.wav
+        ├── MEGAERA_callout.wav
         └── ...
 ```
 
@@ -86,33 +86,33 @@ The mobile app should consume roles and rehearsal line items, not a single flat 
 {
   "schema_version": 1,
   "play": {
-    "id": "fairies",
-    "title": "The Curious Case of the Cottingley Fairies"
+    "id": "androcles",
+    "title": "Androcles and the Lion"
   },
   "roles": [
     {
-      "id": "CHRISTINE",
-      "display_name": "Christine",
+      "id": "MEGAERA",
+      "display_name": "Megæra",
       "lines": [
         {
-          "id": "0_2_CHRISTINE",
-          "block_id": "0.2",
+          "id": "0_5_MEGAERA",
+          "block_id": "0.5",
           "cue": {
             "speaker": "_NARRATOR",
-            "text": "1966.",
+            "text": "Androcles and Megæra come along the path.",
             "audio": {
-              "path": "audio/segments/_NARRATOR/0_1_1.wav",
-              "duration_ms": 1200,
-              "required": false
+              "path": "audio/segments/_NARRATOR/0_4_1.wav",
+              "duration_ms": 3600,
+              "required": true
             }
           },
           "response": {
-            "text": "This is Christine Canfield with the London Sun...",
+            "text": "I won’t go another step.",
             "segments": [
               {
-                "id": "0_2_1",
+                "id": "0_5_2",
                 "audio": {
-                  "path": "audio/segments/CHRISTINE/0_2_1.wav",
+                  "path": "audio/segments/MEGAERA/0_5_2.wav",
                   "duration_ms": 4200,
                   "required": true
                 }
@@ -130,9 +130,9 @@ Important manifest rules:
 
 - Roles come from the parsed Stager `Play.roles`, excluding `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` from actor role selection by default.
 - Line ids are based on existing block and segment ids, not newly assigned sequential ids.
-- Direction and narrator cues may include `_NARRATOR` audio when available.
-- Required response audio is expected to exist; missing required response audio should fail Playbook generation.
-- Optional cue audio may be missing if cue text is available, unless a stricter package mode requires complete playable cues.
+- Direction and narrator cues include `_NARRATOR` audio when used for rehearsable lines.
+- Required cue audio and response audio are expected to exist for every rehearsable non-meta role line; missing required audio should fail Playbook generation.
+- Callout audio is a separate playback asset. Cuemaster may let users choose whether callouts are played, but callouts do not replace cue audio.
 
 The app may derive a flat session sequence from `roles[].lines` after the actor selects a role.
 
@@ -145,8 +145,8 @@ The app's session state is a simple cursor over the selected role's line array.
 ### Session configuration (set before starting)
 
 ```
-selectedRole: string             // e.g. "CHRISTINE"
-cueDepth: number                 // how many preceding cue items to play when available (default: 1)
+selectedRole: string             // e.g. "MEGAERA"
+cueDepth: number                 // how many preceding cue items to play (default: 1)
 includeDirections: boolean       // whether direction cues are played when narrator audio exists
 startLineId: string              // where to begin
 ```
@@ -161,7 +161,7 @@ playbackMode: enum               // CUE_PLAYING | WAITING | REFERENCE_PLAYING | 
 ### Derived values (computed from manifest + session config)
 
 - **My lines**: `roles[].lines` for `selectedRole`.
-- **Cue for line N**: cue payloads attached to the selected line, optionally expanded by `cueDepth` if the manifest includes enough preceding context.
+- **Cue for line N**: required cue payloads attached to the selected line, optionally expanded by `cueDepth` if the manifest includes enough preceding context.
 - **Next/previous**: walking the selected role's line array.
 
 ---
