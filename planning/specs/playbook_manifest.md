@@ -88,8 +88,39 @@ Root fields:
 - `schema_version`: Manifest schema version.
 - `play`: Source text metadata needed for display.
 - `reading`: Reading metadata that affects generated assets.
+- `context`: Ordered narrator context blocks, including headings, descriptions, and top-level directions.
 - `roles`: Rehearsable role payloads.
 - `assets`: Optional Playbook-wide asset index.
+
+## Context Payload
+
+Context entries preserve script material that is not a rehearsable actor response but is still needed for browsing, cue display, cue-depth expansion, and direction playback.
+
+```json
+{
+  "id": "0_4_1",
+  "part_id": 0,
+  "block_id": "0.4",
+  "kind": "description",
+  "speaker": "_NARRATOR",
+  "text": "Androcles and Megæra come along the path.",
+  "audio": {
+    "path": "audio/segments/_NARRATOR/0_4_1.wav",
+    "duration_ms": 3600,
+    "required": true
+  }
+}
+```
+
+Context fields:
+
+- `id`: Stable segment id for the context audio/text.
+- `part_id`: Numeric play part id, or `null` for no-part preamble material.
+- `block_id`: Human-readable block id using dot format.
+- `kind`: `heading`, `description`, or `direction`.
+- `speaker`: `_NARRATOR` for schema version 1 context entries.
+- `text`: Display text. Headings should use the cleaned heading text, not raw source markers.
+- `audio`: Required narrator audio for the context segment.
 
 ## Role Payload
 
@@ -115,7 +146,7 @@ Role fields:
 - `parts`: Optional summary of parts where the role appears.
 - `lines`: Ordered rehearsal line items for this role.
 
-Initial Stager Playbook export should include normal actor roles by default. `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` should be excluded from role selection unless a Stager CLI option or later design explicitly includes meta roles.
+Initial Stager Playbook export should include normal actor roles by default. `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` should be excluded from actor role selection unless a Stager CLI option or later design explicitly includes meta roles. `_NARRATOR` headings, descriptions, and top-level directions still belong in the top-level `context` array.
 
 ## Line Item
 
@@ -298,7 +329,7 @@ Default Playbook behavior:
 
 - `_NARRATOR`: Excluded as a rehearsable role, but top-level and inline directions may appear as context.
 - `_CALLER`: Excluded from role selection. Callout audio may be included as a separate playback asset and controlled by a Cuemaster UI preference.
-- `_ANNOUNCER`: Excluded from actor rehearsal packages.
+- `_ANNOUNCER`: Excluded from actor rehearsal packages. Announcer snippets are for audiobook/Librivox preambles and epilogues, not script headings, descriptions, or stage directions.
 
 Future options may include:
 

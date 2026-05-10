@@ -5,10 +5,11 @@ import logging
 from pathlib import Path, PurePosixPath
 import shutil
 
-from stager.domain.block import RoleBlock
+from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
 from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechSegment
 from stager.playbook.app_audio_asset import AppAudioAsset
+from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_cue import AppCue
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
@@ -54,7 +55,35 @@ class PlaybookBuilder:
             play=AppPlay.from_play(self.play_id or self.paths.play_name, self.play),
             reading=AppReading.from_play(self.play, build_type=self.build_type),
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
+            context=self._build_context_blocks(),
         )
+
+    def _build_context_blocks(self) -> list[AppContextBlock]:
+        context_blocks: list[AppContextBlock] = []
+        for block in self.play.blocks:
+            if not isinstance(block, (TitleBlock, DescriptionBlock, DirectionBlock)):
+                continue
+            if not block.segments:
+                continue
+            segment = block.segments[0]
+            segment_id = str(segment.segment_id)
+            context_blocks.append(
+                AppContextBlock(
+                    id=segment_id,
+                    part_id=block.block_id.part_id,
+                    block_id=self._block_id_for(block),
+                    kind=self._context_kind_for(block),
+                    speaker="_NARRATOR",
+                    text=self._context_text_for(block),
+                    audio=self._copy_required_audio(
+                        source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                        role="_NARRATOR",
+                        segment_id=segment_id,
+                        category="context",
+                    ),
+                )
+            )
+        return context_blocks
 
     def _build_role(self, role) -> AppRole:
         app_role = AppRole.from_domain(self.play, role)
@@ -96,6 +125,22 @@ class PlaybookBuilder:
             elif isinstance(segment, SimultaneousSegment) and role in segment.roles:
                 segments.append(segment)
         return segments
+
+    def _block_id_for(self, block) -> str:
+        part = block.block_id.part_id if block.block_id.part_id is not None else ""
+        return f"{part}.{block.block_id.block_no}"
+
+    def _context_kind_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock) -> str:
+        if isinstance(block, TitleBlock):
+            return "heading"
+        if isinstance(block, DescriptionBlock):
+            return "description"
+        return "direction"
+
+    def _context_text_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock) -> str:
+        if isinstance(block, TitleBlock):
+            return block.heading
+        return block.text
 
     def _build_cue(self, selection: CueSelection) -> AppCue:
         asset = self._copy_required_audio(

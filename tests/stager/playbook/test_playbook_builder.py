@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from stager.domain.block import RoleBlock, TitleBlock
+from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.block_id import BlockId
 from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
-from stager.domain.segment import MetaSegment, SpeechSegment
+from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.shared import paths
@@ -72,6 +72,34 @@ def _speech_block(part_id: int, block_no: int, role: str, text: str) -> RoleBloc
     )
 
 
+def _description_block(part_id: int, block_no: int, text: str) -> DescriptionBlock:
+    block_id = BlockId(part_id, block_no)
+    return DescriptionBlock(
+        block_id=block_id,
+        text=text,
+        segments=[
+            DescriptionSegment(
+                segment_id=SegmentId(block_id, 1),
+                text=text,
+            )
+        ],
+    )
+
+
+def _direction_block(part_id: int, block_no: int, text: str) -> DirectionBlock:
+    block_id = BlockId(part_id, block_no)
+    return DirectionBlock(
+        block_id=block_id,
+        text=text,
+        segments=[
+            DirectionSegment(
+                segment_id=SegmentId(block_id, 1),
+                text=text,
+            )
+        ],
+    )
+
+
 def _play(blocks) -> Play:
     return Play(
         source_text_metadata=SourceTextMetadata(
@@ -103,6 +131,34 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
     assert line["response"]["segments"][0]["audio"]["path"] == "audio/segments/MEGAERA/0_2_1.wav"
     assert (cfg.build_dir / "app" / line["cue"]["audio"]["path"]).exists()
     assert (cfg.build_dir / "app" / line["response"]["segments"][0]["audio"]["path"]).exists()
+    assert data["context"][0]["kind"] == "heading"
+    assert data["context"][0]["speaker"] == "_NARRATOR"
+    assert data["context"][0]["audio"]["path"] == "audio/segments/_NARRATOR/0_0_1.wav"
+
+
+def test_playbook_builder_exports_narrator_context_blocks(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    title_block = _title_block()
+    description_block = _description_block(0, 1, "A path through a forest.")
+    direction_block = _direction_block(0, 2, "Androcles enters.")
+    response_block = _speech_block(0, 3, "MEGAERA", "I won't go another step.")
+    play = _play([title_block, description_block, direction_block, response_block])
+    for segment_id in ("0_0_1", "0_1_1", "0_2_1"):
+        _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_3_1.wav")
+
+    manifest_path = PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert [block["kind"] for block in data["context"]] == ["heading", "description", "direction"]
+    assert [block["text"] for block in data["context"]] == [
+        "Opening",
+        "A path through a forest.",
+        "Androcles enters.",
+    ]
+    assert data["context"][1]["audio"]["path"] == "audio/segments/_NARRATOR/0_1_1.wav"
+    assert data["context"][2]["audio"]["path"] == "audio/segments/_NARRATOR/0_2_1.wav"
+    assert "_ANNOUNCER" not in {block["speaker"] for block in data["context"]}
 
 
 def test_playbook_builder_uses_part_title_as_first_line_cue(tmp_path: Path) -> None:

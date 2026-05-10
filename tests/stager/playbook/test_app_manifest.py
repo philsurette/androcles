@@ -9,6 +9,7 @@ from stager.domain.play import Play, Reader, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.playbook.app_audio_asset import AppAudioAsset
+from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_cue import AppCue
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
@@ -79,6 +80,20 @@ def test_manifest_serializes_schema_one_shape() -> None:
             source="Project Gutenberg",
         ),
         reading=AppReading(type="solo", build_type="custom"),
+        context=[
+            AppContextBlock(
+                id="0_0_1",
+                part_id=0,
+                block_id="0.0",
+                kind="heading",
+                speaker="_NARRATOR",
+                text="Opening",
+                audio=AppAudioAsset(
+                    path=PurePosixPath("audio/segments/_NARRATOR/0_0_1.wav"),
+                    duration_ms=1200,
+                ),
+            )
+        ],
         roles=[
             AppRole(
                 id="MEGAERA",
@@ -95,6 +110,8 @@ def test_manifest_serializes_schema_one_shape() -> None:
     assert data["schema_version"] == 1
     assert data["play"]["id"] == "androcles"
     assert data["reading"] == {"type": "solo", "build_type": "custom"}
+    assert data["context"][0]["kind"] == "heading"
+    assert data["context"][0]["speaker"] == "_NARRATOR"
     assert data["roles"][0]["lines"][0]["id"] == "0_5_MEGAERA"
     assert data["roles"][0]["lines"][0]["block_id"] == "0.5"
     assert data["roles"][0]["lines"][0]["cue"]["audio"]["required"] is True
