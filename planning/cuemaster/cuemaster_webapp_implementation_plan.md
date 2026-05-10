@@ -476,7 +476,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [ ] Define storage interface independent of IndexedDB.
 - [ ] Implement `indexedDbStorage`.
 - [x] Store Playbook manifest.
-- [ ] Store asset blobs or extractable asset records.
+- [x] Store asset blobs or extractable asset records.
 - [ ] Store import metadata.
 - [x] Store selected role per Playbook.
 - [x] Store session position per Playbook/role.
@@ -504,6 +504,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [x] Selected role survives page reload.
 - [x] Current line position survives page reload.
 - [x] Deleting a Playbook removes its manifest and session state.
+- [x] Deleting a Playbook removes stored audio assets.
 - [ ] Storage code is isolated behind an interface that can later be replaced by Capacitor filesystem/preferences implementations.
 
 ---
@@ -563,33 +564,33 @@ This milestone does not yet require the full rehearsal UI.
 
 #### Audio abstraction
 
-- [ ] Create `AudioPlayer` class/wrapper around `HTMLAudioElement`.
-- [ ] Support loading an audio asset by app asset ID/path.
-- [ ] Support play.
+- [x] Create `AudioPlayer` class/wrapper around `HTMLAudioElement`.
+- [x] Support loading an audio asset by app asset ID/path.
+- [x] Support play.
 - [ ] Support pause.
-- [ ] Support stop.
-- [ ] Support ended event.
-- [ ] Support error event.
-- [ ] Support `playbackRate`.
-- [ ] Support pitch preservation where browser exposes it.
+- [x] Support stop.
+- [x] Support ended event.
+- [x] Support error event.
+- [x] Support `playbackRate`.
+- [x] Support pitch preservation where browser exposes it.
 - [ ] Expose current playback state.
 - [ ] Avoid React dependency.
 
 #### Audio queue
 
-- [ ] Create `AudioQueue`.
-- [ ] Play one cue asset.
-- [ ] Play multiple cue assets sequentially.
-- [ ] Cancel queue.
+- [x] Create `AudioQueue`.
+- [x] Play one cue asset.
+- [x] Play multiple cue assets sequentially.
+- [x] Cancel queue.
 - [ ] Report queue completion.
 - [ ] Report queue failure.
 
 #### Asset resolution
 
-- [ ] Resolve imported Playbook audio assets to playable object URLs.
-- [ ] Revoke object URLs when no longer needed.
-- [ ] Avoid loading all Playbook audio into memory at once.
-- [ ] Handle missing/failed audio asset.
+- [x] Resolve imported Playbook audio assets to playable object URLs.
+- [x] Revoke object URLs when no longer needed.
+- [x] Avoid loading all Playbook audio into memory at once.
+- [x] Handle missing/failed audio asset.
 
 #### Tests
 
@@ -600,11 +601,11 @@ This milestone does not yet require the full rehearsal UI.
 
 ### Acceptance Criteria
 
-- [ ] App can play a cue audio file from an imported Playbook.
-- [ ] App can play multiple cue files sequentially.
-- [ ] App can play actor response audio at selected speed.
-- [ ] Cue audio always plays at `1.0x`.
-- [ ] Response audio can play from `0.4x` to `1.3x` in `0.1x` increments.
+- [x] App can play a cue audio file from an imported Playbook.
+- [x] App can play multiple cue files sequentially.
+- [x] App can play actor response audio at selected speed.
+- [x] Cue audio always plays at `1.0x`.
+- [x] Response audio can play from `0.4x` to `1.3x` in `0.1x` increments.
 - [ ] Audio playback logic is isolated enough that a Capacitor-native audio implementation can replace it later if needed.
 
 ---
@@ -642,8 +643,8 @@ This is the second major useful milestone.
 
 - [ ] On session start, play cue for current line.
 - [ ] After cue playback, enter waiting state.
-- [ ] Repeat cue replays cue without advancing.
-- [ ] Hear My Line plays actor response audio without advancing.
+- [x] Repeat cue replays cue without advancing.
+- [x] Hear My Line plays actor response audio without advancing.
 - [ ] Next advances to next actor line and plays next cue.
 - [ ] Back moves to previous actor line and plays cue.
 - [ ] Pause stops playback and saves state.
@@ -684,15 +685,15 @@ Support speed-adjusted playback for the actor's own reference lines.
 
 ### Checklist
 
-- [ ] Add playback speed control.
-- [ ] Support speeds from `0.4x` to `1.3x`.
-- [ ] Use `0.1x` increments.
-- [ ] Default to `1.0x`.
-- [ ] Persist selected speed per Playbook/role.
-- [ ] Apply speed only to selected actor response audio.
-- [ ] Force cue audio to `1.0x`.
-- [ ] Enable pitch preservation where supported.
-- [ ] Show current speed clearly in Session screen.
+- [x] Add playback speed control.
+- [x] Support speeds from `0.4x` to `1.3x`.
+- [x] Use `0.1x` increments.
+- [x] Default to `1.0x`.
+- [x] Persist selected speed per Playbook/role.
+- [x] Apply speed only to selected actor response audio.
+- [x] Force cue audio to `1.0x`.
+- [x] Enable pitch preservation where supported.
+- [x] Show current speed clearly in Session screen.
 - [ ] Add quick controls:
   - [ ] Slower
   - [ ] Faster

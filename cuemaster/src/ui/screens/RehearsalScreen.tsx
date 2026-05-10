@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
+import { AudioQueue } from "../../rehearsal/audioQueue";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { sessionRepository } from "../../storage/sessionRepository";
 import { CueCard } from "../components/CueCard";
@@ -21,7 +22,10 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       includeDirections: initialSession?.includeDirections
     })
   );
+  const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
+  const [playbackRate, setPlaybackRate] = useState(initialSession?.playbackRate ?? 1);
+  const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
 
@@ -42,18 +46,51 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   function updatePosition() {
     const nextPosition = engine.position();
     setPosition(nextPosition);
-    void saveSession(nextPosition.index);
+    void saveSession(nextPosition.index, playbackRate);
   }
 
-  async function saveSession(lineIndex: number) {
+  async function saveSession(lineIndex: number, nextPlaybackRate = playbackRate) {
     await sessionRepository.save({
       playbookId: playbook.id,
       roleId: role.id,
       lineIndex,
       includeDirections: engine.includeDirections(),
-      playbackRate: initialSession?.playbackRate ?? 1,
+      playbackRate: nextPlaybackRate,
       updatedAt: Date.now()
     });
+  }
+
+  async function playCue() {
+    setPlaybackStatus("Playing cue...");
+    try {
+      await audioQueue.play(cues.map((cue) => ({ path: cue.audioPath, playbackRate: 1 })));
+      setPlaybackStatus("Cue complete.");
+    } catch (error) {
+      setPlaybackStatus(error instanceof Error ? error.message : "Cue playback failed.");
+    }
+  }
+
+  async function playResponse() {
+    if (!line) {
+      return;
+    }
+    setPlaybackStatus("Playing your line...");
+    try {
+      await audioQueue.play(line.responseSegments.map((segment) => ({ path: segment.audioPath, playbackRate })));
+      setPlaybackStatus("Line complete.");
+    } catch (error) {
+      setPlaybackStatus(error instanceof Error ? error.message : "Line playback failed.");
+    }
+  }
+
+  function stopPlayback() {
+    audioQueue.cancel();
+    setPlaybackStatus("Playback stopped.");
+  }
+
+  function changePlaybackRate(nextPlaybackRate: number) {
+    setPlaybackRate(nextPlaybackRate);
+    void saveSession(position.index, nextPlaybackRate);
   }
 
   return (
@@ -90,11 +127,39 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           <button type="button" className="secondary" disabled={position.atBeginning} onClick={goPrevious}>
             Previous
           </button>
+          <button type="button" onClick={() => void playCue()}>
+            Repeat Cue
+          </button>
+          <button type="button" onClick={() => void playResponse()} disabled={!line}>
+            Hear My Line
+          </button>
           <button type="button" disabled={position.atEnd} onClick={goNext}>
             Next
           </button>
+          <button type="button" className="secondary" onClick={stopPlayback}>
+            Stop
+          </button>
+        </div>
+
+        <div className="session-settings">
+          <label>
+            Response speed
+            <select
+              value={playbackRate}
+              onChange={(event) => changePlaybackRate(Number(event.target.value))}
+            >
+              {playbackRates.map((rate) => (
+                <option key={rate} value={rate}>
+                  {rate.toFixed(1)}x
+                </option>
+              ))}
+            </select>
+          </label>
+          {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>
     </main>
   );
 }
+
+const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];

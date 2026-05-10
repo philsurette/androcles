@@ -188,9 +188,35 @@ button:disabled {
 
 .transport {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 2rem;
+}
+
+.session-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.25rem;
+}
+
+.session-settings label {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--quiet);
+  font-weight: 800;
+}
+
+.session-settings select {
+  border: 1px solid rgba(30, 38, 31, 0.18);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--ink);
+  font: inherit;
+  padding: 0.55rem 0.75rem;
 }
 
 @media (max-width: 760px) {

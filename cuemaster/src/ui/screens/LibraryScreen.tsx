@@ -1,6 +1,6 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
-import { importPlaybook } from "../../playbook/importPlaybook";
+import { installPlaybook } from "../../playbook/installPlaybook";
 import { PlaybookImportError } from "../../playbook/playbookImportError";
 import { playbookRepository } from "../../storage/playbookRepository";
 
@@ -37,8 +37,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
     setIsImporting(true);
 
     try {
-      const playbook = await importPlaybook(file);
-      await playbookRepository.save(playbook);
+      const playbook = await installPlaybook(file);
       await loadPlaybooks();
       setMessage(`Imported ${playbook.title}`);
     } catch (importError) {

@@ -1,4 +1,5 @@
 import type { Playbook } from "../domain/playbook";
+import { audioAssetRepository } from "./audioAssetRepository";
 import { db } from "./db";
 
 export const playbookRepository = {
@@ -6,7 +7,8 @@ export const playbookRepository = {
   get: (id: string) => db.playbooks.get(id),
   save: (playbook: Playbook) => db.playbooks.put(playbook),
   delete: (id: string) =>
-    db.transaction("rw", db.playbooks, db.sessions, async () => {
+    db.transaction("rw", db.playbooks, db.sessions, db.audioAssets, async () => {
+      await audioAssetRepository.deleteForPlaybook(id);
       await db.sessions.where("playbookId").equals(id).delete();
       await db.playbooks.delete(id);
     })
