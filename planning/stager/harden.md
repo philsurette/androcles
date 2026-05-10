@@ -33,7 +33,7 @@ This plan prepares Stager, the current CLI codebase, for reliable Cuemaster Play
 
 Create these design documents before changing production behavior. Keep them short and concrete.
 
-- [x] Create `planning/cuemaster/app_manifest.md`.
+- [x] Create `planning/specs/playbook_manifest.md`.
 - [x] Document the intended consumer: Cuemaster, offline-first, per-role Playbook.
 - [x] Define manifest versioning, e.g. `"schema_version": 1`.
 - [x] Define Playbook layout, e.g. `build/<play>/app/manifest.json`, `build/<play>/app/audio/...`.

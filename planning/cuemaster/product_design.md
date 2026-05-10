@@ -21,9 +21,9 @@ The Stager codebase already has a structured play model:
 - `SegmentId` values used for audio filenames, e.g. `0_2_1.wav`.
 - Role segment audio under `build/<play>/audio/segments/<ROLE>/<segment_id>.wav`.
 - Narrator, caller, and announcer as special roles: `_NARRATOR`, `_CALLER`, `_ANNOUNCER`.
-- A planned Playbook contract in `planning/cuemaster/app_manifest.md`.
+- A planned Playbook contract in `planning/specs/playbook_manifest.md`.
 
-Use `planning/cuemaster/app_manifest.md` as the authoritative manifest schema. This document stays focused on app behavior, session flow, navigation, voice commands, screens, persistence, implementation choices, and licensing policy.
+Use `planning/specs/playbook_manifest.md` as the authoritative manifest schema. This document stays focused on app behavior, session flow, navigation, voice commands, screens, persistence, implementation choices, and licensing policy.
 
 ---
 
@@ -282,7 +282,7 @@ Initial Stager-generated Playbooks should keep segment audio as WAV because that
 
 ### Manifest Schema
 
-The manifest schema is defined in `planning/cuemaster/app_manifest.md`.
+The manifest schema is defined in `planning/specs/playbook_manifest.md`.
 
 The mobile app consumes roles and rehearsal line items, not a single flat `snippets` array. A simplified shape is:
 

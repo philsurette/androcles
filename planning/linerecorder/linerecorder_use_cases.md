@@ -8,7 +8,7 @@ LineRecorder helps actors record their role lines one at a time from a Stager-ge
 
 The system must work without server infrastructure. All core workflows are local, offline-capable, and file-based.
 
-The authoritative file contract for recording packs, recording packages, and future re-record requests is [recording_package_manifest.md](recording_package_manifest.md).
+The authoritative file contract for recording packs, recording packages, and future re-record requests is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
 ---
 

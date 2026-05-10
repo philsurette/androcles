@@ -4,7 +4,7 @@ This plan turns the LineRecorder design into resumable implementation work. It c
 
 ## Phase 0: Contracts And Fixtures
 
-- [ ] Keep [recording_package_manifest.md](recording_package_manifest.md) as the source of truth for recording pack and recording package schemas.
+- [ ] Keep [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md) as the source of truth for recording pack and recording package schemas.
 - [ ] Add small Stager test fixtures with one role, multiple segments, inline directions, and simultaneous speech.
 - [ ] Define fixture WAV files with deterministic short audio.
 - [ ] Add schema-validation tests for `role_recording_pack`.

@@ -1,4 +1,4 @@
-# App Manifest Design
+# Playbook Manifest Specification
 
 This document defines the first app-facing export contract for Cuemaster, an actor rehearsal app. The goal is to give Cuemaster a stable, versioned Playbook to consume without parsing markdown, spreadsheets, or MP4 chapter metadata.
 

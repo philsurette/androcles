@@ -162,7 +162,7 @@ Optional hosted/server workflows may be considered in the future, but they must 
 
 ## Input Package: Role Recording Pack
 
-Stager exports a role-specific recording pack for each actor or role. The authoritative contract is [recording_package_manifest.md](recording_package_manifest.md).
+Stager exports a role-specific recording pack for each actor or role. The authoritative contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
 A recording pack is a zip archive with a root `manifest.json`. The manifest contains enough information for LineRecorder to present actor-facing lines and produce correctly named segment recordings. Each recording item maps to a Stager `segment_id`; if a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context.
 
@@ -170,7 +170,7 @@ A recording pack is a zip archive with a root `manifest.json`. The manifest cont
 
 ## Output Package: Role Recording Package
 
-LineRecorder exports a role recording package that Stager can import. The authoritative contract is [recording_package_manifest.md](recording_package_manifest.md).
+LineRecorder exports a role recording package that Stager can import. The authoritative contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
 The output manifest lets Stager validate completeness, match recordings to Stager segment IDs, and avoid relying on file order. LineRecorder may export partial packages, but the package must explicitly report missing segment IDs so Stager does not treat partial input as complete Playbook-ready audio.
 
@@ -500,7 +500,7 @@ Stager rebuilds Playbook
 
 ### Re-Recording Request File
 
-The authoritative future contract is [recording_package_manifest.md](recording_package_manifest.md). LineRecorder should eventually import these files and open directly to the requested segment-backed recording items.
+The authoritative future contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md). LineRecorder should eventually import these files and open directly to the requested segment-backed recording items.
 
 ---
 
