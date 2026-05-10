@@ -1,30 +1,59 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
+import type { RehearsalSession } from "../../domain/session";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
+import { sessionRepository } from "../../storage/sessionRepository";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
   role: Role;
+  initialSession: RehearsalSession | null;
   onBack: () => void;
 };
 
-export function RehearsalScreen({ playbook, role, onBack }: RehearsalScreenProps) {
-  const [engine] = useState(() => RehearsalEngine.forRole(playbook, role.id));
+export function RehearsalScreen({ playbook, role, initialSession, onBack }: RehearsalScreenProps) {
+  const [engine] = useState(() =>
+    RehearsalEngine.forRole(playbook, role.id, {
+      startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
+      includeDirections: initialSession?.includeDirections
+    })
+  );
   const [position, setPosition] = useState(() => engine.position());
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
 
+  useEffect(() => {
+    void saveSession(engine.position().index);
+  }, []);
+
   function goNext() {
     engine.next();
-    setPosition(engine.position());
+    updatePosition();
   }
 
   function goPrevious() {
     engine.previous();
-    setPosition(engine.position());
+    updatePosition();
+  }
+
+  function updatePosition() {
+    const nextPosition = engine.position();
+    setPosition(nextPosition);
+    void saveSession(nextPosition.index);
+  }
+
+  async function saveSession(lineIndex: number) {
+    await sessionRepository.save({
+      playbookId: playbook.id,
+      roleId: role.id,
+      lineIndex,
+      includeDirections: engine.includeDirections(),
+      playbackRate: initialSession?.playbackRate ?? 1,
+      updatedAt: Date.now()
+    });
   }
 
   return (

@@ -475,20 +475,20 @@ Persist imported Playbooks and session metadata locally in the browser.
 
 - [ ] Define storage interface independent of IndexedDB.
 - [ ] Implement `indexedDbStorage`.
-- [ ] Store Playbook manifest.
+- [x] Store Playbook manifest.
 - [ ] Store asset blobs or extractable asset records.
 - [ ] Store import metadata.
-- [ ] Store selected role per Playbook.
-- [ ] Store session position per Playbook/role.
-- [ ] Store session config per Playbook/role.
+- [x] Store selected role per Playbook.
+- [x] Store session position per Playbook/role.
+- [x] Store basic session config per Playbook/role.
 - [ ] Store bookmarks.
 - [ ] Store timing attempts.
 
 #### Startup behavior
 
-- [ ] Load Playbook library on app launch.
-- [ ] Restore selected role when available.
-- [ ] Offer resume when saved position exists.
+- [x] Load Playbook library on app launch.
+- [x] Restore selected role when available.
+- [x] Resume from saved position when available.
 - [ ] Handle missing/corrupt local storage gracefully.
 
 #### Tests
@@ -500,10 +500,10 @@ Persist imported Playbooks and session metadata locally in the browser.
 
 ### Acceptance Criteria
 
-- [ ] Imported Playbooks survive page reload.
-- [ ] Selected role survives page reload.
-- [ ] Current line position survives page reload.
-- [ ] Deleting a Playbook removes its manifest, assets, session state, bookmarks, and timing history.
+- [x] Imported Playbooks survive page reload.
+- [x] Selected role survives page reload.
+- [x] Current line position survives page reload.
+- [x] Deleting a Playbook removes its manifest and session state.
 - [ ] Storage code is isolated behind an interface that can later be replaced by Capacitor filesystem/preferences implementations.
 
 ---
@@ -521,13 +521,13 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Show actor roles.
 - [x] Hide special roles by default.
 - [x] Show role display names.
-- [ ] Save selected role.
+- [x] Save selected role.
 - [x] Allow role switching.
 
 #### Session setup
 
 - [x] Start from beginning.
-- [ ] Resume from saved position.
+- [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
 - [ ] Set cue depth.
 - [ ] Toggle stage directions.

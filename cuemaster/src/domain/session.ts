@@ -4,4 +4,5 @@ export type RehearsalSession = {
   lineIndex: number;
   includeDirections: boolean;
   playbackRate: number;
+  updatedAt: number;
 };
