@@ -41,14 +41,15 @@ The goal of Phase 1 is to produce a useful browser-based rehearsal app that can:
 | UI framework | React |
 | Build tool | Vite |
 | Language | TypeScript |
-| State management | Zustand |
+| State management | React state first; add Zustand only when session/library state becomes awkward to pass explicitly |
 | Styling | Plain CSS or CSS modules |
 | Audio playback | `HTMLAudioElement` behind an `AudioPlayer` abstraction |
 | Variable speed | `HTMLMediaElement.playbackRate` |
-| Zip extraction | `fflate` |
-| Zip execution | Web Worker |
-| Browser storage | IndexedDB |
+| Zip extraction | `jszip` initially; revisit `fflate` only if import performance becomes a problem |
+| Zip execution | Main thread for tiny fixtures; move to Web Worker before large realistic imports |
+| Browser storage | IndexedDB via Dexie |
 | File import | Browser File API |
+| Manifest validation | Zod |
 | Unit testing | Vitest |
 | Browser flow testing | Playwright |
 | Microphone timing | Browser microphone APIs + app-owned voice activity detection |
@@ -80,78 +81,75 @@ Development-only tools should also be permissive unless there is a clear reason 
 
 ---
 
-## Recommended Source Layout
+## Current Source Layout
+
+The current scaffold lives under `cuemaster/` and uses this layout:
 
 ```text
-src/
-  app/
-    App.tsx
-    routes.tsx
+cuemaster/
+  README.md
+  package.json
+  vite.config.ts
+  playwright.config.ts
 
-  domain/
-    ids.ts
-    manifest.ts
-    playbook.ts
-    rehearsalSession.ts
-    playbackState.ts
-    tempo.ts
+  src/
+    app/
+      App.tsx
+      providers.tsx
+      routes.tsx
 
-  audio/
-    AudioPlayer.ts
-    AudioQueue.ts
-    audioTypes.ts
+    domain/
+      context.ts
+      cue.ts
+      line.ts
+      playbook.ts
+      role.ts
+      session.ts
 
-  playbook/
-    importPlaybook.ts
-    validateManifest.ts
-    unzipWorker.ts
-    assetResolver.ts
+    playbook/
+      extractPlaybookZip.ts
+      importPlaybook.ts
+      normalizePlaybook.ts
+      resolveAudioAsset.ts
 
-  storage/
-    storageTypes.ts
-    indexedDbStorage.ts
-    memoryStorage.ts
+    storage/
+      audioAssetRepository.ts
+      db.ts
+      playbookRepository.ts
+      sessionRepository.ts
 
-  state/
-    useAppStore.ts
-    useSessionStore.ts
+    specs/
+      playbookManifest.ts
+      validatePlaybookManifest.ts
 
-  tempo/
-    VoiceActivityDetector.ts
-    VoiceActivityTimer.ts
-    tempoAnalysis.ts
-    tempoTypes.ts
+    rehearsal/
+      cuePlayer.ts
+      lineNavigator.ts
+      rehearsalEngine.ts
+      responsePlayer.ts
 
-  screens/
-    LibraryScreen.tsx
-    ImportScreen.tsx
-    RoleSelectScreen.tsx
-    SessionSetupScreen.tsx
-    SessionScreen.tsx
-    ScriptBrowser.tsx
-    TempoReviewScreen.tsx
+    ui/
+      components/
+      screens/
 
-  components/
-    BigButton.tsx
-    PlaybackSpeedControl.tsx
-    TimingFeedbackPanel.tsx
-    SessionControls.tsx
-    CueDisplay.tsx
-    LineDisplay.tsx
+    platform/
+      audio.ts
+      filesystem.ts
 
-  platform/
-    platformTypes.ts
-    webPlatform.ts
-    capacitorPlaceholder.ts
+    styles/
+      app.css
+      theme.css
 
-  test/
+  tests/
+    unit/
     fixtures/
       minimal-playbook/
-      multi-role-playbook/
-      tempo-playbook/
+      androcles-playbook/
+
+  e2e/
 ```
 
-The `platform/` folder exists even in the web version so later Capacitor work can replace browser-specific behavior without rewriting the app.
+The `platform/` folder exists even in the web version so later Capacitor work can replace browser-specific behavior without rewriting the app. Do not introduce a separate `audio/`, `state/`, or `tempo/` top-level folder until the relevant milestone creates enough code to justify it.
 
 ---
 
@@ -167,23 +165,59 @@ Minimum internal model:
 type Playbook = {
   id: string;
   title: string;
-  version?: string;
+  authors: string[];
+  source?: string;
+  schemaVersion: number;
+  context: ContextBlock[];
   roles: Role[];
-  assets: PlaybookAssetIndex;
+};
+
+type ContextBlock = {
+  id: string;
+  partId: number | null;
+  blockId: string;
+  kind: "heading" | "description" | "direction";
+  speaker: "_NARRATOR";
+  text: string;
+  audioPath: string;
+  durationMs: number;
 };
 
 type Role = {
   id: string;
   displayName: string;
+  reader: string;
+  parts: Array<number | null>;
   lines: RehearsalLine[];
 };
 
 type RehearsalLine = {
   id: string;
+  partId: number | null;
   blockId: string;
+  role: string;
+  speaker: string;
   cue: CuePayload;
-  response: ResponsePayload;
+  responseText: string;
+  responseSegments: ResponseSegment[];
+  previousRoles: string[];
   timing?: LineTiming;
+};
+
+type CuePayload = {
+  speaker: string;
+  text: string;
+  audioPath: string;
+  durationMs: number;
+};
+
+type ResponseSegment = {
+  id: string;
+  owners: string[];
+  text: string;
+  audioPath: string;
+  durationMs: number;
+  simultaneous: boolean;
 };
 
 type LineTiming = {
@@ -257,33 +291,59 @@ type TimingAttempt = {
 
 ### Goal
 
-Create a working React/Vite/TypeScript app with the planned folder structure, test setup, linting, and dependency policy.
+Create a working React/Vite/TypeScript app with the planned folder structure, test setup, and dependency policy.
 
 ### Checklist
 
-- [ ] Create Vite React TypeScript project.
-- [ ] Add Zustand.
-- [ ] Add Vitest.
-- [ ] Add Playwright.
-- [ ] Add `fflate`.
-- [ ] Add IndexedDB wrapper code or a small permissively licensed helper after license review.
-- [ ] Add CSS baseline.
-- [ ] Add route/screen skeletons.
-- [ ] Add `platform/` abstraction folder.
+- [x] Create Vite React TypeScript project under `cuemaster/`.
+- [x] Defer Zustand until app state requires it.
+- [x] Add Vitest.
+- [x] Add Playwright.
+- [x] Add `jszip` for initial zip extraction.
+- [x] Add Dexie IndexedDB wrapper.
+- [x] Add Zod manifest validation.
+- [x] Add CSS baseline.
+- [x] Add route/screen skeletons.
+- [x] Add `platform/` abstraction folder.
 - [ ] Add dependency license audit script.
 - [ ] Add `THIRD_PARTY_NOTICES.md` placeholder.
-- [ ] Add `README.md` with web-app-only development instructions.
-- [ ] Add initial sample manifest fixture.
-- [ ] Add a fake in-memory Playbook fixture for UI development before zip import works.
+- [x] Add `README.md` with web-app-only development instructions.
+- [ ] Add initial sample manifest fixture from a Stager-generated public-domain Playbook.
+- [x] Add a fake in-memory Playbook fixture in unit tests for UI/domain development before zip import works.
 
 ### Acceptance Criteria
 
-- [ ] `npm install` succeeds.
+- [x] `npm install` succeeds.
 - [ ] `npm run dev` starts the web app.
-- [ ] `npm test` runs Vitest.
-- [ ] `npm run test:e2e` runs Playwright smoke test.
-- [ ] Home screen renders.
+- [x] `npm run build` succeeds.
+- [x] `npm test` runs Vitest.
+- [ ] `npm run e2e` runs Playwright smoke test.
+- [x] Home screen renders in the build.
 - [ ] No runtime dependency has an incompatible license.
+
+### Remaining Milestone 0 Work
+
+- Add a license audit script and `THIRD_PARTY_NOTICES.md`.
+- Add a small committed Playbook manifest fixture generated from public-domain Stager data.
+- Run `npm run dev` manually and confirm the browser app starts.
+- Run `npm run e2e`; install Playwright browsers first if needed.
+
+After those are done, Milestone 0 is complete.
+
+---
+
+## Immediate Next Implementation Slice
+
+Start with Milestone 1, not zip import UI.
+
+The next code changes should:
+
+- strengthen `src/specs/validatePlaybookManifest.ts` to validate roles, lines, cues, responses, and context fully;
+- add public-domain manifest fixtures under `tests/fixtures/minimal-playbook/`;
+- add domain/session engine tests that select a role and walk lines forward/backward;
+- keep this code independent of React and browser APIs.
+
+This produces a reliable app model before storage, zip import, or UI screens depend on it.
 
 ---
 
@@ -299,19 +359,21 @@ No real audio or zip import is required yet.
 
 #### Manifest parsing
 
-- [ ] Define TypeScript types for the expected Playbook manifest.
-- [ ] Define app-owned normalized types.
-- [ ] Implement manifest validation.
-- [ ] Reject manifests with missing play ID/title.
+- [x] Define TypeScript types for the expected Playbook manifest.
+- [x] Define app-owned normalized types.
+- [x] Implement initial manifest validation.
+- [x] Reject manifests with missing play ID/title.
 - [ ] Reject roles without line arrays.
 - [ ] Reject lines with missing IDs.
-- [ ] Reject required cue or response audio references that are missing from the manifest.
+- [ ] Reject required cue or response audio fields that are malformed or missing in the manifest.
+- [ ] Validate and preserve top-level narrator `context`.
 - [ ] Preserve optional `timing.target_hesitation_ms`.
+- [ ] Add a fixture generated from `build/androcles/app/manifest.json` or a smaller Stager fixture.
 
 #### Role filtering
 
-- [ ] Exclude `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` from normal actor role selection by default.
-- [ ] Keep special roles available internally for cue playback.
+- [x] Exclude `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` from normal actor role selection by relying on Stager `roles`.
+- [x] Keep `_NARRATOR` context available internally through the manifest `context` array.
 - [ ] Add tests for role filtering.
 
 #### Session engine
@@ -364,10 +426,10 @@ This is the first major useful milestone.
 
 #### Zip handling
 
-- [ ] Implement zip extraction with `fflate`.
-- [ ] Move extraction work into a Web Worker.
-- [ ] Read `manifest.json` from the expected location.
-- [ ] Validate manifest.
+- [x] Implement initial zip extraction with `jszip`.
+- [ ] Move extraction work into a Web Worker before realistic large Playbook imports.
+- [x] Read `manifest.json` from the expected location.
+- [x] Validate manifest.
 - [ ] Build asset index from zip entries.
 - [ ] Detect missing required audio assets.
 - [ ] Report friendly errors for invalid zips.
