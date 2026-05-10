@@ -16,12 +16,7 @@ from stager.audiobook.timings_xlsx import generate_xlsx
 from stager.audiobook.play_builder import PlayBuilder
 from stager.domain.play import Play, Part
 from stager.text.play_text_parser import PlayTextParser
-from stager.text.announcer_script_writer import AnnouncerScriptWriter
-from stager.text.announcer import select_announcer
-from stager.text.play_markdown_writer import PlayMarkdownWriter
-from stager.text.role_markdown_writer import RoleMarkdownWriter
-from stager.text.narrator_markdown_writer import NarratorMarkdownWriter
-from stager.text.callout_script_writer import CalloutScriptWriter
+from stager.text.text_artifact_builder import TextArtifactBuilder
 from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_builder import CueBuilder
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
@@ -752,79 +747,29 @@ def run_text(
     build_type: str | None = None,
 ) -> None:
     cfg = paths_config or paths.current()
-    effective_build_type = BuildTypeResolver(
-        paths_config=cfg,
-        explicit_build_type=build_type,
-    ).resolve()
-    run_write_play(line_no_prefix, paths_config=cfg)
-    run_write_roles(line_no_prefix, paths_config=cfg)
-    run_write_callout_script(paths_config=cfg)
-    run_write_announcer(paths_config=cfg, build_type=effective_build_type)
+    TextArtifactBuilder(paths=cfg).build_all(line_no_prefix=line_no_prefix, build_type=build_type)
 
 
 def run_write_play(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
-    writer = PlayMarkdownWriter(play, paths=cfg, prefix_line_nos=line_no_prefix)
-    path = writer.to_markdown()
-    logging.info("✅ wrote %s", paths.display_path(path))
-    return path
+    return TextArtifactBuilder(paths=cfg).write_play(line_no_prefix=line_no_prefix)
 
 
 def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
-    written_paths: list[Path] = []
-    for role in play.roles:
-        writer = RoleMarkdownWriter(
-            role,
-            reading_metadata=getattr(play, "reading_metadata", None),
-            paths=cfg,
-            prefix_line_nos=line_no_prefix,
-        )
-        path = writer.to_markdown()
-        written_paths.append(path)
-        logging.debug("✅ wrote %s", paths.display_path(path))
-    narrator_path = NarratorMarkdownWriter(
-        play,
-        reading_metadata=getattr(play, "reading_metadata", None),
-        paths=cfg,
-        prefix_line_nos=line_no_prefix,
-    ).to_markdown()
-    written_paths.append(narrator_path)
-    if written_paths:
-        role_names = [r.name for r in play.roles] + ["_NARRATOR"]
-        logging.info(
-            "✅ created .md files in %s for %s",
-            paths.display_path(written_paths[0].parent),
-            ",".join(role_names),
-        )
-    return written_paths
+    return TextArtifactBuilder(paths=cfg).write_roles(line_no_prefix=line_no_prefix)
 
 
 def run_write_callout_script(paths_config: paths.PathConfig | None = None):
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
-    writer = CalloutScriptWriter(play, paths=cfg)
-    path = writer.to_markdown()
-    logging.info("✅ wrote %s", paths.display_path(path))
-    return path
+    return TextArtifactBuilder(paths=cfg).write_callout_script()
 
 def run_write_announcer(
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
 ):
     cfg = paths_config or paths.current()
-    effective_build_type = BuildTypeResolver(
-        paths_config=cfg,
-        explicit_build_type=build_type,
-    ).resolve()
-    play = PlayTextParser(paths_config=cfg).parse()
-    announcer = select_announcer(play, build_type=effective_build_type)
-    writer = AnnouncerScriptWriter(announcer=announcer, paths=cfg)
-    path = writer.to_markdown()
-    logging.info("✅ wrote %s", paths.display_path(path))
-    return path
+    return TextArtifactBuilder(paths=cfg).write_announcer(build_type=build_type)
 
 
 def run_write_cues(paths_config: paths.PathConfig | None = None):

@@ -21,6 +21,7 @@ Required when the corresponding feature is enabled:
 - Caller/callout audio when callouts are enabled as required output.
 - Announcer audio for generated announcer tracks.
 - Librivox preamble and epilog snippets when Librivox output is enabled.
+- Segment audio for every block included in audioplay output, including narrator/title audio.
 
 ## Optional Or Diagnostic Audio
 
@@ -51,7 +52,6 @@ Missing required response audio for role MEGAERA segment 0_5_2 while building Pl
 
 ## Current Compatibility
 
-Existing Stager outputs may temporarily keep diagnostic missing-audio behavior while Playbook generation is introduced. Do not copy that behavior into Playbook code.
+Existing diagnostic reports may keep missing-audio reporting behavior while Playbook generation is introduced. Do not copy permissive missing-audio behavior into Playbook or audioplay output code.
 
 When changing an existing command from permissive to strict, add a test and document any compatibility flag.
-

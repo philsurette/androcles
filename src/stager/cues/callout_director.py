@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-import logging
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -39,8 +38,7 @@ class CalloutDirector(ABC):
         # Expect callout clips to be split from recordings/_CALLER.wav into build/audio/callouts/<callout>.wav
         path = self.paths.build_dir / "audio" / "callouts" / f"{role}.wav"
         if not path.exists():
-            logging.warning("Callout missing for role %s (expected in %s)", role, paths.display_path(path))
-            return None
+            raise RuntimeError(f"Callout missing for role {role} at {paths.display_path(path)}")
         length_ms = self._load_length_ms(path)
         return CalloutClip(
             path=path,

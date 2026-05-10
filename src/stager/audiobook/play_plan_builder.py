@@ -119,11 +119,7 @@ class PlayPlanBuilder:
                 clips: List[SegmentClip] = []
                 for role in bullet.owners:
                     wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
-                    if not wav_path.exists():
-                        logging.error("Missing snippet %s for role %s", seg_id, role)
-                        length_ms = 0
-                    else:
-                        length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
+                    length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
                     clips.append(
                         SegmentClip(
                             path=wav_path,
@@ -138,11 +134,7 @@ class PlayPlanBuilder:
             else:
                 role = bullet.owners[0]
                 wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
-                if not wav_path.exists():
-                    logging.error("Missing snippet %s for role %s", seg_id, role)
-                    length_ms = 0
-                else:
-                    length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
+                length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
                 plan_items.addClip(
                     SegmentClip(path=wav_path, text=bullet.text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
                     following_silence_ms=gap,
@@ -171,6 +163,17 @@ class PlayPlanBuilder:
         for b_idx, block in enumerate(part_blocks):
             block_id = block.block_id
             callout_clip = director_obj.calloutForBlock(block_id) if self.include_callouts else None
+            block_id_key = f"{'' if block_id.part_id is None else block_id.part_id}:{block_id.block_no}"
+            if block_id_key in chapter_map and block_id_key not in inserted_chapters:
+                chapter_template = chapter_map[block_id_key]
+                audio_plan.addChapter(
+                    Chapter(
+                        block_id=chapter_template.block_id,
+                        title=chapter_template.title,
+                        offset_ms=audio_plan.duration_ms,
+                    )
+                )
+                inserted_chapters.add(block_id_key)
 
             block_items = self.build_block_plan(
                 block,
@@ -279,13 +282,11 @@ class PlayPlanBuilder:
 
     @staticmethod
     def get_audio_length_ms(path: Path, cache: Dict[Path, int]) -> int:
-        """Return audio length in ms, caching results (0 if missing)."""
+        """Return audio length in ms, caching results."""
         if path in cache:
             return cache[path]
         if not path.exists():
-            logging.warning("Audio file missing: %s", paths.display_path(path))
-            cache[path] = 0
-            return 0
+            raise RuntimeError(f"Audio file missing: {paths.display_path(path)}")
         length = len(AudioSegment.from_file(path))
         cache[path] = length
         return length
