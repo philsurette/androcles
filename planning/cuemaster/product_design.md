@@ -27,28 +27,69 @@ Use `planning/cuemaster/app_manifest.md` as the authoritative manifest schema. T
 
 ## Core Principles
 
-- **Audio-first, eyes-free.** The primary use case is rehearsal while driving or doing other tasks. All essential functions must be reachable by voice command.
+- **Audio-first, eyes-free.** The primary use case is rehearsal while driving or doing other tasks. All essential functions must be reachable without looking at the screen.
 - **No backend required at runtime.** After the Playbook is downloaded, the app operates entirely offline. No accounts, no sync, no network dependency.
 - **Self-assessment, not algorithmic scoring.** The actor hears their cue, speaks their line, then optionally hears the correct version to judge themselves. The app does not evaluate performance.
 - **Simple state machine.** The app walks a flat, ordered list of rehearsal lines for the selected role. Navigation is the primary complexity; playback is straightforward.
+- **Iterate fast, ship incrementally.** The UI is developed as a web app first and wrapped for mobile using Capacitor. Voice commands and hardware controls are added after the core playback loop is stable.
+
+---
+
+## Development Strategy: Two Phases
+
+### Phase 1 — Web app (browser-based)
+
+Build the full UI as a standard web application running in the browser. This enables rapid iteration on the interface without native build tooling, simulators, or device deployment.
+
+- Standard HTML/CSS/JavaScript (or a lightweight framework such as React or Svelte)
+- Web Audio API for audio playback
+- Playbook loaded from local disk via a file picker (`<input type="file">` accepting `.zip`)
+- No voice commands in Phase 1 — all interaction via on-screen tap controls
+- Fully functional rehearsal tool in this form; many actors will use it at a desk before rehearsing in the car
+
+The Phase 1 web app is a shippable product in its own right, not merely a prototype.
+
+### Phase 2 — Capacitor mobile app
+
+Once the UI is stable, wrap the web app using **Capacitor** (by Ionic) to produce native iOS and Android apps. Capacitor provides a thin native shell around the web app with access to native APIs via plugins.
+
+- The web app code moves across unchanged
+- Capacitor plugins replace browser file picker with native filesystem access
+- Voice command layer (Vosk) added at this stage
+- Hardware media control integration (steering wheel, headset buttons) added at this stage
+- Background audio session registered so playback continues with screen off
+
+This approach keeps options open: if the web app meets most users' needs, it can be shipped standalone. If native features are required, Capacitor gets there without a rewrite.
 
 ---
 
 ## Technology Stack
 
-This stack is provisional product planning, not part of the Stager hardening work. Validate current library capabilities before starting the mobile app.
+### Phase 1 (web)
 
 | Layer | Choice | Rationale |
 |---|---|---|
-| Framework | React Native (Expo) | Single codebase for iOS and Android; strong audio and filesystem support |
-| Audio playback | `expo-av` | Plays local audio files; supports background audio sessions |
-| Voice commands | `@react-native-voice/voice` or equivalent | Small command vocabulary; exact offline/on-device behavior must be verified per platform |
-| Local storage | MMKV | Fast key-value store for session state, progress, bookmarks |
-| File handling | `expo-file-system` + `expo-document-picker` | Unzipping Playbooks, accessing local audio files |
-| Navigation | React Navigation | Standard stack + tab navigation |
-| Distribution | App Store + Google Play | Playbooks distributed separately (static file host, CDN, or direct transfer) |
+| UI framework | React (or Svelte) | Fast iteration; no native build step |
+| Audio playback | Web Audio API / `<audio>` element | Native browser support; no dependencies |
+| Playbook loading | Browser File API (`<input type="file">`) | Load zip from local disk |
+| Zip unpacking | `fflate` or `JSZip` | In-browser zip extraction |
+| State persistence | `localStorage` | Session position, bookmarks |
 
-**No server is required beyond a static file host** (e.g. S3, Cloudflare R2, or even a shared drive) for Playbook distribution. There is no auth, no API, no user database.
+### Phase 2 (Capacitor mobile)
+
+| Layer | Choice | Rationale |
+|---|---|---|
+| Native wrapper | Capacitor (Ionic) | Wraps existing web app; minimal rewrite |
+| Audio playback | `@capacitor/media` or `capacitor-native-audio` | Reliable background audio on iOS and Android |
+| Wake word detection | `react-native-vosk` via Capacitor bridge, or Vosk WASM | Fully offline; Apache 2.0 license; grammar-constrained to command vocabulary |
+| Hardware media controls | `@jofr/capacitor-media-session` | Maps steering wheel / headset buttons to session actions |
+| Filesystem | `@capacitor/filesystem` | Access to downloaded Playbook zip |
+| State persistence | `@capacitor/preferences` (replaces localStorage) | Persistent key-value store on device |
+| Distribution | App Store + Google Play | Playbooks distributed separately |
+
+**Vosk** (https://github.com/alphacep/vosk-api) is the chosen speech recognition library. It is open source under the **Apache 2.0 license**, fully on-device, and supports grammar-constrained recognition — meaning it only listens for the small vocabulary of command words, not arbitrary speech. This avoids false positives from the actor speaking their lines. The English model is approximately 50MB and can be bundled with the app or downloaded on first launch.
+
+**No server is required beyond a static file host** (e.g. S3, Cloudflare R2, or a shared drive) for Playbook distribution. There is no auth, no API, no user database.
 
 ---
 
@@ -107,7 +148,7 @@ The mobile app should consume roles and rehearsal line items, not a single flat 
             }
           },
           "response": {
-            "text": "I won’t go another step.",
+            "text": "I won't go another step.",
             "segments": [
               {
                 "id": "0_5_2",
@@ -151,7 +192,7 @@ includeDirections: boolean       // whether direction cues are played when narra
 startLineId: string              // where to begin
 ```
 
-### Session state (persisted to MMKV)
+### Session state (persisted)
 
 ```
 currentLineId: string            // the actor's NEXT line to attempt
@@ -176,7 +217,8 @@ Play cue(s)                  ← one or more audio files played sequentially
   │
   ▼
 WAITING                      ← silence; actor speaks their line from memory
-  │                            app listens for voice commands only
+  │                            app listens for wake word + command (Phase 2)
+  │                            or waits for tap/hardware button (Phase 1 + 2)
   ├── "hear my line"  ──────► Play reference audio for current line
   │                              │
   │                              └── returns to WAITING
@@ -196,25 +238,64 @@ The app **never auto-advances**. It always waits for an explicit command before 
 
 ---
 
-## Voice Commands
+## Input Methods
 
-Voice recognition runs continuously in the background during a session (listening for commands only, not scoring lines). The vocabulary is small enough that simple keyword matching suffices — no NLP needed.
+Cuemaster supports three input methods, in order of implementation priority:
+
+### 1. On-screen tap controls (Phase 1 and 2)
+
+Large, high-contrast buttons covering all session actions. Always available. Required for stationary use and as a fallback when voice or hardware controls are unavailable.
+
+### 2. Hardware media controls (Phase 2)
+
+Steering wheel buttons, Bluetooth headset buttons, wired headset remotes, and lock screen controls all communicate via the OS Media Session API. Cuemaster registers action handlers via `@jofr/capacitor-media-session`:
+
+| Hardware control | Media Session action | Cuemaster function |
+|---|---|---|
+| Play / Pause | `play` / `pause` | Resume / pause session |
+| Next track ⏭ | `nexttrack` | Next cue |
+| Previous track ⏮ | `previoustrack` | Repeat cue |
+| Skip forward ⏩ | `seekforward` | Hear my line |
+| Skip back ⏪ | `seekbackward` | Back one line |
+
+Most steering wheels expose only play/pause and next/previous, covering the two most critical actions — **Next Cue** and **Repeat Cue** — without the actor touching the phone.
+
+As a side effect of registering a Media Session, the OS displays session metadata (play title, role, current scene and line number) on the lock screen and in the notification panel. This gives the actor a glanceable status display without unlocking the phone.
+
+### 3. Wake word + voice commands (Phase 2)
+
+Voice commands use a **two-phase detection model** to avoid false positives from the actor speaking their lines:
+
+**Phase A — Wake word (Vosk, always-on, lightweight)**
+Vosk runs continuously with a grammar constrained to a single word: `"Quince"`. The actor's spoken lines are ignored because they are not in the grammar. Battery impact is low because Vosk is not running full transcription — it is doing constrained keyword spotting only.
+
+**Phase B — Command recognition (Vosk, brief, triggered)**
+When "Quince" is detected, Vosk immediately switches to a second constrained grammar containing the command vocabulary. It listens for approximately 3 seconds, captures one command word or phrase, executes the action, and returns to Phase A.
+
+This architecture means:
+- The actor's lines never trigger false commands
+- There is no iOS 1-minute STT session limit to work around (Vosk has no such limit)
+- No internet connection is required at any point
+- Nothing the actor says is transmitted off-device
+
+#### Voice command vocabulary
 
 | Utterance(s) | Action |
 |---|---|
-| "next", "go", "continue" | Advance to next actor line and play cue |
-| "again", "repeat", "cue again" | Replay current cue without advancing |
-| "hear my line", "correct", "play my line" | Play reference audio for current line |
-| "back", "previous" | Go to previous actor line and play cue |
-| "skip" | Advance to next line without playing reference |
-| "go to scene [N]" | Jump to beginning of scene N |
-| "go to act [N]" | Jump to beginning of act N |
-| "stop", "pause" | Pause session and save state |
-| "start", "resume" | Resume from saved state |
+| "Quince… next" / "go" / "continue" | Advance to next actor line and play cue |
+| "Quince… again" / "repeat" | Replay current cue without advancing |
+| "Quince… line" / "hear my line" | Play reference audio for current line |
+| "Quince… back" / "previous" | Go to previous actor line and play cue |
+| "Quince… skip" | Advance without playing reference |
+| "Quince… scene [N]" | Jump to beginning of scene N |
+| "Quince… stop" / "pause" | Pause session and save state |
+| "Quince… resume" / "start" | Resume from saved state |
 
-**Implementation note:** STT sessions on iOS (`SFSpeechRecognizer`) have a ~1-minute audio limit. Restart the session in a loop. On Android, recognition quality varies by device; lower-end devices may silently fall back to network STT — document this in the app's setup flow.
+Voice commands are a convenience layer. All commands must also be reachable by tap or hardware button.
 
-Voice commands are a convenience layer. All commands must also be reachable by on-screen tap, so the app is fully usable when stationary.
+#### Permission handling
+
+Microphone permission is required for voice commands. The onboarding flow should explain that the microphone is used for voice commands only — nothing is recorded or transmitted. If permission is denied, the app degrades gracefully to tap and hardware controls with no loss of core functionality.
 
 ---
 
@@ -224,13 +305,13 @@ Beyond line-by-line stepping, the actor needs to jump around the script efficien
 
 ### Levels of navigation
 
-1. **Line level** — previous / next actor line (voice: "back", "next")
-2. **Part/scene level** — jump to first actor line in a part or scene (voice: "go to scene 2"; UI: scene list)
+1. **Line level** — previous / next actor line (voice: "Quince… back", "Quince… next"; hardware: ⏮ / ⏭)
+2. **Part/scene level** — jump to first actor line in a part or scene (voice: "Quince… scene 2"; UI: scene list)
 3. **Play section level** — jump to first actor line in a higher-level section if the manifest exposes one
 
 ### Bookmark
 
-The actor can drop a bookmark at the current position (voice: "bookmark this"; UI: star button). Bookmarks are persisted in MMKV and shown in the script browser. Tapping a bookmark resumes from that line.
+The actor can drop a bookmark at the current position (voice: "Quince… bookmark"; UI: star button). Bookmarks are persisted and shown in the script browser. Tapping a bookmark resumes from that line.
 
 ### Resume on launch
 
@@ -246,14 +327,14 @@ The home screen. Lists installed Playbooks. Each entry shows play title, package
 
 Actions:
 - Tap a Playbook → Role select (or directly to Session if role already chosen)
-- "Import Playbook" button → `expo-document-picker` to select a `.zip` from Files/Downloads
+- "Import Playbook" button → file picker to select a `.zip` (browser File API in Phase 1; `@capacitor/filesystem` in Phase 2)
 - Swipe to delete a Playbook (with confirmation)
 
 ### 2. Role select
 
 Shown after tapping a Playbook for the first time, or when the actor wants to switch role.
 
-Displays the manifest `roles` array as a list. Tap to select and proceed to Session setup.
+Displays the manifest `roles` array as a list, excluding `_NARRATOR`, `_CALLER`, and `_ANNOUNCER`. Tap to select and proceed to Session setup.
 
 ### 3. Session setup
 
@@ -270,9 +351,9 @@ Shown before starting or resuming a session. Lets the actor configure:
 The main rehearsal screen. Designed to be glanceable — large text, high contrast, minimal controls.
 
 **Display (top half):**
-- Current position: "Act II · Scene 1 · Line 14 of 47"
+- Current position: scene / line number within role
 - Cue text (the lines just played) — shown in muted colour
-- Your line text — hidden by default; revealed on demand by tap
+- Actor's line text — hidden by default; revealed on demand by tap
 
 **Controls (bottom half):**
 
@@ -284,13 +365,13 @@ The main rehearsal screen. Designed to be glanceable — large text, high contra
               [ Next ▶ ]
 ```
 
-**Driving mode toggle** (accessible from session setup or via a persistent button): collapses the screen to a minimal display — large position indicator, no text content, a single "Stop" button. All other interaction is voice-only.
+**Driving mode toggle** (accessible from session setup or via a persistent button): collapses the screen to a minimal display — large position indicator, no text content, a single "Stop" button. All substantive interaction shifts to hardware media controls and voice commands.
 
-**Status indicator**: a small persistent indicator showing whether voice recognition is active (listening for commands).
+**Voice status indicator** (Phase 2): a small persistent indicator showing whether Vosk wake word detection is active.
 
 ### 5. Script browser (modal/sheet)
 
-Accessible from the Session screen via a menu button. Shows the full act/scene structure with progress indicators (which scenes have been rehearsed in this session). Tap any scene to jump to it.
+Accessible from the Session screen via a menu button. Shows the full scene structure with progress indicators (which scenes have been rehearsed in this session). Tap any scene to jump to it.
 
 ---
 
@@ -299,25 +380,29 @@ Accessible from the Session screen via a menu button. Shows the full act/scene s
 When driving mode is active:
 
 - Screen dims to a minimal display (position info + "Stop" button only)
-- Voice command recognition is the only input method
-- The app registers as a background audio session (behaves like a podcast/audiobook app)
-- On iOS: use `AVAudioSession` category `playAndRecord` with `allowBluetooth` and `defaultToSpeaker` options
-- On Android: register a foreground service with audio focus to prevent the OS from killing playback
-- Bluetooth headsets and car audio are supported natively via the OS audio routing
+- Hardware media controls (steering wheel, headset) become the primary input
+- Voice commands via Vosk wake word active as secondary input (Phase 2)
+- The app registers as a background audio session (behaves like a podcast or audiobook app)
+  - **Phase 2, iOS**: audio session configured for background playback with Bluetooth support
+  - **Phase 2, Android**: foreground service registered to maintain audio focus and prevent OS from killing playback
+- Lock screen and notification panel show session metadata via Media Session API
 
-The actor should be prompted to enable driving mode before starting a session if the phone detects it is connected to a car Bluetooth device (optional enhancement).
+The actor may be prompted to enable driving mode if the phone detects a Bluetooth car audio connection (optional enhancement, Phase 2).
 
 ---
 
-## Data Persistence (MMKV)
+## Data Persistence
 
 All state is local. No cloud sync.
+
+**Phase 1**: `localStorage` (browser).
+**Phase 2**: `@capacitor/preferences` (native key-value store).
 
 | Key | Value | Description |
 |---|---|---|
 | `playbooks` | `string[]` | List of installed Playbook IDs |
 | `playbook:{id}:manifest` | `object` | Cached parsed manifest |
-| `playbook:{id}:path` | `string` | Absolute path to unpacked folder |
+| `playbook:{id}:path` | `string` | Absolute path to unpacked folder (Phase 2) |
 | `session:{id}:role` | `string` | Selected role for this Playbook |
 | `session:{id}:position` | `string` | Current line ID |
 | `session:{id}:config` | `object` | Cue depth, direction toggle, etc. |
@@ -357,12 +442,16 @@ The following are deliberate exclusions for the initial version:
 
 ## Open Questions for Implementation
 
-1. **STT permission handling**: Both iOS and Android require explicit user permission for microphone and speech recognition. The onboarding flow should explain why this is needed (voice commands only, nothing is recorded or transmitted) and gracefully degrade to tap-only if permission is denied.
+1. **Vosk model bundling**: The Vosk English model is approximately 50MB. Decide whether to bundle it with the app (simpler UX, larger initial download) or download on first launch over Wi-Fi (smaller app, requires connectivity once). Given that actors are already downloading a Playbook of similar or larger size, bundling is probably preferable.
 
-2. **Playbook size limits**: No hard limit is imposed by the app, but the UI should show storage usage and warn if a Playbook exceeds 500MB.
+2. **Vosk React Native / Capacitor bridge**: `react-native-vosk` (https://github.com/riderodd/react-native-vosk) provides a React Native wrapper. Verify that it can be used within a Capacitor app via a custom native plugin bridge, or assess whether a Vosk WASM build running in the WebView is a viable alternative for Phase 2.
 
-3. **Audio interruption handling**: Phone calls, notifications, and other audio interruptions should pause the session and allow resumption. Use `expo-av`'s interruption handling callbacks.
+3. **Playbook size limits**: No hard limit is imposed by the app, but the UI should show storage usage and warn if a Playbook exceeds 500MB.
 
-4. **Playbook versioning**: If a production updates the Playbook (e.g. a line changes during rehearsals), the app should detect a version mismatch and prompt the actor to re-download. The manifest should include package-version metadata before this behavior is implemented.
+4. **Audio interruption handling**: Phone calls, notifications, and other audio interruptions should pause the session and allow resumption. Handle `pause` events from the Media Session API and audio focus loss callbacks on Android.
 
-5. **Accessibility**: The session screen should be fully usable with VoiceOver (iOS) and TalkBack (Android) for actors with visual impairments, though the voice command system largely serves this need already.
+5. **Playbook versioning**: If a production updates the Playbook (e.g. a line changes during rehearsals), the app should detect a version mismatch and prompt the actor to re-download. The manifest should include package-version metadata before this behavior is implemented.
+
+6. **Accessibility**: The session screen should be fully usable with VoiceOver (iOS) and TalkBack (Android) for actors with visual impairments. The voice command system partially serves this need, but tap targets and screen reader labels should be correct from the start.
+
+7. **Phase 1 zip handling in browser**: Large Playbook zips (potentially several hundred MB of WAV audio) must be extracted in the browser without blocking the UI. Use a Web Worker for zip extraction with `fflate` and stream audio file references rather than loading all audio into memory at once.
