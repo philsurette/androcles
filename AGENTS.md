@@ -104,3 +104,6 @@ Reusable classes should use Python's logging mechanism with `logging.getLogger(_
 Do not use `print()` in library code.
 
 Use logging for build progress, diagnostics, and generated artifact paths.
+
+## Response format
+When a response includes changes to committable files, include a one-line commit message at the end of the response.
