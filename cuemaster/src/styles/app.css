@@ -22,6 +22,10 @@
   width: min(100%, 58rem);
 }
 
+.rehearsal {
+  width: min(100%, 68rem);
+}
+
 .eyebrow {
   margin: 0 0 1rem;
   color: var(--accent);
@@ -66,6 +70,11 @@ button {
 button.secondary {
   background: rgba(30, 38, 31, 0.1);
   color: var(--ink);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .button input {
@@ -139,6 +148,55 @@ button.secondary {
 .playbook-row h3,
 .playbook-row p {
   margin: 0;
+}
+
+.rehearsal-grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  margin-top: 2rem;
+}
+
+.stack {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+}
+
+.stack h2 {
+  margin: 0;
+}
+
+.cue-card p,
+.line-card p {
+  margin: 0;
+}
+
+.cue-card p:last-child,
+.line-card p:last-child {
+  font-size: 1.35rem;
+  line-height: 1.45;
+}
+
+.speaker {
+  color: var(--accent);
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.transport {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+@media (max-width: 760px) {
+  .rehearsal-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .card,

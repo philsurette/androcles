@@ -518,15 +518,15 @@ Allow the actor to choose a role and configure a rehearsal session.
 
 #### Role select
 
-- [ ] Show actor roles.
-- [ ] Hide special roles by default.
-- [ ] Show role display names.
+- [x] Show actor roles.
+- [x] Hide special roles by default.
+- [x] Show role display names.
 - [ ] Save selected role.
-- [ ] Allow role switching.
+- [x] Allow role switching.
 
 #### Session setup
 
-- [ ] Start from beginning.
+- [x] Start from beginning.
 - [ ] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
 - [ ] Set cue depth.
@@ -547,7 +547,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 
 - [ ] User can import a Playbook, choose a role, configure a session, and enter the Session screen.
 - [ ] Selected settings persist across reload.
-- [ ] The UI does not expose special roles as normal actor choices.
+- [x] The UI does not expose special roles as normal actor choices.
 
 ---
 

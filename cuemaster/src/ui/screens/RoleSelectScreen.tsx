@@ -1,11 +1,13 @@
 import type { Playbook } from "../../domain/playbook";
+import type { Role } from "../../domain/role";
 
 type RoleSelectScreenProps = {
   playbook: Playbook;
   onBack: () => void;
+  onSelectRole: (role: Role) => void;
 };
 
-export function RoleSelectScreen({ playbook, onBack }: RoleSelectScreenProps) {
+export function RoleSelectScreen({ playbook, onBack, onSelectRole }: RoleSelectScreenProps) {
   return (
     <main className="shell">
       <section className="hero library">
@@ -25,7 +27,9 @@ export function RoleSelectScreen({ playbook, onBack }: RoleSelectScreenProps) {
                   {role.lines.length} line{role.lines.length === 1 ? "" : "s"}
                 </p>
               </div>
-              <button type="button">Select</button>
+              <button type="button" onClick={() => onSelectRole(role)}>
+                Select
+              </button>
             </li>
           ))}
         </ul>
