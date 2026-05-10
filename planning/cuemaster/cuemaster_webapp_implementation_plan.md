@@ -308,7 +308,7 @@ Create a working React/Vite/TypeScript app with the planned folder structure, te
 - [ ] Add dependency license audit script.
 - [ ] Add `THIRD_PARTY_NOTICES.md` placeholder.
 - [x] Add `README.md` with web-app-only development instructions.
-- [ ] Add initial sample manifest fixture from a Stager-generated public-domain Playbook.
+- [x] Add initial sample manifest fixture from a Stager-generated public-domain Playbook.
 - [x] Add a fake in-memory Playbook fixture in unit tests for UI/domain development before zip import works.
 
 ### Acceptance Criteria
@@ -363,47 +363,47 @@ No real audio or zip import is required yet.
 - [x] Define app-owned normalized types.
 - [x] Implement initial manifest validation.
 - [x] Reject manifests with missing play ID/title.
-- [ ] Reject roles without line arrays.
-- [ ] Reject lines with missing IDs.
-- [ ] Reject required cue or response audio fields that are malformed or missing in the manifest.
-- [ ] Validate and preserve top-level narrator `context`.
-- [ ] Preserve optional `timing.target_hesitation_ms`.
-- [ ] Add a fixture generated from `build/androcles/app/manifest.json` or a smaller Stager fixture.
+- [x] Reject roles without line arrays.
+- [x] Reject lines with missing IDs.
+- [x] Reject required cue or response audio fields that are malformed or missing in the manifest.
+- [x] Validate and preserve top-level narrator `context`.
+- [x] Preserve optional `timing.target_hesitation_ms`.
+- [x] Add a fixture generated from `build/androcles/app/manifest.json` or a smaller Stager fixture.
 
 #### Role filtering
 
 - [x] Exclude `_NARRATOR`, `_CALLER`, and `_ANNOUNCER` from normal actor role selection by relying on Stager `roles`.
 - [x] Keep `_NARRATOR` context available internally through the manifest `context` array.
-- [ ] Add tests for role filtering.
+- [x] Add tests for role filtering.
 
 #### Session engine
 
-- [ ] Select role.
-- [ ] Start from first line.
-- [ ] Start from chosen line.
-- [ ] Advance to next line.
-- [ ] Go back to previous line.
-- [ ] Repeat current line/cue.
-- [ ] Detect beginning/end of role sequence.
-- [ ] Support `cueDepth` in derived cue list.
-- [ ] Support `includeDirections` flag where manifest data allows it.
-- [ ] Expose current line, cue payload, response payload, and position information.
+- [x] Select role.
+- [x] Start from first line.
+- [x] Start from chosen line.
+- [x] Advance to next line.
+- [x] Go back to previous line.
+- [x] Repeat current line/cue.
+- [x] Detect beginning/end of role sequence.
+- [x] Support `cueDepth` in derived cue list.
+- [x] Support `includeDirections` flag where manifest data allows it.
+- [x] Expose current line, cue payload, response payload, and position information.
 
 #### Tests
 
-- [ ] Test one-role manifest.
-- [ ] Test multi-role manifest.
-- [ ] Test special-role filtering.
-- [ ] Test next/back behavior.
-- [ ] Test cue-depth behavior.
-- [ ] Test line-specific target hesitation fallback behavior.
+- [x] Test one-role manifest.
+- [x] Test multi-role manifest.
+- [x] Test special-role filtering.
+- [x] Test next/back behavior.
+- [x] Test cue-depth behavior.
+- [x] Test line-specific target hesitation fallback behavior.
 
 ### Acceptance Criteria
 
-- [ ] A unit test can load a sample manifest and derive a rehearsal sequence for a selected role.
-- [ ] A unit test can walk forward and backward through the selected role's lines.
-- [ ] The domain engine has no React dependency.
-- [ ] The domain engine has no browser API dependency.
+- [x] A unit test can load a sample manifest and derive a rehearsal sequence for a selected role.
+- [x] A unit test can walk forward and backward through the selected role's lines.
+- [x] The domain engine has no React dependency.
+- [x] The domain engine has no browser API dependency.
 
 ---
 

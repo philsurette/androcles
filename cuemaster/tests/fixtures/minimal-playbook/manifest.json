@@ -1,0 +1,151 @@
+{
+  "schema_version": 1,
+  "play": {
+    "id": "androcles-minimal",
+    "title": "Androcles and the Lion",
+    "authors": ["George Bernard Shaw"],
+    "source": "Project Gutenberg"
+  },
+  "reading": {
+    "type": "solo",
+    "build_type": "custom"
+  },
+  "context": [
+    {
+      "id": "0_0_1",
+      "part_id": 0,
+      "block_id": "0.0",
+      "kind": "heading",
+      "speaker": "_NARRATOR",
+      "text": "PROLOGUE",
+      "audio": {
+        "path": "audio/segments/_NARRATOR/0_0_1.wav",
+        "duration_ms": 1000,
+        "required": true
+      }
+    }
+  ],
+  "roles": [
+    {
+      "id": "ANDROCLES",
+      "display_name": "ANDROCLES",
+      "reader": "Anonymous",
+      "meta": false,
+      "parts": [0],
+      "lines": [
+        {
+          "id": "0_1_ANDROCLES",
+          "part_id": 0,
+          "block_id": "0.1",
+          "role": "ANDROCLES",
+          "speaker": "ANDROCLES",
+          "cue": {
+            "speaker": "_NARRATOR",
+            "text": "PROLOGUE",
+            "audio": {
+              "path": "audio/segments/_NARRATOR/0_0_1.wav",
+              "duration_ms": 1000,
+              "required": true
+            }
+          },
+          "response": {
+            "text": "Not bloody likely.",
+            "segments": [
+              {
+                "id": "0_1_1",
+                "owners": ["ANDROCLES"],
+                "text": "Not bloody likely.",
+                "audio": {
+                  "path": "audio/segments/ANDROCLES/0_1_1.wav",
+                  "duration_ms": 1400,
+                  "required": true
+                }
+              }
+            ]
+          },
+          "directions": [],
+          "previous_roles": ["_NARRATOR"],
+          "timing": {
+            "target_hesitation_ms": 750
+          }
+        },
+        {
+          "id": "0_3_ANDROCLES",
+          "part_id": 0,
+          "block_id": "0.3",
+          "role": "ANDROCLES",
+          "speaker": "ANDROCLES",
+          "cue": {
+            "speaker": "MEGAERA",
+            "text": "You are always talking nonsense.",
+            "audio": {
+              "path": "audio/segments/MEGAERA/0_2_1.wav",
+              "duration_ms": 1800,
+              "required": true
+            }
+          },
+          "response": {
+            "text": "It is the best sense I can make of it.",
+            "segments": [
+              {
+                "id": "0_3_1",
+                "owners": ["ANDROCLES"],
+                "text": "It is the best sense I can make of it.",
+                "audio": {
+                  "path": "audio/segments/ANDROCLES/0_3_1.wav",
+                  "duration_ms": 2200,
+                  "required": true
+                }
+              }
+            ]
+          },
+          "directions": [],
+          "previous_roles": ["MEGAERA"]
+        }
+      ]
+    },
+    {
+      "id": "MEGAERA",
+      "display_name": "MEGAERA",
+      "reader": "Anonymous",
+      "meta": false,
+      "parts": [0],
+      "lines": [
+        {
+          "id": "0_2_MEGAERA",
+          "part_id": 0,
+          "block_id": "0.2",
+          "role": "MEGAERA",
+          "speaker": "MEGAERA",
+          "cue": {
+            "speaker": "ANDROCLES",
+            "text": "Not bloody likely.",
+            "audio": {
+              "path": "audio/segments/ANDROCLES/0_1_1.wav",
+              "duration_ms": 1400,
+              "required": true
+            }
+          },
+          "response": {
+            "text": "You are always talking nonsense.",
+            "segments": [
+              {
+                "id": "0_2_1",
+                "owners": ["MEGAERA"],
+                "text": "You are always talking nonsense.",
+                "audio": {
+                  "path": "audio/segments/MEGAERA/0_2_1.wav",
+                  "duration_ms": 1800,
+                  "required": true
+                }
+              }
+            ]
+          },
+          "directions": [],
+          "previous_roles": ["ANDROCLES"]
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

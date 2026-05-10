@@ -68,4 +68,7 @@ export type ManifestLine = {
   }>;
   previous_roles: string[];
   simultaneous?: boolean;
+  timing?: {
+    target_hesitation_ms?: number;
+  };
 };

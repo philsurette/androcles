@@ -9,6 +9,10 @@ export type ResponseSegment = {
   simultaneous: boolean;
 };
 
+export type LineTiming = {
+  targetHesitationMs?: number;
+};
+
 export type Line = {
   id: string;
   partId: number | null;
@@ -19,4 +23,5 @@ export type Line = {
   responseText: string;
   responseSegments: ResponseSegment[];
   previousRoles: string[];
+  timing?: LineTiming;
 };

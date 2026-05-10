@@ -44,7 +44,11 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           durationMs: segment.audio.duration_ms,
           simultaneous: segment.simultaneous ?? false
         })),
-        previousRoles: line.previous_roles
+        previousRoles: line.previous_roles,
+        timing:
+          line.timing?.target_hesitation_ms === undefined
+            ? undefined
+            : { targetHesitationMs: line.timing.target_hesitation_ms }
       }))
     }))
   };
