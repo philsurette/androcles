@@ -98,10 +98,10 @@ def test_run_audioplay_passes_librivox_build_type_to_preparation(
     cfg = _config(tmp_path, build_type="custom")
     calls: list[tuple[str, str | None]] = []
 
-    def fake_run_text(*, line_no_prefix: bool, paths_config: paths.PathConfig, build_type: str) -> None:
+    def fake_build_text(self, *, line_no_prefix: bool, build_type: str) -> None:
         calls.append(("text", build_type))
 
-    def fake_run_segments(*, paths_config: paths.PathConfig, build_type: str) -> None:
+    def fake_build_segments(self, *, build_type: str, **kwargs) -> None:
         calls.append(("segments", build_type))
 
     @dataclass
@@ -115,9 +115,9 @@ def test_run_audioplay_passes_librivox_build_type_to_preparation(
             calls.append(("builder", "librivox" if self.librivox else "custom"))
             return []
 
-    monkeypatch.setattr("stager.cli.build.run_text", fake_run_text)
-    monkeypatch.setattr("stager.cli.build.run_segments", fake_run_segments)
-    monkeypatch.setattr("stager.cli.build.PlayBuilder", FakePlayBuilder)
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.TextArtifactBuilder.build_all", fake_build_text)
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.SegmentBuildService.build", fake_build_segments)
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.PlayBuilder", FakePlayBuilder)
 
     run_audioplay(
         paths_config=cfg,

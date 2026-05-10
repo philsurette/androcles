@@ -1,7 +1,7 @@
 """Build markdown text artifacts for a play."""
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 import logging
 from pathlib import Path
 
@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class TextArtifactBuilder:
     """Build the markdown artifacts emitted by the Stager text workflow."""
 
-    paths: paths.PathConfig = field(default_factory=paths.current)
+    paths: paths.PathConfig
 
     def build_all(self, *, line_no_prefix: bool = True, build_type: str | None = None) -> None:
         effective_build_type = BuildTypeResolver(

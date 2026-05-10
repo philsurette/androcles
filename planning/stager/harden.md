@@ -193,32 +193,32 @@ Target outcome: Typer commands become thin Stager wrappers over reusable service
 - [x] Create `TextArtifactBuilder`.
 - [x] Move `run_text`, `run_write_play`, `run_write_roles`, `run_write_callout_script`, and `run_write_announcer` behavior into the service.
 - [x] Keep backwards-compatible helper functions in `src/stager/cli/build.py` temporarily if tests or scripts import them.
-- [ ] Create `SegmentBuildService`.
-- [ ] Move `run_segments` behavior into the service.
-- [ ] Create `TimingBuildService`.
-- [ ] Move `run_generate_timings` behavior into the service.
-- [ ] Create `AudioPlayBuildService`.
-- [ ] Move `run_audioplay` behavior into the service.
-- [ ] Create `CueBuildService`.
-- [ ] Move `run_cues` behavior into the service.
-- [ ] Ensure each service receives `PathConfig` explicitly.
-- [ ] Ensure service classes use `logging.getLogger(__name__)`.
+- [x] Create `SegmentBuildService`.
+- [x] Move `run_segments` behavior into the service.
+- [x] Create `TimingBuildService`.
+- [x] Move `run_generate_timings` behavior into the service.
+- [x] Create `AudioPlayBuildService`.
+- [x] Move `run_audioplay` behavior into the service.
+- [x] Create `CueBuildService`.
+- [x] Move `run_cues` behavior into the service.
+- [x] Ensure each service receives `PathConfig` explicitly.
+- [x] Ensure service classes use `logging.getLogger(__name__)`.
 - [ ] Keep `src/stager/cli/build.py` focused on Typer/Stager option parsing and service invocation.
 - [x] Run targeted tests after the `TextArtifactBuilder` extraction.
-- [ ] Run targeted tests after each remaining extracted service.
-- [ ] Run full tests after all service extraction.
+- [x] Run targeted tests after each remaining extracted service.
+- [x] Run full tests after all service extraction.
 
 ## Phase 7: Reduce Global Path State
 
 Target outcome: Cuemaster/Playbook-oriented services and tests do not depend on import-time global play configuration.
 
-- [ ] Audit remaining `paths.current()` usage.
-- [ ] Replace `paths.current()` in newly extracted services with required `PathConfig` constructor arguments.
-- [ ] Keep legacy aliases in `paths.py` only for existing compatibility.
-- [ ] Avoid adding new imports of `BUILD_DIR`, `SEGMENTS_DIR`, `RECORDINGS_DIR`, or similar aliases.
+- [x] Audit remaining `paths.current()` usage.
+- [x] Replace `paths.current()` in newly extracted services with required `PathConfig` constructor arguments.
+- [x] Keep legacy aliases in `paths.py` only for existing compatibility.
+- [x] Avoid adding new imports of `BUILD_DIR`, `SEGMENTS_DIR`, `RECORDINGS_DIR`, or similar aliases.
 - [ ] Consider changing `DEFAULT_PLAY_NAME = PlayConfig.load().play_id` to a function if import-time config becomes a test or app-packaging problem.
-- [ ] Add tests that construct two `PathConfig` instances for different plays in the same process and verify no cross-contamination in Playbook export.
-- [ ] Run full tests.
+- [x] Add tests that construct two `PathConfig` instances for different plays in the same process and verify no cross-contamination in Playbook export.
+- [x] Run full tests.
 
 ## Phase 8: Clean Library Output
 

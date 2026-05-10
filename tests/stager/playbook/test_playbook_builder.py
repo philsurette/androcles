@@ -35,6 +35,15 @@ def _cfg(tmp_path: Path) -> paths.PathConfig:
     )
 
 
+def _named_cfg(tmp_path: Path, play_name: str) -> paths.PathConfig:
+    return paths.PathConfig(
+        play_name=play_name,
+        build_root=tmp_path / "build",
+        plays_dir=tmp_path / "plays",
+        snippets_dir=tmp_path / "snippets",
+    )
+
+
 def _title_block() -> TitleBlock:
     block_id = BlockId(0, 0)
     return TitleBlock(
@@ -132,3 +141,21 @@ def test_playbook_builder_fails_on_missing_cue_audio(tmp_path: Path) -> None:
 
     with pytest.raises(RuntimeError, match="Missing required cue audio for role _NARRATOR segment 0_0_1"):
         PlaybookBuilder(play=play, paths=cfg).build()
+
+
+def test_playbook_builder_keeps_path_configs_isolated(tmp_path: Path) -> None:
+    first_cfg = _named_cfg(tmp_path, "first-play")
+    second_cfg = _named_cfg(tmp_path, "second-play")
+    response_block = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), response_block])
+    for cfg in (first_cfg, second_cfg):
+        _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+        _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav")
+
+    first_manifest = PlaybookBuilder(play=play, paths=first_cfg).build()
+    second_manifest = PlaybookBuilder(play=play, paths=second_cfg).build()
+
+    assert first_manifest == first_cfg.build_dir / "app" / "manifest.json"
+    assert second_manifest == second_cfg.build_dir / "app" / "manifest.json"
+    assert first_manifest.exists()
+    assert second_manifest.exists()

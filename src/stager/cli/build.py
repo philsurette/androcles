@@ -10,15 +10,15 @@ import time
 from stager.shared import paths
 import typer
 
-from stager.audio.play_splitter import PlaySplitter
+from stager.audio.segment_build_service import SegmentBuildService
 from stager.verification.recording_checker import summarize as summarize_recordings
-from stager.audiobook.timings_xlsx import generate_xlsx
-from stager.audiobook.play_builder import PlayBuilder
+from stager.audiobook.audio_play_build_service import AudioPlayBuildService
+from stager.audiobook.timing_build_service import TimingBuildService
 from stager.domain.play import Play, Part
 from stager.text.play_text_parser import PlayTextParser
 from stager.text.text_artifact_builder import TextArtifactBuilder
 from stager.loudnorm.normalizer import Normalizer
-from stager.cues.cue_builder import CueBuilder
+from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.verification.segment_verifier import SegmentVerifier
@@ -797,25 +797,18 @@ def run_segments(
     build_type: str | None = None,
 ):
     cfg = paths_config or paths.current()
-    effective_build_type = BuildTypeResolver(
-        paths_config=cfg,
-        explicit_build_type=build_type,
-    ).resolve()
-    AudacityRecordingExporter(paths=cfg).export_recordings()
-    play = PlayTextParser(paths_config=cfg).parse()
-    splitter = PlaySplitter(
-        play=play,
-        paths=cfg,
-        build_type=effective_build_type,
-        force=force,
-        min_silence_ms=separator_len_ms,
+    return SegmentBuildService(paths=cfg).build(
+        role=role,
+        part=part,
         silence_thresh=silence_thresh,
+        separator_len_ms=separator_len_ms,
         chunk_size=chunk_size,
         verbose=verbose,
         chunk_exports=chunk_exports,
         chunk_export_size=chunk_export_size,
+        force=force,
+        build_type=build_type,
     )
-    return splitter.split_all(part_filter=part, role_filter=role)
 
 
 def run_check_recording(paths_config: paths.PathConfig | None = None):
@@ -838,34 +831,13 @@ def run_generate_timings(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
-    effective_build_type = BuildTypeResolver(
-        paths_config=cfg,
-        librivox_override=librivox,
-    ).resolve()
-    effective_librivox = effective_build_type == "librivox"
-    play = PlayTextParser(paths_config=cfg).parse()
-    part_ids = [p.part_no for p in play.parts if p.part_no is not None]
-    if effective_librivox and len(part_ids) > 1:
-        for part_no in part_ids:
-            generate_xlsx(
-                librivox=effective_librivox,
-                part_no=part_no,
-                include_callouts=callouts,
-                callout_spacing_ms=callout_spacing_ms,
-                minimal_callouts=minimal_callouts,
-                segment_spacing_ms=segment_spacing_ms,
-                include_decorations=include_decorations,
-                paths_config=cfg,
-            )
-        return
-    generate_xlsx(
-        librivox=effective_librivox,
-        include_callouts=callouts,
+    TimingBuildService(paths=cfg).build(
+        librivox=librivox,
+        segment_spacing_ms=segment_spacing_ms,
+        callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
-        segment_spacing_ms=segment_spacing_ms,
         include_decorations=include_decorations,
-        paths_config=cfg,
     )
 
 
@@ -887,46 +859,19 @@ def run_audioplay(
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     cfg = paths_config or paths.current()
-    effective_build_type = BuildTypeResolver(
-        paths_config=cfg,
-        librivox_override=librivox,
-    ).resolve()
-    effective_librivox = effective_build_type == "librivox"
-    if prepare:
-        logging.info("Preparing text artifacts and split segments before audioplay")
-        run_text(line_no_prefix=True, paths_config=cfg, build_type=effective_build_type)
-        run_segments(paths_config=cfg, build_type=effective_build_type)
-    play: Play = PlayTextParser(paths_config=cfg).parse()
-    if part is None:
-        part_no = None
-    else:
-        part_no = int(part)
-
-    builder = PlayBuilder(
-        spacing_ms=segment_spacing_ms,
-        include_callouts=callouts,
+    return AudioPlayBuildService(paths=cfg).build(
+        part=part,
+        segment_spacing_ms=segment_spacing_ms,
+        callouts=callouts,
         callout_spacing_ms=callout_spacing_ms,
         minimal_callouts=minimal_callouts,
-        audio_format=audio_format,
-        part_gap_ms=2000,
+        captions=captions,
         generate_audio=generate_audio,
-        generate_captions=captions,
-        librivox=effective_librivox,
-        play=play,
-        paths=cfg,
+        librivox=librivox,
+        audio_format=audio_format,
+        normalize_output=normalize_output,
+        prepare=prepare,
     )
-    out_paths = builder.build_audio(part_no=part_no)
-    if normalize_output and generate_audio:
-        normalizer = Normalizer()
-        for out_path in out_paths:
-            target_dir = out_path.parent / "normalized"
-            target_dir.mkdir(parents=True, exist_ok=True)
-            norm_path = target_dir / out_path.name
-            logging.info("Normalizing audioplay to %s", paths.display_path(norm_path))
-            normalizer.normalize(str(out_path), str(norm_path))
-    elif normalize_output and not generate_audio:
-        logging.info("Skipping normalization because audio rendering was skipped.")
-    return out_paths
 
 
 def run_normalize(src: Path):
@@ -948,18 +893,13 @@ def run_cues(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
-    builder = CueBuilder(
-        play,
-        paths=cfg,
+    CueBuildService(paths=cfg).build(
+        role=role,
         response_delay_ms=response_delay_ms,
         max_cue_size_ms=max_cue_size_ms,
         include_prompts=include_prompts,
         callout_spacing_ms=callout_spacing_ms,
     )
-    roles = [role] if role else [r.name for r in play.roles] + ["_NARRATOR"]
-    for r in roles:
-        builder.build_cues(r)
 
 
 def run_playbook(
