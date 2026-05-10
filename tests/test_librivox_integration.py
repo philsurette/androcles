@@ -13,7 +13,7 @@ if str(SRC) not in sys.path:
 from stager.shared import paths
 from stager.text.play_text_parser import PlayTextParser
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
-from librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
+from stager.audiobook.librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
 
 
 pytest.importorskip("pydub", reason="pydub required for integration test")

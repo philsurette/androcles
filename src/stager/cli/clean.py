@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Remove generated files in the blocks and parts folders."""
-import paths
+from stager.shared import paths
 
 
 def main(paths_config: paths.PathConfig | None = None) -> None:

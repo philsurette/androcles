@@ -20,6 +20,7 @@ src/stager/
   cli/
     __init__.py
     build.py
+    clean.py
 
   shared/
     __init__.py
@@ -233,7 +234,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Update `./main` to invoke `stager.cli.build`.
 - [x] Keep current CLI commands and `--play/-p` behavior unchanged.
 - [ ] Add Playbook modules under `stager.playbook` only after shared/domain boundaries are established.
-- [ ] Remove temporary top-level compatibility wrappers after all imports use package paths.
+- [x] Remove temporary top-level compatibility wrappers after all imports use package paths.
 - [x] Run `.venv/bin/python run_tests.py`.
 - [x] Run `./main --help`.
 - [ ] Run a representative safe CLI command such as `./main text`.
@@ -247,7 +248,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [ ] Commit 5: move audiobook and cue modules and tests.
 - [ ] Commit 6: move verification and transcription modules and tests.
 - [ ] Commit 7: move CLI entrypoint and update `./main`.
-- [ ] Commit 8: remove compatibility wrappers once no imports require them.
+- [x] Commit 8: remove compatibility wrappers once no imports require them.
 
 ## Notes
 

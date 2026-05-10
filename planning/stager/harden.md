@@ -110,9 +110,10 @@ Follow `planning/stager/package_refactor.md`.
 - [x] Move verification modules and matching unit tests.
 - [x] Move transcription modules and matching unit tests.
 - [x] Move `loudnorm` under `stager.loudnorm`.
+- [x] Move cleanup utility under `stager.cli.clean`.
 - [x] Move CLI entrypoint to `stager.cli.build` and update `./main`.
 - [x] Use temporary top-level compatibility wrappers only during migration.
-- [ ] Remove compatibility wrappers once imports are package-based.
+- [x] Remove compatibility wrappers once imports are package-based.
 - [x] Run package-specific targeted tests after each package move.
 - [x] Run `.venv/bin/python run_tests.py`.
 - [x] Run `./main --help`.
