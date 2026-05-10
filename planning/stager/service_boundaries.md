@@ -17,6 +17,8 @@ These outputs should share parsed play structure and segment audio assets, but t
 
 Stager code should move toward three module categories.
 
+The package migration plan is defined in `planning/stager/package_refactor.md`.
+
 Shared modules:
 
 - own source parsing, play models, ids, reader metadata, role metadata, segment identity, and reusable audio-file lookup

@@ -24,6 +24,7 @@ This plan prepares Stager, the current CLI codebase, for reliable Cuemaster Play
 - Missing segment audio is sometimes logged and represented as zero-length clips instead of failing the build.
 - There is no versioned Cuemaster manifest or Playbook format.
 - Existing `src/` modules are heavily oriented around audiobook/audio-play assembly; Playbook work needs a separate output layer over shared play and segment models.
+- Existing modules are top-level files with bare imports; package boundaries should be introduced before substantial Playbook implementation.
 - `src/build.py` is too large and mixes Typer/Stager CLI concerns with orchestration and domain behavior.
 - `paths.py` still exposes import-time default play state and backwards-compatible global aliases.
 - Some library-style modules still use `print()` instead of logging or caller-owned output.
@@ -61,6 +62,13 @@ Create these design documents before changing production behavior. Keep them sho
 - [x] Define path/config ownership: all services receive `paths.PathConfig` and never rely on `paths.current()`.
 - [x] Define shared, audiobook/legacy cue-output, and Playbook module categories.
 
+- [x] Create `planning/stager/package_refactor.md`.
+- [x] Propose source package structure.
+- [x] Propose mirrored unit-test package structure.
+- [x] Define compatibility-wrapper migration strategy.
+- [x] Define package dependency rules for Playbook, audiobook, cues, shared, and domain code.
+- [x] Define package-refactor commit slices.
+
 - [x] Create `planning/stager/missing_audio_policy.md`.
 - [x] Define required versus optional audio categories.
 - [x] Required for Playbooks: cue audio and response audio for every rehearsable non-meta role line.
@@ -85,6 +93,28 @@ Target outcome: cue generation returns non-empty audio and correct chapter bound
 - [x] Verify `run_cues()` still writes cue files through the Stager CLI.
 - [x] Run targeted tests: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_alignment_gaps.py`.
 - [x] Run full tests: `.venv/bin/python run_tests.py`.
+
+## Phase 1.5: Introduce Package Boundaries
+
+Target outcome: Stager has explicit Python package boundaries before new Playbook implementation expands the codebase.
+
+Follow `planning/stager/package_refactor.md`.
+
+- [ ] Create `src/stager/` package directories.
+- [ ] Move domain modules and matching unit tests first.
+- [ ] Move shared config/path modules and matching unit tests.
+- [ ] Move text artifact modules and matching unit tests.
+- [ ] Move audio splitting/playback modules and matching unit tests.
+- [ ] Move audiobook modules and matching unit tests.
+- [ ] Move legacy MP4 cue modules and matching unit tests.
+- [ ] Move verification modules and matching unit tests.
+- [ ] Move transcription modules and matching unit tests.
+- [ ] Move CLI entrypoint to `stager.cli.build` and update `./main`.
+- [ ] Use temporary top-level compatibility wrappers only during migration.
+- [ ] Remove compatibility wrappers once imports are package-based.
+- [ ] Run package-specific targeted tests after each package move.
+- [ ] Run `.venv/bin/python run_tests.py`.
+- [ ] Run `./main --help`.
 
 ## Phase 2: Add Cuemaster Manifest Domain Model
 
@@ -214,13 +244,14 @@ Target outcome: future work can resume without rediscovering conventions.
 
 - [ ] Commit 1: design docs under `planning/`.
 - [ ] Commit 2: `CueBuilder` correctness fix and tests.
-- [ ] Commit 3: Cuemaster manifest dataclasses and JSON writer tests.
-- [ ] Commit 4: Playbook builder and service tests.
-- [ ] Commit 5: Stager CLI command for Playbook export.
-- [ ] Commit 6: missing-audio policy enforcement.
-- [ ] Commit 7: service extraction from `src/build.py`.
-- [ ] Commit 8: path/global cleanup and print/logging cleanup.
-- [ ] Commit 9: documentation updates.
+- [ ] Commit 3: package boundaries and package-aligned unit tests.
+- [ ] Commit 4: Cuemaster manifest dataclasses and JSON writer tests.
+- [ ] Commit 5: Playbook builder and service tests.
+- [ ] Commit 6: Stager CLI command for Playbook export.
+- [ ] Commit 7: missing-audio policy enforcement.
+- [ ] Commit 8: service extraction from `src/build.py`.
+- [ ] Commit 9: path/global cleanup and print/logging cleanup.
+- [ ] Commit 10: documentation updates.
 
 ## Resume Checklist
 

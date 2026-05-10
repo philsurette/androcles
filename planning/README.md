@@ -12,6 +12,7 @@ Stager is the existing CLI/build tool in this repository.
 
 - [stager/harden.md](stager/harden.md): Resumable implementation plan for hardening Stager before Playbook work.
 - [stager/service_boundaries.md](stager/service_boundaries.md): Target service ownership for extracting domain behavior from the Stager CLI.
+- [stager/package_refactor.md](stager/package_refactor.md): Package layout and migration plan for separating shared, audiobook/cue, and Playbook code.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - Future Stager docs belong in `planning/stager/`.
 
