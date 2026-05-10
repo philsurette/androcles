@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import wave
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -121,9 +122,12 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
     _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
 
-    manifest_path = PlaybookBuilder(play=play, paths=cfg).build()
+    zip_path = PlaybookBuilder(play=play, paths=cfg).build()
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
 
+    assert zip_path == cfg.build_dir / "test-play.playbook.zip"
+    assert zip_path.exists()
     megaera = next(role for role in data["roles"] if role["id"] == "MEGAERA")
     line = megaera["lines"][0]
     assert line["cue"]["speaker"] == "ANDROCLES"
@@ -134,6 +138,10 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
     assert data["context"][0]["kind"] == "heading"
     assert data["context"][0]["speaker"] == "_NARRATOR"
     assert data["context"][0]["audio"]["path"] == "audio/segments/_NARRATOR/0_0_1.wav"
+    with zipfile.ZipFile(zip_path) as archive:
+        assert "manifest.json" in archive.namelist()
+        assert line["cue"]["audio"]["path"] in archive.namelist()
+        assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
 
 
 def test_playbook_builder_exports_narrator_context_blocks(tmp_path: Path) -> None:
@@ -147,7 +155,8 @@ def test_playbook_builder_exports_narrator_context_blocks(tmp_path: Path) -> Non
         _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_3_1.wav")
 
-    manifest_path = PlaybookBuilder(play=play, paths=cfg).build()
+    PlaybookBuilder(play=play, paths=cfg).build()
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     assert [block["kind"] for block in data["context"]] == ["heading", "description", "direction"]
@@ -168,7 +177,8 @@ def test_playbook_builder_uses_part_title_as_first_line_cue(tmp_path: Path) -> N
     _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav")
 
-    manifest_path = PlaybookBuilder(play=play, paths=cfg).build()
+    PlaybookBuilder(play=play, paths=cfg).build()
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
     data = json.loads(manifest_path.read_text(encoding="utf-8"))
 
     line = data["roles"][0]["lines"][0]
@@ -208,10 +218,12 @@ def test_playbook_builder_keeps_path_configs_isolated(tmp_path: Path) -> None:
         _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
         _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav")
 
-    first_manifest = PlaybookBuilder(play=play, paths=first_cfg).build()
-    second_manifest = PlaybookBuilder(play=play, paths=second_cfg).build()
+    first_zip = PlaybookBuilder(play=play, paths=first_cfg).build()
+    second_zip = PlaybookBuilder(play=play, paths=second_cfg).build()
 
-    assert first_manifest == first_cfg.build_dir / "app" / "manifest.json"
-    assert second_manifest == second_cfg.build_dir / "app" / "manifest.json"
-    assert first_manifest.exists()
-    assert second_manifest.exists()
+    assert first_zip == first_cfg.build_dir / "first-play.playbook.zip"
+    assert second_zip == second_cfg.build_dir / "second-play.playbook.zip"
+    assert first_zip.exists()
+    assert second_zip.exists()
+    assert (first_cfg.build_dir / "app" / "manifest.json").exists()
+    assert (second_cfg.build_dir / "app" / "manifest.json").exists()

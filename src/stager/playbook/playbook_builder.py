@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import logging
 from pathlib import Path, PurePosixPath
 import shutil
+import zipfile
 
 from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
@@ -42,13 +43,21 @@ class PlaybookBuilder:
     def app_dir(self) -> Path:
         return self.paths.build_dir / "app"
 
+    @property
+    def zip_path(self) -> Path:
+        return self.paths.build_dir / f"{self.paths.play_name}.playbook.zip"
+
     def build(self) -> Path:
+        if self.app_dir.exists():
+            shutil.rmtree(self.app_dir)
         self.app_dir.mkdir(parents=True, exist_ok=True)
         manifest = self.build_manifest()
         manifest_path = self.app_dir / "manifest.json"
         manifest_path.write_text(manifest.to_json(), encoding="utf-8")
         self._logger.info("Wrote Playbook manifest %s", paths.display_path(manifest_path))
-        return manifest_path
+        self._write_zip()
+        self._logger.info("Wrote Playbook package %s", paths.display_path(self.zip_path))
+        return self.zip_path
 
     def build_manifest(self) -> AppManifest:
         return AppManifest(
@@ -190,3 +199,10 @@ class PlaybookBuilder:
             duration_ms=duration_ms,
             required=True,
         )
+
+    def _write_zip(self) -> None:
+        self.zip_path.parent.mkdir(parents=True, exist_ok=True)
+        with zipfile.ZipFile(self.zip_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            for path in sorted(self.app_dir.rglob("*")):
+                if path.is_file():
+                    archive.write(path, path.relative_to(self.app_dir).as_posix())

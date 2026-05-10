@@ -149,11 +149,11 @@ def test_run_playbook_passes_build_type_to_builder(
 
         def build(self) -> Path:
             calls.append(self.build_type)
-            return cfg.build_dir / "app" / "manifest.json"
+            return cfg.build_dir / "test-play.playbook.zip"
 
     monkeypatch.setattr("stager.cli.build.PlaybookBuilder", FakePlaybookBuilder)
 
     path = run_playbook(paths_config=cfg)
 
-    assert path == cfg.build_dir / "app" / "manifest.json"
+    assert path == cfg.build_dir / "test-play.playbook.zip"
     assert calls == ["librivox"]

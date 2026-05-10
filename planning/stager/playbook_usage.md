@@ -20,7 +20,17 @@ The command is strict. It raises if any rehearsable non-meta role line is missin
 
 ## Output Layout
 
-Stager writes Playbook files under:
+Stager writes an unpacked Playbook directory for inspection and a distributable zip package.
+
+The zip package is:
+
+```text
+build/<play_id>/<play_id>.playbook.zip
+```
+
+Cuemaster imports this `.zip` file.
+
+The unpacked inspection directory is:
 
 ```text
 build/<play_id>/app/
