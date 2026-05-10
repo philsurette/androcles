@@ -1,12 +1,12 @@
 import pytest
 
-from narrator_splitter import NarratorSplitter
-from play import NarratorRole, RoleBlock
+from stager.audio.narrator_splitter import NarratorSplitter
+from stager.domain.play import NarratorRole
 
-from segment import DirectionSegment
-from segment_id import SegmentId
-from block_id import BlockId
-from block import RoleBlock 
+from stager.domain.segment import DirectionSegment
+from stager.domain.segment_id import SegmentId
+from stager.domain.block_id import BlockId
+from stager.domain.block import RoleBlock
 
 class DummyPlay:
     def __init__(self, role):

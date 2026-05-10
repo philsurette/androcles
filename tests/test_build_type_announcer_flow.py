@@ -11,10 +11,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
-from announcer_splitter import AnnouncerSplitter
-from build import run_audioplay, run_text, run_write_announcer
-from play import Play, ReadingMetadata, SourceTextMetadata
+from stager.shared import paths
+from stager.audio.announcer_splitter import AnnouncerSplitter
+from stager.cli.build import run_audioplay, run_text, run_write_announcer
+from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 
 
 def _config(tmp_path: Path, build_type: str = "custom") -> paths.PathConfig:
@@ -115,9 +115,9 @@ def test_run_audioplay_passes_librivox_build_type_to_preparation(
             calls.append(("builder", "librivox" if self.librivox else "custom"))
             return []
 
-    monkeypatch.setattr("build.run_text", fake_run_text)
-    monkeypatch.setattr("build.run_segments", fake_run_segments)
-    monkeypatch.setattr("build.PlayBuilder", FakePlayBuilder)
+    monkeypatch.setattr("stager.cli.build.run_text", fake_run_text)
+    monkeypatch.setattr("stager.cli.build.run_segments", fake_run_segments)
+    monkeypatch.setattr("stager.cli.build.PlayBuilder", FakePlayBuilder)
 
     run_audioplay(
         paths_config=cfg,

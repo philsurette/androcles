@@ -12,15 +12,15 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
-import segment_verifier
-from chapter_builder import ChapterBuilder
-from audio_plan import AudioPlan
-from caption_builder import CaptionBuilder
-from clip import ParallelClips, SegmentClip, Silence
-from play_text_parser import PlayTextParser
-from play_plan_builder import PlayPlanBuilder
-from segment_verifier import SegmentVerifier
+from stager.shared import paths
+import stager.verification.segment_verifier as segment_verifier
+from stager.audiobook.chapter_builder import ChapterBuilder
+from stager.audiobook.audio_plan import AudioPlan
+from stager.audiobook.caption_builder import CaptionBuilder
+from stager.audiobook.clip import ParallelClips, SegmentClip, Silence
+from stager.text.play_text_parser import PlayTextParser
+from stager.audiobook.play_plan_builder import PlayPlanBuilder
+from stager.verification.segment_verifier import SegmentVerifier
 
 
 def _write_play(tmp_path: Path, content: str) -> Path:

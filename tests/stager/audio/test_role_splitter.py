@@ -4,15 +4,16 @@ import pathlib
 import sys
 from pathlib import Path
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
-from block_id import BlockId
-from play import Play, Reader, ReadingMetadata, RoleBlock
-from role_splitter import CalloutSplitter
+from stager.shared import paths
+from stager.domain.block_id import BlockId
+from stager.domain.play import Play, Reader, ReadingMetadata
+from stager.domain.block import RoleBlock
+from stager.audio.role_splitter import CalloutSplitter
 
 
 def _path_config(tmp_path: Path) -> paths.PathConfig:

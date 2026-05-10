@@ -211,29 +211,29 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Move matching unit tests under `tests/stager/shared/`.
 - [x] Add temporary top-level wrappers for moved shared modules.
 - [x] Run shared and domain tests.
-- [ ] Move text artifact modules.
-- [ ] Move matching unit tests under `tests/stager/text/`.
-- [ ] Run text, shared, and domain tests.
-- [ ] Move audio splitting/playback utility modules.
-- [ ] Move matching unit tests under `tests/stager/audio/`.
-- [ ] Run audio-related tests.
-- [ ] Move audiobook modules.
-- [ ] Move legacy MP4 cue modules to `stager.cues`.
-- [ ] Move matching unit tests under `tests/stager/audiobook/` and `tests/stager/cues/`.
-- [ ] Run audiobook and cue tests.
-- [ ] Move verification modules.
-- [ ] Move matching unit tests under `tests/stager/verification/`.
-- [ ] Run verification tests.
-- [ ] Move transcription modules.
-- [ ] Move matching unit tests under `tests/stager/transcription/`.
-- [ ] Run transcription tests that do not require model downloads.
-- [ ] Move `build.py` to `stager.cli.build`.
-- [ ] Update `./main` to invoke `stager.cli.build`.
-- [ ] Keep current CLI commands and `--play/-p` behavior unchanged.
+- [x] Move text artifact modules.
+- [x] Move matching unit tests under `tests/stager/text/`.
+- [x] Run text, shared, and domain tests.
+- [x] Move audio splitting/playback utility modules.
+- [x] Move matching unit tests under `tests/stager/audio/`.
+- [x] Run audio-related tests.
+- [x] Move audiobook modules.
+- [x] Move legacy MP4 cue modules to `stager.cues`.
+- [x] Move matching unit tests under `tests/stager/audiobook/` and `tests/stager/cues/`.
+- [x] Run audiobook and cue tests.
+- [x] Move verification modules.
+- [x] Move matching unit tests under `tests/stager/verification/`.
+- [x] Run verification tests.
+- [x] Move transcription modules.
+- [x] Move matching unit tests under `tests/stager/transcription/`.
+- [x] Run transcription tests that do not require model downloads.
+- [x] Move `build.py` to `stager.cli.build`.
+- [x] Update `./main` to invoke `stager.cli.build`.
+- [x] Keep current CLI commands and `--play/-p` behavior unchanged.
 - [ ] Add Playbook modules under `stager.playbook` only after shared/domain boundaries are established.
 - [ ] Remove temporary top-level compatibility wrappers after all imports use package paths.
-- [ ] Run `.venv/bin/python run_tests.py`.
-- [ ] Run `./main --help`.
+- [x] Run `.venv/bin/python run_tests.py`.
+- [x] Run `./main --help`.
 - [ ] Run a representative safe CLI command such as `./main text`.
 
 ## Commit Slices

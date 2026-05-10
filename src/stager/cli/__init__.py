@@ -1,0 +1,1 @@
+"""Stager command-line interface."""

@@ -103,18 +103,18 @@ Follow `planning/stager/package_refactor.md`.
 - [x] Create `src/stager/` package directories.
 - [x] Move domain modules and matching unit tests first.
 - [x] Move shared config/path modules and matching unit tests.
-- [ ] Move text artifact modules and matching unit tests.
-- [ ] Move audio splitting/playback modules and matching unit tests.
-- [ ] Move audiobook modules and matching unit tests.
-- [ ] Move legacy MP4 cue modules and matching unit tests.
-- [ ] Move verification modules and matching unit tests.
-- [ ] Move transcription modules and matching unit tests.
-- [ ] Move CLI entrypoint to `stager.cli.build` and update `./main`.
+- [x] Move text artifact modules and matching unit tests.
+- [x] Move audio splitting/playback modules and matching unit tests.
+- [x] Move audiobook modules and matching unit tests.
+- [x] Move legacy MP4 cue modules and matching unit tests.
+- [x] Move verification modules and matching unit tests.
+- [x] Move transcription modules and matching unit tests.
+- [x] Move CLI entrypoint to `stager.cli.build` and update `./main`.
 - [x] Use temporary top-level compatibility wrappers only during migration.
 - [ ] Remove compatibility wrappers once imports are package-based.
 - [x] Run package-specific targeted tests after each package move.
-- [ ] Run `.venv/bin/python run_tests.py`.
-- [ ] Run `./main --help`.
+- [x] Run `.venv/bin/python run_tests.py`.
+- [x] Run `./main --help`.
 
 ## Phase 2: Add Cuemaster Manifest Domain Model
 

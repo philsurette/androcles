@@ -1,17 +1,16 @@
-import sys
-from pathlib import Path
 from pathlib import Path
 import pytest
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-
-from play import Play, BlockId, RoleBlock, DescriptionBlock, DirectionSegment
-from callout_director import (
+from stager.domain.play import Play
+from stager.domain.block_id import BlockId
+from stager.domain.block import RoleBlock, DescriptionBlock
+from stager.domain.segment import DirectionSegment
+from stager.cues.callout_director import (
     NoCalloutDirector,
     RoleCalloutDirector,
     ConversationAwareCalloutDirector,
 )
-from clip import CalloutClip
+from stager.audiobook.clip import CalloutClip
 
 
 def build_play(seq):

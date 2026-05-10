@@ -11,16 +11,16 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
-from audio_plan import AudioPlan
-from block import RoleBlock
-from block_id import BlockId
-from cue_builder import CueBuilder
-from librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
-from play import Play, TitleBlock
+from stager.shared import paths
+from stager.audiobook.audio_plan import AudioPlan
+from stager.domain.block import RoleBlock, TitleBlock
+from stager.domain.block_id import BlockId
+from stager.cues.cue_builder import CueBuilder
+from stager.audiobook.librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
+from stager.domain.play import Play
 from pydub import AudioSegment
-from segment import MetaSegment, SpeechSegment
-from segment_id import SegmentId
+from stager.domain.segment import MetaSegment, SpeechSegment
+from stager.domain.segment_id import SegmentId
 
 
 def _dummy_play() -> Play:
@@ -55,7 +55,7 @@ def test_cue_builder_loads_split_callouts(tmp_path: Path, monkeypatch: pytest.Mo
     cfg = paths.PathConfig(play_name="test", build_root=tmp_path / "build", plays_dir=tmp_path / "plays", snippets_dir=tmp_path / "snippets")
     builder = CueBuilder(play, paths=cfg)
 
-    monkeypatch.setattr("cue_builder.AudioSegment", type("Audio", (), {"from_file": staticmethod(lambda path: "dummy")}))
+    monkeypatch.setattr("stager.cues.cue_builder.AudioSegment", type("Audio", (), {"from_file": staticmethod(lambda path: "dummy")}))
 
     split_callouts = cfg.build_dir / "audio" / "callouts"
     split_callouts.mkdir(parents=True, exist_ok=True)

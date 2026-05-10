@@ -1,0 +1,321 @@
+#!/usr/bin/env python3
+"""Load and evaluate user-defined word equivalencies."""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from pathlib import Path
+import re
+
+from ruamel import yaml
+
+from stager.shared import paths
+
+
+@dataclass
+class Equivalencies:
+    global_map: dict[str, set[str]] = field(default_factory=dict)
+    scoped_map: dict[str, dict[str, set[str]]] = field(default_factory=dict)
+    ignorable_extras: set[str] = field(default_factory=set)
+    vetted_ids: set[str] = field(default_factory=set)
+    ignored_ids: set[str] = field(default_factory=set)
+    problems_ids: set[str] = field(default_factory=set)
+    _token_re: re.Pattern[str] = field(default_factory=lambda: re.compile(r"[A-Za-z0-9']+"))
+
+    @classmethod
+    def load(cls, path: Path) -> "Equivalencies":
+        if not path.exists():
+            return cls()
+        display_path = paths.display_path(path)
+        yml = yaml.YAML(typ="safe", pure=True)
+        text = path.read_text(encoding="utf-8")
+        raw = yml.load(text) or {}
+        if not isinstance(raw, dict):
+            raise RuntimeError(f"Invalid equivalencies format in {display_path}")
+        inst = cls()
+        equivalencies = raw
+        if (
+            "equivalencies" in raw
+            or "ignorables" in raw
+            or "vetted" in raw
+            or "ignored" in raw
+            or "problems" in raw
+        ):
+            unexpected = [
+                key
+                for key in raw
+                if key not in {"equivalencies", "ignorables", "vetted", "ignored", "problems"}
+            ]
+            if unexpected:
+                raise RuntimeError(f"Unexpected substitutions keys in {display_path}: {unexpected}")
+            equivalencies = raw.get("equivalencies") or {}
+            if not isinstance(equivalencies, dict):
+                raise RuntimeError(f"Invalid equivalencies format in {display_path}")
+            inst._load_ignorables(raw.get("ignorables"), path)
+            inst._load_vetted(raw.get("vetted"), path, text)
+            inst._load_ignored(raw.get("ignored"), path, text)
+            inst._load_problems(raw.get("problems"), path, text)
+        for key, value in equivalencies.items():
+            if not isinstance(key, str):
+                raise RuntimeError(f"Invalid equivalencies key in {display_path}: {key!r}")
+            segment_id = None
+            if "@" in key:
+                base, segment = key.split("@", 1)
+                key = base
+                segment_id = segment.strip()
+            variants = inst._coerce_variants(value, path)
+            for variant in variants:
+                inst._add_pair(key, variant, segment_id)
+        inst._validate_statuses(str(path))
+        return inst
+
+    @classmethod
+    def load_many(cls, paths: list[Path]) -> "Equivalencies":
+        merged = cls()
+        for path in paths:
+            loaded = cls.load(path)
+            merged._merge(loaded)
+        merged._validate_statuses()
+        return merged
+
+    def is_equivalent(self, expected: str, actual: str, segment_id: str | None = None) -> bool:
+        expected_norm = self._normalize_text(expected)
+        actual_norm = self._normalize_text(actual)
+        if not expected_norm or not actual_norm:
+            return False
+        if expected_norm == actual_norm:
+            return True
+        if segment_id:
+            scoped = self.scoped_map.get(segment_id)
+            if scoped and self._map_contains(scoped, expected_norm, actual_norm):
+                return True
+        return self._map_contains(self.global_map, expected_norm, actual_norm)
+
+    def is_ignorable_extra(self, text: str) -> bool:
+        normalized = self._normalize_text(text)
+        if not normalized:
+            return False
+        for ignorable in self.ignorable_extras:
+            if ignorable in normalized:
+                return True
+        return False
+
+    def _map_contains(self, mapping: dict[str, set[str]], left: str, right: str) -> bool:
+        if right in mapping.get(left, set()):
+            return True
+        return left in mapping.get(right, set())
+
+    def _add_pair(self, expected: str, actual: str, segment_id: str | None) -> None:
+        expected_norm = self._normalize_text(expected)
+        actual_norm = self._normalize_text(actual)
+        if not expected_norm or not actual_norm or expected_norm == actual_norm:
+            return
+        if segment_id:
+            scoped = self.scoped_map.setdefault(segment_id, {})
+            scoped.setdefault(expected_norm, set()).add(actual_norm)
+            scoped.setdefault(actual_norm, set()).add(expected_norm)
+        else:
+            self.global_map.setdefault(expected_norm, set()).add(actual_norm)
+            self.global_map.setdefault(actual_norm, set()).add(expected_norm)
+
+    def _coerce_variants(self, value: object, path: Path) -> list[str]:
+        if isinstance(value, (list, tuple, set)):
+            variants = [item for item in value if isinstance(item, str)]
+            if len(variants) != len(value):
+                raise RuntimeError(f"Invalid equivalencies value in {paths.display_path(path)}: {value!r}")
+            return variants
+        raise RuntimeError(f"Invalid equivalencies value in {paths.display_path(path)}: {value!r}")
+
+    def _normalize_text(self, text: str) -> str:
+        text = text.replace("\u2019", "'").replace("\u2018", "'")
+        tokens = self._token_re.findall(text)
+        words: list[str] = []
+        for token in tokens:
+            token = token.lower()
+            token = token.replace("'", "")
+            if token:
+                words.append(token)
+        return " ".join(words)
+
+    def _merge(self, other: "Equivalencies") -> None:
+        for key, values in other.global_map.items():
+            self.global_map.setdefault(key, set()).update(values)
+        for segment_id, scoped in other.scoped_map.items():
+            target = self.scoped_map.setdefault(segment_id, {})
+            for key, values in scoped.items():
+                target.setdefault(key, set()).update(values)
+        self.ignorable_extras.update(other.ignorable_extras)
+        self.vetted_ids.update(other.vetted_ids)
+        self.ignored_ids.update(other.ignored_ids)
+        self.problems_ids.update(other.problems_ids)
+
+    def _load_ignorables(self, raw: object, path: Path) -> None:
+        if raw is None:
+            return
+        values: list[str]
+        if isinstance(raw, str):
+            values = [raw]
+        elif isinstance(raw, (list, tuple, set)):
+            values = [item for item in raw if isinstance(item, str)]
+            if len(values) != len(raw):
+                raise RuntimeError(f"Invalid ignorables in {paths.display_path(path)}: {raw!r}")
+        else:
+            raise RuntimeError(f"Invalid ignorables in {paths.display_path(path)}: {raw!r}")
+        for value in values:
+            normalized = self._normalize_text(value)
+            if normalized:
+                self.ignorable_extras.add(normalized)
+
+    def _load_vetted(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="vetted",
+            target=self.vetted_ids,
+        )
+
+    def _load_ignored(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="ignored",
+            target=self.ignored_ids,
+        )
+
+    def _load_problems(self, raw: object, path: Path, text: str | None = None) -> None:
+        self._load_status_list(
+            raw,
+            path,
+            text,
+            key="problems",
+            target=self.problems_ids,
+        )
+
+    def _load_status_list(
+        self,
+        raw: object,
+        path: Path,
+        text: str | None,
+        key: str,
+        target: set[str],
+    ) -> None:
+        if raw is None:
+            return
+        values: list[str]
+        if isinstance(raw, str):
+            values = [raw]
+        elif isinstance(raw, (list, tuple, set)):
+            parsed_mapping = False
+            needs_text_parse = False
+            values = []
+            for item in raw:
+                if isinstance(item, str):
+                    values.append(item)
+                    continue
+                if isinstance(item, dict):
+                    parsed_mapping = True
+                    for entry_key in item.keys():
+                        if isinstance(entry_key, str):
+                            values.append(entry_key)
+                        else:
+                            needs_text_parse = True
+                    continue
+                needs_text_parse = True
+            if needs_text_parse:
+                if text is None:
+                    raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
+                parsed = self._parse_status_tokens(text, key)
+                if parsed:
+                    values = parsed
+                else:
+                    values = [str(item) for item in raw]
+            elif not values or (len(values) != len(raw) and not parsed_mapping):
+                if text is None:
+                    raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
+                parsed = self._parse_status_tokens(text, key)
+                if parsed:
+                    values = parsed
+                else:
+                    values = [str(item) for item in raw]
+        else:
+            raise RuntimeError(f"Invalid {key} ids in {paths.display_path(path)}: {raw!r}")
+        for value in values:
+            cleaned = value.strip()
+            if cleaned:
+                target.add(cleaned)
+
+    def _parse_status_tokens(self, text: str, key: str) -> list[str]:
+        lines = text.splitlines()
+        for idx, line in enumerate(lines):
+            stripped = line.lstrip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            if not stripped.startswith(f"{key}:"):
+                continue
+            indent = len(line) - len(stripped)
+            remainder = stripped[len(key) + 1 :].strip()
+            if remainder:
+                if remainder.startswith("[") and remainder.endswith("]"):
+                    inner = remainder[1:-1]
+                    return self._split_status_flow(inner)
+                return [self._strip_yaml_scalar(remainder)]
+            tokens: list[str] = []
+            for next_line in lines[idx + 1 :]:
+                next_stripped = next_line.lstrip()
+                if not next_stripped or next_stripped.startswith("#"):
+                    continue
+                next_indent = len(next_line) - len(next_stripped)
+                if next_indent <= indent and ":" in next_stripped.split("#", 1)[0]:
+                    break
+                if not next_stripped.startswith("-"):
+                    if next_indent <= indent:
+                        break
+                    continue
+                item = next_stripped[1:].strip()
+                if not item:
+                    continue
+                item = item.split("#", 1)[0].strip()
+                if not item:
+                    continue
+                tokens.append(self._extract_status_id(item))
+            return tokens
+        return []
+
+    def _split_status_flow(self, inner: str) -> list[str]:
+        tokens: list[str] = []
+        for part in inner.split(","):
+            item = part.strip()
+            if not item:
+                continue
+            item = item.split("#", 1)[0].strip()
+            if not item:
+                continue
+            tokens.append(self._extract_status_id(item))
+        return tokens
+
+    def _extract_status_id(self, value: str) -> str:
+        raw = value.strip()
+        if not raw:
+            return raw
+        if raw.startswith(("'", '"')):
+            quote = raw[0]
+            end_idx = raw.find(quote, 1)
+            if end_idx != -1:
+                return self._strip_yaml_scalar(raw[: end_idx + 1])
+        if ":" in raw:
+            raw = raw.split(":", 1)[0].strip()
+        return self._strip_yaml_scalar(raw)
+
+    def _strip_yaml_scalar(self, value: str) -> str:
+        if (value.startswith("'") and value.endswith("'")) or (
+            value.startswith('"') and value.endswith('"')
+        ):
+            return value[1:-1].strip()
+        return value.strip()
+
+    def _validate_statuses(self, context: str | None = None) -> None:
+        overlap = self.vetted_ids & self.ignored_ids
+        if overlap:
+            label = f" in {context}" if context else ""
+            raise RuntimeError(f"Vetted and ignored ids overlap{label}: {sorted(overlap)}")

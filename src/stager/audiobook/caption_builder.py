@@ -1,0 +1,72 @@
+#!/usr/bin/env python3
+"""Generate WebVTT captions from plan items."""
+from __future__ import annotations
+
+from pathlib import Path
+from dataclasses import dataclass
+from typing import List
+
+from stager.audiobook.clip import SegmentClip, CalloutClip, ParallelClips
+from stager.audiobook.play_plan_builder import PlanItem
+from stager.audiobook.audio_plan import AudioPlan
+
+
+
+@dataclass
+class CaptionBuilder:
+    plan: AudioPlan[PlanItem]
+    include_callouts: bool = False
+
+    def build(self, out_path: Path) -> Path:
+        """Write WebVTT captions for all clips with text, optionally including callouts."""
+        def fmt_ts(ms: int) -> str:
+            hours = ms // 3_600_000
+            rem = ms % 3_600_000
+            minutes = rem // 60_000
+            rem = rem % 60_000
+            seconds = rem // 1000
+            millis = rem % 1000
+            return f"{hours:02d}:{minutes:02d}:{seconds:02d}.{millis:03d}"
+        lines: List[str] = ["WEBVTT", ""]
+        idx = 1
+        for item in self.plan:
+            if isinstance(item, SegmentClip):
+                text = (item.text or "").strip()
+                if not text:
+                    continue
+                start_ms = item.offset_ms
+                end_ms = item.offset_ms + item.length_ms
+                lines.append(str(idx))
+                lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
+                lines.append(text)
+                lines.append("")  # blank separator
+                idx += 1
+            elif isinstance(item, ParallelClips):
+                texts = [(c.text or "").strip() for c in item.clips if (c.text or "").strip()]
+                if not texts:
+                    continue
+                label = texts[0]
+                start_ms = item.offset_ms
+                end_ms = item.offset_ms + item.length_ms
+                lines.append(str(idx))
+                lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
+                lines.append(label)
+                lines.append("")
+                idx += 1
+            elif self.include_callouts and isinstance(item, CalloutClip):
+                label = (item.text or "").strip() or (item.clip_id or "").strip()
+                if item.path and item.path.stem.startswith("_DESCRIPTION"):
+                    label = "description"
+                if not label:
+                    continue
+                start_ms = item.offset_ms
+                end_ms = item.offset_ms + item.length_ms
+                lines.append(str(idx))
+                lines.append(f"{fmt_ts(start_ms)} --> {fmt_ts(end_ms)}")
+                lines.append(label)
+                lines.append("")  # blank separator
+                idx += 1
+        content = "\n".join(lines)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(content + ("\n" if not content.endswith("\n") else ""), encoding="utf-8")
+        return out_path
