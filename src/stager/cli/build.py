@@ -10,7 +10,7 @@ import time
 from stager.shared import paths
 import typer
 
-from play_splitter import PlaySplitter
+from stager.audio.play_splitter import PlaySplitter
 from stager.verification.recording_checker import summarize as summarize_recordings
 from stager.audiobook.timings_xlsx import generate_xlsx
 from stager.audiobook.play_builder import PlayBuilder
@@ -22,7 +22,7 @@ from stager.text.play_markdown_writer import PlayMarkdownWriter
 from stager.text.role_markdown_writer import RoleMarkdownWriter
 from stager.text.narrator_markdown_writer import NarratorMarkdownWriter
 from stager.text.callout_script_writer import CalloutScriptWriter
-from loudnorm.normalizer import Normalizer
+from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_builder import CueBuilder
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.verification.segment_verifier import SegmentVerifier
@@ -39,7 +39,7 @@ from stager.transcription.vad_config import VadConfig
 from stager.transcription.whisper_cache_cleaner import WhisperCacheCleaner
 from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
-from audacity_recording_exporter import AudacityRecordingExporter
+from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.shared.build_type_resolver import BuildTypeResolver
 from huggingface_hub.errors import LocalEntryNotFoundError
 

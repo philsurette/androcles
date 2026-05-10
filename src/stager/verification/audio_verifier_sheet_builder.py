@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 from openpyxl.utils import get_column_letter
 
-from audio_verifier_diff import AudioVerifierDiff
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
 
 
 @dataclass

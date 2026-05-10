@@ -7,15 +7,15 @@ from typing import Iterable
 
 from diff_match_patch import diff_match_patch
 
-from diff_context import DiffContext
-from diff_walker import DiffWalker
-from inline_text_diff import InlineTextDiff
-from inline_text_replacement import InlineTextReplacement
-from token_comparator import TokenComparator
-from token_slice import TokenSlice
-from spelling_normalizer import SpellingNormalizer
-from equivalencies import Equivalencies
-from homophone_matcher import HomophoneMatcher
+from stager.verification.diff_context import DiffContext
+from stager.verification.diff_walker import DiffWalker
+from stager.verification.inline_text_diff import InlineTextDiff
+from stager.verification.inline_text_replacement import InlineTextReplacement
+from stager.verification.token_comparator import TokenComparator
+from stager.verification.token_slice import TokenSlice
+from stager.verification.spelling_normalizer import SpellingNormalizer
+from stager.verification.equivalencies import Equivalencies
+from stager.verification.homophone_matcher import HomophoneMatcher
 
 
 @dataclass

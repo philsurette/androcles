@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from token_slice import TokenSlice
+from stager.verification.token_slice import TokenSlice
 
 
 @dataclass

@@ -17,13 +17,13 @@ from stager.domain.play import Play
 from stager.text.play_text_parser import PlayTextParser
 from stager.domain.segment import SpeechSegment, SimultaneousSegment, DirectionSegment
 from stager.transcription.whisper_model_store import WhisperModelStore
-from inline_text_differ import InlineTextDiffer
-from audio_verifier_diff import AudioVerifierDiff
-from audio_verifier_diff_builder import AudioVerifierDiffBuilder
-from audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
+from stager.verification.inline_text_differ import InlineTextDiffer
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
+from stager.verification.audio_verifier_diff_builder import AudioVerifierDiffBuilder
+from stager.verification.audio_verifier_xlsx_writer import AudioVerifierXlsxWriter
 from stager.text.announcer import select_announcer
 from stager.transcription.vad_config import VadConfig
-from equivalencies import Equivalencies
+from stager.verification.equivalencies import Equivalencies
 from stager.transcription.whisper_transcription_cache import WhisperTranscriptionCache
 
 

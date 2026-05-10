@@ -8,7 +8,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from inline_text_differ import InlineTextDiffer
+from stager.verification.inline_text_differ import InlineTextDiffer
 
 
 def test_windowed_diffs_include_context() -> None:

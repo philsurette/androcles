@@ -7,10 +7,10 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from audio_verifier_diff import AudioVerifierDiff
-from audio_verifier_sheet_builder import AudioVerifierSheetBuilder
-from audio_verifier_summary_sheet_builder import AudioVerifierSummarySheetBuilder
-from audio_verifier_problems_sheet_builder import AudioVerifierProblemsSheetBuilder
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
+from stager.verification.audio_verifier_sheet_builder import AudioVerifierSheetBuilder
+from stager.verification.audio_verifier_summary_sheet_builder import AudioVerifierSummarySheetBuilder
+from stager.verification.audio_verifier_problems_sheet_builder import AudioVerifierProblemsSheetBuilder
 
 
 @dataclass

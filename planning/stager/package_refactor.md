@@ -48,12 +48,14 @@ src/stager/
 
   audio/
     __init__.py
+    audacity_recording_exporter.py
     audio_check.py
     audio_mixer.py
     audio_splitter.py
     segment_splitter.py
     role_splitter.py
     narrator_splitter.py
+    play_splitter.py
     announcer_splitter.py
     segment_audio_player.py
     spacing.py
@@ -200,7 +202,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 ## Migration Checklist
 
 - [x] Create `src/stager/` and package `__init__.py` files.
-- [ ] Move `loudnorm` under `src/stager/loudnorm` or explicitly decide to keep it as a separate package.
+- [x] Move `loudnorm` under `src/stager/loudnorm` or explicitly decide to keep it as a separate package.
 - [x] Move domain modules first: `block_id.py`, `segment_id.py`, `segment.py`, `block.py`, `reader_block.py`, `play.py`.
 - [x] Update domain imports to `stager.domain.*`.
 - [x] Move matching unit tests under `tests/stager/domain/`.
@@ -214,7 +216,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Move text artifact modules.
 - [x] Move matching unit tests under `tests/stager/text/`.
 - [x] Run text, shared, and domain tests.
-- [x] Move audio splitting/playback utility modules.
+- [x] Move audio splitting/playback utility modules, including `play_splitter.py` and `audacity_recording_exporter.py`.
 - [x] Move matching unit tests under `tests/stager/audio/`.
 - [x] Run audio-related tests.
 - [x] Move audiobook modules.

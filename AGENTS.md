@@ -70,7 +70,7 @@ When logging, printing, or raising user-facing diagnostics that include reposito
 When reporting source locations, use `paths.display_location(path, line_no, col)` so diagnostics render as `file:line` or `file:line:col` and are clickable in VS Code terminals.
 
 ## CLI
-The main user-facing CLI wrapper is `./main`, which invokes `.venv/bin/python src/build.py`.
+The main user-facing CLI wrapper is `./main`, which invokes `.venv/bin/python -m stager.cli.build`.
 
 Use `./main <command>` for normal CLI runs, for example:
 
@@ -80,7 +80,7 @@ Use `./main <command>` for normal CLI runs, for example:
 ./main audioplay
 ```
 
-The Typer app implementation lives in `src/build.py`. Add new CLI commands there unless there is a strong reason to create a separate script.
+The Typer app implementation lives in `src/stager/cli/build.py`. `src/build.py` is a temporary compatibility wrapper. Add new CLI commands to `src/stager/cli/build.py` unless there is a strong reason to create a separate script.
 
 For play-specific commands, support the existing `--play/-p` option.
 

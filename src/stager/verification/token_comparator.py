@@ -8,10 +8,10 @@ import re
 
 from rapidfuzz import fuzz
 
-from spelling_normalizer import SpellingNormalizer
-from equivalencies import Equivalencies
-from homophone_matcher import HomophoneMatcher
-from token_slice import TokenSlice
+from stager.verification.spelling_normalizer import SpellingNormalizer
+from stager.verification.equivalencies import Equivalencies
+from stager.verification.homophone_matcher import HomophoneMatcher
+from stager.verification.token_slice import TokenSlice
 
 
 @dataclass

@@ -6,10 +6,10 @@ from dataclasses import dataclass, field
 
 from openpyxl.utils import get_column_letter
 
-from audio_verifier_diff import AudioVerifierDiff
-from extra_audio_diff import ExtraAudioDiff
-from match_audio_diff import MatchAudioDiff
-from missing_audio_diff import MissingAudioDiff
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
+from stager.verification.extra_audio_diff import ExtraAudioDiff
+from stager.verification.match_audio_diff import MatchAudioDiff
+from stager.verification.missing_audio_diff import MissingAudioDiff
 
 
 @dataclass

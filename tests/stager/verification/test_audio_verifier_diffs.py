@@ -10,13 +10,13 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from audio_verifier_diff_builder import AudioVerifierDiffBuilder
-from extra_audio_diff import ExtraAudioDiff
-from match_audio_diff import MatchAudioDiff
-from missing_audio_diff import MissingAudioDiff
-from inline_text_differ import InlineTextDiffer
-from spelling_normalizer import SpellingNormalizer
-from equivalencies import Equivalencies
+from stager.verification.audio_verifier_diff_builder import AudioVerifierDiffBuilder
+from stager.verification.extra_audio_diff import ExtraAudioDiff
+from stager.verification.match_audio_diff import MatchAudioDiff
+from stager.verification.missing_audio_diff import MissingAudioDiff
+from stager.verification.inline_text_differ import InlineTextDiffer
+from stager.verification.spelling_normalizer import SpellingNormalizer
+from stager.verification.equivalencies import Equivalencies
 
 
 def test_missing_orders_between_matched_segments() -> None:

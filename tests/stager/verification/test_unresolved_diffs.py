@@ -8,7 +8,7 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from unresolved_diffs import UnresolvedDiffs
+from stager.verification.unresolved_diffs import UnresolvedDiffs
 
 
 def test_unresolved_diffs_write_flow_list(tmp_path) -> None:

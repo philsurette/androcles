@@ -8,10 +8,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from audio_verifier_problems_sheet_builder import AudioVerifierProblemsSheetBuilder
-from extra_audio_diff import ExtraAudioDiff
-from match_audio_diff import MatchAudioDiff
-from missing_audio_diff import MissingAudioDiff
+from stager.verification.audio_verifier_problems_sheet_builder import AudioVerifierProblemsSheetBuilder
+from stager.verification.extra_audio_diff import ExtraAudioDiff
+from stager.verification.match_audio_diff import MatchAudioDiff
+from stager.verification.missing_audio_diff import MissingAudioDiff
 
 
 def test_problems_builder_rows() -> None:

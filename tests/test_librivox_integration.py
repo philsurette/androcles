@@ -10,9 +10,9 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
-from play_text_parser import PlayTextParser
-from play_plan_builder import PlayPlanBuilder
+from stager.shared import paths
+from stager.text.play_text_parser import PlayTextParser
+from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from librivox_play_plan_decorator import LibrivoxPlayPlanDecorator
 
 

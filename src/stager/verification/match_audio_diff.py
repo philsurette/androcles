@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from audio_verifier_diff import AudioVerifierDiff
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
 
 
 @dataclass

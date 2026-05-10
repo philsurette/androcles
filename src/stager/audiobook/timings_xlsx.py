@@ -9,7 +9,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill
 
 from stager.shared import paths
-from segment_verifier import compute_rows
+from stager.verification.segment_verifier import compute_rows
 from stager.audio.spacing import CALLOUT_SPACING_MS, SEGMENT_SPACING_MS
 
 

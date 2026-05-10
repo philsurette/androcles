@@ -6,12 +6,12 @@ from dataclasses import dataclass, field
 import logging
 import time
 
-from audio_verifier_diff import AudioVerifierDiff
-from extra_audio_diff import ExtraAudioDiff
-from inline_text_differ import InlineTextDiffer
-from match_audio_diff import MatchAudioDiff
-from missing_audio_diff import MissingAudioDiff
-from equivalencies import Equivalencies
+from stager.verification.audio_verifier_diff import AudioVerifierDiff
+from stager.verification.extra_audio_diff import ExtraAudioDiff
+from stager.verification.inline_text_differ import InlineTextDiffer
+from stager.verification.match_audio_diff import MatchAudioDiff
+from stager.verification.missing_audio_diff import MissingAudioDiff
+from stager.verification.equivalencies import Equivalencies
 
 
 @dataclass

@@ -8,10 +8,10 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from block import RoleBlock
-from block_id import BlockId
-from play import Play, ReadingMetadata, Reader, SourceTextMetadata
-from role_audio_verifier import RoleAudioVerifier
+from stager.domain.block import RoleBlock
+from stager.domain.block_id import BlockId
+from stager.domain.play import Play, ReadingMetadata, Reader, SourceTextMetadata
+from stager.verification.role_audio_verifier import RoleAudioVerifier
 
 
 class DummyWhisperStore:

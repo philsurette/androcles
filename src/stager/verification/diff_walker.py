@@ -5,8 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterator
 
-from diff_context import DiffContext
-from diff_event import DiffEvent
+from stager.verification.diff_context import DiffContext
+from stager.verification.diff_event import DiffEvent
 
 
 @dataclass

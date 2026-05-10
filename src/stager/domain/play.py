@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional, Dict
 import re
 from pathlib import Path
-import paths
+from stager.shared import paths
 from stager.domain.block_id import BlockId
 from stager.domain.segment import DirectionSegment, SpeechSegment, SimultaneousSegment
 from stager.domain.block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock

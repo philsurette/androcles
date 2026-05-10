@@ -8,9 +8,9 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from diff_context import DiffContext
-from diff_walker import DiffWalker
-from inline_text_differ import InlineTextDiffer
+from stager.verification.diff_context import DiffContext
+from stager.verification.diff_walker import DiffWalker
+from stager.verification.inline_text_differ import InlineTextDiffer
 
 
 def _context(differ: InlineTextDiffer, expected: str, actual: str) -> DiffContext:
