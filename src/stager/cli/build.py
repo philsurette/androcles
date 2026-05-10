@@ -732,11 +732,10 @@ def playbook(
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    manifest_path = run_playbook(
+    run_playbook(
         paths_config=cfg,
         build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
     )
-    logging.info("Wrote Playbook to %s", paths.display_path(manifest_path))
 
 
 # Helper functions (non-Typer) -----------------------------------------------
