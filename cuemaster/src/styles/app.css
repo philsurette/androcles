@@ -18,6 +18,10 @@
   box-shadow: 0 2rem 5rem rgba(30, 38, 31, 0.16);
 }
 
+.library {
+  width: min(100%, 58rem);
+}
+
 .eyebrow {
   margin: 0 0 1rem;
   color: var(--accent);
@@ -32,11 +36,109 @@ h1 {
   line-height: 0.92;
 }
 
-.hero p:last-child {
+.hero > p {
   max-width: 34rem;
   color: var(--quiet);
   font-size: 1.25rem;
   line-height: 1.55;
+}
+
+.import-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 2rem;
+}
+
+.button,
+button {
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 800;
+  padding: 0.8rem 1.1rem;
+}
+
+button.secondary {
+  background: rgba(30, 38, 31, 0.1);
+  color: var(--ink);
+}
+
+.button input {
+  display: none;
+}
+
+.filename,
+.status,
+.empty,
+.playbook-row p {
+  color: var(--quiet);
+}
+
+.notice,
+.error {
+  border-radius: 1rem;
+  margin: 1rem 0 0;
+  padding: 0.9rem 1rem;
+}
+
+.notice {
+  background: rgba(86, 125, 81, 0.14);
+}
+
+.error {
+  background: rgba(185, 79, 47, 0.14);
+  color: #8e2c18;
+}
+
+.library-list {
+  margin-top: 2.5rem;
+}
+
+.library-list h2 {
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.role-list,
+.library-list ul {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.role-list {
+  margin-top: 2rem;
+}
+
+.playbook-row {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(30, 38, 31, 0.12);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.34);
+  padding: 1rem;
+}
+
+.row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.playbook-row h3,
+.playbook-row p {
+  margin: 0;
 }
 
 .card,

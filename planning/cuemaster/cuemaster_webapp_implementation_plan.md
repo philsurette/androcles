@@ -419,10 +419,10 @@ This is the first major useful milestone.
 
 #### File picker
 
-- [ ] Add **Import Playbook** button.
-- [ ] Accept `.zip` files.
-- [ ] Show selected filename.
-- [ ] Show import progress state.
+- [x] Add **Import Playbook** button.
+- [x] Accept `.zip` files.
+- [x] Show selected filename.
+- [x] Show import progress state.
 
 #### Zip handling
 
@@ -430,35 +430,35 @@ This is the first major useful milestone.
 - [ ] Move extraction work into a Web Worker before realistic large Playbook imports.
 - [x] Read `manifest.json` from the expected location.
 - [x] Validate manifest.
-- [ ] Build asset index from zip entries.
-- [ ] Detect missing required audio assets.
-- [ ] Report friendly errors for invalid zips.
-- [ ] Report friendly errors for invalid manifests.
-- [ ] Avoid loading all audio into active playback memory.
+- [x] Build asset index from zip entries.
+- [x] Detect missing required audio assets.
+- [x] Report friendly errors for invalid zips.
+- [x] Report friendly errors for invalid manifests.
+- [x] Avoid loading all audio into active playback memory.
 
 #### Library integration
 
-- [ ] Store imported Playbook metadata.
-- [ ] Show Playbook in Library screen.
-- [ ] Show play title.
-- [ ] Show available actor roles.
-- [ ] Allow delete/remove from local library.
+- [x] Store imported Playbook metadata.
+- [x] Show Playbook in Library screen.
+- [x] Show play title.
+- [x] Show available actor roles.
+- [x] Allow delete/remove from local library.
 
 #### Tests
 
-- [ ] Unit-test manifest validation.
-- [ ] Unit-test asset lookup.
+- [x] Unit-test manifest validation.
+- [x] Unit-test asset lookup.
 - [ ] Add Playwright test importing a small fixture Playbook.
-- [ ] Add error-path test for invalid zip.
-- [ ] Add error-path test for missing manifest.
-- [ ] Add error-path test for missing required audio.
+- [x] Add error-path test for invalid zip.
+- [x] Add error-path test for missing manifest.
+- [x] Add error-path test for missing required audio.
 
 ### Acceptance Criteria
 
-- [ ] User can import a valid Playbook zip.
-- [ ] Imported Playbook appears in the library.
-- [ ] User can select the Playbook and see roles.
-- [ ] Invalid Playbooks produce useful error messages.
+- [x] User can import a valid Playbook zip.
+- [x] Imported Playbook appears in the library.
+- [x] User can select the Playbook and see roles.
+- [x] Invalid Playbooks produce useful error messages.
 - [ ] Large import work does not freeze the UI.
 
 ---
