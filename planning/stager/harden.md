@@ -5,8 +5,9 @@ This plan prepares Stager, the current CLI codebase, for reliable Cuemaster Play
 ## Goals
 
 - Preserve the existing Stager CLI workflows for markdown, segment splitting, verification, timings, cues, and audioplay.
-- Make cue generation correct, tested, and suitable as the foundation for an actor line-learning workflow.
+- Make legacy MP4 cue generation correct and tested for actors who use general-purpose audio players.
 - Introduce a stable Cuemaster-facing export boundary rather than requiring the mobile app to infer structure from markdown, spreadsheets, or MP4 chapter metadata.
+- Build Playbooks from shared play/segment data, not from legacy audiobook or MP4 cue assembly internals.
 - Reduce coupling in the Stager CLI so future Playbook packaging can reuse domain services directly.
 - Make Playbook builds fail on missing required cue or response audio unless explicitly running in a diagnostic mode.
 
@@ -22,6 +23,7 @@ This plan prepares Stager, the current CLI codebase, for reliable Cuemaster Play
 - `CueBuilder` likely returns empty audio because helper methods receive an `AudioSegment` and use `+=`, which rebinds locally instead of mutating the caller's value.
 - Missing segment audio is sometimes logged and represented as zero-length clips instead of failing the build.
 - There is no versioned Cuemaster manifest or Playbook format.
+- Existing `src/` modules are heavily oriented around audiobook/audio-play assembly; Playbook work needs a separate output layer over shared play and segment models.
 - `src/build.py` is too large and mixes Typer/Stager CLI concerns with orchestration and domain behavior.
 - `paths.py` still exposes import-time default play state and backwards-compatible global aliases.
 - Some library-style modules still use `print()` instead of logging or caller-owned output.
@@ -42,46 +44,47 @@ Create these design documents before changing production behavior. Keep them sho
 - [x] Define strict Playbook behavior for missing cue and response audio.
 - [x] Align `planning/cuemaster/product_design.md` with the Stager manifest and Playbook design.
 
-- [ ] Create `planning/cuemaster/cue_generation.md`.
-- [ ] Document current cue behavior: previous speech block as prompt, optional callout, cropped cue audio, response delay, expected response playback.
-- [ ] Define desired cue behavior for first line in a part or scene.
-- [ ] Define whether stage directions are prompts, context text, playable audio, or ignored.
-- [ ] Define whether caller/announcer snippets are included in Cuemaster Playbooks.
-- [ ] Define expected chapter or item boundaries for generated cue media.
-- [ ] Define deterministic test fixtures for cue audio without using real recordings.
+- [x] Create `planning/cuemaster/cue_generation.md`.
+- [x] Document current cue behavior: previous speech block as prompt, optional callout, cropped cue audio, response delay, expected response playback.
+- [x] Define desired cue behavior for first line in a part or scene.
+- [x] Define whether stage directions are prompts, context text, playable audio, or ignored.
+- [x] Define whether caller/announcer snippets are included in Cuemaster Playbooks.
+- [x] Define expected chapter or item boundaries for generated cue media.
+- [x] Define deterministic test fixtures for cue audio without using real recordings.
 
-- [ ] Create `planning/stager/service_boundaries.md`.
-- [ ] Define domain services to extract from `src/build.py`.
-- [ ] Proposed services: `TextArtifactBuilder`, `SegmentBuildService`, `TimingBuildService`, `AudioPlayBuildService`, `CueBuildService`, `PlaybookBuilder`.
-- [ ] Define which services may call ffmpeg, pydub, Whisper, or Audacity.
-- [ ] Define which services are pure enough for fast tests.
-- [ ] Define Stager CLI ownership: Typer validates options and delegates to services; services raise exceptions.
-- [ ] Define path/config ownership: all services receive `paths.PathConfig` and never rely on `paths.current()`.
+- [x] Create `planning/stager/service_boundaries.md`.
+- [x] Define domain services to extract from `src/build.py`.
+- [x] Proposed services: `TextArtifactBuilder`, `SegmentBuildService`, `TimingBuildService`, `AudioPlayBuildService`, `CueBuildService`, `PlaybookBuilder`.
+- [x] Define which services may call ffmpeg, pydub, Whisper, or Audacity.
+- [x] Define which services are pure enough for fast tests.
+- [x] Define Stager CLI ownership: Typer validates options and delegates to services; services raise exceptions.
+- [x] Define path/config ownership: all services receive `paths.PathConfig` and never rely on `paths.current()`.
+- [x] Define shared, audiobook/legacy cue-output, and Playbook module categories.
 
-- [ ] Create `planning/stager/missing_audio_policy.md`.
-- [ ] Define required versus optional audio categories.
-- [ ] Required for Playbooks: cue audio and response audio for every rehearsable non-meta role line.
-- [ ] Required when enabled: callouts, announcer, narrator, Librivox preamble/epilog snippets.
-- [ ] Optional or diagnostic: timing previews with missing audio placeholders, if still needed.
-- [ ] Define Stager CLI flags for diagnostic mode, e.g. `--allow-missing-audio`.
-- [ ] Define exact exception type or error message style for missing required audio.
+- [x] Create `planning/stager/missing_audio_policy.md`.
+- [x] Define required versus optional audio categories.
+- [x] Required for Playbooks: cue audio and response audio for every rehearsable non-meta role line.
+- [x] Required when enabled: callouts, announcer, narrator, Librivox preamble/epilog snippets.
+- [x] Optional or diagnostic: timing previews with missing audio placeholders, if still needed.
+- [x] Define Stager CLI flags for diagnostic mode, e.g. `--allow-missing-audio`.
+- [x] Define exact exception type or error message style for missing required audio.
 
 ## Phase 1: Fix CueBuilder Correctness
 
 Target outcome: cue generation returns non-empty audio and correct chapter boundaries for roles with available segment audio.
 
-- [ ] Add failing tests that reproduce the current `AudioSegment` accumulation issue.
-- [ ] Use tiny generated WAV files in `tmp_path` fixtures so tests do not require real recordings.
-- [ ] Test that `build_cues_for_role("A")` returns audio length greater than zero when role A has response audio.
-- [ ] Test that cue chapters include both `CUE <role> <segment>` and `LINE <role> <segment>` when prompts are enabled and a previous speaker exists.
-- [ ] Test that cue generation works when prompts are disabled.
+- [x] Add failing tests that reproduce the current `AudioSegment` accumulation issue.
+- [x] Use tiny generated WAV files in `tmp_path` fixtures so tests do not require real recordings.
+- [x] Test that `build_cues_for_role("A")` returns audio length greater than zero when role A has response audio.
+- [x] Test that cue chapters include both `CUE <role> <segment>` and `LINE <role> <segment>` when prompts are enabled and a previous speaker exists.
+- [x] Test that cue generation works when prompts are disabled.
 - [ ] Test that first-line behavior matches `planning/cuemaster/cue_generation.md`.
-- [ ] Refactor `CueBuilder` helpers to return updated audio and chapter data instead of trying to mutate `AudioSegment` parameters.
-- [ ] Keep `CueBuilder` as a dataclass.
-- [ ] Avoid adding defensive fallbacks; raise exceptions for missing required audio according to the policy design.
-- [ ] Verify `run_cues()` still writes cue files through the Stager CLI.
-- [ ] Run targeted tests: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_alignment_gaps.py`.
-- [ ] Run full tests: `.venv/bin/python run_tests.py`.
+- [x] Refactor `CueBuilder` helpers to return updated audio and chapter data instead of trying to mutate `AudioSegment` parameters.
+- [x] Keep `CueBuilder` as a dataclass.
+- [x] Avoid adding defensive fallbacks; raise exceptions for missing required audio according to the policy design.
+- [x] Verify `run_cues()` still writes cue files through the Stager CLI.
+- [x] Run targeted tests: `PYTHONPATH=src .venv/bin/python -m pytest tests/test_alignment_gaps.py`.
+- [x] Run full tests: `.venv/bin/python run_tests.py`.
 
 ## Phase 2: Add Cuemaster Manifest Domain Model
 
@@ -89,6 +92,7 @@ Target outcome: the app gets a structured data model independent of markdown for
 
 - [ ] Create dataclasses for app export records, one primary class per new file.
 - [ ] Proposed files: `src/app_manifest.py`, `src/app_role.py`, `src/app_line.py`, `src/app_audio_asset.py`.
+- [ ] Keep Playbook dataclasses independent of `CueBuilder`, `PlayBuilder`, and MP4 chapter models.
 - [ ] Include `schema_version` in the manifest model.
 - [ ] Use stable ids based on existing `SegmentId` and `BlockId`.
 - [ ] Represent cue text separately from expected response text.
@@ -107,6 +111,7 @@ Target outcome: `build/<play>/app/manifest.json` can be generated by Stager and 
 
 - [ ] Create `src/playbook_builder.py`.
 - [ ] Inject `Play`, `PathConfig`, and any audio-length helper.
+- [ ] Reuse shared play, block, segment, and audio path models directly rather than invoking legacy MP4 cue generation.
 - [ ] Build package directory at `build/<play>/app`.
 - [ ] Write `manifest.json` with paths relative to the Playbook root.
 - [ ] Decide whether to copy audio assets into `build/<play>/app/audio` or reference existing `build/<play>/audio/segments` paths.

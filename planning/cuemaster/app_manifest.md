@@ -190,6 +190,7 @@ Cue rules:
 
 - The default cue is the preceding non-meta speech block.
 - If the preceding block contains only directions, use direction text as context and attach narrator audio.
+- If a role has the first rehearsable line in a part, use the part title as the cue; if the part has no title, use the play title.
 - Rehearsable role lines must not have `cue: null` in a generated Playbook.
 - Cue text may be shortened for rehearsal display, but the manifest should preserve enough metadata to support future full-text display.
 - Narrator audio for direction-only cues is required when the direction is used as the cue for a rehearsable line.

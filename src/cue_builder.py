@@ -14,6 +14,8 @@ from pydub import AudioSegment
 from play import Play, RoleBlock
 import paths
 
+logger = logging.getLogger(__name__)
+
 
 @dataclass
 class CueBuilder:
@@ -36,14 +38,15 @@ class CueBuilder:
         for sid in seg_ids:
             path = self.paths.segments_dir / role / f"{sid}.wav"
             if not path.exists():
-                logging.warning("Missing snippet %s for role %s", sid, role)
-                continue
+                raise RuntimeError(
+                    f"Missing required cue segment audio for role {role} segment {sid}: {paths.display_path(path)}"
+                )
             audio += AudioSegment.from_file(path)
         return audio
 
     def _load_callout(self, role: str) -> AudioSegment | None:
         """Return the callout clip for a role if it exists."""
-        path = self.paths.build_dir / "audio" / "callouts" / f"{role}_callout.wav"
+        path = self.paths.build_dir / "audio" / "callouts" / f"{role}.wav"
         if not path.exists():
             raise RuntimeError(f"Callout missing for role {role} at {paths.display_path(path)}")
         return AudioSegment.from_file(path)
@@ -91,7 +94,7 @@ class CueBuilder:
         chapters: List[Tuple[int, int, str]] = []
 
         for part in self.play.getParts():
-            self._build_cues_for_role_and_part(role, part, combined, chapters)
+            combined, chapters = self._build_cues_for_role_and_part(role, part, combined, chapters)
 
         return combined, chapters
 
@@ -101,14 +104,14 @@ class CueBuilder:
         part: "Part",
         combined: AudioSegment,
         chapters: List[Tuple[int, int, str]],
-    ) -> None:
+    ) -> Tuple[AudioSegment, List[Tuple[int, int, str]]]:
         """Append cues for a role within a part to combined audio and chapters."""
         callout_cache: Dict[str, AudioSegment | None] = {}
         callout_gap = AudioSegment.silent(duration=self.callout_spacing_ms) if self.callout_spacing_ms > 0 else None
 
         speech_blocks = [b for b in part.blocks if isinstance(b, RoleBlock)]
         for idx, blk in enumerate(speech_blocks):
-            self._append_block_cues(
+            combined, chapters = self._append_block_cues(
                 role=role,
                 block=blk,
                 speech_blocks=speech_blocks,
@@ -118,6 +121,7 @@ class CueBuilder:
                 callout_cache=callout_cache,
                 callout_gap=callout_gap,
             )
+        return combined, chapters
 
     def _append_block_cues(
         self,
@@ -129,10 +133,10 @@ class CueBuilder:
         chapters: List[Tuple[int, int, str]],
         callout_cache: Dict[str, AudioSegment | None],
         callout_gap: AudioSegment | None,
-    ) -> None:
+    ) -> Tuple[AudioSegment, List[Tuple[int, int, str]]]:
         """Append cues for a single block to the combined audio and chapters."""
         if block.primary_role != role:
-            return
+            return combined, chapters
 
         prev_block = self._previous_speech_block(speech_blocks, idx)
 
@@ -162,8 +166,9 @@ class CueBuilder:
         key = (block.block_id.part_id, block.block_id.block_no)
         resp_ids = self.segment_maps.get(role, {}).get(key, [])
         if not resp_ids:
-            logging.warning("No response segment ids for %s %s:%s", role, block.block_id.part_id, block.block_id.block_no)
-            return
+            raise RuntimeError(
+                f"No response segment ids for role {role} block {block.block_id.part_id}.{block.block_id.block_no}"
+            )
 
         resp_audio = self._concat_segments(role, resp_ids)
         resp_start = len(combined)
@@ -172,6 +177,7 @@ class CueBuilder:
         chapters.append((resp_start, resp_end, f"LINE {role} {resp_ids[0]}"))
 
         combined += AudioSegment.silent(duration=self.response_delay_ms)
+        return combined, chapters
 
     def build_cues(self, role: str) -> Path:
         """Build cue MP4 for a role using builder configuration."""
@@ -182,7 +188,7 @@ class CueBuilder:
             audio = audio[:total]
         out_path = self.paths.audio_out_dir / "cues" / f"{role}_cue.mp4"
         self._export_mp4(audio, chapters, out_path)
-        logging.info("Wrote cue file %s with %d chapters", paths.display_path(out_path), len(chapters))
+        logger.info("Wrote cue file %s with %d chapters", paths.display_path(out_path), len(chapters))
         return out_path
 
 
