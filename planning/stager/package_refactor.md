@@ -233,7 +233,7 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Move `build.py` to `stager.cli.build`.
 - [x] Update `./main` to invoke `stager.cli.build`.
 - [x] Keep current CLI commands and `--play/-p` behavior unchanged.
-- [ ] Add Playbook modules under `stager.playbook` only after shared/domain boundaries are established.
+- [x] Add Playbook modules under `stager.playbook` only after shared/domain boundaries are established.
 - [x] Remove temporary top-level compatibility wrappers after all imports use package paths.
 - [x] Run `.venv/bin/python run_tests.py`.
 - [x] Run `./main --help`.

@@ -1,0 +1,1 @@
+"""Cuemaster Playbook manifest model."""

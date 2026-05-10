@@ -78,6 +78,7 @@ Use `./main <command>` for normal CLI runs, for example:
 ./main text
 ./main segments
 ./main audioplay
+./main playbook
 ```
 
 The Typer app implementation lives in `src/stager/cli/build.py`. Add new CLI commands to `src/stager/cli/build.py` unless there is a strong reason to create a separate script.

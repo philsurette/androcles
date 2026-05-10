@@ -13,7 +13,7 @@ if str(SRC) not in sys.path:
 
 from stager.shared import paths
 from stager.audio.announcer_splitter import AnnouncerSplitter
-from stager.cli.build import run_audioplay, run_text, run_write_announcer
+from stager.cli.build import run_audioplay, run_playbook, run_text, run_write_announcer
 from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 
 
@@ -131,3 +131,29 @@ def test_run_audioplay_passes_librivox_build_type_to_preparation(
         ("segments", "librivox"),
         ("builder", "librivox"),
     ]
+
+
+def test_run_playbook_passes_build_type_to_builder(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cfg = _config(tmp_path, build_type="librivox")
+    calls: list[str] = []
+
+    @dataclass
+    class FakePlaybookBuilder:
+        build_type: str
+
+        def __init__(self, **kwargs):
+            self.build_type = kwargs["build_type"]
+
+        def build(self) -> Path:
+            calls.append(self.build_type)
+            return cfg.build_dir / "app" / "manifest.json"
+
+    monkeypatch.setattr("stager.cli.build.PlaybookBuilder", FakePlaybookBuilder)
+
+    path = run_playbook(paths_config=cfg)
+
+    assert path == cfg.build_dir / "app" / "manifest.json"
+    assert calls == ["librivox"]

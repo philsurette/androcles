@@ -25,6 +25,7 @@ from stager.text.callout_script_writer import CalloutScriptWriter
 from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_builder import CueBuilder
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
+from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.role_audio_verifier import RoleAudioVerifier
@@ -728,6 +729,21 @@ def cues(
     )
 
 
+@app.command("playbook", rich_help_panel="build")
+def playbook(
+    librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type metadata"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Build a Cuemaster Playbook manifest and package."""
+    cfg = paths.PathConfig(play or paths.DEFAULT_PLAY_NAME)
+    setup_logging(cfg)
+    manifest_path = run_playbook(
+        paths_config=cfg,
+        build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
+    )
+    logging.info("Wrote Playbook to %s", paths.display_path(manifest_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -999,6 +1015,25 @@ def run_cues(
     roles = [role] if role else [r.name for r in play.roles] + ["_NARRATOR"]
     for r in roles:
         builder.build_cues(r)
+
+
+def run_playbook(
+    *,
+    paths_config: paths.PathConfig | None = None,
+    build_type: str | None = None,
+) -> Path:
+    cfg = paths_config or paths.current()
+    effective_build_type = BuildTypeResolver(
+        paths_config=cfg,
+        explicit_build_type=build_type,
+    ).resolve()
+    play = PlayTextParser(paths_config=cfg).parse()
+    builder = PlaybookBuilder(
+        play=play,
+        paths=cfg,
+        build_type=effective_build_type,
+    )
+    return builder.build()
 
 
 def _is_segment_id(value: str) -> bool:
