@@ -199,18 +199,18 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 
 ## Migration Checklist
 
-- [ ] Create `src/stager/` and package `__init__.py` files.
+- [x] Create `src/stager/` and package `__init__.py` files.
 - [ ] Move `loudnorm` under `src/stager/loudnorm` or explicitly decide to keep it as a separate package.
-- [ ] Move domain modules first: `block_id.py`, `segment_id.py`, `segment.py`, `block.py`, `reader_block.py`, `play.py`.
-- [ ] Update domain imports to `stager.domain.*`.
-- [ ] Move matching unit tests under `tests/stager/domain/`.
-- [ ] Add temporary top-level wrappers for moved domain modules.
-- [ ] Run domain tests.
-- [ ] Move shared modules: `paths.py`, `play_config.py`, `build_type_resolver.py`.
-- [ ] Update shared imports to `stager.shared.*`.
-- [ ] Move matching unit tests under `tests/stager/shared/`.
-- [ ] Add temporary top-level wrappers for moved shared modules.
-- [ ] Run shared and domain tests.
+- [x] Move domain modules first: `block_id.py`, `segment_id.py`, `segment.py`, `block.py`, `reader_block.py`, `play.py`.
+- [x] Update domain imports to `stager.domain.*`.
+- [x] Move matching unit tests under `tests/stager/domain/`.
+- [x] Add temporary top-level wrappers for moved domain modules.
+- [x] Run domain tests.
+- [x] Move shared modules: `paths.py`, `play_config.py`, `build_type_resolver.py`.
+- [x] Update shared imports to `stager.shared.*`.
+- [x] Move matching unit tests under `tests/stager/shared/`.
+- [x] Add temporary top-level wrappers for moved shared modules.
+- [x] Run shared and domain tests.
 - [ ] Move text artifact modules.
 - [ ] Move matching unit tests under `tests/stager/text/`.
 - [ ] Run text, shared, and domain tests.
@@ -253,4 +253,3 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - Keep `PlaybookBuilder` independent of audiobook and cue packages.
 - Do not do broad behavior changes in package-move commits.
 - Do not update generated `build/` artifacts as part of package refactors.
-

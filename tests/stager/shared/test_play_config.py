@@ -5,12 +5,12 @@ import sys
 
 import pytest
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-from play_config import PlayConfig, DEFAULT_PLAY_ID, DEFAULT_BUILD_TYPE
+from stager.shared.play_config import PlayConfig, DEFAULT_PLAY_ID, DEFAULT_BUILD_TYPE
 
 
 def test_play_config_default_when_missing(tmp_path) -> None:

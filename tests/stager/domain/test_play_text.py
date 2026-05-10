@@ -1,14 +1,14 @@
 
 import pytest
 
-from play import (
+from stager.domain.play import (
     DirectionSegment,
     Play,
 )
-from segment import DescriptionSegment, MetaSegment, SpeechSegment
-from segment_id import SegmentId
-from block_id import BlockId
-from block import DescriptionBlock, TitleBlock, RoleBlock    
+from stager.domain.segment import DescriptionSegment, MetaSegment, SpeechSegment
+from stager.domain.segment_id import SegmentId
+from stager.domain.block_id import BlockId
+from stager.domain.block import DescriptionBlock, TitleBlock, RoleBlock
 
 def build_play(sequence):
     """Helper to build a PlayText from a list of (part, block_no, role)."""

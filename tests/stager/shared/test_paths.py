@@ -3,12 +3,12 @@ from __future__ import annotations
 import pathlib
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[3]
 SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
-import paths
+from stager.shared import paths
 
 
 def test_display_path_uses_project_relative_paths() -> None:

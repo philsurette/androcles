@@ -100,9 +100,9 @@ Target outcome: Stager has explicit Python package boundaries before new Playboo
 
 Follow `planning/stager/package_refactor.md`.
 
-- [ ] Create `src/stager/` package directories.
-- [ ] Move domain modules and matching unit tests first.
-- [ ] Move shared config/path modules and matching unit tests.
+- [x] Create `src/stager/` package directories.
+- [x] Move domain modules and matching unit tests first.
+- [x] Move shared config/path modules and matching unit tests.
 - [ ] Move text artifact modules and matching unit tests.
 - [ ] Move audio splitting/playback modules and matching unit tests.
 - [ ] Move audiobook modules and matching unit tests.
@@ -110,9 +110,9 @@ Follow `planning/stager/package_refactor.md`.
 - [ ] Move verification modules and matching unit tests.
 - [ ] Move transcription modules and matching unit tests.
 - [ ] Move CLI entrypoint to `stager.cli.build` and update `./main`.
-- [ ] Use temporary top-level compatibility wrappers only during migration.
+- [x] Use temporary top-level compatibility wrappers only during migration.
 - [ ] Remove compatibility wrappers once imports are package-based.
-- [ ] Run package-specific targeted tests after each package move.
+- [x] Run package-specific targeted tests after each package move.
 - [ ] Run `.venv/bin/python run_tests.py`.
 - [ ] Run `./main --help`.
 
