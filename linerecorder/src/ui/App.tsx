@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
+import { WavRecorder, type RecordedWav } from "../audio/wavRecorder";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
+import type { RecordingTake } from "../domain/take";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
 import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
@@ -91,6 +93,7 @@ export function App() {
           project={selectedProject}
           acceptedSegmentIds={acceptedSegmentIds}
           onSelectItem={(item) => void selectItem(selectedProject, item)}
+          onAccepted={() => void loadAcceptedSegments(selectedProject.id)}
         />
       ) : (
         <ProjectLibrary projects={projects} onOpenProject={(project) => void openProject(project)} />
@@ -168,9 +171,10 @@ type ProjectDetailProps = {
   project: RecordingProjectRecord;
   acceptedSegmentIds: Set<string>;
   onSelectItem: (item: RecordingItem) => void;
+  onAccepted: () => void;
 };
 
-function ProjectDetail({ project, acceptedSegmentIds, onSelectItem }: ProjectDetailProps) {
+function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }: ProjectDetailProps) {
   const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
   const selectedItem =
     project.currentSegmentId === undefined
@@ -183,7 +187,7 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem }: ProjectDet
       <MicrophoneSetup />
       <div className="recording-workspace">
         <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
-        {selectedItem ? <ItemDetail progress={selectedItem} /> : null}
+        {selectedItem ? <ItemDetail project={project} progress={selectedItem} onAccepted={onAccepted} /> : null}
       </div>
     </section>
   );
@@ -356,10 +360,12 @@ function ItemList({ progress, selectedSegmentId, onSelectItem }: ItemListProps) 
 }
 
 type ItemDetailProps = {
+  project: RecordingProjectRecord;
   progress: RecordingItemProgress;
+  onAccepted: () => void;
 };
 
-function ItemDetail({ progress }: ItemDetailProps) {
+function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
   const { item, status } = progress;
   return (
     <article className="item-detail">
@@ -406,7 +412,137 @@ function ItemDetail({ progress }: ItemDetailProps) {
           <dd>{item.reason ?? "recording"}</dd>
         </div>
       </dl>
+      <TakeRecorder project={project} item={item} onAccepted={onAccepted} />
     </article>
+  );
+}
+
+type TakeRecorderProps = {
+  project: RecordingProjectRecord;
+  item: RecordingItem;
+  onAccepted: () => void;
+};
+
+function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
+  const recorderRef = useRef<WavRecorder | null>(null);
+  const playbackUrlRef = useRef<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [currentTake, setCurrentTake] = useState<RecordedWav | null>(null);
+  const [status, setStatus] = useState("No take recorded.");
+
+  useEffect(() => {
+    return () => {
+      recorderRef.current?.stopWithoutResult();
+      revokePlaybackUrl();
+    };
+  }, []);
+
+  useEffect(() => {
+    recorderRef.current?.stopWithoutResult();
+    setIsRecording(false);
+    setCurrentTake(null);
+    setStatus("No take recorded.");
+    revokePlaybackUrl();
+  }, [item.segmentId]);
+
+  async function startRecording(): Promise<void> {
+    try {
+      revokePlaybackUrl();
+      const recorder = new WavRecorder();
+      recorderRef.current = recorder;
+      setCurrentTake(null);
+      setStatus("Recording...");
+      await recorder.start(undefined, "clean");
+      setIsRecording(true);
+    } catch {
+      setStatus("Unable to start recording.");
+      setIsRecording(false);
+    }
+  }
+
+  function stopRecording(): void {
+    if (!recorderRef.current) {
+      return;
+    }
+    const take = recorderRef.current.stop();
+    recorderRef.current = null;
+    setCurrentTake(take);
+    setIsRecording(false);
+    setStatus(`Recorded ${Math.round(take.durationMs)} ms.`);
+  }
+
+  function playTake(): void {
+    if (!currentTake) {
+      return;
+    }
+    revokePlaybackUrl();
+    const url = URL.createObjectURL(currentTake.blob);
+    playbackUrlRef.current = url;
+    const audio = new Audio(url);
+    audio.onended = revokePlaybackUrl;
+    void audio.play();
+  }
+
+  async function acceptTake(): Promise<void> {
+    if (!currentTake) {
+      return;
+    }
+    const take: RecordingTake = {
+      id: `${project.id}:${item.segmentId}:${new Date().toISOString()}`,
+      projectId: project.id,
+      segmentId: item.segmentId,
+      status: "accepted",
+      recordedAt: new Date().toISOString(),
+      durationMs: currentTake.durationMs,
+      sampleRateHz: currentTake.sampleRateHz,
+      channels: currentTake.channels,
+      blob: currentTake.blob
+    };
+    await takeRepository.saveAccepted(take);
+    setStatus("Take accepted.");
+    onAccepted();
+  }
+
+  function retryTake(): void {
+    setCurrentTake(null);
+    setStatus("No take recorded.");
+    revokePlaybackUrl();
+  }
+
+  function revokePlaybackUrl(): void {
+    if (playbackUrlRef.current) {
+      URL.revokeObjectURL(playbackUrlRef.current);
+      playbackUrlRef.current = null;
+    }
+  }
+
+  return (
+    <section className="take-panel" aria-label="Take recorder">
+      <div>
+        <p className="eyebrow">Take</p>
+        <p>{status}</p>
+      </div>
+      <div className="take-controls">
+        {isRecording ? (
+          <button type="button" onClick={stopRecording}>
+            Stop
+          </button>
+        ) : (
+          <button type="button" onClick={() => void startRecording()}>
+            Record
+          </button>
+        )}
+        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={playTake}>
+          Play
+        </button>
+        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={() => void acceptTake()}>
+          Accept
+        </button>
+        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={retryTake}>
+          Retry
+        </button>
+      </div>
+    </section>
   );
 }
 
