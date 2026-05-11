@@ -448,7 +448,7 @@ This is the first major useful milestone.
 
 - [x] Unit-test manifest validation.
 - [x] Unit-test asset lookup.
-- [ ] Add Playwright test importing a small fixture Playbook.
+- [x] Add Playwright test importing a small fixture Playbook.
 - [x] Add error-path test for invalid zip.
 - [x] Add error-path test for missing manifest.
 - [x] Add error-path test for missing required audio.
@@ -481,8 +481,8 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [x] Store selected role per Playbook.
 - [x] Store session position per Playbook/role.
 - [x] Store basic session config per Playbook/role.
-- [ ] Store bookmarks.
-- [ ] Store timing attempts.
+- [x] Store bookmarks.
+- [x] Store timing attempts.
 
 #### Startup behavior
 
@@ -494,9 +494,9 @@ Persist imported Playbooks and session metadata locally in the browser.
 #### Tests
 
 - [ ] Unit-test storage interface with memory implementation.
-- [ ] Integration-test IndexedDB implementation where practical.
-- [ ] Playwright test: import Playbook, reload page, Playbook remains in library.
-- [ ] Playwright test: save session position, reload page, resume works.
+- [x] Integration-test IndexedDB implementation where practical.
+- [x] Playwright test: import Playbook, reload page, Playbook remains in library.
+- [x] Playwright test: save session position, reload page, resume works.
 
 ### Acceptance Criteria
 
@@ -532,22 +532,22 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [ ] Choose scene/section if manifest structure supports it.
 - [ ] Set cue depth.
 - [ ] Toggle stage directions.
-- [ ] Set response playback speed.
-- [ ] Toggle speak-along mode.
-- [ ] Toggle tempo timing.
-- [ ] Show default target hesitation setting, initially fixed at 750ms or hidden under advanced settings.
+- [x] Set response playback speed.
+- [x] Toggle speak-along mode.
+- [x] Toggle tempo timing.
+- [x] Show default target hesitation setting, initially fixed at 750ms or hidden under advanced settings.
 
 #### UI constraints
 
-- [ ] Large tap targets.
-- [ ] Clear session start button.
-- [ ] No dense settings wall.
-- [ ] Settings should be saved per Playbook/role.
+- [x] Large tap targets.
+- [x] Clear session start button.
+- [x] No dense settings wall.
+- [x] Settings should be saved per Playbook/role.
 
 ### Acceptance Criteria
 
-- [ ] User can import a Playbook, choose a role, configure a session, and enter the Session screen.
-- [ ] Selected settings persist across reload.
+- [x] User can import a Playbook, choose a role, configure a session, and enter the Session screen.
+- [x] Selected settings persist across reload.
 - [x] The UI does not expose special roles as normal actor choices.
 
 ---
@@ -597,7 +597,7 @@ This milestone does not yet require the full rehearsal UI.
 - [x] Unit-test queue sequencing with mock player.
 - [x] Unit-test cancellation.
 - [x] Unit-test playback speed assignment.
-- [ ] Browser/manual test with real audio fixture.
+- [x] Browser/manual test with real audio fixture.
 
 ### Acceptance Criteria
 
@@ -632,7 +632,7 @@ This is the second major useful milestone.
 - [x] Show cue text.
 - [x] Hide actor line by default.
 - [x] Add reveal/hide actor line.
-- [ ] Add large controls:
+- [x] Add large controls:
   - [x] Back
   - [x] Repeat Cue
   - [x] Hear My Line
@@ -641,7 +641,7 @@ This is the second major useful milestone.
 
 #### Playback behavior
 
-- [ ] On session start, play cue for current line.
+- [x] On session start, play cue for current line.
 - [x] After cue playback, enter waiting state.
 - [x] Repeat cue replays cue without advancing.
 - [x] Hear My Line plays actor response audio without advancing.
@@ -654,17 +654,17 @@ This is the second major useful milestone.
 
 - [x] Save current line after navigation.
 - [x] Save playback mode safely as idle/waiting on reload; do not resume mid-audio.
-- [ ] Save bookmarks.
+- [x] Save bookmarks.
 - [ ] Save reveal-line preference only if desired.
 
 #### Tests
 
-- [ ] Unit-test session transitions.
-- [ ] Playwright test: start session, click Next, position changes.
+- [x] Unit-test session transitions.
+- [x] Playwright test: start session, click Next, position changes.
 - [ ] Playwright test: Repeat Cue does not advance.
 - [ ] Playwright test: Hear My Line does not advance.
 - [ ] Playwright test: Back returns to previous line.
-- [ ] Playwright test: reload offers resume.
+- [x] Playwright test: reload offers resume.
 
 ### Acceptance Criteria
 
@@ -799,7 +799,7 @@ Initial internal defaults:
 - [x] App does not save audio.
 - [x] App does not transcribe audio.
 - [x] App releases microphone when timing is off.
-- [ ] Result is good enough to proceed to productized tempo timing, or the spike documents blockers.
+- [x] Result is good enough to proceed to productized tempo timing, or the spike documents blockers.
 
 ---
 
@@ -995,11 +995,11 @@ Make the web app reliable enough to share with real users for early testing.
 - [x] Playwright reload/resume path.
 - [x] Playwright invalid import path.
 - [x] Unit tests for domain/session/tempo.
-- [ ] Manual test with at least one realistic Playbook.
+- [x] Manual test with at least one realistic Playbook.
 
 ### Acceptance Criteria
 
-- [ ] App is good enough for a small group of real actors/testers.
+- [x] App is good enough for a small group of real actors/testers.
 - [x] Known limitations are documented.
 - [ ] No major architecture refactor is obviously required before Capacitor work.
 
