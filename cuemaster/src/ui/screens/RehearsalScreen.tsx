@@ -659,7 +659,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         {line ? (
           <div className="rehearsal-line-layout">
             <section className="cue-strip" aria-label="Cue">
-              <h2>Cue</h2>
               <div className="cue-strip-cards">
                 {cues.map((cue, index) => (
                   <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
@@ -680,8 +679,11 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                   Show my line
                 </label>
               </div>
-              {includeDirections && line.directions.length > 0 ? <StageDirections directions={line.directions} /> : null}
-              {isLineRevealed ? <LineCard line={line} /> : <article className="card hidden-line">Line hidden</article>}
+              {isLineRevealed ? (
+                <LineCard line={line} includeDirections={includeDirections} />
+              ) : (
+                <article className="card hidden-line">Line hidden</article>
+              )}
             </section>
           </div>
         ) : (
@@ -1042,16 +1044,6 @@ function ScriptBrowserPanel({
         </section>
       ))}
     </div>
-  );
-}
-
-function StageDirections({ directions }: { directions: Line["directions"] }) {
-  return (
-    <article className="card stage-directions" aria-label="Stage directions">
-      {directions.map((direction) => (
-        <p key={`${direction.segmentId}-${direction.placement}`}>{direction.text}</p>
-      ))}
-    </article>
   );
 }
 
