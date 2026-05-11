@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
+import { meterFillPercent } from "../audio/inputMeter";
 import { WavRecorder, type RecordedWav } from "../audio/wavRecorder";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
@@ -289,7 +290,7 @@ function MicrophoneSetup() {
       </div>
       <div className="meter-row">
         <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
-          <span style={{ width: `${Math.min(reading.energy * 140, 1) * 100}%` }} />
+          <span style={{ width: `${meterFillPercent(reading.energy)}%` }} />
         </div>
         <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
       </div>

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { classifyInputLevel, rootMeanSquareEnergy } from "../../src/audio/inputMeter";
+import { classifyInputLevel, meterFillPercent, rootMeanSquareEnergy } from "../../src/audio/inputMeter";
 
 describe("inputMeter", () => {
   it("calculates root mean square energy from byte samples", () => {
@@ -12,5 +12,12 @@ describe("inputMeter", () => {
     expect(classifyInputLevel(0.02)).toBe("too-quiet");
     expect(classifyInputLevel(0.1)).toBe("good");
     expect(classifyInputLevel(0.95)).toBe("clipping");
+  });
+
+  it("keeps quiet room noise visually low", () => {
+    expect(meterFillPercent(0)).toBe(0);
+    expect(meterFillPercent(0.02)).toBeCloseTo(12.5);
+    expect(meterFillPercent(0.08)).toBeCloseTo(50);
+    expect(meterFillPercent(0.2)).toBe(100);
   });
 });

@@ -21,3 +21,8 @@ export function classifyInputLevel(energy: number): InputLevel {
   }
   return "good";
 }
+
+export function meterFillPercent(energy: number): number {
+  const speechReferenceEnergy = 0.16;
+  return Math.max(0, Math.min(100, (energy / speechReferenceEnergy) * 100));
+}
