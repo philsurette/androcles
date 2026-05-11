@@ -11,7 +11,7 @@ from stager.shared import paths
 import typer
 
 from stager.audio.segment_build_service import SegmentBuildService
-from stager.verification.recording_checker import summarize as summarize_recordings
+from stager.verification.recording_checker import RecordingChecker
 from stager.audiobook.audio_play_build_service import AudioPlayBuildService
 from stager.audiobook.timing_build_service import TimingBuildService
 from stager.domain.play import Play, Part
@@ -212,7 +212,7 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
 
 @app.command("check-recording", rich_help_panel="verify")
 def check_recording(play: str | None = PLAY_OPTION) -> None:
-    """Check recordings against timings.csv to find missing segments."""
+    """Summarize missing and suspect split segments by role."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     run_check_recording(paths_config=cfg)
@@ -812,11 +812,7 @@ def run_segments(
 
 def run_check_recording(paths_config: paths.PathConfig | None = None):
     cfg = paths_config or paths.current()
-    timings_path = cfg.audio_out_dir / "timings.csv"
-    if not timings_path.exists():
-        typer.echo(f"{paths.display_path(timings_path)} not found; run verify first.")
-        raise typer.Exit(code=1)
-    for line in summarize_recordings(timings_path):
+    for line in RecordingChecker(paths=cfg).summarize():
         typer.echo(line)
 
 
