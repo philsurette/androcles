@@ -8,7 +8,7 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 - **Role**: The character or part you are rehearsing.
 - **Line**: A rehearsable segment for your selected role. Internally, Cuemaster may split audio into smaller segments, but the app presents them as lines.
 - **Cue**: The audio and text that prompts your next line. It may be another role, narration, or a heading.
-- **Speak Along**: Plays the cue, waits for the pickup target, then plays your reference line so you can speak with it.
+- **Speak-along practice**: A practice option that plays the cue, waits for the pickup target, then plays your reference line so you can speak with it.
 - **Tempo Timing**: Uses microphone energy to measure pickup time and delivery pace. It does not record, transcribe, save, or upload audio.
 
 ## Import A Playbook
@@ -34,7 +34,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Show lines by default** opens each line with your expected response visible, useful when you are first learning the role.
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
-- **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
+- **Speak-along practice** changes cue playback so Start, Repeat Cue, Previous, and Next play the cue, wait for the pickup target, then play your line at the selected response speed.
 - **Bookmark** marks the current line so you can find it again in Review.
 - **Stop** stops playback.
 - **Section** jumps to the first line for your role in the selected section.
@@ -52,7 +52,7 @@ Use **Cue length** to control how much of a long cue is played:
 - **Full cue** plays only the immediate cue that directly prompts your line.
 - **Last 2s**, **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** include as many preceding cues as needed to reach the selected length.
 
-Cue length applies to cue playback and Speak Along. When the selected length starts inside a preceding cue, Cuemaster snaps up to the next shared cue window so Stager-generated cue offsets can make the start more natural. This may play slightly more cue than the selected length.
+Cue length applies to cue playback and speak-along practice. When the selected length starts inside a preceding cue, Cuemaster snaps up to the next shared cue window so Stager-generated cue offsets can make the start more natural. This may play slightly more cue than the selected length.
 
 ## Response Speed
 

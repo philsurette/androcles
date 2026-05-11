@@ -384,10 +384,6 @@ button:disabled {
   display: none;
 }
 
-.speak-along-button {
-  margin-left: 0.25rem;
-}
-
 .session-settings {
   display: grid;
   gap: 1rem;

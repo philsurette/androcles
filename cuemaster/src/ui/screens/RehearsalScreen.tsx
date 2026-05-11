@@ -249,14 +249,24 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function playCue() {
+    const currentLine = engine.currentLine();
     setHasStarted(true);
-    setPlaybackStatus("Playing cue...");
+    setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
     try {
-      await audioQueue.play(cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId));
-      setPlaybackStatus("Cue complete.");
+      if (speakAlongEnabled && currentLine) {
+        await audioQueue.play(
+          speakAlongPlaybackItems(engine.cuePayloads(cueWindowPresetId), currentLine, playbackRate, cueWindowPresetId)
+        );
+        setPlaybackStatus("Speak-along complete.");
+      } else {
+        await audioQueue.play(cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId));
+        setPlaybackStatus("Cue complete.");
+      }
       setPlaybackState("idle");
-      beginTimedAttempt();
+      if (!speakAlongEnabled) {
+        beginTimedAttempt();
+      }
     } catch (error) {
       setPlaybackState("idle");
       setPlaybackStatus(userFacingErrorMessage(error));
@@ -272,23 +282,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     try {
       await audioQueue.play(responsePlaybackItems(line, playbackRate));
       setPlaybackStatus("Line complete.");
-      setPlaybackState("idle");
-    } catch (error) {
-      setPlaybackState("idle");
-      setPlaybackStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function speakAlong() {
-    if (!line) {
-      return;
-    }
-    setHasStarted(true);
-    setPlaybackStatus("Speak along: playing cue, then your line...");
-    setPlaybackState("playing");
-    try {
-      await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate, cueWindowPresetId));
-      setPlaybackStatus("Speak-along complete.");
       setPlaybackState("idle");
     } catch (error) {
       setPlaybackState("idle");
@@ -711,15 +704,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               <span aria-hidden="true" className="transport-icon">
                 ♫
               </span>
-            </button>
-            <button
-              type="button"
-              className="secondary speak-along-button"
-              aria-label="Speak along with the reference line."
-              onClick={() => void speakAlong()}
-              disabled={!line}
-            >
-              Speak Along
             </button>
           </div>
         </div>
