@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
+import type { TimingAttempt } from "../../domain/timingAttempt";
 import { AudioQueue } from "../../rehearsal/audioQueue";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
@@ -9,6 +10,7 @@ import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedb
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { sessionRepository } from "../../storage/sessionRepository";
+import { timingAttemptRepository } from "../../storage/timingAttemptRepository";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
 
@@ -36,6 +38,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingEnabled ?? false);
   const [tempoStatus, setTempoStatus] = useState<string>("");
   const [tempoFeedback, setTempoFeedback] = useState<TempoFeedback | null>(null);
+  const [lastTimingAttempt, setLastTimingAttempt] = useState<TimingAttempt | null>(null);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
@@ -49,6 +52,10 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       voiceActivityDetector?.stop();
     };
   }, [voiceActivityDetector]);
+
+  useEffect(() => {
+    void loadLastTimingAttempt();
+  }, [line?.id]);
 
   async function goNext() {
     engine.next();
@@ -71,6 +78,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   function updatePosition() {
     const nextPosition = engine.position();
     setPosition(nextPosition);
+    setTempoFeedback(null);
     void saveSession(nextPosition.index, playbackRate);
   }
 
@@ -209,9 +217,41 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     } else {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
       const deliveryMs = Math.round(result.deliveryMs ?? 0);
-      setTempoFeedback(tempoFeedbackFor(line, { hesitationMs, deliveryMs }));
+      const feedback = tempoFeedbackFor(line, { hesitationMs, deliveryMs });
+      setTempoFeedback(feedback);
+      void saveTimingAttempt(line.id, feedback);
       setTempoStatus("Timed attempt complete.");
     }
+  }
+
+  async function saveTimingAttempt(lineId: string, feedback: TempoFeedback) {
+    if (!feedback.delivery) {
+      return;
+    }
+    const attempt: TimingAttempt = {
+      id: crypto.randomUUID(),
+      playbookId: playbook.id,
+      roleId: role.id,
+      lineId,
+      createdAt: Date.now(),
+      hesitationMs: feedback.hesitation.measuredMs,
+      deliveryMs: feedback.delivery.measuredMs,
+      targetHesitationMs: feedback.hesitation.targetMs,
+      targetDeliveryMs: feedback.delivery.targetMs,
+      hesitationLabel: feedback.hesitation.label,
+      deliveryLabel: feedback.delivery.label,
+      detectionMode: "energy"
+    };
+    await timingAttemptRepository.save(attempt);
+    setLastTimingAttempt(attempt);
+  }
+
+  async function loadLastTimingAttempt() {
+    if (!line) {
+      setLastTimingAttempt(null);
+      return;
+    }
+    setLastTimingAttempt((await timingAttemptRepository.latestForLine(playbook.id, role.id, line.id)) ?? null);
   }
 
   return (
@@ -322,6 +362,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {tempoStatus ? <p className="status">{tempoStatus}</p> : null}
           {tempoFeedback ? <TempoFeedbackPanel feedback={tempoFeedback} /> : null}
+          {!tempoFeedback && lastTimingAttempt ? <TimingAttemptPanel attempt={lastTimingAttempt} /> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>
@@ -342,6 +383,20 @@ function TempoFeedbackPanel({ feedback }: { feedback: TempoFeedback }) {
           {feedback.delivery.label}.
         </p>
       ) : null}
+    </div>
+  );
+}
+
+function TimingAttemptPanel({ attempt }: { attempt: TimingAttempt }) {
+  return (
+    <div className="tempo-feedback">
+      <p>Last attempt:</p>
+      <p>
+        Pickup: {attempt.hesitationMs} ms target {attempt.targetHesitationMs} ms, {attempt.hesitationLabel}.
+      </p>
+      <p>
+        Delivery: {attempt.deliveryMs} ms target {attempt.targetDeliveryMs} ms, {attempt.deliveryLabel}.
+      </p>
     </div>
   );
 }

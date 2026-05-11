@@ -824,7 +824,7 @@ This is the third major useful milestone.
 - [x] Long silence ends the attempt.
 - [x] Final silence is subtracted from delivery time.
 - [x] Tempo feedback is shown.
-- [ ] Actor can then:
+- [x] Actor can then:
   - [x] hear line,
   - [x] try again,
   - [x] repeat cue,
@@ -855,11 +855,11 @@ This is the third major useful milestone.
 
 #### Storage
 
-- [ ] Store timing attempts locally.
-- [ ] Store hesitation and delivery separately.
-- [ ] Store target values used at the time.
-- [ ] Store detection mode.
-- [ ] Limit history size if necessary.
+- [x] Store timing attempts locally.
+- [x] Store hesitation and delivery separately.
+- [x] Store target values used at the time.
+- [x] Store detection mode.
+- [x] Limit history size if necessary.
 
 #### Tests
 
@@ -875,7 +875,7 @@ This is the third major useful milestone.
 - [x] Actor can complete a timed attempt after hearing a cue.
 - [x] App reports hesitation and delivery pace separately.
 - [x] App uses line-specific target hesitation when available.
-- [ ] App stores local timing history.
+- [x] App stores local timing history.
 - [x] App remains useful if timing is disabled.
 
 ---
@@ -888,8 +888,8 @@ Let the actor see which lines need work, without building a full analytics produ
 
 ### Checklist
 
-- [ ] Add simple timing history per line.
-- [ ] Show last attempt on Session screen.
+- [x] Add simple timing history per line.
+- [x] Show last attempt on Session screen.
 - [ ] Show recent attempts for current line.
 - [ ] Add basic Tempo Review screen.
 - [ ] List lines with late pickup.
