@@ -15,6 +15,14 @@ npm install
 npm run dev
 ```
 
+## Static Deployment Build
+
+```sh
+npm run build:static
+```
+
+This writes a static deployment bundle to `dist/` with relative asset paths so it can be hosted from either a GitHub Pages user site or project subpath.
+
 ## Key Boundaries
 
 - `src/specs/`: Playbook manifest contract and validation.
