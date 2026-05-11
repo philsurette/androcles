@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Playbook } from "../domain/playbook";
 import type { Role } from "../domain/role";
 import type { RehearsalSession } from "../domain/session";
+import { defaultTargetHesitationMs } from "../rehearsal/tempoTimingConfig";
 import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { LibraryScreen } from "../ui/screens/LibraryScreen";
 import { RehearsalScreen } from "../ui/screens/RehearsalScreen";
@@ -88,6 +89,10 @@ export function App() {
         cueWindowPresetId: savedSession?.cueWindowPresetId ?? "full",
         playbackRate: savedSession?.playbackRate ?? 1,
         speakAlongEnabled: savedSession?.speakAlongEnabled ?? false,
+        speakAlongPauseMs: savedSession?.speakAlongPauseMs ?? defaultTargetHesitationMs,
+        tempoTargetHesitationMs:
+          savedSession?.tempoTargetHesitationMs ?? savedSession?.speakAlongPauseMs ?? defaultTargetHesitationMs,
+        syncPracticeTiming: savedSession?.syncPracticeTiming ?? true,
         tempoTimingPreferred: savedSession?.tempoTimingPreferred ?? false,
         updatedAt: savedSession?.updatedAt ?? Date.now()
       };

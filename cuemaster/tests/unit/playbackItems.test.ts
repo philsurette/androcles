@@ -112,4 +112,12 @@ describe("playbackItems", () => {
       { kind: "audio", path: "audio/response.wav", playbackRate: 0.8 }
     ]);
   });
+
+  it("uses explicit speak-along pause when supplied", () => {
+    expect(speakAlongPlaybackItems([cue], line, 0.8, "full", 1000)).toEqual([
+      { kind: "audio", path: "audio/cue.wav", playbackRate: 1 },
+      { kind: "delay", durationMs: 1000 },
+      { kind: "audio", path: "audio/response.wav", playbackRate: 0.8 }
+    ]);
+  });
 });

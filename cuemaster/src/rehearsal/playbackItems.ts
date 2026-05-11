@@ -24,11 +24,12 @@ export function speakAlongPlaybackItems(
   cues: Cue[],
   line: Line,
   playbackRate: number,
-  cueWindowPresetId = "full"
+  cueWindowPresetId = "full",
+  pauseMs = timingTargetsForLine(line).targetHesitationMs
 ): QueueItem[] {
   return [
     ...cuePlaybackItems(cues, cueWindowPresetId),
-    { kind: "delay", durationMs: timingTargetsForLine(line).targetHesitationMs },
+    { kind: "delay", durationMs: pauseMs },
     ...responsePlaybackItems(line, playbackRate)
   ];
 }

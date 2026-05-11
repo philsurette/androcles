@@ -8,7 +8,7 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 - **Role**: The character or part you are rehearsing.
 - **Line**: A rehearsable segment for your selected role. Internally, Cuemaster may split audio into smaller segments, but the app presents them as lines.
 - **Cue**: The audio and text that prompts your next line. It may be another role, narration, or a heading.
-- **Speak-along practice**: A practice option that plays the cue, waits for the pickup target, then plays your reference line so you can speak with it.
+- **Speak-along practice**: A practice option that plays the cue, waits for the speak-along pause, then plays your reference line so you can speak with it.
 - **Tempo Timing**: Uses microphone energy to measure pickup time and delivery pace. It does not record, transcribe, save, or upload audio.
 
 ## Import A Playbook
@@ -34,13 +34,16 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Show lines by default** opens each line with your expected response visible, useful when you are first learning the role.
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
-- **Speak-along practice** changes cue playback so Start, Repeat Cue, Previous, and Next play the cue, wait for the pickup target, then play your line at the selected response speed.
+- **Speak-along practice** changes cue playback so Start, Repeat Cue, Previous, and Next play the cue, wait for the speak-along pause, then play your line at the selected response speed.
+- **Speak-along pause** controls the delay between cue playback and reference-line playback during speak-along practice.
+- **Tempo pickup target** controls the pickup timing Cuemaster uses to label tempo attempts as sharp, close, or late.
+- **Keep timing targets in sync** changes both timing values together, which is usually what you want while rehearsing.
 - **Bookmark** marks the current line so you can find it again in Review.
 - **Stop** stops playback.
 - **Section** jumps to the first line for your role in the selected section.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
-Your current role, line position, cue length, stage-direction preference, line visibility preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+Your current role, line position, cue length, stage-direction preference, line visibility preference, playback speed, practice timing preferences, bookmarks, and timing history are saved locally.
 
 If you choose a section from **Start at** on the role screen, Cuemaster starts at the first line for that role in the selected section. Leave it on **Resume saved position / beginning** to continue from saved progress.
 

@@ -19,9 +19,9 @@ export type TempoFeedback = {
   };
 };
 
-export function timingTargetsForLine(line: Line): TempoTimingTargets {
+export function timingTargetsForLine(line: Line, targetHesitationMs = line.timing?.targetHesitationMs ?? defaultTargetHesitationMs): TempoTimingTargets {
   return {
-    targetHesitationMs: line.timing?.targetHesitationMs ?? defaultTargetHesitationMs,
+    targetHesitationMs,
     targetDeliveryMs: line.responseSegments.reduce((total, segment) => total + segment.durationMs, 0)
   };
 }
@@ -51,9 +51,10 @@ export function deliveryLabel(measuredMs: number, targetMs: number): NonNullable
 
 export function tempoFeedbackFor(
   line: Line,
-  measured: { hesitationMs: number; deliveryMs?: number }
+  measured: { hesitationMs: number; deliveryMs?: number },
+  targetHesitationMs?: number
 ): TempoFeedback {
-  const targets = timingTargetsForLine(line);
+  const targets = timingTargetsForLine(line, targetHesitationMs);
   return {
     hesitation: {
       measuredMs: measured.hesitationMs,

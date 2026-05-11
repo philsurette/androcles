@@ -14,6 +14,9 @@ describe("RehearsalSession", () => {
       cueWindowPresetId: "full",
       playbackRate: 1,
       speakAlongEnabled: false,
+      speakAlongPauseMs: 750,
+      tempoTargetHesitationMs: 750,
+      syncPracticeTiming: true,
       tempoTimingPreferred: true,
       updatedAt: 1000
     };

@@ -156,6 +156,9 @@ function session(playbookId: string, roleId: string, lineIndex: number): Rehears
     cueWindowPresetId: "full",
     playbackRate: 1,
     speakAlongEnabled: false,
+    speakAlongPauseMs: 750,
+    tempoTargetHesitationMs: 750,
+    syncPracticeTiming: true,
     tempoTimingPreferred: false,
     updatedAt: 1000
   };

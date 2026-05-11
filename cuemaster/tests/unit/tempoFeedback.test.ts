@@ -69,4 +69,11 @@ describe("tempoFeedback", () => {
       delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
     });
   });
+
+  it("uses explicit tempo pickup target when supplied", () => {
+    expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 2400 }, 500)).toEqual({
+      hesitation: { measuredMs: 600, targetMs: 500, label: "close" },
+      delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
+    });
+  });
 });

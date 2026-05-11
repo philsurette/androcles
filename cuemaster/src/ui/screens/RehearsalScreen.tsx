@@ -14,6 +14,7 @@ import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { sectionOptionsForRole } from "../../rehearsal/sectionOptions";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
@@ -56,6 +57,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
+  const [speakAlongPauseMs, setSpeakAlongPauseMs] = useState(
+    initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
+  );
+  const [tempoTargetHesitationMs, setTempoTargetHesitationMs] = useState(
+    initialSession?.tempoTargetHesitationMs ?? initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
+  );
+  const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoStatus, setTempoStatus] = useState<string>(
@@ -224,7 +232,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextRevealLine = isLineRevealed,
     nextCueWindowPresetId = cueWindowPresetId,
     nextIncludeDirections = includeDirections,
-    nextShowLinesByDefault = showLinesByDefault
+    nextShowLinesByDefault = showLinesByDefault,
+    nextSpeakAlongPauseMs = speakAlongPauseMs,
+    nextTempoTargetHesitationMs = tempoTargetHesitationMs,
+    nextSyncPracticeTiming = syncPracticeTiming
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -238,6 +249,9 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         cueWindowPresetId: nextCueWindowPresetId,
         playbackRate: nextPlaybackRate,
         speakAlongEnabled: nextSpeakAlongEnabled,
+        speakAlongPauseMs: nextSpeakAlongPauseMs,
+        tempoTargetHesitationMs: nextTempoTargetHesitationMs,
+        syncPracticeTiming: nextSyncPracticeTiming,
         tempoTimingPreferred: nextTempoTimingPreferred,
         updatedAt: Date.now()
       });
@@ -255,7 +269,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     try {
       if (speakAlongEnabled && currentLine) {
         await audioQueue.play(
-          speakAlongPlaybackItems(engine.cuePayloads(cueWindowPresetId), currentLine, playbackRate, cueWindowPresetId)
+          speakAlongPlaybackItems(
+            engine.cuePayloads(cueWindowPresetId),
+            currentLine,
+            playbackRate,
+            cueWindowPresetId,
+            speakAlongPauseMs
+          )
         );
         setPlaybackStatus("Speak-along complete.");
       } else {
@@ -323,6 +343,67 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const preset = cueWindowPresetForId(nextCueWindowPresetId);
     setCueWindowPresetId(preset.id);
     void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, isLineRevealed, preset.id);
+  }
+
+  function changeSpeakAlongPauseMs(nextPauseMs: number) {
+    setSpeakAlongPauseMs(nextPauseMs);
+    const nextTempoTargetMs = syncPracticeTiming ? nextPauseMs : tempoTargetHesitationMs;
+    if (syncPracticeTiming) {
+      setTempoTargetHesitationMs(nextTempoTargetMs);
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      nextPauseMs,
+      nextTempoTargetMs
+    );
+  }
+
+  function changeTempoTargetHesitationMs(nextTargetMs: number) {
+    setTempoTargetHesitationMs(nextTargetMs);
+    const nextSpeakAlongPauseMs = syncPracticeTiming ? nextTargetMs : speakAlongPauseMs;
+    if (syncPracticeTiming) {
+      setSpeakAlongPauseMs(nextSpeakAlongPauseMs);
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      nextSpeakAlongPauseMs,
+      nextTargetMs
+    );
+  }
+
+  function changeSyncPracticeTiming(nextSyncPracticeTiming: boolean) {
+    setSyncPracticeTiming(nextSyncPracticeTiming);
+    const nextTempoTargetMs = nextSyncPracticeTiming ? speakAlongPauseMs : tempoTargetHesitationMs;
+    if (nextSyncPracticeTiming) {
+      setTempoTargetHesitationMs(nextTempoTargetMs);
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      nextTempoTargetMs,
+      nextSyncPracticeTiming
+    );
   }
 
   function toggleLineReveal() {
@@ -419,7 +500,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     } else {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
       const deliveryMs = Math.round(result.deliveryMs ?? 0);
-      const feedback = tempoFeedbackFor(line, { hesitationMs, deliveryMs });
+      const feedback = tempoFeedbackFor(line, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
       setTempoFeedback(feedback);
       void saveTimingAttempt(line.id, feedback);
       setTempoStatus("Timed attempt complete.");
@@ -829,6 +910,41 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       />
                       Enable Tempo Timing
                     </label>
+                    <label className="timing-setting">
+                      Speak-along pause
+                      <select
+                        value={speakAlongPauseMs}
+                        onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}
+                      >
+                        {practiceTimingOptionsMs.map((optionMs) => (
+                          <option key={optionMs} value={optionMs}>
+                            {formatTimingOption(optionMs)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="timing-setting">
+                      Tempo pickup target
+                      <select
+                        value={tempoTargetHesitationMs}
+                        disabled={syncPracticeTiming}
+                        onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
+                      >
+                        {practiceTimingOptionsMs.map((optionMs) => (
+                          <option key={optionMs} value={optionMs}>
+                            {formatTimingOption(optionMs)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
+                        checked={syncPracticeTiming}
+                        onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
+                      />
+                      🔒 Keep timing targets in sync
+                    </label>
                     <p className="status">
                       Tempo timing uses microphone energy only: no recording, no transcription, no upload.
                     </p>
@@ -1063,6 +1179,11 @@ function currentRoleSectionId(
 const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
+const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
+
+function formatTimingOption(optionMs: number): string {
+  return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;
+}
 
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;

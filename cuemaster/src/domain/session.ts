@@ -9,6 +9,9 @@ export type RehearsalSession = {
   cueWindowPresetId: string;
   playbackRate: number;
   speakAlongEnabled: boolean;
+  speakAlongPauseMs: number;
+  tempoTargetHesitationMs: number;
+  syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
   updatedAt: number;
 };
