@@ -661,9 +661,9 @@ This is the second major useful milestone.
 
 - [x] Unit-test session transitions.
 - [x] Playwright test: start session, click Next, position changes.
-- [ ] Playwright test: Repeat Cue does not advance.
-- [ ] Playwright test: Hear My Line does not advance.
-- [ ] Playwright test: Back returns to previous line.
+- [x] Playwright test: Repeat Cue does not advance.
+- [x] Playwright test: Hear My Line does not advance.
+- [x] Playwright test: Back returns to previous line.
 - [x] Playwright test: reload offers resume.
 
 ### Acceptance Criteria
