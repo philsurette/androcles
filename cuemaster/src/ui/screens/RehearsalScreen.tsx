@@ -30,6 +30,7 @@ type RehearsalScreenProps = {
 };
 
 type PlaybackUiState = "idle" | "playing" | "paused";
+type UtilityPanel = "script" | "options" | "review";
 
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
@@ -69,8 +70,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
-  const [isScriptBrowserOpen, setIsScriptBrowserOpen] = useState(false);
-  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [activeUtilityPanel, setActiveUtilityPanel] = useState<UtilityPanel | null>(null);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
@@ -182,8 +182,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
-    setIsScriptBrowserOpen(false);
-    setIsReviewOpen(false);
+    setActiveUtilityPanel(null);
   }
 
   async function jumpToSection(sectionId: string) {
@@ -540,9 +539,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
   }
 
-  async function setReviewVisibility(nextIsOpen: boolean) {
-    setIsReviewOpen(nextIsOpen);
-    if (nextIsOpen) {
+  async function showUtilityPanel(panel: UtilityPanel) {
+    const nextPanel = activeUtilityPanel === panel ? null : panel;
+    setActiveUtilityPanel(nextPanel);
+    if (nextPanel === "review") {
       await loadReviewAttempts();
     }
   }
@@ -759,80 +759,101 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbackStatus}
             </p>
           ) : null}
-          <div className="utility-panel">
-            <details className="utility-disclosure">
-              <summary>Practice Options</summary>
-              <div className="practice-options-panel">
-                <label className="check-setting">
-                  <input
-                    type="checkbox"
-                    checked={speakAlongEnabled}
-                    disabled={tempoTimingEnabled}
-                    onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
+          <div className="utility-drawer">
+            <div className="utility-tabs" aria-label="Rehearsal utilities">
+              <button
+                type="button"
+                className={activeUtilityPanel === "script" ? "utility-tab active" : "utility-tab"}
+                aria-pressed={activeUtilityPanel === "script"}
+                onClick={() => void showUtilityPanel("script")}
+              >
+                Script
+              </button>
+              <button
+                type="button"
+                className={activeUtilityPanel === "options" ? "utility-tab active" : "utility-tab"}
+                aria-pressed={activeUtilityPanel === "options"}
+                onClick={() => void showUtilityPanel("options")}
+              >
+                Options
+              </button>
+              <button
+                type="button"
+                className={activeUtilityPanel === "review" ? "utility-tab active" : "utility-tab"}
+                aria-pressed={activeUtilityPanel === "review"}
+                onClick={() => void showUtilityPanel("review")}
+              >
+                Review
+              </button>
+            </div>
+            {activeUtilityPanel ? (
+              <div className="utility-content">
+                {activeUtilityPanel === "options" ? (
+                  <div className="practice-options-panel">
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
+                        checked={speakAlongEnabled}
+                        disabled={tempoTimingEnabled}
+                        onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
+                      />
+                      Speak-along practice
+                    </label>
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
+                        checked={includeDirections}
+                        onChange={(event) => changeIncludeDirections(event.target.checked)}
+                      />
+                      Show stage directions
+                    </label>
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
+                        checked={showLinesByDefault}
+                        onChange={(event) => changeShowLinesByDefault(event.target.checked)}
+                      />
+                      Show lines by default
+                    </label>
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
+                        checked={tempoTimingEnabled}
+                        onChange={(event) => {
+                          if (event.target.checked) {
+                            void enableTempoTiming();
+                          } else {
+                            void disableTempoTiming();
+                          }
+                        }}
+                      />
+                      Enable Tempo Timing
+                    </label>
+                    <p className="status">
+                      Tempo timing uses microphone energy only: no recording, no transcription, no upload.
+                    </p>
+                  </div>
+                ) : null}
+                {activeUtilityPanel === "script" ? (
+                  <ScriptBrowserPanel
+                    currentLineId={line?.id ?? null}
+                    includeDirections={includeDirections}
+                    lines={role.lines}
+                    sections={playbook.sections}
+                    onSelectLine={(lineId) => void jumpToLine(lineId)}
                   />
-                  Speak-along practice
-                </label>
-                <label className="check-setting">
-                  <input
-                    type="checkbox"
-                    checked={includeDirections}
-                    onChange={(event) => changeIncludeDirections(event.target.checked)}
-                  />
-                  Show stage directions
-                </label>
-                <label className="check-setting">
-                  <input
-                    type="checkbox"
-                    checked={showLinesByDefault}
-                    onChange={(event) => changeShowLinesByDefault(event.target.checked)}
-                  />
-                  Show lines by default
-                </label>
-                <label className="check-setting">
-                  <input
-                    type="checkbox"
-                    checked={tempoTimingEnabled}
-                    onChange={(event) => {
-                      if (event.target.checked) {
-                        void enableTempoTiming();
-                      } else {
-                        void disableTempoTiming();
-                      }
-                    }}
-                  />
-                  Enable Tempo Timing
-                </label>
-                <p className="status">
-                  Tempo timing uses microphone energy only: no recording, no transcription, no upload.
-                </p>
-              </div>
-            </details>
-            <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
-              {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
-            </button>
-            <details
-              className="utility-disclosure"
-              open={isReviewOpen}
-              onToggle={(event) => void setReviewVisibility(event.currentTarget.open)}
-            >
-              <summary>Review</summary>
+                ) : null}
+                {activeUtilityPanel === "review" ? (
               <ReviewPanel
                 attempts={reviewAttempts}
                 bookmarks={bookmarks}
                 role={role}
                 onSelectLine={(lineId) => void jumpToLine(lineId)}
               />
-            </details>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-          {isScriptBrowserOpen ? (
-            <ScriptBrowserPanel
-              currentLineId={line?.id ?? null}
-              includeDirections={includeDirections}
-              lines={role.lines}
-              sections={playbook.sections}
-              onSelectLine={(lineId) => void jumpToLine(lineId)}
-            />
-          ) : null}
         </div>
       </section>
     </main>
