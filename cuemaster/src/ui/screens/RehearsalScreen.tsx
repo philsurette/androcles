@@ -5,7 +5,9 @@ import type { RehearsalSession } from "../../domain/session";
 import { AudioQueue } from "../../rehearsal/audioQueue";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
+import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
+import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { sessionRepository } from "../../storage/sessionRepository";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
@@ -33,6 +35,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingEnabled ?? false);
   const [tempoStatus, setTempoStatus] = useState<string>("");
+  const [tempoFeedback, setTempoFeedback] = useState<TempoFeedback | null>(null);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
@@ -95,6 +98,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     try {
       await audioQueue.play(cuePlaybackItems(cues));
       setPlaybackStatus("Cue complete.");
+      beginTimedAttempt();
     } catch (error) {
       setPlaybackStatus(error instanceof Error ? error.message : "Cue playback failed.");
     }
@@ -130,6 +134,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   function stopPlayback() {
     audioQueue.cancel();
     setPlaybackStatus("Playback stopped.");
+    setTempoStatus(tempoTimingEnabled ? "Tempo timing is idle." : tempoStatus);
   }
 
   function changePlaybackRate(nextPlaybackRate: number) {
@@ -160,13 +165,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
 
   async function enableTempoTiming() {
     setTempoStatus("Requesting microphone permission...");
-    const detector = new VoiceActivityDetector((result) => {
-      if (result.event === "speech-started") {
-        setTempoStatus(`Speech detected after ${result.hesitationMs} ms.`);
-      } else {
-        setTempoStatus(`Delivery ended after ${result.deliveryMs} ms.`);
-      }
-    });
+    const detector = new VoiceActivityDetector(handleVoiceActivity);
 
     try {
       await detector.start();
@@ -174,7 +173,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       setVoiceActivityDetector(detector);
       setTempoTimingEnabled(true);
       setSpeakAlongEnabled(false);
-      setTempoStatus("Tempo timing enabled. Audio is not recorded, transcribed, saved, or uploaded.");
+      setTempoStatus("Tempo timing enabled. Press Start or Repeat Cue to time an attempt.");
       await saveSession(position.index, playbackRate, false, true);
     } catch (error) {
       detector.stop();
@@ -189,6 +188,30 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     setTempoTimingEnabled(false);
     setTempoStatus(message);
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
+  }
+
+  function beginTimedAttempt() {
+    if (!tempoTimingEnabled || !voiceActivityDetector) {
+      return;
+    }
+    setTempoFeedback(null);
+    setTempoStatus("Listening for your pickup...");
+    voiceActivityDetector.beginAttempt();
+  }
+
+  function handleVoiceActivity(result: VoiceActivityResult) {
+    if (!line) {
+      return;
+    }
+    if (result.event === "speech-started") {
+      const hesitationMs = Math.round(result.hesitationMs ?? 0);
+      setTempoStatus(`Pickup detected after ${hesitationMs} ms. Continue speaking; pause when finished.`);
+    } else {
+      const hesitationMs = Math.round(result.hesitationMs ?? 0);
+      const deliveryMs = Math.round(result.deliveryMs ?? 0);
+      setTempoFeedback(tempoFeedbackFor(line, { hesitationMs, deliveryMs }));
+      setTempoStatus("Timed attempt complete.");
+    }
   }
 
   return (
@@ -298,10 +321,28 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           </div>
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {tempoStatus ? <p className="status">{tempoStatus}</p> : null}
+          {tempoFeedback ? <TempoFeedbackPanel feedback={tempoFeedback} /> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>
     </main>
+  );
+}
+
+function TempoFeedbackPanel({ feedback }: { feedback: TempoFeedback }) {
+  return (
+    <div className="tempo-feedback">
+      <p>
+        Pickup: {feedback.hesitation.measuredMs} ms target {feedback.hesitation.targetMs} ms,{" "}
+        {feedback.hesitation.label}.
+      </p>
+      {feedback.delivery ? (
+        <p>
+          Delivery: {feedback.delivery.measuredMs} ms target {feedback.delivery.targetMs} ms,{" "}
+          {feedback.delivery.label}.
+        </p>
+      ) : null}
+    </div>
   );
 }
 

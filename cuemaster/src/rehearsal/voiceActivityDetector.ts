@@ -7,6 +7,7 @@ export class VoiceActivityDetector {
   private analyser: AnalyserNode | null = null;
   private stream: MediaStream | null = null;
   private animationFrameId: number | null = null;
+  private isTracking = false;
   private readonly tracker: VoiceActivityTracker;
 
   constructor(
@@ -24,8 +25,12 @@ export class VoiceActivityDetector {
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 1024;
     source.connect(this.analyser);
-    this.tracker.start(performance.now());
     this.readEnergy();
+  }
+
+  beginAttempt(): void {
+    this.isTracking = true;
+    this.tracker.start(performance.now());
   }
 
   stop(): void {
@@ -35,6 +40,7 @@ export class VoiceActivityDetector {
     }
     this.stream?.getTracks().forEach((track) => track.stop());
     this.stream = null;
+    this.isTracking = false;
     void this.audioContext?.close();
     this.audioContext = null;
     this.analyser = null;
@@ -48,7 +54,10 @@ export class VoiceActivityDetector {
     const samples = new Uint8Array(this.analyser.fftSize);
     this.analyser.getByteTimeDomainData(samples);
     const energy = rootMeanSquareEnergy(samples);
-    const result = this.tracker.observe(energy, performance.now());
+    const result = this.isTracking ? this.tracker.observe(energy, performance.now()) : null;
+    if (result?.event === "delivery-ended") {
+      this.isTracking = false;
+    }
     if (result) {
       this.onActivity(result);
     }

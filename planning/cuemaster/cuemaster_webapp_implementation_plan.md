@@ -815,43 +815,43 @@ This is the third major useful milestone.
 
 #### Timing flow
 
-- [ ] Cue plays at `1.0x`.
-- [ ] Microphone opens immediately after cue ends.
-- [ ] Hesitation timer starts immediately when cue ends.
-- [ ] First detected speech stops hesitation timer.
-- [ ] First detected speech starts delivery timer.
-- [ ] Short pauses are treated as part of delivery.
-- [ ] Long silence ends the attempt.
-- [ ] Final silence is subtracted from delivery time.
-- [ ] Tempo feedback is shown.
+- [x] Cue plays at `1.0x`.
+- [x] Microphone timing starts immediately after cue ends.
+- [x] Hesitation timer starts immediately when cue ends.
+- [x] First detected speech stops hesitation timer.
+- [x] First detected speech starts delivery timer.
+- [x] Short pauses are treated as part of delivery.
+- [x] Long silence ends the attempt.
+- [x] Final silence is subtracted from delivery time.
+- [x] Tempo feedback is shown.
 - [ ] Actor can then:
-  - [ ] hear line,
-  - [ ] try again,
-  - [ ] repeat cue,
-  - [ ] next,
-  - [ ] back.
+  - [x] hear line,
+  - [x] try again,
+  - [x] repeat cue,
+  - [x] next,
+  - [x] back.
 
 #### Target values
 
-- [ ] Use line-specific `timing.target_hesitation_ms` when present.
-- [ ] Fall back to default target hesitation, initially `500ms`.
-- [ ] Use Playbook response audio duration as target delivery duration.
-- [ ] If response has multiple segments, sum their durations.
-- [ ] Handle missing duration gracefully.
+- [x] Use line-specific `timing.target_hesitation_ms` when present.
+- [x] Fall back to default target hesitation, initially `500ms`.
+- [x] Use Playbook response audio duration as target delivery duration.
+- [x] If response has multiple segments, sum their durations.
+- [x] Handle missing duration gracefully.
 
 #### Feedback
 
-- [ ] Show hesitation:
-  - [ ] measured pickup time,
-  - [ ] target pickup time,
-  - [ ] sharp/close/late label.
-- [ ] Show delivery:
-  - [ ] measured delivery time,
-  - [ ] Playbook target duration,
-  - [ ] pace relative to target,
-  - [ ] fast/close/slow label.
-- [ ] Avoid acting-quality language.
-- [ ] Keep feedback readable and nonjudgmental.
+- [x] Show hesitation:
+  - [x] measured pickup time,
+  - [x] target pickup time,
+  - [x] sharp/close/late label.
+- [x] Show delivery:
+  - [x] measured delivery time,
+  - [x] Playbook target duration,
+  - [x] pace relative to target,
+  - [x] fast/close/slow label.
+- [x] Avoid acting-quality language.
+- [x] Keep feedback readable and nonjudgmental.
 
 #### Storage
 
@@ -863,20 +863,20 @@ This is the third major useful milestone.
 
 #### Tests
 
-- [ ] Unit-test tempo calculations.
-- [ ] Unit-test hesitation target fallback.
-- [ ] Unit-test multi-segment duration sum.
-- [ ] Unit-test result labels.
-- [ ] Mock VAD tests for timing state transitions.
+- [x] Unit-test tempo calculations.
+- [x] Unit-test hesitation target fallback.
+- [x] Unit-test multi-segment duration sum.
+- [x] Unit-test result labels.
+- [x] Mock VAD tests for timing state transitions.
 - [ ] Playwright/manual test for real microphone timing.
 
 ### Acceptance Criteria
 
-- [ ] Actor can complete a timed attempt after hearing a cue.
-- [ ] App reports hesitation and delivery pace separately.
-- [ ] App uses line-specific target hesitation when available.
+- [x] Actor can complete a timed attempt after hearing a cue.
+- [x] App reports hesitation and delivery pace separately.
+- [x] App uses line-specific target hesitation when available.
 - [ ] App stores local timing history.
-- [ ] App remains useful if timing is disabled.
+- [x] App remains useful if timing is disabled.
 
 ---
 

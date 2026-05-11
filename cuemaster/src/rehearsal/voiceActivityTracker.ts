@@ -51,6 +51,7 @@ export class VoiceActivityTracker {
       return {
         event: "delivery-ended",
         atMs,
+        hesitationMs: this.firstSpeechAtMs - this.startedAtMs,
         deliveryMs: this.lastSpeechAtMs - this.firstSpeechAtMs
       };
     }

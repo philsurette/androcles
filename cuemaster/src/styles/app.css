@@ -236,6 +236,16 @@ button:disabled {
   gap: 0.5rem;
 }
 
+.tempo-feedback {
+  border-radius: 1rem;
+  background: rgba(86, 125, 81, 0.14);
+  padding: 1rem;
+}
+
+.tempo-feedback p {
+  margin: 0.25rem 0;
+}
+
 @media (max-width: 760px) {
   .rehearsal-grid {
     grid-template-columns: 1fr;

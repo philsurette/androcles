@@ -35,6 +35,7 @@ describe("VoiceActivityTracker", () => {
     expect(tracker.observe(0.01, 2400)).toEqual({
       event: "delivery-ended",
       atMs: 2400,
+      hesitationMs: 100,
       deliveryMs: 800
     });
   });
