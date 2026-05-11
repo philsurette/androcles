@@ -178,6 +178,12 @@ button:disabled {
   line-height: 1.45;
 }
 
+.hidden-line {
+  color: var(--quiet);
+  font-size: 1.25rem;
+  font-style: italic;
+}
+
 .speaker {
   color: var(--accent);
   font-size: 0.8rem;

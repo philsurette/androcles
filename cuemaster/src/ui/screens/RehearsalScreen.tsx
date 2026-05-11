@@ -26,6 +26,8 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(initialSession?.playbackRate ?? 1);
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
+  const [isLineRevealed, setIsLineRevealed] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
 
@@ -33,14 +35,22 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     void saveSession(engine.position().index);
   }, []);
 
-  function goNext() {
+  async function goNext() {
     engine.next();
     updatePosition();
+    setIsLineRevealed(false);
+    if (hasStarted) {
+      await playCue();
+    }
   }
 
-  function goPrevious() {
+  async function goPrevious() {
     engine.previous();
     updatePosition();
+    setIsLineRevealed(false);
+    if (hasStarted) {
+      await playCue();
+    }
   }
 
   function updatePosition() {
@@ -61,6 +71,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   }
 
   async function playCue() {
+    setHasStarted(true);
     setPlaybackStatus("Playing cue...");
     try {
       await audioQueue.play(cues.map((cue) => ({ path: cue.audioPath, playbackRate: 1 })));
@@ -116,7 +127,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
 
             <section className="stack" aria-label="Your Line">
               <h2>Your Line</h2>
-              <LineCard line={line} />
+              {isLineRevealed ? <LineCard line={line} /> : <article className="card hidden-line">Line hidden</article>}
             </section>
           </div>
         ) : (
@@ -124,16 +135,19 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         )}
 
         <div className="transport">
-          <button type="button" className="secondary" disabled={position.atBeginning} onClick={goPrevious}>
+          <button type="button" onClick={() => void playCue()}>
+            {hasStarted ? "Repeat Cue" : "Start"}
+          </button>
+          <button type="button" className="secondary" disabled={position.atBeginning} onClick={() => void goPrevious()}>
             Previous
           </button>
-          <button type="button" onClick={() => void playCue()}>
-            Repeat Cue
+          <button type="button" className="secondary" disabled={!line} onClick={() => setIsLineRevealed(!isLineRevealed)}>
+            {isLineRevealed ? "Hide Line" : "Reveal Line"}
           </button>
           <button type="button" onClick={() => void playResponse()} disabled={!line}>
             Hear My Line
           </button>
-          <button type="button" disabled={position.atEnd} onClick={goNext}>
+          <button type="button" disabled={position.atEnd} onClick={() => void goNext()}>
             Next
           </button>
           <button type="button" className="secondary" onClick={stopPlayback}>

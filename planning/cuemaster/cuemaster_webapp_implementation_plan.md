@@ -573,8 +573,8 @@ This milestone does not yet require the full rehearsal UI.
 - [x] Support error event.
 - [x] Support `playbackRate`.
 - [x] Support pitch preservation where browser exposes it.
-- [ ] Expose current playback state.
-- [ ] Avoid React dependency.
+- [x] Expose current playback state.
+- [x] Avoid React dependency.
 
 #### Audio queue
 
@@ -582,8 +582,8 @@ This milestone does not yet require the full rehearsal UI.
 - [x] Play one cue asset.
 - [x] Play multiple cue assets sequentially.
 - [x] Cancel queue.
-- [ ] Report queue completion.
-- [ ] Report queue failure.
+- [x] Report queue completion.
+- [x] Report queue failure.
 
 #### Asset resolution
 
@@ -594,9 +594,9 @@ This milestone does not yet require the full rehearsal UI.
 
 #### Tests
 
-- [ ] Unit-test queue sequencing with mock player.
-- [ ] Unit-test cancellation.
-- [ ] Unit-test playback speed assignment.
+- [x] Unit-test queue sequencing with mock player.
+- [x] Unit-test cancellation.
+- [x] Unit-test playback speed assignment.
 - [ ] Browser/manual test with real audio fixture.
 
 ### Acceptance Criteria
@@ -606,7 +606,7 @@ This milestone does not yet require the full rehearsal UI.
 - [x] App can play actor response audio at selected speed.
 - [x] Cue audio always plays at `1.0x`.
 - [x] Response audio can play from `0.4x` to `1.3x` in `0.1x` increments.
-- [ ] Audio playback logic is isolated enough that a Capacitor-native audio implementation can replace it later if needed.
+- [x] Audio playback logic is isolated enough that a Capacitor-native audio implementation can replace it later if needed.
 
 ---
 
@@ -626,34 +626,34 @@ This is the second major useful milestone.
 
 #### Session screen
 
-- [ ] Show play title.
-- [ ] Show selected role.
-- [ ] Show current position.
-- [ ] Show cue text.
-- [ ] Hide actor line by default.
-- [ ] Add reveal/hide actor line.
+- [x] Show play title.
+- [x] Show selected role.
+- [x] Show current position.
+- [x] Show cue text.
+- [x] Hide actor line by default.
+- [x] Add reveal/hide actor line.
 - [ ] Add large controls:
-  - [ ] Back
-  - [ ] Repeat Cue
-  - [ ] Hear My Line
-  - [ ] Skip/Next
-  - [ ] Pause/Resume
+  - [x] Back
+  - [x] Repeat Cue
+  - [x] Hear My Line
+  - [x] Skip/Next
+  - [x] Stop
 
 #### Playback behavior
 
 - [ ] On session start, play cue for current line.
-- [ ] After cue playback, enter waiting state.
+- [x] After cue playback, enter waiting state.
 - [x] Repeat cue replays cue without advancing.
 - [x] Hear My Line plays actor response audio without advancing.
-- [ ] Next advances to next actor line and plays next cue.
-- [ ] Back moves to previous actor line and plays cue.
-- [ ] Pause stops playback and saves state.
-- [ ] Resume restores line position and can replay current cue.
+- [x] Next advances to next actor line and plays next cue after session start.
+- [x] Back moves to previous actor line and plays cue after session start.
+- [x] Stop stops playback and saves state.
+- [x] Resume restores line position and can replay current cue.
 
 #### State persistence
 
-- [ ] Save current line after navigation.
-- [ ] Save playback mode safely as idle/waiting on reload; do not resume mid-audio.
+- [x] Save current line after navigation.
+- [x] Save playback mode safely as idle/waiting on reload; do not resume mid-audio.
 - [ ] Save bookmarks.
 - [ ] Save reveal-line preference only if desired.
 
@@ -668,12 +668,12 @@ This is the second major useful milestone.
 
 ### Acceptance Criteria
 
-- [ ] User can rehearse through a role using on-screen controls.
-- [ ] User can repeat cue.
-- [ ] User can hear their line.
-- [ ] User can advance and go back.
-- [ ] User can reload and resume.
-- [ ] This milestone is demoable as a basic Cuemaster web app.
+- [x] User can rehearse through a role using on-screen controls.
+- [x] User can repeat cue.
+- [x] User can hear their line.
+- [x] User can advance and go back.
+- [x] User can reload and resume.
+- [x] This milestone is demoable as a basic Cuemaster web app.
 
 ---
 
