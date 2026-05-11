@@ -810,9 +810,24 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbackStatus}
             </p>
           ) : null}
-          <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
-            {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
-          </button>
+          <div className="session-actions">
+            <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
+              {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
+            </button>
+            <details
+              className="review-disclosure"
+              open={isReviewOpen}
+              onToggle={(event) => void setReviewVisibility(event.currentTarget.open)}
+            >
+              <summary>Review</summary>
+              <ReviewPanel
+                attempts={reviewAttempts}
+                bookmarks={bookmarks}
+                role={role}
+                onSelectLine={(lineId) => void jumpToLine(lineId)}
+              />
+            </details>
+          </div>
           {isScriptBrowserOpen ? (
             <ScriptBrowserPanel
               currentLineId={line?.id ?? null}
@@ -822,19 +837,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               onSelectLine={(lineId) => void jumpToLine(lineId)}
             />
           ) : null}
-          <details
-            className="review-disclosure"
-            open={isReviewOpen}
-            onToggle={(event) => void setReviewVisibility(event.currentTarget.open)}
-          >
-            <summary>Review</summary>
-            <ReviewPanel
-              attempts={reviewAttempts}
-              bookmarks={bookmarks}
-              role={role}
-              onSelectLine={(lineId) => void jumpToLine(lineId)}
-            />
-          </details>
         </div>
       </section>
     </main>

@@ -375,6 +375,18 @@ button:disabled {
   padding: 0.55rem 0.75rem;
 }
 
+.session-actions {
+  display: grid;
+  grid-template-columns: max-content minmax(14rem, 1fr);
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
+}
+
+.session-actions > button {
+  align-self: start;
+}
+
 .tempo-feedback {
   border-radius: 1rem;
   background: rgba(86, 125, 81, 0.14);
@@ -393,19 +405,39 @@ button:disabled {
 .review-disclosure {
   display: grid;
   gap: 1rem;
+  min-width: 0;
 }
 
 .review-disclosure summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  border-radius: 1rem;
+  background: rgba(30, 38, 31, 0.08);
   cursor: pointer;
   color: var(--ink);
   font-family: var(--display-font);
   font-size: 1.15rem;
   font-weight: 900;
-  list-style-position: inside;
+  list-style: none;
+  padding: 0.8rem 1.1rem;
 }
 
-.review-disclosure summary::marker {
+.review-disclosure summary::-webkit-details-marker {
+  display: none;
+}
+
+.review-disclosure summary::after {
   color: var(--accent);
+  content: "Show";
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.review-disclosure[open] summary::after {
+  content: "Hide";
 }
 
 .review-panel {
@@ -498,6 +530,14 @@ button:disabled {
 @media (max-width: 760px) {
   .rehearsal-grid {
     grid-template-columns: 1fr;
+  }
+
+  .session-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .session-actions > button {
+    justify-self: start;
   }
 
   .review-columns {
