@@ -269,7 +269,14 @@ Audio assets are represented consistently anywhere they appear:
 {
   "path": "audio/segments/MEGAERA/0_5_2.wav",
   "duration_ms": 2430,
-  "required": true
+  "required": true,
+  "cue_start_offsets": [
+    {
+      "requested_window_ms": 10000,
+      "start_ms": 1260,
+      "confidence": "boundary"
+    }
+  ]
 }
 ```
 
@@ -278,12 +285,28 @@ Fields:
 - `path`: Relative path from `manifest.json`.
 - `duration_ms`: Intended audible content duration in milliseconds, excluding codec/container padding.
 - `required`: Whether Playbook generation should fail if the asset is missing.
+- `cue_start_offsets`: Optional cue-start offsets for cue playback windows. This field is most useful on cue audio assets; response audio may omit it.
+
+Cue-start-offset fields:
+
+- `requested_window_ms`: Cue window, in milliseconds, from `planning/specs/cue_window_presets.json`.
+- `start_ms`: Milliseconds from the start of the asset's audible content timeline where playback should begin.
+- `confidence`: `exact`, `boundary`, or `fallback`.
+
+Cue-start-offset rules:
+
+- `cue_start_offsets` is optional for backward-compatible additive manifest changes.
+- `requested_window_ms` values must come from non-`null` `window_ms` values in `planning/specs/cue_window_presets.json`.
+- `start_ms` must satisfy `0 <= start_ms < duration_ms`.
+- `start_ms` is a content-timeline offset, not a codec/container timestamp.
+- Offsets must not alter `duration_ms`.
+- Stager should emit at most one offset per requested window per asset.
 
 For schema version 1, WAV remains the baseline segment asset format. Stager may add an explicit Playbook packaging option for MP3 assets as a storage/import optimization, but it must remain format-aware: manifest paths must use the encoded extension, `duration_ms` must preserve the source segment's audible content duration, and Cuemaster must consume assets through manifest paths rather than assuming `.wav`.
 
 For compressed assets, encoder delay or padding must not change rehearsal timing. Stager should validate that the packaged audio has not been materially clipped, stretched, or padded with audible silence, but should not treat MP3 frame/container duration drift as the actor-facing timing duration.
 
-A future manifest extension may add optional cue-start offsets to audio assets so Cuemaster can trim long cues near low-volume boundaries. The implementation plan is `planning/stager/cue_start_offsets.md`.
+Compressed packaging must validate, adjust, recompute, or omit `cue_start_offsets`; Stager must not assume offsets computed from source WAV samples are valid seek timestamps in a packaged compressed file. The implementation plan is `planning/stager/cue_start_offsets.md`.
 
 ## Stage Directions
 

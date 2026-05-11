@@ -36,37 +36,7 @@ When the actor chooses a max cue length:
 
 The Playbook manifest source of truth remains `planning/specs/playbook_manifest.md`.
 
-Recommended extension on `ManifestAudioAsset`:
-
-```json
-{
-  "path": "audio/segments/MEGAERA/0_5_2.wav",
-  "duration_ms": 2430,
-  "required": true,
-  "cue_start_offsets": [
-    {
-      "requested_window_ms": 5000,
-      "start_ms": 0,
-      "confidence": "exact"
-    }
-  ]
-}
-```
-
-Fields:
-
-- `requested_window_ms`: The user-facing target window this offset supports.
-- `start_ms`: Milliseconds from the start of the asset where playback should begin.
-- `confidence`: `exact`, `boundary`, or `fallback`.
-
-Rules:
-
-- `cue_start_offsets` is optional.
-- Offsets are useful for cue audio assets; response audio may omit them.
-- `start_ms` must satisfy `0 <= start_ms < duration_ms`.
-- `start_ms` is a content-timeline offset, not a codec/container timestamp.
-- Offsets must not alter `duration_ms`.
-- Stager should emit at most one offset per requested window per asset.
+Audio assets may include optional `cue_start_offsets` as defined in that spec. `requested_window_ms` values must come from the non-`null` `window_ms` values in `planning/specs/cue_window_presets.json`, so Stager and Cuemaster stay in sync without Stager emitting arbitrary word-boundary metadata.
 
 ## Compressed Audio Compatibility
 
@@ -122,6 +92,7 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 
 ### Phase 1: Contract And Dataclasses
 
+- [ ] Update `planning/specs/playbook_manifest.md` with the optional `cue_start_offsets` field on audio assets.
 - [ ] Add optional cue-start-offset dataclasses to the Playbook manifest model.
 - [ ] Allow `cue_start_offsets` in manifest JSON validation.
 - [ ] Add fixture tests proving existing manifests without offsets still validate.
