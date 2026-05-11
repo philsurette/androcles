@@ -42,10 +42,10 @@ Your current role, line position, cue length, line reveal preference, playback s
 
 Use **Cue length** to control how much of a long cue is played:
 
-- **Full cue** plays the whole cue.
-- **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** start near the end of the final cue audio item.
+- **Full cue** plays only the immediate cue that directly prompts your line.
+- **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** include as many preceding cues as needed to reach the selected length.
 
-Cue length applies to cue playback and Speak Along. Earlier cue-depth context still plays normally; the selected limit is applied only to the final cue that directly prompts your line.
+Cue length applies to cue playback and Speak Along. When the selected length starts inside a cue, Cuemaster starts near that point; Stager-generated cue offsets can make those starts more natural.
 
 ## Response Speed
 

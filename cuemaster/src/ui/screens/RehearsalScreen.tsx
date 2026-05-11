@@ -34,14 +34,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
-      cueDepth: clampCueDepth(initialSession?.cueDepth ?? 1),
       includeDirections: initialSession?.includeDirections
     })
   );
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
-  const [cueDepth, setCueDepth] = useState(clampCueDepth(initialSession?.cueDepth ?? 1));
   const [cueWindowPresetId, setCueWindowPresetId] = useState(
     cueWindowPresetForId(initialSession?.cueWindowPresetId).id
   );
@@ -68,7 +66,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
-  const cues = engine.cuePayloads();
+  const cues = engine.cuePayloads(cueWindowPresetId);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -209,7 +207,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextPlaybackRate = playbackRate,
     nextSpeakAlongEnabled = speakAlongEnabled,
     nextTempoTimingPreferred = tempoTimingPreferred,
-    nextCueDepth = cueDepth,
     nextRevealLine = isLineRevealed,
     nextCueWindowPresetId = cueWindowPresetId
   ) {
@@ -218,7 +215,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         playbookId: playbook.id,
         roleId: role.id,
         lineIndex,
-        cueDepth: nextCueDepth,
+        cueDepth: 1,
         includeDirections: engine.includeDirections(),
         revealLine: nextRevealLine,
         cueWindowPresetId: nextCueWindowPresetId,
@@ -238,7 +235,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     setPlaybackStatus("Playing cue...");
     setPlaybackState("playing");
     try {
-      await audioQueue.play(cuePlaybackItems(engine.cuePayloads(), cueWindowPresetId));
+      await audioQueue.play(cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId));
       setPlaybackStatus("Cue complete.");
       setPlaybackState("idle");
       beginTimedAttempt();
@@ -315,20 +312,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   function changeCueWindowPreset(nextCueWindowPresetId: string) {
     const preset = cueWindowPresetForId(nextCueWindowPresetId);
     setCueWindowPresetId(preset.id);
-    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, cueDepth, isLineRevealed, preset.id);
-  }
-
-  function changeCueDepth(nextCueDepth: number) {
-    const clampedCueDepth = clampCueDepth(nextCueDepth);
-    engine.setCueDepth(clampedCueDepth);
-    setCueDepth(clampedCueDepth);
-    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, clampedCueDepth);
+    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, isLineRevealed, preset.id);
   }
 
   function toggleLineReveal() {
     const nextRevealLine = !isLineRevealed;
     setIsLineRevealed(nextRevealLine);
-    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, cueDepth, nextRevealLine);
+    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, nextRevealLine);
   }
 
   function slowDownResponse() {
@@ -666,19 +656,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             Tempo timing uses microphone energy only: no recording, no transcription, no upload.
           </p>
           <label>
-            Cue depth
-            <select
-              value={cueDepth}
-              onChange={(event) => changeCueDepth(Number(event.target.value))}
-            >
-              {cueDepths.map((depth) => (
-                <option key={depth} value={depth}>
-                  {depth} cue{depth === 1 ? "" : "s"}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
             Cue length
             <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
               {cueWindowPresets.map((preset) => (
@@ -924,15 +901,8 @@ const maxPlaybackRate = 1.3;
 const defaultPlaybackRate = 1;
 const playbackRateStep = 0.1;
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
-const minCueDepth = 1;
-const maxCueDepth = 3;
-const cueDepths = [1, 2, 3];
 
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
-}
-
-export function clampCueDepth(cueDepth: number): number {
-  return Math.min(maxCueDepth, Math.max(minCueDepth, Math.round(cueDepth)));
 }

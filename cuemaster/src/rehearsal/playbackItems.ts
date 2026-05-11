@@ -6,7 +6,7 @@ import { timingTargetsForLine } from "./tempoFeedback";
 
 export function cuePlaybackItems(cues: Cue[], cueWindowPresetId = "full"): AudioQueueItem[] {
   return cues.map((cue, index) => {
-    const startTimeMs = index === cues.length - 1 ? cueStartTimeMs(cue, cueWindowPresetId) : undefined;
+    const startTimeMs = index === 0 ? cueStartTimeMs(cue, cueWindowPresetId, cueWindowMsRemaining(cues, index, cueWindowPresetId)) : undefined;
     return {
       kind: "audio",
       path: cue.audioPath,
@@ -33,12 +33,23 @@ export function speakAlongPlaybackItems(
   ];
 }
 
-export function cueStartTimeMs(cue: Cue, cueWindowPresetId: string): number | undefined {
+export function cueStartTimeMs(cue: Cue, cueWindowPresetId: string, windowMsOverride?: number): number | undefined {
   const preset = cueWindowPresetForId(cueWindowPresetId);
-  if (preset.windowMs === null || cue.durationMs <= preset.windowMs) {
+  const windowMs = windowMsOverride ?? preset.windowMs;
+  if (windowMs === null || cue.durationMs <= windowMs) {
     return undefined;
   }
 
-  const offset = cue.cueStartOffsets?.find((candidate) => candidate.requestedWindowMs === preset.windowMs);
-  return offset?.startMs ?? cue.durationMs - preset.windowMs;
+  const offset = cue.cueStartOffsets?.find((candidate) => candidate.requestedWindowMs === windowMs);
+  return offset?.startMs ?? cue.durationMs - windowMs;
+}
+
+function cueWindowMsRemaining(cues: Cue[], index: number, cueWindowPresetId: string): number | undefined {
+  const preset = cueWindowPresetForId(cueWindowPresetId);
+  if (preset.windowMs === null || index !== 0) {
+    return undefined;
+  }
+
+  const laterCueDurationMs = cues.slice(1).reduce((totalMs, cue) => totalMs + cue.durationMs, 0);
+  return Math.max(0, preset.windowMs - laterCueDurationMs);
 }

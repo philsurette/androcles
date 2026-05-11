@@ -41,26 +41,16 @@ describe("RehearsalEngine", () => {
     expect(engine.cuePayloads().map((cue) => cue.text)).toEqual(["PROLOGUE"]);
   });
 
-  it("derives cue payloads using cue depth", () => {
-    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", {
-      startLineId: "0_3_ANDROCLES",
-      cueDepth: 2
-    });
-
-    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual([
-      "PROLOGUE",
-      "You are always talking nonsense."
-    ]);
-  });
-
-  it("updates cue depth after session setup", () => {
+  it("plays only the immediate cue for the full cue preset", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
 
-    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
-    engine.setCueDepth(2);
+    expect(engine.cuePayloads("full").map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
+  });
 
-    expect(engine.cueDepth()).toBe(2);
-    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual([
+  it("uses enough preceding cues to satisfy a timed cue-length preset", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+
+    expect(engine.cuePayloads("last_5s").map((cue) => cue.text)).toEqual([
       "PROLOGUE",
       "You are always talking nonsense."
     ]);

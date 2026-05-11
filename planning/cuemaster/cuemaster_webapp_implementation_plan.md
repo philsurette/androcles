@@ -230,7 +230,7 @@ type LineTiming = {
 ```ts
 type SessionConfig = {
   selectedRoleId: string;
-  cueDepth: number;
+  cueWindowPresetId: string;
   includeDirections: boolean;
   startLineId?: string;
 
@@ -382,7 +382,7 @@ No real audio or zip import is required yet.
 - [x] Go back to previous line.
 - [x] Repeat current line/cue.
 - [x] Detect beginning/end of role sequence.
-- [x] Support `cueDepth` in derived cue list.
+- [x] Support cue-window presets in derived cue list.
 - [x] Support `includeDirections` flag where manifest data allows it.
 - [x] Expose current line, cue payload, response payload, and position information.
 
@@ -392,7 +392,7 @@ No real audio or zip import is required yet.
 - [x] Test multi-role manifest.
 - [x] Test special-role filtering.
 - [x] Test next/back behavior.
-- [x] Test cue-depth behavior.
+- [x] Test cue-window behavior.
 - [x] Test line-specific target hesitation fallback behavior.
 
 ### Acceptance Criteria
@@ -527,7 +527,6 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Start from beginning.
 - [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
-- [x] Set cue depth.
 - [x] Set cue length from shared presets: Full cue, Last 5s, Last 10s, Last 15s, Last 20s.
 - [ ] Toggle stage directions.
 - [x] Set response playback speed.
@@ -643,7 +642,7 @@ This is the second major useful milestone.
 - [x] After cue playback, enter waiting state.
 - [x] Repeat cue replays cue without advancing.
 - [x] Cue playback respects the selected cue-length preset.
-- [x] Cue-length truncation applies to the final cue audio item only.
+- [x] Cue length controls how many preceding cues are included.
 - [x] Cue playback uses Stager-provided `cue_start_offsets` when present and falls back to exact `duration_ms - selectedWindowMs` when absent.
 - [x] Hear My Line plays actor response audio without advancing.
 - [x] Next advances to next actor line and plays next cue after session start.

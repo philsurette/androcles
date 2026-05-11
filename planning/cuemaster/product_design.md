@@ -358,7 +358,6 @@ The app's session state is a simple cursor over the selected role's line array.
 
 ```ts
 selectedRole: string;             // e.g. "MEGAERA"
-cueDepth: number;                 // how many preceding cue items to play; default 1
 includeDirections: boolean;       // whether narrator/stage direction cues are played
 startLineId: string;              // where to begin
 roleLinePlaybackSpeed: number;    // actor response/reference speed; default 1.0, range 0.4-1.3
@@ -418,7 +417,7 @@ Persist tempo attempts locally per Playbook, role, and line. Timing history is a
 ### Derived Values
 
 - **My lines**: `roles[].lines` for `selectedRole`.
-- **Cue for line N**: required cue payloads attached to the selected line, optionally expanded by `cueDepth` if the manifest includes enough preceding context.
+- **Cue for line N**: required cue payloads attached to the selected line, optionally expanded by the selected cue-length preset.
 - **Next/previous**: movement through the selected role's line array.
 - **Session progress**: current role-line index and scene/part position where available.
 - **Target hesitation**: `line.timing.target_hesitation_ms` when present; otherwise `defaultTargetHesitationMs`.
@@ -674,7 +673,7 @@ Use `@capacitor/preferences` for:
 
 - Selected role.
 - Current line position.
-- Cue depth.
+- Cue length.
 - Include-directions setting.
 - Bookmarks.
 - Lightweight session history.
@@ -688,7 +687,7 @@ Use `@capacitor/preferences` for:
 | `playbook:{id}:path` | `string` | Absolute path to unpacked folder in Phase 2. |
 | `session:{id}:role` | `string` | Selected role for this Playbook. |
 | `session:{id}:position` | `string` | Current line ID. |
-| `session:{id}:config` | `object` | Cue depth, direction toggle, etc. |
+| `session:{id}:config` | `object` | Cue length, direction toggle, etc. |
 | `session:{id}:bookmarks` | `string[]` | Bookmarked line IDs. |
 | `session:{id}:history` | `object` | Per-line attempt counts; optional. |
 
@@ -845,7 +844,6 @@ Shown before starting or resuming a session.
 
 Settings:
 
-- **Cue depth**: how many preceding lines to hear as cue; default 1, range 1-5.
 - **Cue length**: shared preset from `planning/specs/cue_window_presets.json`; default Full cue.
 - **Include stage directions in cue**: default on.
 - **Start position**: From beginning, Resume, Choose scene, or Bookmark.

@@ -41,13 +41,21 @@ describe("playbackItems", () => {
     expect(cuePlaybackItems([cue])).toEqual([{ kind: "audio", path: "audio/cue.wav", playbackRate: 1 }]);
   });
 
-  it("starts only the final cue item at the selected absolute cue window", () => {
+  it("starts a single long cue at the selected absolute cue window", () => {
+    const longCue: Cue = { ...cue, audioPath: "audio/long-cue.wav", durationMs: 30000 };
+
+    expect(cuePlaybackItems([longCue], "last_10s")).toEqual([
+      { kind: "audio", path: "audio/long-cue.wav", playbackRate: 1, startTimeMs: 20000 }
+    ]);
+  });
+
+  it("trims the first cue item when a timed window spans multiple cues", () => {
     const earlierCue: Cue = { ...cue, audioPath: "audio/earlier-cue.wav", durationMs: 20000 };
-    const finalCue: Cue = { ...cue, audioPath: "audio/final-cue.wav", durationMs: 30000 };
+    const finalCue: Cue = { ...cue, audioPath: "audio/final-cue.wav", durationMs: 6000 };
 
     expect(cuePlaybackItems([earlierCue, finalCue], "last_10s")).toEqual([
-      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1 },
-      { kind: "audio", path: "audio/final-cue.wav", playbackRate: 1, startTimeMs: 20000 }
+      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1, startTimeMs: 16000 },
+      { kind: "audio", path: "audio/final-cue.wav", playbackRate: 1 }
     ]);
   });
 

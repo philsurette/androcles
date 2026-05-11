@@ -1,13 +1,13 @@
 import type { Line } from "../domain/line";
 import type { Playbook } from "../domain/playbook";
 import type { Role } from "../domain/role";
+import { cueWindowPresetForId } from "./cueWindowPreset";
 
 export type RehearsalState = {
   playbook: Playbook;
   role: Role;
   lines: Line[];
   index: number;
-  cueDepth: number;
   includeDirections: boolean;
 };
 
@@ -17,7 +17,7 @@ export class RehearsalEngine {
   static forRole(
     playbook: Playbook,
     roleId: string,
-    options: { startLineId?: string; cueDepth?: number; includeDirections?: boolean } = {}
+    options: { startLineId?: string; includeDirections?: boolean } = {}
   ): RehearsalEngine {
     const role = playbook.roles.find((candidate) => candidate.id === roleId);
     if (!role) {
@@ -32,7 +32,6 @@ export class RehearsalEngine {
       role,
       lines: role.lines,
       index: startIndex < 0 ? 0 : startIndex,
-      cueDepth: options.cueDepth ?? 1,
       includeDirections: options.includeDirections ?? true
     });
   }
@@ -64,17 +63,26 @@ export class RehearsalEngine {
     return this.currentLine();
   }
 
-  cuePayloads(): Array<Line["cue"]> {
-    const start = Math.max(this.state.index - this.state.cueDepth + 1, 0);
-    return this.state.lines.slice(start, this.state.index + 1).map((line) => line.cue);
-  }
+  cuePayloads(cueWindowPresetId = "full"): Array<Line["cue"]> {
+    const preset = cueWindowPresetForId(cueWindowPresetId);
+    if (preset.windowMs === null) {
+      const line = this.currentLine();
+      return line ? [line.cue] : [];
+    }
 
-  cueDepth(): number {
-    return this.state.cueDepth;
-  }
+    const cues: Array<Line["cue"]> = [];
+    let durationMs = 0;
 
-  setCueDepth(cueDepth: number): void {
-    this.state.cueDepth = cueDepth;
+    for (let index = this.state.index; index >= 0; index -= 1) {
+      const cue = this.state.lines[index].cue;
+      cues.unshift(cue);
+      durationMs += cue.durationMs;
+      if (durationMs >= preset.windowMs) {
+        break;
+      }
+    }
+
+    return cues;
   }
 
   includeDirections(): boolean {
