@@ -24,7 +24,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   );
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
-  const [playbackRate, setPlaybackRate] = useState(initialSession?.playbackRate ?? 1);
+  const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -100,8 +100,21 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   }
 
   function changePlaybackRate(nextPlaybackRate: number) {
-    setPlaybackRate(nextPlaybackRate);
-    void saveSession(position.index, nextPlaybackRate);
+    const clampedPlaybackRate = clampPlaybackRate(nextPlaybackRate);
+    setPlaybackRate(clampedPlaybackRate);
+    void saveSession(position.index, clampedPlaybackRate);
+  }
+
+  function slowDownResponse() {
+    changePlaybackRate(playbackRate - playbackRateStep);
+  }
+
+  function speedUpResponse() {
+    changePlaybackRate(playbackRate + playbackRateStep);
+  }
+
+  function resetResponseSpeed() {
+    changePlaybackRate(defaultPlaybackRate);
   }
 
   return (
@@ -169,6 +182,17 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
               ))}
             </select>
           </label>
+          <div className="speed-controls" aria-label="Response speed quick controls">
+            <button type="button" className="secondary" onClick={slowDownResponse} disabled={playbackRate <= minPlaybackRate}>
+              Slower
+            </button>
+            <button type="button" className="secondary" onClick={resetResponseSpeed} disabled={playbackRate === defaultPlaybackRate}>
+              Normal
+            </button>
+            <button type="button" className="secondary" onClick={speedUpResponse} disabled={playbackRate >= maxPlaybackRate}>
+              Faster
+            </button>
+          </div>
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>
@@ -176,4 +200,13 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   );
 }
 
+const minPlaybackRate = 0.4;
+const maxPlaybackRate = 1.3;
+const defaultPlaybackRate = 1;
+const playbackRateStep = 0.1;
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
+
+export function clampPlaybackRate(playbackRate: number): number {
+  const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
+  return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
+}

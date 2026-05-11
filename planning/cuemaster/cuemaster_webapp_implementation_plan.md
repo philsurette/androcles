@@ -694,18 +694,18 @@ Support speed-adjusted playback for the actor's own reference lines.
 - [x] Force cue audio to `1.0x`.
 - [x] Enable pitch preservation where supported.
 - [x] Show current speed clearly in Session screen.
-- [ ] Add quick controls:
-  - [ ] Slower
-  - [ ] Faster
-  - [ ] Normal
-- [ ] Clamp invalid values.
+- [x] Add quick controls:
+  - [x] Slower
+  - [x] Faster
+  - [x] Normal
+- [x] Clamp invalid values.
 
 ### Acceptance Criteria
 
-- [ ] Actor can hear their own line at 0.4x through 1.3x.
-- [ ] Cue playback is never slowed by this setting.
-- [ ] The selected speed persists after reload.
-- [ ] Tests verify cue speed stays `1.0x`.
+- [x] Actor can hear their own line at 0.4x through 1.3x.
+- [x] Cue playback is never slowed by this setting.
+- [x] The selected speed persists after reload.
+- [x] Tests verify cue speed stays `1.0x`.
 
 ---
 

@@ -225,6 +225,12 @@ button:disabled {
   padding: 0.55rem 0.75rem;
 }
 
+.speed-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 @media (max-width: 760px) {
   .rehearsal-grid {
     grid-template-columns: 1fr;
