@@ -84,6 +84,7 @@ Keyboard shortcuts work on the rehearsal screen unless you are focused in a form
 | `Right Arrow` | Next line |
 | `Left Arrow` | Previous line |
 | `L` | Hear my line |
+| `Esc` | Stop playback |
 
 ## Microphone Troubleshooting
 

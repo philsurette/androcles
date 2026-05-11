@@ -8,6 +8,7 @@ describe("shortcutForKey", () => {
     expect(shortcutForKey({ key: "ArrowRight", target: null })).toBe("next");
     expect(shortcutForKey({ key: "ArrowLeft", target: null })).toBe("previous");
     expect(shortcutForKey({ key: "L", target: null })).toBe("hear-line");
+    expect(shortcutForKey({ key: "Escape", target: null })).toBe("stop");
   });
 
   it("ignores shortcuts from editable controls", () => {
@@ -16,6 +17,6 @@ describe("shortcutForKey", () => {
   });
 
   it("ignores unmapped keys", () => {
-    expect(shortcutForKey({ key: "Escape", target: null })).toBeNull();
+    expect(shortcutForKey({ key: "Tab", target: null })).toBeNull();
   });
 });

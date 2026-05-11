@@ -91,6 +91,8 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         void goPrevious();
       } else if (shortcut === "hear-line" && engine.currentLine()) {
         void playResponse();
+      } else if (shortcut === "stop") {
+        stopPlayback();
       }
     }
 
@@ -454,7 +456,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           >
             Next
           </button>
-          <button type="button" className="secondary" aria-label="Stop playback." onClick={stopPlayback}>
+          <button type="button" className="secondary" aria-label="Stop playback. Shortcut: Escape." onClick={stopPlayback}>
             Stop
           </button>
         </div>

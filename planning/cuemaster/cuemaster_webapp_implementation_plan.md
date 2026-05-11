@@ -931,6 +931,7 @@ Improve navigation once the core loop works.
   - [x] Left arrow: back.
   - [x] R: repeat cue.
   - [x] L: hear line.
+  - [x] Escape: stop playback.
 - [x] Ensure shortcuts do not interfere with text inputs.
 - [x] Add accessible labels for all controls.
 

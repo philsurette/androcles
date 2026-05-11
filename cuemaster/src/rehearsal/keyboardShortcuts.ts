@@ -1,4 +1,4 @@
-export type RehearsalShortcut = "repeat-cue" | "next" | "previous" | "hear-line";
+export type RehearsalShortcut = "repeat-cue" | "next" | "previous" | "hear-line" | "stop";
 
 export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): RehearsalShortcut | null {
   if (isEditableTarget(event.target)) {
@@ -18,6 +18,8 @@ export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): Re
     case "l":
     case "L":
       return "hear-line";
+    case "Escape":
+      return "stop";
     default:
       return null;
   }
