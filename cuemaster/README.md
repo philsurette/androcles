@@ -4,6 +4,10 @@ Cuemaster is the local-first rehearsal app for actors learning lines from Stager
 
 This package starts as a Vite + React + TypeScript web app. The initial implementation target is browser/PWA import, validation, local storage, role selection, and rehearsal playback. Native iPhone/Android packaging should come later via Capacitor after the core import and rehearsal loop is stable.
 
+## User Guide
+
+See [USER_GUIDE.md](USER_GUIDE.md) for actor-facing usage, terms, keyboard shortcuts, and microphone troubleshooting.
+
 ## Development
 
 ```sh
