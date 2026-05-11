@@ -69,10 +69,29 @@ async function extractRequiredAudioAssets(zip: JSZip, assetPaths: string[]): Pro
     }
     audioAssets.push({
       path: assetPath,
-      blob: await entry.async("blob")
+      blob: withAudioMimeType(assetPath, await entry.async("blob"))
     });
   }
 
   return audioAssets;
 }
 
+function withAudioMimeType(assetPath: string, blob: Blob): Blob {
+  const mimeType = audioMimeType(assetPath);
+  if (!mimeType || blob.type === mimeType) {
+    return blob;
+  }
+  return new Blob([blob], { type: mimeType });
+}
+
+function audioMimeType(assetPath: string): string | undefined {
+  const extension = assetPath.toLowerCase().split(".").pop();
+  switch (extension) {
+    case "mp3":
+      return "audio/mpeg";
+    case "wav":
+      return "audio/wav";
+    default:
+      return undefined;
+  }
+}

@@ -14,6 +14,19 @@ describe("extractPlaybookZip", () => {
     expect(extracted.assetIndex.has("audio/segments/ANDROCLES/0_1_1.wav")).toBe(true);
   });
 
+  it("extracts MP3 Playbooks without assuming WAV asset paths", async () => {
+    const manifest = manifestWithAudioExtension("mp3");
+    const file = await buildPlaybookZip({ manifest });
+
+    const extracted = await extractPlaybookZip(file);
+
+    expect(extracted.assetIndex.has("audio/segments/ANDROCLES/0_1_1.mp3")).toBe(true);
+    expect(extracted.manifest.roles[0].lines[0].response.segments[0].audio.path).toBe(
+      "audio/segments/ANDROCLES/0_1_1.mp3"
+    );
+    expect(extracted.audioAssets.find((asset) => asset.path.endsWith(".mp3"))?.blob.type).toBe("audio/mpeg");
+  });
+
   it("reports an invalid zip with a friendly import error", async () => {
     await expect(extractPlaybookZip(new Blob(["not a zip"]))).rejects.toThrow(PlaybookImportError);
     await expect(extractPlaybookZip(new Blob(["not a zip"]))).rejects.toThrow("Invalid Playbook zip");
@@ -58,22 +71,36 @@ describe("extractPlaybookZip", () => {
   });
 });
 
-async function buildPlaybookZip(options: { excludePath?: string } = {}): Promise<Blob> {
+async function buildPlaybookZip(options: { excludePath?: string; manifest?: typeof manifestFixture } = {}): Promise<Blob> {
   const zip = new JSZip();
-  zip.file("manifest.json", JSON.stringify(manifestFixture));
+  const manifest = options.manifest ?? manifestFixture;
+  zip.file("manifest.json", JSON.stringify(manifest));
 
-  const audioPaths = [
-    "audio/segments/_NARRATOR/0_0_1.wav",
-    "audio/segments/ANDROCLES/0_1_1.wav",
-    "audio/segments/ANDROCLES/0_3_1.wav",
-    "audio/segments/MEGAERA/0_2_1.wav"
-  ];
-
-  for (const audioPath of audioPaths) {
+  for (const audioPath of requiredAudioPaths(manifest)) {
     if (audioPath !== options.excludePath) {
       zip.file(audioPath, "");
     }
   }
 
   return zip.generateAsync({ type: "blob" });
+}
+
+function manifestWithAudioExtension(extension: "mp3" | "wav"): typeof manifestFixture {
+  return JSON.parse(JSON.stringify(manifestFixture).replaceAll(".wav", `.${extension}`)) as typeof manifestFixture;
+}
+
+function requiredAudioPaths(manifest: typeof manifestFixture): string[] {
+  const paths = new Set<string>();
+  for (const contextBlock of manifest.context) {
+    paths.add(contextBlock.audio.path);
+  }
+  for (const role of manifest.roles) {
+    for (const line of role.lines) {
+      paths.add(line.cue.audio.path);
+      for (const segment of line.response.segments) {
+        paths.add(segment.audio.path);
+      }
+    }
+  }
+  return [...paths];
 }

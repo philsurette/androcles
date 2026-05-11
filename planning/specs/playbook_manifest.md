@@ -291,14 +291,14 @@ Fields:
 
 Cue-start-offset fields:
 
-- `requested_window_ms`: Positive cue window, in milliseconds, from `planning/specs/cue_window_presets.json`. The no-cue preset uses `0`, but Stager does not emit cue-start offsets for disabled cue playback.
+- `requested_window_ms`: Cue window, in milliseconds, from `planning/specs/cue_window_presets.json`. The no-cue preset uses `0`; Cuemaster ignores offsets when cue playback is disabled.
 - `start_ms`: Milliseconds from the start of the asset's audible content timeline where playback should begin.
 - `confidence`: `exact`, `boundary`, or `fallback`.
 
 Cue-start-offset rules:
 
 - `cue_start_offsets` is optional for backward-compatible additive manifest changes.
-- `requested_window_ms` values must come from positive `window_ms` values in `planning/specs/cue_window_presets.json`.
+- `requested_window_ms` values must come from non-null `window_ms` values in `planning/specs/cue_window_presets.json`.
 - `start_ms` must satisfy `0 <= start_ms < duration_ms`.
 - `start_ms` is a content-timeline offset, not a codec/container timestamp.
 - Offsets must not alter `duration_ms`.
