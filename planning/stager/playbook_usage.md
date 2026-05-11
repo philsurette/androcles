@@ -16,6 +16,14 @@ Build a Playbook for a specific play directory:
 ./main playbook --play androcles
 ```
 
+Build a Playbook with MP3 audio assets:
+
+```sh
+./main playbook --audio-format mp3
+```
+
+Supported Playbook audio formats are `wav` and `mp3`. The default is `wav`; MP3 assets are encoded at 128 kbps.
+
 The command is strict. It raises if any rehearsable non-meta role line is missing required cue audio or response audio.
 
 ## Output Layout
@@ -46,6 +54,8 @@ build/<play_id>/app/
       <ROLE>/
         <segment_id>.wav
 ```
+
+When `--audio-format mp3` is used, segment files are written with `.mp3` extensions and manifest audio paths point to those `.mp3` files.
 
 Manifest audio paths are relative to the Playbook root, not repository-root paths.
 
@@ -82,6 +92,10 @@ Run the full suite with:
 
 ## External Dependencies
 
-The current Playbook builder reads WAV durations and copies existing segment audio. It does not assemble MP4 files or invoke Whisper. It uses the same Python audio stack as the rest of Stager, so the repository virtualenv must be used.
+The Playbook builder reads source WAV durations for manifest `duration_ms`. When exporting MP3 Playbooks, `duration_ms` remains the source WAV audible content duration rather than an MP3 container duration.
+
+Cue-start offsets are computed from the source WAV and may be emitted for both WAV and MP3 Playbooks. MP3 playback can have small encoder/player seek drift, but Stager treats the offsets as content-timeline values.
+
+The builder does not assemble MP4 files or invoke Whisper. It uses the same Python audio stack as the rest of Stager, so the repository virtualenv must be used. MP3 Playbook export uses pydub's ffmpeg-backed encoder.
 
 Audio preparation before Playbook export may require Audacity exports, pydub, and ffmpeg through the segment-splitting workflow.

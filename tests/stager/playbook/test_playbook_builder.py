@@ -4,6 +4,7 @@ import json
 import wave
 import zipfile
 from pathlib import Path
+from pathlib import PurePosixPath
 
 import pytest
 
@@ -13,6 +14,7 @@ from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
+from stager.playbook.playbook_audio_packager import PackagedAudio
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.shared import paths
 
@@ -125,6 +127,19 @@ class _FakeCueStartOffsetAnalyzer:
         ]
 
 
+class _FakeMp3Packager:
+    def package(self, source_path: Path, destination_dir: Path) -> PackagedAudio:
+        destination = destination_dir / source_path.with_suffix(".mp3").name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_bytes(b"fake mp3")
+        return PackagedAudio(
+            path=destination,
+            manifest_path=PurePosixPath(
+                destination.relative_to(destination_dir.parents[2]).as_posix()
+            ),
+        )
+
+
 def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -181,6 +196,39 @@ def test_playbook_builder_attaches_offsets_to_cue_audio_only(tmp_path: Path) -> 
         }
     ]
     assert "cue_start_offsets" not in line["response"]["segments"][0]["audio"]
+
+
+def test_playbook_builder_can_package_audio_as_mp3_with_wav_derived_offsets(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+
+    zip_path = PlaybookBuilder(
+        play=play,
+        paths=cfg,
+        audio_format="mp3",
+        cue_start_offset_analyzer=_FakeCueStartOffsetAnalyzer(),
+        audio_packager=_FakeMp3Packager(),
+    ).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    line = next(role for role in data["roles"] if role["id"] == "MEGAERA")["lines"][0]
+    assert line["cue"]["audio"]["path"] == "audio/segments/ANDROCLES/0_1_1.mp3"
+    assert line["cue"]["audio"]["cue_start_offsets"] == [
+        {
+            "requested_window_ms": 5000,
+            "start_ms": 0,
+            "confidence": "exact",
+        }
+    ]
+    assert line["response"]["segments"][0]["audio"]["path"] == "audio/segments/MEGAERA/0_2_1.mp3"
+    with zipfile.ZipFile(zip_path) as archive:
+        assert "audio/segments/ANDROCLES/0_1_1.mp3" in archive.namelist()
+        assert "audio/segments/MEGAERA/0_2_1.mp3" in archive.namelist()
 
 
 def test_playbook_builder_exports_narrator_context_blocks(tmp_path: Path) -> None:

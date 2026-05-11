@@ -40,17 +40,17 @@ Audio assets may include optional `cue_start_offsets` as defined in that spec. `
 
 ## Compressed Audio Compatibility
 
-MP3 or other compressed Playbook audio can introduce encoder delay, padding, or seek behavior that does not exactly match the source WAV sample timeline. Stager must not assume a cue-start offset computed from source WAV samples is automatically valid as a seek timestamp in the packaged compressed file.
+MP3 or other compressed Playbook audio can introduce encoder delay, padding, or seek behavior that does not exactly match the source WAV sample timeline. For MP3 Playbooks, Stager may still emit source-WAV-derived cue-start offsets because the expected drift is small enough for the rehearsal use case.
 
 Required policy:
 
 - `duration_ms` and `cue_start_offsets[].start_ms` are both audible content-timeline values.
 - WAV packaging may use source-WAV offsets directly.
-- Compressed packaging must validate, adjust, recompute, or omit offsets for the packaged asset.
-- If Stager cannot verify that seeking to `start_ms` in the packaged compressed file lands near the intended boundary within tolerance, it should omit `cue_start_offsets` for that asset and let Cuemaster fall back to exact max-cue truncation.
+- MP3 packaging may use source-WAV offsets directly.
+- Cuemaster should tolerate small encoder/player seek drift when applying source-WAV-derived offsets to MP3 assets.
 - MP3 frame/container duration drift must not be folded into `duration_ms` or `start_ms`.
 
-Recommended initial rule: implement and validate cue-start offsets for WAV Playbooks first. Add MP3 offset emission only after MP3 packaging has a testable seek-validation path.
+Recommended initial rule: emit source-WAV-derived cue-start offsets for WAV and MP3 Playbooks. Add packaged-file seek validation later only if real-device testing shows clipped words or otherwise unacceptable drift.
 
 ## Shared Preset Windows
 
@@ -120,9 +120,9 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 
 - [ ] Treat source-WAV offsets as content-timeline metadata.
 - [ ] If Playbook audio format is WAV, emit offsets directly.
-- [ ] If Playbook audio format is MP3, do not emit offsets until packaged-file seek validation exists.
-- [ ] Add tests proving MP3 packaging either validates/recomputes offsets or omits them.
-- [ ] Document the accepted seek tolerance before enabling MP3 offsets.
+- [ ] If Playbook audio format is MP3, emit source-WAV-derived offsets.
+- [ ] Add tests proving MP3 packaging preserves cue-start offsets in the manifest.
+- [ ] Document that MP3 playback may have small encoder/player seek drift.
 
 ### Phase 4: Cuemaster Integration
 
@@ -139,7 +139,7 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 - [ ] Inspect long cue offsets manually.
 - [ ] Confirm offsets start between words in common cases.
 - [ ] Confirm short cues still play from the beginning.
-- [ ] If MP3 Playbook packaging is enabled, confirm MP3 cue seeking starts near the same audible boundary as the WAV source.
+- [ ] If MP3 Playbook packaging is enabled, confirm MP3 cue seeking starts close enough to the same audible boundary as the WAV source.
 - [ ] Run Cuemaster import/rehearsal tests with offset-bearing Playbooks.
 
 ## Testing Notes

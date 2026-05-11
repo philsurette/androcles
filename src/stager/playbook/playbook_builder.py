@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import logging
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 import shutil
 import zipfile
 
@@ -23,6 +23,7 @@ from stager.playbook.app_response_segment import AppResponseSegment
 from stager.playbook.app_role import AppRole
 from stager.playbook.cue_start_offset_analyzer import CueStartOffsetAnalyzer
 from stager.playbook.cue_selection import CueSelection
+from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.shared import paths
 
@@ -33,8 +34,10 @@ class PlaybookBuilder:
     paths: paths.PathConfig
     play_id: str | None = None
     build_type: str = "custom"
+    audio_format: str = "wav"
     selector: PlaybookCueSelector | None = None
     cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
+    audio_packager: PlaybookAudioPackager | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -43,6 +46,11 @@ class PlaybookBuilder:
             self.selector = PlaybookCueSelector(play=self.play, paths=self.paths)
         if self.cue_start_offset_analyzer is None:
             self.cue_start_offset_analyzer = CueStartOffsetAnalyzer()
+        if self.audio_packager is None:
+            self.audio_packager = PlaybookAudioPackager(
+                app_dir=self.app_dir,
+                audio_format=self.audio_format,
+            )
 
     @property
     def app_dir(self) -> Path:
@@ -195,16 +203,18 @@ class PlaybookBuilder:
                 f"Missing required {category} audio for role {role} segment {segment_id} "
                 f"while building Playbook: {paths.display_path(source_path)}"
             )
-        destination = self.app_dir / "audio" / "segments" / role / source_path.name
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_path, destination)
         duration_ms = self.paths.get_audio_length_ms(source_path)
         cue_start_offsets: list[AppCueStartOffset] = []
         if category == "cue":
             assert self.cue_start_offset_analyzer is not None
             cue_start_offsets = self.cue_start_offset_analyzer.analyze(source_path, duration_ms)
+        assert self.audio_packager is not None
+        packaged_audio = self.audio_packager.package(
+            source_path,
+            self.app_dir / "audio" / "segments" / role,
+        )
         return AppAudioAsset(
-            path=PurePosixPath(destination.relative_to(self.app_dir).as_posix()),
+            path=packaged_audio.manifest_path,
             duration_ms=duration_ms,
             required=True,
             cue_start_offsets=cue_start_offsets,

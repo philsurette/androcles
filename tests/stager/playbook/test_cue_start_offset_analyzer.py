@@ -47,10 +47,10 @@ def test_preset_file_contains_initial_timed_windows() -> None:
     timed_windows = [
         preset["window_ms"]
         for preset in data["cue_window_presets"]
-        if preset["window_ms"] is not None
+        if preset["window_ms"] is not None and preset["window_ms"] > 0
     ]
 
-    assert timed_windows == [5000, 10000, 15000, 20000]
+    assert timed_windows == [2000, 5000, 10000, 15000, 20000]
 
 
 def test_short_audio_offsets_start_at_zero(tmp_path: Path) -> None:

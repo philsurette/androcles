@@ -20,5 +20,5 @@ class CueWindowPresets:
         return [
             int(preset["window_ms"])
             for preset in presets
-            if preset["window_ms"] is not None
+            if preset["window_ms"] is not None and preset["window_ms"] > 0
         ]

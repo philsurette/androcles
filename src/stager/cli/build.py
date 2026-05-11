@@ -727,6 +727,7 @@ def cues(
 @app.command("playbook", rich_help_panel="build")
 def playbook(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type metadata"),
+    audio_format: str = typer.Option("wav", "--audio-format", help="Playbook audio format: wav or mp3"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Build a Cuemaster Playbook manifest and package."""
@@ -735,6 +736,7 @@ def playbook(
     run_playbook(
         paths_config=cfg,
         build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
+        audio_format=audio_format,
     )
 
 
@@ -901,7 +903,10 @@ def run_playbook(
     *,
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
+    audio_format: str = "wav",
 ) -> Path:
+    if audio_format not in ("wav", "mp3"):
+        raise typer.BadParameter("audio-format must be one of: wav, mp3")
     cfg = paths_config or paths.current()
     effective_build_type = BuildTypeResolver(
         paths_config=cfg,
@@ -912,6 +917,7 @@ def run_playbook(
         play=play,
         paths=cfg,
         build_type=effective_build_type,
+        audio_format=audio_format,
     )
     return builder.build()
 
