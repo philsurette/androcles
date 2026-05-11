@@ -1,0 +1,29 @@
+:root {
+  color: #182019;
+  background: #f7f1df;
+  font-family: "Avenir Next", "Gill Sans", system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --surface: #fffaf0;
+  --surface-muted: #e7e2d1;
+  --ink: #182019;
+  --muted: #6e7562;
+  --accent: #b94f37;
+  --border: #d8d0bc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+button,
+input {
+  font: inherit;
+}
