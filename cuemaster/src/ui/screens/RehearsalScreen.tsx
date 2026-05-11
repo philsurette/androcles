@@ -6,6 +6,7 @@ import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { TimingAttempt } from "../../domain/timingAttempt";
 import { AudioQueue } from "../../rehearsal/audioQueue";
+import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
@@ -74,6 +75,28 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   useEffect(() => {
     void loadBookmarks();
   }, []);
+
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      const shortcut = shortcutForKey(event);
+      if (!shortcut) {
+        return;
+      }
+      event.preventDefault();
+      if (shortcut === "repeat-cue") {
+        void playCue();
+      } else if (shortcut === "next" && !engine.position().atEnd) {
+        void goNext();
+      } else if (shortcut === "previous" && !engine.position().atBeginning) {
+        void goPrevious();
+      } else if (shortcut === "hear-line" && engine.currentLine()) {
+        void playResponse();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
 
   async function goNext() {
     engine.next();
@@ -382,28 +405,56 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         )}
 
         <div className="transport">
-          <button type="button" onClick={() => void playCue()}>
+          <button type="button" aria-label="Start or repeat cue. Shortcut: Space or R." onClick={() => void playCue()}>
             {hasStarted ? "Repeat Cue" : "Start"}
           </button>
-          <button type="button" className="secondary" disabled={position.atBeginning} onClick={() => void goPrevious()}>
+          <button
+            type="button"
+            className="secondary"
+            aria-label="Go to previous line. Shortcut: Left arrow."
+            disabled={position.atBeginning}
+            onClick={() => void goPrevious()}
+          >
             Previous
           </button>
-          <button type="button" className="secondary" disabled={!line} onClick={() => setIsLineRevealed(!isLineRevealed)}>
+          <button
+            type="button"
+            className="secondary"
+            aria-label={isLineRevealed ? "Hide your line." : "Reveal your line."}
+            disabled={!line}
+            onClick={() => setIsLineRevealed(!isLineRevealed)}
+          >
             {isLineRevealed ? "Hide Line" : "Reveal Line"}
           </button>
-          <button type="button" className="secondary" disabled={!line} onClick={() => void toggleBookmark()}>
+          <button
+            type="button"
+            className="secondary"
+            aria-label={isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."}
+            disabled={!line}
+            onClick={() => void toggleBookmark()}
+          >
             {isCurrentLineBookmarked ? "Remove Bookmark" : "Bookmark"}
           </button>
-          <button type="button" onClick={() => void playResponse()} disabled={!line}>
+          <button
+            type="button"
+            aria-label="Hear your line. Shortcut: L."
+            onClick={() => void playResponse()}
+            disabled={!line}
+          >
             Hear My Line
           </button>
-          <button type="button" onClick={() => void speakAlong()} disabled={!line}>
+          <button type="button" aria-label="Speak along with the reference line." onClick={() => void speakAlong()} disabled={!line}>
             Speak Along
           </button>
-          <button type="button" disabled={position.atEnd} onClick={() => void goNext()}>
+          <button
+            type="button"
+            aria-label="Go to next line. Shortcut: Right arrow."
+            disabled={position.atEnd}
+            onClick={() => void goNext()}
+          >
             Next
           </button>
-          <button type="button" className="secondary" onClick={stopPlayback}>
+          <button type="button" className="secondary" aria-label="Stop playback." onClick={stopPlayback}>
             Stop
           </button>
         </div>

@@ -925,20 +925,20 @@ Improve navigation once the core loop works.
 - [ ] Allow jump to scene.
 - [x] Allow jump to bookmarked line.
 - [x] Add bookmark toggle on Session screen.
-- [ ] Add keyboard shortcuts for desk rehearsal:
-  - [ ] Space: play/pause or repeat depending state.
-  - [ ] Right arrow: next.
-  - [ ] Left arrow: back.
-  - [ ] R: repeat cue.
-  - [ ] L: hear line.
-- [ ] Ensure shortcuts do not interfere with text inputs.
-- [ ] Add accessible labels for all controls.
+- [x] Add keyboard shortcuts for desk rehearsal:
+  - [x] Space: play/pause or repeat depending state.
+  - [x] Right arrow: next.
+  - [x] Left arrow: back.
+  - [x] R: repeat cue.
+  - [x] L: hear line.
+- [x] Ensure shortcuts do not interfere with text inputs.
+- [x] Add accessible labels for all controls.
 
 ### Acceptance Criteria
 
 - [ ] Actor can jump around without walking line by line.
 - [x] Actor can bookmark and revisit difficult lines.
-- [ ] Desk rehearsal is efficient with keyboard controls.
+- [x] Desk rehearsal is efficient with keyboard controls.
 
 ---
 
