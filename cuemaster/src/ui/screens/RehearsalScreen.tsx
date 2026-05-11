@@ -557,13 +557,21 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   return (
     <main className="shell">
       <section className="hero rehearsal">
-        <button type="button" className="secondary" onClick={onBack}>
-          Back to Roles
-        </button>
         <header className="rehearsal-header">
-          <p className="breadcrumb">
-            {playbook.title} / {role.displayName}
-          </p>
+          <div className="breadcrumb-row">
+            <button
+              type="button"
+              className="icon-button secondary"
+              aria-label="Back to roles."
+              data-tooltip="Back to roles"
+              onClick={onBack}
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <p className="breadcrumb">
+              {playbook.title} / {role.displayName}
+            </p>
+          </div>
           <p className="line-position">
             Line {position.total === 0 ? 0 : position.index + 1} of {position.total}
           </p>
