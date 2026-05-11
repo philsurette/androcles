@@ -12,14 +12,14 @@ describe("sectionOptionsForRole", () => {
     ]);
 
     expect(sectionOptionsForRole(playbook(), role)).toEqual([
-      { id: "part-0", title: "PROLOGUE", startLineId: "line-one", lineCount: 2 },
-      { id: "part-2", title: "ACT II", startLineId: "line-three", lineCount: 1 }
+      { id: "part-0", partId: 0, title: "PROLOGUE", startLineId: "line-one", lineCount: 2 },
+      { id: "part-2", partId: 2, title: "ACT II", startLineId: "line-three", lineCount: 1 }
     ]);
   });
 
   it("falls back to generic section labels for older Playbooks", () => {
     expect(sectionOptionsForRole({ ...playbook(), sections: [] }, roleWithLines([{ id: "line-one", partId: 1 }]))).toEqual([
-      { id: "part-1", title: "Part 2", startLineId: "line-one", lineCount: 1 }
+      { id: "part-1", partId: 1, title: "Part 2", startLineId: "line-one", lineCount: 1 }
     ]);
   });
 });

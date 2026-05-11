@@ -36,6 +36,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
 - **Bookmark** marks the current line so you can find it again in Tempo Review.
 - **Stop** stops playback.
+- **Section** jumps to the first line for your role in the selected section.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
 Your current role, line position, cue length, stage-direction preference, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.

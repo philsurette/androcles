@@ -5,7 +5,7 @@ test("resumes the last role and line after reload", async ({ page }) => {
   await openAndroclesRole(page);
 
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
-  await expect(page.getByText("PROLOGUE")).toBeVisible();
+  await expect(page.getByLabel("Cue", { exact: true }).getByText("PROLOGUE")).toBeVisible();
 
   await page.getByRole("button", { name: "Next" }).click();
   await expect(page.getByText("Line 2 of 2")).toBeVisible();
@@ -45,7 +45,7 @@ test("back returns to the previous line", async ({ page }) => {
 
   await page.getByRole("button", { name: /go to previous line/i }).click();
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
-  await expect(page.getByText("PROLOGUE")).toBeVisible();
+  await expect(page.getByLabel("Cue", { exact: true }).getByText("PROLOGUE")).toBeVisible();
 });
 
 async function openAndroclesRole(page: Page) {

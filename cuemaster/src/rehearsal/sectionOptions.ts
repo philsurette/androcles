@@ -3,6 +3,7 @@ import type { Role } from "../domain/role";
 
 export type RoleSectionOption = {
   id: string;
+  partId: number | null;
   title: string;
   startLineId: string;
   lineCount: number;
@@ -24,6 +25,7 @@ export function sectionOptionsForRole(playbook: Playbook, role: Role): RoleSecti
     }
     options.push({
       id: section.id,
+      partId: section.partId,
       title: section.title,
       startLineId: lines[0].id,
       lineCount: lines.length
@@ -34,6 +36,7 @@ export function sectionOptionsForRole(playbook: Playbook, role: Role): RoleSecti
   for (const [partId, lines] of linesByPartId) {
     options.push({
       id: partId === null ? "play" : `part-${partId}`,
+      partId,
       title: partId === null ? "Play" : `Part ${partId + 1}`,
       startLineId: lines[0].id,
       lineCount: lines.length
