@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "cue_window_presets": [
+    {
+      "id": "full",
+      "label": "Full cue",
+      "window_ms": null
+    },
+    {
+      "id": "last_5s",
+      "label": "Last 5s",
+      "window_ms": 5000
+    },
+    {
+      "id": "last_10s",
+      "label": "Last 10s",
+      "window_ms": 10000
+    },
+    {
+      "id": "last_15s",
+      "label": "Last 15s",
+      "window_ms": 15000
+    },
+    {
+      "id": "last_20s",
+      "label": "Last 20s",
+      "window_ms": 20000
+    }
+  ]
+}

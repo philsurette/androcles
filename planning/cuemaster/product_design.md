@@ -34,6 +34,7 @@ Use `planning/specs/playbook_manifest.md` as the authoritative manifest schema. 
 - **Self-assessment, not algorithmic scoring.** The actor hears their cue, speaks their line, then optionally hears the correct version to judge themselves. The app does not evaluate acting quality or textual correctness.
 - **Timing feedback, not performance scoring.** Tempo training measures hesitation and delivery pace only. It does not decide whether the actor gave a good performance.
 - **Cues stay at performance speed.** Cue audio is always played at 1.0x so the actor learns real entrances. Only the selected actor role's own response audio supports variable-speed playback.
+- **Cue length is actor-controlled.** The actor can choose full cue playback or a shared max-cue-length preset. Preset values come from `planning/specs/cue_window_presets.json` so Cuemaster settings and Stager cue-start offsets stay aligned.
 - **Narrow, transparent microphone use.** Microphone access is used only for explicitly enabled features: voice commands and voice-activity timing. Tempo timing does not record, save, transcribe, upload, or score audio.
 - **Simple state machine.** The app walks a flat, ordered list of rehearsal lines for the selected role. Navigation is the primary complexity; playback is deliberately straightforward.
 - **Web app first, mobile wrapper second.** The app is built first as a browser-based React web app, then packaged for mobile using Capacitor.
@@ -361,6 +362,7 @@ cueDepth: number;                 // how many preceding cue items to play; defau
 includeDirections: boolean;       // whether narrator/stage direction cues are played
 startLineId: string;              // where to begin
 roleLinePlaybackSpeed: number;    // actor response/reference speed; default 1.0, range 0.4-1.3
+cueWindowPresetId: string;        // cue length preset id from planning/specs/cue_window_presets.json; default "full"
 speakAlongEnabled: boolean;       // play actor reference line for shadowing practice
 tempoTimingEnabled: boolean;      // enable hesitation and delivery timing
 defaultTargetHesitationMs: number;// default 500ms unless line-specific manifest value exists
@@ -844,6 +846,7 @@ Shown before starting or resuming a session.
 Settings:
 
 - **Cue depth**: how many preceding lines to hear as cue; default 1, range 1-5.
+- **Cue length**: shared preset from `planning/specs/cue_window_presets.json`; default Full cue.
 - **Include stage directions in cue**: default on.
 - **Start position**: From beginning, Resume, Choose scene, or Bookmark.
 - **Role-line playback speed**: default 1.0x; range 0.4x-1.3x in 0.1x increments.

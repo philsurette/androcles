@@ -61,6 +61,20 @@ Compatibility rules:
 - Additive fields may keep the same schema version if existing fields retain their meaning.
 - Cuemaster should reject unsupported schema versions explicitly.
 
+## Shared Cue Window Presets
+
+Cuemaster cue-length choices and Stager cue-start-offset windows use the machine-readable preset list in `planning/specs/cue_window_presets.json`.
+
+Initial presets:
+
+- `full`: full cue playback.
+- `last_5s`: last 5 seconds.
+- `last_10s`: last 10 seconds.
+- `last_15s`: last 15 seconds.
+- `last_20s`: last 20 seconds.
+
+Stager and Cuemaster should each have a small test that checks their local constants against this JSON file. This keeps user-facing cue-length options and Stager-generated `requested_window_ms` offsets from drifting.
+
 ## Root Manifest Shape
 
 Proposed root shape:

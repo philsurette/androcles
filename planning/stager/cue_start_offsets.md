@@ -4,7 +4,7 @@
 
 Let Cuemaster play the last useful portion of a long cue without cutting into the middle of a word.
 
-Stager should compute optional cue-start offsets during Playbook generation. Cuemaster can then offer user-facing settings such as **Full cue**, **Last 20s**, **Last 15s**, **Last 10s**, and **Last 5s**, while starting playback near a low-volume boundary rather than at an exact hard timestamp.
+Stager should compute optional cue-start offsets during Playbook generation. Cuemaster can then offer the shared cue-window presets from `planning/specs/cue_window_presets.json` while starting playback near a low-volume boundary rather than at an exact hard timestamp.
 
 ## Non-Goals
 
@@ -82,16 +82,13 @@ Required policy:
 
 Recommended initial rule: implement and validate cue-start offsets for WAV Playbooks first. Add MP3 offset emission only after MP3 packaging has a testable seek-validation path.
 
-## Initial Windows
+## Shared Preset Windows
 
-Use these target windows first:
+Use `planning/specs/cue_window_presets.json` as the source of truth for cue-window presets.
 
-- `5000`
-- `10000`
-- `15000`
-- `20000`
+`full` is a Cuemaster playback option, but Stager does not need to generate an offset for it.
 
-Cuemaster can expose those as **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s**.
+Stager tests must assert that the analyzer windows match the JSON preset windows with non-null `window_ms` values.
 
 ## Boundary Algorithm
 
@@ -134,7 +131,8 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 
 - [ ] Add a `CueStartOffsetAnalyzer` service under the Stager Playbook package.
 - [ ] Inject audio loading/duration helpers so tests can use generated tiny WAV fixtures.
-- [ ] Compute offsets for the initial windows: 5s, 10s, 15s, 20s.
+- [ ] Compute offsets for the timed windows in `planning/specs/cue_window_presets.json`.
+- [ ] Add a test that fails if Stager's analyzer windows drift from `cue_window_presets.json`.
 - [ ] Unit-test short audio where every requested window should start at `0`.
 - [ ] Unit-test a synthetic cue with silence near a target boundary.
 - [ ] Unit-test fallback behavior when no quiet boundary is available.
