@@ -30,7 +30,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Pause / Resume** pauses or resumes active playback.
 - **Previous** moves to the previous line.
 - **Next** moves to the next line.
-- **Reveal Line / Hide Line** shows or hides your expected response.
+- **Show my line** shows or hides your expected response for the current line.
 - **Show lines by default** opens each line with your expected response visible, useful when you are first learning the role.
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.

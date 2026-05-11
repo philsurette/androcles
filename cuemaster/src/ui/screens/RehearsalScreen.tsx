@@ -585,7 +585,18 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             </section>
 
             <section className="stack" aria-label="Your Line">
-              <h2>Your Line</h2>
+              <div className="line-heading">
+                <h2>Your Line</h2>
+                <label className="line-visibility-toggle">
+                  <input
+                    type="checkbox"
+                    checked={isLineRevealed}
+                    disabled={!line}
+                    onChange={toggleLineReveal}
+                  />
+                  Show my line
+                </label>
+              </div>
               {includeDirections && line.directions.length > 0 ? <StageDirections directions={line.directions} /> : null}
               {isLineRevealed ? <LineCard line={line} /> : <article className="card hidden-line">Line hidden</article>}
             </section>
@@ -647,18 +658,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             )}
             <button
               type="button"
-              className="transport-button primary"
-              aria-label="Go to next line. Shortcut: Right arrow."
-              data-tooltip="Next line"
-              disabled={position.atEnd}
-              onClick={() => void runCommand("next")}
-            >
-              <span aria-hidden="true" className="transport-icon">
-                ⏭
-              </span>
-            </button>
-            <button
-              type="button"
               className="transport-button secondary"
               aria-label="Stop playback. Shortcut: Escape."
               data-tooltip="Stop"
@@ -668,20 +667,20 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 ■
               </span>
             </button>
-          </div>
-          <div className="transport-group secondary-actions" aria-label="Line controls">
             <button
               type="button"
               className="transport-button secondary"
-              aria-label={isLineRevealed ? "Hide your line." : "Reveal your line."}
-              data-tooltip={isLineRevealed ? "Hide line" : "Reveal line"}
-              disabled={!line}
-              onClick={toggleLineReveal}
+              aria-label="Go to next line. Shortcut: Right arrow."
+              data-tooltip="Next line"
+              disabled={position.atEnd}
+              onClick={() => void runCommand("next")}
             >
               <span aria-hidden="true" className="transport-icon">
-                {isLineRevealed ? "🙈" : "👁"}
+                ⏭
               </span>
             </button>
+          </div>
+          <div className="transport-group secondary-actions" aria-label="Line controls">
             <button
               type="button"
               className="transport-button secondary"
@@ -696,7 +695,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             </button>
             <button
               type="button"
-              className="transport-button primary"
+              className="transport-button secondary"
               aria-label="Hear your line. Shortcut: L."
               data-tooltip="Hear line"
               onClick={() => void runCommand("hear-line")}

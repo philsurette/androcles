@@ -15,6 +15,8 @@ npm install
 npm run dev
 ```
 
+The Cuemaster dev server is pinned to `http://127.0.0.1:5173`.
+
 ## Static Deployment Build
 
 ```sh
