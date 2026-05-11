@@ -1,5 +1,6 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
+import { estimateStorage, formatBytes, requestPersistentStorage, type StorageEstimate } from "../../platform/storageEstimate";
 import { installPlaybook } from "../../playbook/installPlaybook";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
@@ -14,9 +15,11 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   const [isImporting, setIsImporting] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [storageEstimate, setStorageEstimate] = useState<StorageEstimate | null>(null);
 
   useEffect(() => {
     void loadPlaybooks();
+    void loadStorageEstimate();
   }, []);
 
   async function loadPlaybooks() {
@@ -26,6 +29,10 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
       setPlaybooks([]);
       setError(userFacingErrorMessage(loadError));
     }
+  }
+
+  async function loadStorageEstimate() {
+    setStorageEstimate(await estimateStorage());
   }
 
   async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
@@ -42,9 +49,17 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
     setIsImporting(true);
 
     try {
+      const importStartedAt = performance.now();
       const playbook = await installPlaybook(file);
+      const elapsedSeconds = (performance.now() - importStartedAt) / 1000;
+      const persistence = await requestPersistentStorage();
+      await loadStorageEstimate();
       await loadPlaybooks();
-      setMessage(`Imported ${playbook.title}`);
+      setMessage(
+        `Imported ${playbook.title} (${formatBytes(file.size)}) in ${elapsedSeconds.toFixed(1)}s.${
+          persistence === null ? "" : persistence ? " Persistent storage is enabled." : " Persistent storage was not granted."
+        }`
+      );
     } catch (importError) {
       setError(userFacingErrorMessage(importError));
     } finally {
@@ -57,6 +72,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
     try {
       await indexedDbStorage.playbooks.delete(id);
       await loadPlaybooks();
+      await loadStorageEstimate();
     } catch (deleteError) {
       setError(userFacingErrorMessage(deleteError));
     }
@@ -85,6 +101,12 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
         {error ? (
           <p className="error" role="alert">
             {error}
+          </p>
+        ) : null}
+        {storageEstimate ? (
+          <p className="status">
+            Browser storage: {formatBytes(storageEstimate.usageBytes)} used of {formatBytes(storageEstimate.quotaBytes)}
+            {storageEstimate.persisted === null ? "" : storageEstimate.persisted ? ", persistent" : ", best effort"}.
           </p>
         ) : null}
 

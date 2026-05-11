@@ -107,6 +107,7 @@ Cuemaster does not record or upload microphone audio. It only reads volume-like 
 ## Known Limitations
 
 - Cuemaster is currently a browser app. Imported Playbooks are stored in this browser on this device.
+- Cuemaster is optimized for one active Playbook at a time. You can keep multiple Playbooks locally, but large libraries may use significant browser storage.
 - Very large Playbooks may pause briefly during import while the zip is checked and stored.
 - Audio playback depends on the browser supporting the Playbook's audio files.
 - Tempo Timing works best in a quiet space and can be confused by speakers, headphones leaking audio, or background noise.

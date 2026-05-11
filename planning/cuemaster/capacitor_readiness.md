@@ -12,7 +12,7 @@ This note records what can remain unchanged when the browser app is wrapped with
 
 ## Capacitor Replacement Points
 
-- Filesystem: keep Playbook import validation and normalization, but replace browser `File` selection/storage with Capacitor file picker/filesystem APIs. Audio assets should move from IndexedDB blobs to filesystem-backed paths if large Playbooks make IndexedDB impractical.
+- Filesystem: keep Playbook import validation and normalization, but replace browser `File` selection/storage with Capacitor file picker/filesystem APIs. Do not assume audio assets must move out of IndexedDB until this is tested with real Playbooks; the current Androcles Playbook is the baseline fixture at about 322 MB zipped and 383 MB of audio.
 - Preferences: keep session/bookmark/timing interfaces, but decide whether small records stay in IndexedDB/SQLite or move to Capacitor Preferences. Do not store audio blobs in Preferences.
 - Native/background audio: keep `AudioQueue` semantics, but replace `AudioPlayer` with a native audio adapter if background playback, lock-screen controls, or more reliable pause/resume are required.
 - Microphone permission: keep `VoiceActivityTracker` and timing feedback, but replace `requestMicrophoneStream()` with a Capacitor/native permission and stream adapter if browser `getUserMedia` is insufficient.
@@ -29,11 +29,26 @@ This note records what can remain unchanged when the browser app is wrapped with
 
 ## Known Web Decisions That Need Follow-Up
 
-- Zip extraction currently runs on the main thread. Move extraction and required-asset checks to a Web Worker before large Playbook testing.
-- Browser IndexedDB is adequate for Phase 1, but large audio libraries need a Capacitor filesystem spike before mobile packaging.
+- Zip extraction currently runs on the main thread. Test import responsiveness with the real Androcles Playbook before deciding whether Web Worker extraction is required.
+- Browser IndexedDB is adequate for Phase 1 if the Androcles Playbook imports, persists, reloads, and plays reliably. Filesystem-backed audio should be a measured response to import time, quota, or playback failures, not a default assumption.
 - Stage-direction toggling is not yet implemented because normalized role lines do not yet expose enough direction context.
 - Real microphone timing still needs a manual test matrix before declaring mobile-ready behavior.
 
+## Real Playbook Baseline
+
+Use `build/androcles/androcles.playbook.zip` as the first large-file import test. Current local measurements:
+
+- Playbook zip: about 322 MB.
+- Extracted Playbook audio: about 383 MB.
+- Audio files: 605.
+- Manifest: about 748 KB.
+- Rehearsable roles: 26.
+- Rehearsable lines: 471.
+
+The test should measure import time, whether the UI remains responsive enough during import, whether the browser grants enough storage quota, whether reload/resume works after import, and whether cue/response playback still resolves assets promptly.
+
+The 95% product assumption is one active Playbook per actor at a time. Supporting several stored Playbooks is useful, but the app does not need to optimize for a large local library before the first mobile spike. If storage pressure appears, the acceptable first mitigation is clear user-facing guidance to remove old Playbooks.
+
 ## Recommended Next Spike
 
-Build a narrow Capacitor proof of concept that imports one Playbook, stores audio assets through the mobile filesystem, persists session metadata through the storage interface, and plays one cue plus one response through either the current web audio path or a native audio plugin.
+First run a web import stress test with the real Androcles Playbook. If IndexedDB storage is reliable at that size, the Capacitor proof of concept can start by preserving the storage interface and testing whether mobile WebView IndexedDB quotas are acceptable. If mobile quota or performance fails, then build a narrow Capacitor proof of concept that stores audio assets through the mobile filesystem while keeping session metadata behind the storage interface.
