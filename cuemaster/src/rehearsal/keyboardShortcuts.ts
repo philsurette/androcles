@@ -1,4 +1,4 @@
-export type RehearsalShortcut = "toggle-playback" | "repeat-cue" | "next" | "previous" | "hear-line" | "stop";
+import type { RehearsalShortcut } from "./rehearsalCommand";
 
 export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): RehearsalShortcut | null {
   if (isEditableTarget(event.target)) {
@@ -15,7 +15,7 @@ export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): Re
     case "ArrowRight":
       return "next";
     case "ArrowLeft":
-      return "previous";
+      return "back";
     case "l":
     case "L":
       return "hear-line";

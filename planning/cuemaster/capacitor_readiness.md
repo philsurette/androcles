@@ -30,7 +30,7 @@ This note records what can remain unchanged when the browser app is wrapped with
 ## Known Web Decisions That Need Follow-Up
 
 - Zip extraction currently runs on the main thread. Test import responsiveness with the real Androcles Playbook before deciding whether Web Worker extraction is required.
-- Browser IndexedDB is adequate for Phase 1 if the Androcles Playbook imports, persists, reloads, and plays reliably. Filesystem-backed audio should be a measured response to import time, quota, or playback failures, not a default assumption.
+- Browser IndexedDB is adequate for Phase 1 if the Androcles Playbook imports, persists, reloads, and plays reliably. MP3 Playbook packaging should be the first storage optimization if WAV assets create quota/import pressure; filesystem-backed audio should be a measured response to remaining import time, quota, or playback failures, not a default assumption.
 - Stage-direction toggling is not yet implemented because normalized role lines do not yet expose enough direction context.
 - Real microphone timing still needs a manual test matrix before declaring mobile-ready behavior.
 

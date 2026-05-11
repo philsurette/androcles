@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "audit:licenses": "node scripts/audit-licenses.mjs"
   },
   "dependencies": {
     "@vitejs/plugin-react": "^5.0.0",

@@ -265,7 +265,7 @@ Fields:
 - `duration_ms`: Audio length in milliseconds.
 - `required`: Whether Playbook generation should fail if the asset is missing.
 
-For schema version 1, audio format should remain WAV for segment assets unless a later Playbook packaging design chooses compressed assets.
+For schema version 1, WAV remains the baseline segment asset format. Stager may add an explicit Playbook packaging option for MP3 assets as a storage/import optimization, but it must remain format-aware: manifest paths must use the encoded extension, `duration_ms` must be measured from the packaged file, and Cuemaster must consume assets through manifest paths rather than assuming `.wav`.
 
 ## Stage Directions
 

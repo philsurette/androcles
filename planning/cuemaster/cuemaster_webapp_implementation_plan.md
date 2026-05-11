@@ -305,8 +305,8 @@ Create a working React/Vite/TypeScript app with the planned folder structure, te
 - [x] Add CSS baseline.
 - [x] Add route/screen skeletons.
 - [x] Add `platform/` abstraction folder.
-- [ ] Add dependency license audit script.
-- [ ] Add `THIRD_PARTY_NOTICES.md` placeholder.
+- [x] Add dependency license audit script.
+- [x] Add `THIRD_PARTY_NOTICES.md` placeholder.
 - [x] Add `README.md` with web-app-only development instructions.
 - [x] Add initial sample manifest fixture from a Stager-generated public-domain Playbook.
 - [x] Add a fake in-memory Playbook fixture in unit tests for UI/domain development before zip import works.
@@ -314,21 +314,18 @@ Create a working React/Vite/TypeScript app with the planned folder structure, te
 ### Acceptance Criteria
 
 - [x] `npm install` succeeds.
-- [ ] `npm run dev` starts the web app.
+- [x] `npm run dev` starts the web app.
 - [x] `npm run build` succeeds.
 - [x] `npm test` runs Vitest.
-- [ ] `npm run e2e` runs Playwright smoke test.
+- [x] `npm run e2e` runs Playwright smoke test.
 - [x] Home screen renders in the build.
-- [ ] No runtime dependency has an incompatible license.
+- [x] No runtime dependency has an incompatible license.
 
 ### Remaining Milestone 0 Work
 
-- Add a license audit script and `THIRD_PARTY_NOTICES.md`.
-- Add a small committed Playbook manifest fixture generated from public-domain Stager data.
-- Run `npm run dev` manually and confirm the browser app starts.
-- Run `npm run e2e`; install Playwright browsers first if needed.
+None.
 
-After those are done, Milestone 0 is complete.
+Milestone 0 is complete.
 
 ---
 
@@ -1024,15 +1021,15 @@ This milestone does **not** implement Capacitor. It prepares for it.
 - [x] Microphone access is isolated behind a timing/voice input abstraction.
 - [x] No React component directly calls low-level browser APIs except through adapters.
 - [x] No web-only assumption is hardcoded into domain logic.
-- [ ] No dependency blocks mobile packaging.
+- [x] No dependency blocks mobile packaging.
 
 #### Licensing review
 
-- [ ] Runtime dependency list reviewed.
-- [ ] Transitive licenses checked.
-- [ ] `THIRD_PARTY_NOTICES.md` generated or updated.
-- [ ] No GPL-family dependency present.
-- [ ] No unclear-license dependency present.
+- [x] Runtime dependency list reviewed.
+- [x] Transitive licenses checked.
+- [x] `THIRD_PARTY_NOTICES.md` generated or updated.
+- [x] No GPL-family dependency present.
+- [x] No unclear-license dependency present.
 
 #### Mobile feature planning
 
@@ -1063,21 +1060,21 @@ This milestone belongs at the end of web-app Phase 1 because voice commands shou
 
 #### Command abstraction
 
-- [ ] Define app commands independent of input method:
-  - [ ] next,
-  - [ ] back,
-  - [ ] repeat cue,
-  - [ ] hear line,
-  - [ ] pause,
-  - [ ] resume,
-  - [ ] bookmark,
-  - [ ] slower,
-  - [ ] faster,
-  - [ ] normal speed,
-  - [ ] start timing / retry timing if needed.
-- [ ] Ensure buttons call command functions rather than embedding behavior directly.
-- [ ] Ensure keyboard shortcuts call the same command functions.
-- [ ] Leave voice commands as a later input layer.
+- [x] Define app commands independent of input method:
+  - [x] next,
+  - [x] back,
+  - [x] repeat cue,
+  - [x] hear line,
+  - [x] pause,
+  - [x] resume,
+  - [x] bookmark,
+  - [x] slower,
+  - [x] faster,
+  - [x] normal speed,
+  - [x] start timing / retry timing if needed.
+- [x] Ensure buttons call command functions rather than embedding behavior directly.
+- [x] Ensure keyboard shortcuts call the same command functions.
+- [x] Leave voice commands as a later input layer.
 
 #### Research
 
@@ -1101,9 +1098,9 @@ This milestone belongs at the end of web-app Phase 1 because voice commands shou
 
 ### Acceptance Criteria
 
-- [ ] The app has an input-command abstraction ready for voice commands later.
+- [x] The app has an input-command abstraction ready for voice commands later.
 - [ ] There is a documented, license-safe candidate stack for Phase 2 voice commands.
-- [ ] No wake-word code is required in the Phase 1 browser release.
+- [x] No wake-word code is required in the Phase 1 browser release.
 
 ---
 

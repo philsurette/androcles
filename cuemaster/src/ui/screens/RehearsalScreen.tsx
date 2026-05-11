@@ -8,6 +8,7 @@ import type { TimingAttempt } from "../../domain/timingAttempt";
 import { AudioQueue } from "../../rehearsal/audioQueue";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
+import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
@@ -91,24 +92,71 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         return;
       }
       event.preventDefault();
-      if (shortcut === "toggle-playback") {
-        void togglePlayback();
-      } else if (shortcut === "repeat-cue") {
-        void playCue();
-      } else if (shortcut === "next" && !engine.position().atEnd) {
-        void goNext();
-      } else if (shortcut === "previous" && !engine.position().atBeginning) {
-        void goPrevious();
-      } else if (shortcut === "hear-line" && engine.currentLine()) {
-        void playResponse();
-      } else if (shortcut === "stop") {
-        stopPlayback();
-      }
+      void runCommand(commandForShortcut(shortcut));
     }
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   });
+
+  function commandForShortcut(shortcut: RehearsalShortcut): RehearsalCommand {
+    if (shortcut !== "toggle-playback") {
+      return shortcut;
+    }
+
+    if (playbackState === "playing") {
+      return "pause";
+    }
+    if (playbackState === "paused") {
+      return "resume";
+    }
+    return "repeat-cue";
+  }
+
+  async function runCommand(command: RehearsalCommand) {
+    switch (command) {
+      case "next":
+        if (!engine.position().atEnd) {
+          await goNext();
+        }
+        return;
+      case "back":
+        if (!engine.position().atBeginning) {
+          await goPrevious();
+        }
+        return;
+      case "repeat-cue":
+        await playCue();
+        return;
+      case "hear-line":
+        await playResponse();
+        return;
+      case "pause":
+        pausePlayback();
+        return;
+      case "resume":
+        resumePlayback();
+        return;
+      case "stop":
+        stopPlayback();
+        return;
+      case "bookmark":
+        await toggleBookmark();
+        return;
+      case "slower":
+        slowDownResponse();
+        return;
+      case "faster":
+        speedUpResponse();
+        return;
+      case "normal-speed":
+        resetResponseSpeed();
+        return;
+      case "start-timing":
+        beginTimedAttempt();
+        return;
+    }
+  }
 
   async function goNext() {
     engine.next();
@@ -227,25 +275,19 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
   }
 
-  async function togglePlayback() {
-    if (playbackState === "playing") {
-      pausePlayback();
-      return;
-    }
-    if (playbackState === "paused") {
-      resumePlayback();
-      return;
-    }
-    await playCue();
-  }
-
   function pausePlayback() {
+    if (playbackState !== "playing") {
+      return;
+    }
     audioQueue.pause();
     setPlaybackState("paused");
     setPlaybackStatus("Playback paused.");
   }
 
   function resumePlayback() {
+    if (playbackState !== "paused") {
+      return;
+    }
     audioQueue.resume();
     setPlaybackState("playing");
     setPlaybackStatus("Playback resumed.");
@@ -515,11 +557,11 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         )}
 
         <div className="transport">
-          <button type="button" aria-label="Start or repeat cue. Shortcut: Space or R." onClick={() => void playCue()}>
+          <button type="button" aria-label="Start or repeat cue. Shortcut: Space or R." onClick={() => void runCommand("repeat-cue")}>
             {hasStarted ? "Repeat Cue" : "Start"}
           </button>
           {playbackState === "paused" ? (
-            <button type="button" aria-label="Resume playback. Shortcut: Space." onClick={resumePlayback}>
+            <button type="button" aria-label="Resume playback. Shortcut: Space." onClick={() => void runCommand("resume")}>
               Resume
             </button>
           ) : (
@@ -528,7 +570,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               className="secondary"
               aria-label="Pause playback. Shortcut: Space."
               disabled={playbackState !== "playing"}
-              onClick={pausePlayback}
+              onClick={() => void runCommand("pause")}
             >
               Pause
             </button>
@@ -538,7 +580,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             className="secondary"
             aria-label="Go to previous line. Shortcut: Left arrow."
             disabled={position.atBeginning}
-            onClick={() => void goPrevious()}
+            onClick={() => void runCommand("back")}
           >
             Previous
           </button>
@@ -556,14 +598,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             className="secondary"
             aria-label={isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."}
             disabled={!line}
-            onClick={() => void toggleBookmark()}
+            onClick={() => void runCommand("bookmark")}
           >
             {isCurrentLineBookmarked ? "Remove Bookmark" : "Bookmark"}
           </button>
           <button
             type="button"
             aria-label="Hear your line. Shortcut: L."
-            onClick={() => void playResponse()}
+            onClick={() => void runCommand("hear-line")}
             disabled={!line}
           >
             Hear My Line
@@ -575,11 +617,11 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             type="button"
             aria-label="Go to next line. Shortcut: Right arrow."
             disabled={position.atEnd}
-            onClick={() => void goNext()}
+            onClick={() => void runCommand("next")}
           >
             Next
           </button>
-          <button type="button" className="secondary" aria-label="Stop playback. Shortcut: Escape." onClick={stopPlayback}>
+          <button type="button" className="secondary" aria-label="Stop playback. Shortcut: Escape." onClick={() => void runCommand("stop")}>
             Stop
           </button>
         </div>
@@ -638,13 +680,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             </select>
           </label>
           <div className="speed-controls" aria-label="Response speed quick controls">
-            <button type="button" className="secondary" onClick={slowDownResponse} disabled={playbackRate <= minPlaybackRate}>
+            <button type="button" className="secondary" onClick={() => void runCommand("slower")} disabled={playbackRate <= minPlaybackRate}>
               Slower
             </button>
-            <button type="button" className="secondary" onClick={resetResponseSpeed} disabled={playbackRate === defaultPlaybackRate}>
+            <button type="button" className="secondary" onClick={() => void runCommand("normal-speed")} disabled={playbackRate === defaultPlaybackRate}>
               Normal
             </button>
-            <button type="button" className="secondary" onClick={speedUpResponse} disabled={playbackRate >= maxPlaybackRate}>
+            <button type="button" className="secondary" onClick={() => void runCommand("faster")} disabled={playbackRate >= maxPlaybackRate}>
               Faster
             </button>
           </div>

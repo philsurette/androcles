@@ -6,7 +6,7 @@ describe("shortcutForKey", () => {
     expect(shortcutForKey({ key: " ", target: null })).toBe("toggle-playback");
     expect(shortcutForKey({ key: "R", target: null })).toBe("repeat-cue");
     expect(shortcutForKey({ key: "ArrowRight", target: null })).toBe("next");
-    expect(shortcutForKey({ key: "ArrowLeft", target: null })).toBe("previous");
+    expect(shortcutForKey({ key: "ArrowLeft", target: null })).toBe("back");
     expect(shortcutForKey({ key: "L", target: null })).toBe("hear-line");
     expect(shortcutForKey({ key: "Escape", target: null })).toBe("stop");
   });
