@@ -389,11 +389,10 @@ button:disabled {
 }
 
 .session-settings {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: 1rem;
   align-items: center;
-  justify-content: space-between;
+  grid-template-columns: repeat(3, minmax(10rem, 1fr));
   margin-top: 1.25rem;
 }
 
@@ -416,6 +415,54 @@ button:disabled {
   color: var(--ink);
   font: inherit;
   padding: 0.55rem 0.75rem;
+}
+
+.practice-options {
+  grid-column: 1 / -1;
+  border-radius: 1rem;
+  background: rgba(30, 38, 31, 0.06);
+}
+
+.practice-options summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--quiet);
+  font-weight: 900;
+  list-style: none;
+  padding: 0.65rem 0.9rem;
+}
+
+.practice-options summary::-webkit-details-marker {
+  display: none;
+}
+
+.practice-options summary::after {
+  color: var(--accent);
+  content: "Show";
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.practice-options[open] summary::after {
+  content: "Hide";
+}
+
+.practice-options-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  align-items: center;
+  border-top: 1px solid rgba(30, 38, 31, 0.08);
+  padding: 0.8rem 0.9rem 0.9rem;
+}
+
+.practice-options-panel .status {
+  flex-basis: 100%;
+  margin: 0;
 }
 
 .session-actions {
@@ -576,6 +623,10 @@ button:disabled {
   }
 
   .session-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .session-settings {
     grid-template-columns: 1fr;
   }
 

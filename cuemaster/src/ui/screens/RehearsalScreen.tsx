@@ -725,48 +725,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         </div>
 
         <div className="session-settings">
-          <label className="check-setting">
-            <input
-              type="checkbox"
-              checked={speakAlongEnabled}
-              disabled={tempoTimingEnabled}
-              onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
-            />
-            Speak-along practice
-          </label>
-          <label className="check-setting">
-            <input
-              type="checkbox"
-              checked={includeDirections}
-              onChange={(event) => changeIncludeDirections(event.target.checked)}
-            />
-            Show stage directions
-          </label>
-          <label className="check-setting">
-            <input
-              type="checkbox"
-              checked={showLinesByDefault}
-              onChange={(event) => changeShowLinesByDefault(event.target.checked)}
-            />
-            Show lines by default
-          </label>
-          <label className="check-setting">
-            <input
-              type="checkbox"
-              checked={tempoTimingEnabled}
-              onChange={(event) => {
-                if (event.target.checked) {
-                  void enableTempoTiming();
-                } else {
-                  void disableTempoTiming();
-                }
-              }}
-            />
-            Enable Tempo Timing
-          </label>
-          <p className="status">
-            Tempo timing uses microphone energy only: no recording, no transcription, no upload.
-          </p>
           <label>
             Section
             <select
@@ -804,6 +762,53 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               ))}
             </select>
           </label>
+          <details className="practice-options">
+            <summary>Practice Options</summary>
+            <div className="practice-options-panel">
+              <label className="check-setting">
+                <input
+                  type="checkbox"
+                  checked={speakAlongEnabled}
+                  disabled={tempoTimingEnabled}
+                  onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
+                />
+                Speak-along practice
+              </label>
+              <label className="check-setting">
+                <input
+                  type="checkbox"
+                  checked={includeDirections}
+                  onChange={(event) => changeIncludeDirections(event.target.checked)}
+                />
+                Show stage directions
+              </label>
+              <label className="check-setting">
+                <input
+                  type="checkbox"
+                  checked={showLinesByDefault}
+                  onChange={(event) => changeShowLinesByDefault(event.target.checked)}
+                />
+                Show lines by default
+              </label>
+              <label className="check-setting">
+                <input
+                  type="checkbox"
+                  checked={tempoTimingEnabled}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      void enableTempoTiming();
+                    } else {
+                      void disableTempoTiming();
+                    }
+                  }}
+                />
+                Enable Tempo Timing
+              </label>
+              <p className="status">
+                Tempo timing uses microphone energy only: no recording, no transcription, no upload.
+              </p>
+            </div>
+          </details>
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {tempoStatus ? (
             <p className="status" aria-live="polite">
