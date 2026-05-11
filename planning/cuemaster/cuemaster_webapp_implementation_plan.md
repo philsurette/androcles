@@ -749,38 +749,38 @@ This is a technical spike, but it should leave usable code if successful.
 
 #### Permission
 
-- [ ] Add explicit **Enable Tempo Timing** flow.
-- [ ] Explain microphone use:
-  - [ ] no recording,
-  - [ ] no transcription,
-  - [ ] no upload,
-  - [ ] voice activity detection only.
-- [ ] Request microphone permission.
-- [ ] Handle denied permission.
-- [ ] Handle missing microphone.
-- [ ] Handle browser security restrictions.
+- [x] Add explicit **Enable Tempo Timing** flow.
+- [x] Explain microphone use:
+  - [x] no recording,
+  - [x] no transcription,
+  - [x] no upload,
+  - [x] voice activity detection only.
+- [x] Request microphone permission.
+- [x] Handle denied permission.
+- [x] Handle missing microphone.
+- [x] Handle browser security restrictions.
 
 #### Voice activity detector
 
-- [ ] Capture microphone stream.
-- [ ] Analyze volume/energy over time.
-- [ ] Distinguish speech-like activity from silence/noise well enough for a first version.
+- [x] Capture microphone stream.
+- [x] Analyze volume/energy over time.
+- [x] Distinguish speech-like activity from silence/noise well enough for a first version.
 - [ ] Add calibration or ambient noise baseline if needed.
-- [ ] Detect first speech after cue.
-- [ ] Detect end of attempt after long silence.
-- [ ] Ignore short internal pauses.
-- [ ] Subtract final silence from delivery time.
-- [ ] Stop and release microphone when timing is disabled.
+- [x] Detect first speech after cue.
+- [x] Detect end of attempt after long silence.
+- [x] Ignore short internal pauses.
+- [x] Subtract final silence from delivery time.
+- [x] Stop and release microphone when timing is disabled.
 
 #### Timing parameters
 
 Initial internal defaults:
 
-- [ ] Default target hesitation: `500ms`.
-- [ ] Internal pause grace: approximately `750ms`.
-- [ ] End-of-line silence threshold: approximately `1500ms`.
-- [ ] Make thresholds constants in one place.
-- [ ] Keep thresholds adjustable in code for testing.
+- [x] Default target hesitation: `500ms`.
+- [x] Internal pause grace: approximately `750ms`.
+- [x] End-of-line silence threshold: approximately `1500ms`.
+- [x] Make thresholds constants in one place.
+- [x] Keep thresholds adjustable in code for testing.
 
 #### Tests/manual checks
 
@@ -793,12 +793,12 @@ Initial internal defaults:
 
 ### Acceptance Criteria
 
-- [ ] Browser asks for microphone permission only when tempo timing is enabled.
-- [ ] App can detect first speech after cue.
-- [ ] App can detect end of delivery after long silence.
-- [ ] App does not save audio.
-- [ ] App does not transcribe audio.
-- [ ] App releases microphone when timing is off.
+- [x] Browser asks for microphone permission only when tempo timing is enabled.
+- [x] App can detect first speech after cue.
+- [x] App can detect end of delivery after long silence.
+- [x] App does not save audio.
+- [x] App does not transcribe audio.
+- [x] App releases microphone when timing is off.
 - [ ] Result is good enough to proceed to productized tempo timing, or the spike documents blockers.
 
 ---

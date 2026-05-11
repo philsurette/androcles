@@ -5,6 +5,7 @@ import type { RehearsalSession } from "../../domain/session";
 import { AudioQueue } from "../../rehearsal/audioQueue";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
+import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import { sessionRepository } from "../../storage/sessionRepository";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
@@ -30,12 +31,21 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
+  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingEnabled ?? false);
+  const [tempoStatus, setTempoStatus] = useState<string>("");
+  const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
 
   useEffect(() => {
     void saveSession(engine.position().index);
   }, []);
+
+  useEffect(() => {
+    return () => {
+      voiceActivityDetector?.stop();
+    };
+  }, [voiceActivityDetector]);
 
   async function goNext() {
     engine.next();
@@ -64,7 +74,8 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   async function saveSession(
     lineIndex: number,
     nextPlaybackRate = playbackRate,
-    nextSpeakAlongEnabled = speakAlongEnabled
+    nextSpeakAlongEnabled = speakAlongEnabled,
+    nextTempoTimingEnabled = tempoTimingEnabled
   ) {
     await sessionRepository.save({
       playbookId: playbook.id,
@@ -73,6 +84,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       includeDirections: engine.includeDirections(),
       playbackRate: nextPlaybackRate,
       speakAlongEnabled: nextSpeakAlongEnabled,
+      tempoTimingEnabled: nextTempoTimingEnabled,
       updatedAt: Date.now()
     });
   }
@@ -140,7 +152,43 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
 
   function changeSpeakAlongEnabled(nextSpeakAlongEnabled: boolean) {
     setSpeakAlongEnabled(nextSpeakAlongEnabled);
-    void saveSession(position.index, playbackRate, nextSpeakAlongEnabled);
+    if (nextSpeakAlongEnabled && tempoTimingEnabled) {
+      void disableTempoTiming("Tempo timing disabled while speak-along practice is enabled.");
+    }
+    void saveSession(position.index, playbackRate, nextSpeakAlongEnabled, nextSpeakAlongEnabled ? false : tempoTimingEnabled);
+  }
+
+  async function enableTempoTiming() {
+    setTempoStatus("Requesting microphone permission...");
+    const detector = new VoiceActivityDetector((result) => {
+      if (result.event === "speech-started") {
+        setTempoStatus(`Speech detected after ${result.hesitationMs} ms.`);
+      } else {
+        setTempoStatus(`Delivery ended after ${result.deliveryMs} ms.`);
+      }
+    });
+
+    try {
+      await detector.start();
+      voiceActivityDetector?.stop();
+      setVoiceActivityDetector(detector);
+      setTempoTimingEnabled(true);
+      setSpeakAlongEnabled(false);
+      setTempoStatus("Tempo timing enabled. Audio is not recorded, transcribed, saved, or uploaded.");
+      await saveSession(position.index, playbackRate, false, true);
+    } catch (error) {
+      detector.stop();
+      setTempoTimingEnabled(false);
+      setTempoStatus(error instanceof Error ? error.message : "Could not enable tempo timing.");
+    }
+  }
+
+  async function disableTempoTiming(message = "Tempo timing disabled."): Promise<void> {
+    voiceActivityDetector?.stop();
+    setVoiceActivityDetector(null);
+    setTempoTimingEnabled(false);
+    setTempoStatus(message);
+    await saveSession(position.index, playbackRate, speakAlongEnabled, false);
   }
 
   return (
@@ -202,10 +250,28 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
             <input
               type="checkbox"
               checked={speakAlongEnabled}
+              disabled={tempoTimingEnabled}
               onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
             />
             Speak-along practice
           </label>
+          <label className="check-setting">
+            <input
+              type="checkbox"
+              checked={tempoTimingEnabled}
+              onChange={(event) => {
+                if (event.target.checked) {
+                  void enableTempoTiming();
+                } else {
+                  void disableTempoTiming();
+                }
+              }}
+            />
+            Enable Tempo Timing
+          </label>
+          <p className="status">
+            Tempo timing uses microphone energy only: no recording, no transcription, no upload.
+          </p>
           <label>
             Response speed
             <select
@@ -231,6 +297,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
             </button>
           </div>
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
+          {tempoStatus ? <p className="status">{tempoStatus}</p> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>
