@@ -23,9 +23,9 @@ test("repeat cue does not advance the current line", async ({ page }) => {
   await openAndroclesRole(page);
 
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
-  await page.getByRole("button", { name: /start or repeat cue/i }).click();
+  await page.getByRole("button", { name: /start cue/i }).click();
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
-  await page.getByRole("button", { name: /start or repeat cue/i }).click();
+  await page.getByRole("button", { name: /repeat cue/i }).click();
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
 });
 

@@ -258,9 +258,29 @@ button:disabled {
 .transport {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.75rem;
-  justify-content: flex-end;
+  gap: 0.6rem;
+  justify-content: center;
   margin-top: 2rem;
+}
+
+.transport-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 4rem;
+  padding-inline: 0;
+}
+
+.transport-button.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.transport-icon {
+  font-size: 1.35em;
+  line-height: 1;
+  text-align: center;
 }
 
 .session-settings {
@@ -291,12 +311,6 @@ button:disabled {
   color: var(--ink);
   font: inherit;
   padding: 0.55rem 0.75rem;
-}
-
-.speed-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
 }
 
 .tempo-feedback {

@@ -154,15 +154,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       case "bookmark":
         await toggleBookmark();
         return;
-      case "slower":
-        slowDownResponse();
-        return;
-      case "faster":
-        speedUpResponse();
-        return;
-      case "normal-speed":
-        resetResponseSpeed();
-        return;
       case "start-timing":
         beginTimedAttempt();
         return;
@@ -375,18 +366,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       cueWindowPresetId,
       nextIncludeDirections
     );
-  }
-
-  function slowDownResponse() {
-    changePlaybackRate(playbackRate - playbackRateStep);
-  }
-
-  function speedUpResponse() {
-    changePlaybackRate(playbackRate + playbackRateStep);
-  }
-
-  function resetResponseSpeed() {
-    changePlaybackRate(defaultPlaybackRate);
   }
 
   function changeSpeakAlongEnabled(nextSpeakAlongEnabled: boolean) {
@@ -616,72 +595,126 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         )}
 
         <div className="transport">
-          <button type="button" aria-label="Start or repeat cue. Shortcut: Space or R." onClick={() => void runCommand("repeat-cue")}>
-            {hasStarted ? "Repeat Cue" : "Start"}
+          <button
+            type="button"
+            className="transport-button primary"
+            aria-label={`${hasStarted ? "Repeat cue" : "Start cue"}. Shortcut: Space or R.`}
+            title={`${hasStarted ? "Repeat cue" : "Start cue"} (Space or R)`}
+            onClick={() => void runCommand("repeat-cue")}
+          >
+            <span aria-hidden="true" className="transport-icon">
+              {hasStarted ? "↻" : "▶"}
+            </span>
           </button>
           {playbackState === "paused" ? (
-            <button type="button" aria-label="Resume playback. Shortcut: Space." onClick={() => void runCommand("resume")}>
-              Resume
+            <button
+              type="button"
+              className="transport-button"
+              aria-label="Resume playback. Shortcut: Space."
+              title="Resume playback (Space)"
+              onClick={() => void runCommand("resume")}
+            >
+              <span aria-hidden="true" className="transport-icon">
+                ▶
+              </span>
             </button>
           ) : (
             <button
               type="button"
-              className="secondary"
+              className="transport-button secondary"
               aria-label="Pause playback. Shortcut: Space."
+              title="Pause playback (Space)"
               disabled={playbackState !== "playing"}
               onClick={() => void runCommand("pause")}
             >
-              Pause
+              <span aria-hidden="true" className="transport-icon">
+                ⏸
+              </span>
             </button>
           )}
           <button
             type="button"
-            className="secondary"
+            className="transport-button secondary"
             aria-label="Go to previous line. Shortcut: Left arrow."
+            title="Previous line (Left arrow)"
             disabled={position.atBeginning}
             onClick={() => void runCommand("back")}
           >
-            Previous
+            <span aria-hidden="true" className="transport-icon">
+              ⏮
+            </span>
           </button>
           <button
             type="button"
-            className="secondary"
+            className="transport-button secondary"
             aria-label={isLineRevealed ? "Hide your line." : "Reveal your line."}
+            title={isLineRevealed ? "Hide your line" : "Reveal your line"}
             disabled={!line}
             onClick={toggleLineReveal}
           >
-            {isLineRevealed ? "Hide Line" : "Reveal Line"}
+            <span aria-hidden="true" className="transport-icon">
+              {isLineRevealed ? "◉" : "◎"}
+            </span>
           </button>
           <button
             type="button"
-            className="secondary"
+            className="transport-button secondary"
             aria-label={isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."}
+            title={isCurrentLineBookmarked ? "Remove bookmark" : "Bookmark current line"}
             disabled={!line}
             onClick={() => void runCommand("bookmark")}
           >
-            {isCurrentLineBookmarked ? "Remove Bookmark" : "Bookmark"}
+            <span aria-hidden="true" className="transport-icon">
+              {isCurrentLineBookmarked ? "★" : "☆"}
+            </span>
           </button>
           <button
             type="button"
+            className="transport-button primary"
             aria-label="Hear your line. Shortcut: L."
+            title="Hear your line (L)"
             onClick={() => void runCommand("hear-line")}
             disabled={!line}
           >
-            Hear My Line
-          </button>
-          <button type="button" aria-label="Speak along with the reference line." onClick={() => void speakAlong()} disabled={!line}>
-            Speak Along
+            <span aria-hidden="true" className="transport-icon">
+              ♫
+            </span>
           </button>
           <button
             type="button"
+            className="transport-button primary"
+            aria-label="Speak along with the reference line."
+            title="Speak along with the reference line"
+            onClick={() => void speakAlong()}
+            disabled={!line}
+          >
+            <span aria-hidden="true" className="transport-icon">
+              ◌
+            </span>
+            <span>Speak Along</span>
+          </button>
+          <button
+            type="button"
+            className="transport-button primary"
             aria-label="Go to next line. Shortcut: Right arrow."
+            title="Next line (Right arrow)"
             disabled={position.atEnd}
             onClick={() => void runCommand("next")}
           >
-            Next
+            <span aria-hidden="true" className="transport-icon">
+              ⏭
+            </span>
           </button>
-          <button type="button" className="secondary" aria-label="Stop playback. Shortcut: Escape." onClick={() => void runCommand("stop")}>
-            Stop
+          <button
+            type="button"
+            className="transport-button secondary"
+            aria-label="Stop playback. Shortcut: Escape."
+            title="Stop playback (Escape)"
+            onClick={() => void runCommand("stop")}
+          >
+            <span aria-hidden="true" className="transport-icon">
+              ■
+            </span>
           </button>
         </div>
 
@@ -765,17 +798,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               ))}
             </select>
           </label>
-          <div className="speed-controls" aria-label="Response speed quick controls">
-            <button type="button" className="secondary" onClick={() => void runCommand("slower")} disabled={playbackRate <= minPlaybackRate}>
-              Slower
-            </button>
-            <button type="button" className="secondary" onClick={() => void runCommand("normal-speed")} disabled={playbackRate === defaultPlaybackRate}>
-              Normal
-            </button>
-            <button type="button" className="secondary" onClick={() => void runCommand("faster")} disabled={playbackRate >= maxPlaybackRate}>
-              Faster
-            </button>
-          </div>
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {tempoStatus ? (
             <p className="status" aria-live="polite">
@@ -1014,8 +1036,6 @@ function currentRoleSectionId(
 
 const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
-const defaultPlaybackRate = 1;
-const playbackRateStep = 0.1;
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
 
 export function clampPlaybackRate(playbackRate: number): number {

@@ -56,11 +56,7 @@ Cue length applies to cue playback and Speak Along. When the selected length sta
 
 ## Response Speed
 
-Use the response speed selector or quick controls:
-
-- **Slower** decreases response playback speed.
-- **Normal** resets response playback to `1.0x`.
-- **Faster** increases response playback speed.
+Use the response speed selector to choose reference-line playback speed.
 
 Cues always play at normal speed. Only your reference line uses the selected response speed.
 
