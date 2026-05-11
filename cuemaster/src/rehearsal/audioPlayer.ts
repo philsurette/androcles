@@ -1,14 +1,17 @@
 import { createAudioElement } from "../platform/audio";
 
-export type AudioPlaybackState = "idle" | "playing" | "stopped" | "failed";
+export type AudioElementFactory = (src: string) => HTMLAudioElement;
+export type AudioPlaybackState = "idle" | "playing" | "paused" | "stopped" | "failed";
 
 export class AudioPlayer {
   private currentAudio: HTMLAudioElement | null = null;
   private state: AudioPlaybackState = "idle";
 
+  constructor(private readonly audioElementFactory: AudioElementFactory = createAudioElement) {}
+
   async play(src: string, playbackRate = 1): Promise<void> {
     this.stop();
-    const audio = createAudioElement(src);
+    const audio = this.audioElementFactory(src);
     this.currentAudio = audio;
     this.state = "playing";
     audio.playbackRate = playbackRate;
@@ -25,6 +28,14 @@ export class AudioPlayer {
       this.state = "failed";
       throw error;
     }
+  }
+
+  pause(): void {
+    if (!this.currentAudio || this.state !== "playing") {
+      return;
+    }
+    this.currentAudio.pause();
+    this.state = "paused";
   }
 
   stop(): void {

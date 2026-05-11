@@ -567,7 +567,7 @@ This milestone does not yet require the full rehearsal UI.
 - [x] Create `AudioPlayer` class/wrapper around `HTMLAudioElement`.
 - [x] Support loading an audio asset by app asset ID/path.
 - [x] Support play.
-- [ ] Support pause.
+- [x] Support pause.
 - [x] Support stop.
 - [x] Support ended event.
 - [x] Support error event.
