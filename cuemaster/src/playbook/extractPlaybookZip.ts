@@ -1,46 +1,44 @@
-import JSZip from "jszip";
-import { validatePlaybookManifest } from "../specs/validatePlaybookManifest";
-import { PlaybookAssetIndex, assertRequiredAudioAssetsPresent } from "./playbookAssetIndex";
+import type { ExtractedPlaybookZipData } from "./extractedPlaybookZip";
+import { extractPlaybookZipData } from "./extractPlaybookZipData";
+import { PlaybookAssetIndex } from "./playbookAssetIndex";
 import { PlaybookImportError } from "./playbookImportError";
-import { ZodError } from "zod";
 
 export async function extractPlaybookZip(file: Blob) {
-  const zip = await loadZip(file);
-  const manifestEntry = zip.file("manifest.json");
-  if (!manifestEntry) {
-    throw new PlaybookImportError("Playbook zip is missing manifest.json");
-  }
-  const manifest = validateManifestJson(await manifestEntry.async("text"));
-  const assetIndex = PlaybookAssetIndex.fromZip(zip);
-  assertRequiredAudioAssetsPresent(manifest, assetIndex);
-  return { manifest, zip, assetIndex };
+  const extracted = shouldUseWorker() ? await extractInWorker(file) : await extractPlaybookZipData(file);
+
+  return {
+    manifest: extracted.manifest,
+    assetIndex: new PlaybookAssetIndex(extracted.assetPaths),
+    audioAssets: extracted.audioAssets
+  };
 }
 
-async function loadZip(file: Blob): Promise<JSZip> {
-  try {
-    return await JSZip.loadAsync(file);
-  } catch (error) {
-    throw new PlaybookImportError("Invalid Playbook zip", { cause: error });
-  }
+function shouldUseWorker(): boolean {
+  return typeof Worker !== "undefined" && typeof import.meta.url === "string";
 }
 
-function validateManifestJson(manifestJson: string) {
-  let parsedManifest: unknown;
+function extractInWorker(file: Blob): Promise<ExtractedPlaybookZipData> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL("./extractPlaybookZipWorker.ts", import.meta.url), { type: "module" });
 
-  try {
-    parsedManifest = JSON.parse(manifestJson);
-  } catch (error) {
-    throw new PlaybookImportError("Playbook manifest is not valid JSON", { cause: error });
-  }
+    worker.addEventListener("message", (event: MessageEvent<WorkerExtractionMessage>) => {
+      worker.terminate();
+      if (event.data.type === "success") {
+        resolve(event.data.payload);
+      } else {
+        reject(new PlaybookImportError(event.data.message));
+      }
+    });
 
-  try {
-    return validatePlaybookManifest(parsedManifest);
-  } catch (error) {
-    if (error instanceof ZodError) {
-      throw new PlaybookImportError(`Playbook manifest is invalid: ${error.issues[0]?.message ?? "unknown error"}`, {
-        cause: error
-      });
-    }
-    throw error;
-  }
+    worker.addEventListener("error", (event) => {
+      worker.terminate();
+      reject(new PlaybookImportError(`Playbook import worker failed: ${event.message}`));
+    });
+
+    worker.postMessage(file);
+  });
 }
+
+type WorkerExtractionMessage =
+  | { type: "success"; payload: ExtractedPlaybookZipData }
+  | { type: "error"; message: string };

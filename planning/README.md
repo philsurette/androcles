@@ -51,6 +51,10 @@ Examples:
 - Required cue or response audio fails Playbook generation by default.
 - Stager CLI commands delegate to service classes.
 
+Current decisions:
+
+- [decisions/0001-cuemaster-voice-command-stack.md](decisions/0001-cuemaster-voice-command-stack.md): Cuemaster voice commands should wait until after Phase 1 and start with a native Vosk/Capacitor spike.
+
 ## Rules
 
 - Do not define the same contract in multiple docs.

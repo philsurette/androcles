@@ -13,6 +13,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [selectedFilename, setSelectedFilename] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false);
+  const [importStatus, setImportStatus] = useState("");
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [storageEstimate, setStorageEstimate] = useState<StorageEstimate | null>(null);
@@ -47,10 +48,21 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
 
     setSelectedFilename(file.name);
     setIsImporting(true);
+    setImportStatus("Reading Playbook...");
 
     try {
       const importStartedAt = performance.now();
-      const playbook = await installPlaybook(file);
+      const playbook = await installPlaybook(file, {
+        onProgress: (progress) => {
+          if (progress.phase === "extracting") {
+            setImportStatus("Extracting and validating Playbook...");
+          } else if (progress.phase === "storing-audio") {
+            setImportStatus(`Storing audio ${progress.completed} of ${progress.total}...`);
+          } else {
+            setImportStatus("Saving Playbook...");
+          }
+        }
+      });
       const elapsedSeconds = (performance.now() - importStartedAt) / 1000;
       const persistence = await requestPersistentStorage();
       await loadStorageEstimate();
@@ -64,6 +76,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
       setError(userFacingErrorMessage(importError));
     } finally {
       setIsImporting(false);
+      setImportStatus("");
       event.target.value = "";
     }
   }
@@ -94,7 +107,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
             <input type="file" accept=".zip,application/zip" onChange={handleFileSelected} />
           </label>
           {selectedFilename ? <span className="filename">{selectedFilename}</span> : null}
-          {isImporting ? <span className="status">Importing...</span> : null}
+          {isImporting ? <span className="status">{importStatus || "Importing..."}</span> : null}
         </div>
 
         {message ? <p className="notice">{message}</p> : null}

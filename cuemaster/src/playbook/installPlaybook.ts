@@ -1,11 +1,19 @@
-import type JSZip from "jszip";
 import { indexedDbStorage } from "../storage/indexedDbStorage";
+import type { ExtractedAudioAsset } from "./extractedPlaybookZip";
 import { extractPlaybookZip } from "./extractPlaybookZip";
-import { collectRequiredAudioAssetPaths } from "./playbookAssetIndex";
-import { PlaybookImportError } from "./playbookImportError";
 import { normalizePlaybook } from "./normalizePlaybook";
 
-export async function installPlaybook(file: File) {
+export type PlaybookImportProgress =
+  | { phase: "extracting" }
+  | { phase: "storing-audio"; completed: number; total: number }
+  | { phase: "saving-playbook" };
+
+export type PlaybookImportOptions = {
+  onProgress?: (progress: PlaybookImportProgress) => void;
+};
+
+export async function installPlaybook(file: File, options: PlaybookImportOptions = {}) {
+  options.onProgress?.({ phase: "extracting" });
   const extracted = await extractPlaybookZip(file);
   const playbook = normalizePlaybook(extracted.manifest);
   playbook.importMetadata = {
@@ -14,21 +22,23 @@ export async function installPlaybook(file: File) {
     importedAt: Date.now()
   };
   await indexedDbStorage.playbooks.delete(playbook.id);
-  await storeRequiredAudioAssets(playbook.id, extracted.zip, collectRequiredAudioAssetPaths(extracted.manifest));
+  await storeRequiredAudioAssets(playbook.id, extracted.audioAssets, options);
+  options.onProgress?.({ phase: "saving-playbook" });
   await indexedDbStorage.playbooks.save(playbook);
   return playbook;
 }
 
-async function storeRequiredAudioAssets(playbookId: string, zip: JSZip, assetPaths: string[]): Promise<void> {
-  for (const assetPath of assetPaths) {
-    const entry = zip.file(assetPath);
-    if (!entry) {
-      throw new PlaybookImportError(`Playbook zip is missing required audio asset: ${assetPath}`);
-    }
+async function storeRequiredAudioAssets(
+  playbookId: string,
+  audioAssets: ExtractedAudioAsset[],
+  options: PlaybookImportOptions
+): Promise<void> {
+  for (const [index, audioAsset] of audioAssets.entries()) {
     await indexedDbStorage.audioAssets.save({
       playbookId,
-      path: assetPath,
-      blob: await entry.async("blob")
+      path: audioAsset.path,
+      blob: audioAsset.blob
     });
+    options.onProgress?.({ phase: "storing-audio", completed: index + 1, total: audioAssets.length });
   }
 }

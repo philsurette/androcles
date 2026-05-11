@@ -21,6 +21,8 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 
 If import fails, the Playbook is probably missing required data or audio. Ask whoever generated the Playbook to regenerate it with Stager.
 
+Large Playbooks can take time to import. Cuemaster shows progress while it validates the Playbook and stores the audio locally.
+
 ## Rehearsing
 
 - **Start / Repeat Cue** plays the current cue.
@@ -108,7 +110,7 @@ Cuemaster does not record or upload microphone audio. It only reads volume-like 
 
 - Cuemaster is currently a browser app. Imported Playbooks are stored in this browser on this device.
 - Cuemaster is optimized for one active Playbook at a time. You can keep multiple Playbooks locally, but large libraries may use significant browser storage.
-- Very large Playbooks may pause briefly during import while the zip is checked and stored.
+- Very large Playbooks can still take time to import, but zip extraction runs away from the main app screen and progress is shown while audio is stored.
 - Audio playback depends on the browser supporting the Playbook's audio files.
 - Tempo Timing works best in a quiet space and can be confused by speakers, headphones leaking audio, or background noise.
 - If browser storage fills up, remove old Playbooks or clear site data, then re-import the Playbook you need.

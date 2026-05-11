@@ -31,6 +31,21 @@ describe("installPlaybook", () => {
       importMetadata: playbook.importMetadata
     });
   });
+
+  it("reports import progress while extracting, storing audio, and saving the Playbook", async () => {
+    const file = await buildPlaybookFile("androcles-minimal.playbook.zip");
+    const progress: string[] = [];
+
+    await installPlaybook(file, {
+      onProgress: (event) => {
+        progress.push(event.phase === "storing-audio" ? `${event.phase}:${event.completed}/${event.total}` : event.phase);
+      }
+    });
+
+    expect(progress[0]).toBe("extracting");
+    expect(progress).toContain("saving-playbook");
+    expect(progress.filter((event) => event.startsWith("storing-audio:"))).toHaveLength(requiredAudioPaths().length);
+  });
 });
 
 async function buildPlaybookFile(filename: string): Promise<File> {

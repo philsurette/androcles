@@ -424,7 +424,7 @@ This is the first major useful milestone.
 #### Zip handling
 
 - [x] Implement initial zip extraction with `jszip`.
-- [ ] Move extraction work into a Web Worker before realistic large Playbook imports.
+- [x] Move extraction work into a Web Worker before realistic large Playbook imports.
 - [x] Read `manifest.json` from the expected location.
 - [x] Validate manifest.
 - [x] Build asset index from zip entries.
@@ -456,7 +456,7 @@ This is the first major useful milestone.
 - [x] Imported Playbook appears in the library.
 - [x] User can select the Playbook and see roles.
 - [x] Invalid Playbooks produce useful error messages.
-- [ ] Large import work does not freeze the UI.
+- [x] Large import work does not freeze the UI.
 
 ---
 
@@ -973,8 +973,8 @@ Make the web app reliable enough to share with real users for early testing.
 
 #### Performance
 
-- [ ] Import progress remains responsive.
-- [ ] Large Playbook import does not freeze UI.
+- [x] Import progress remains responsive.
+- [x] Large Playbook import does not freeze UI.
 - [x] App does not keep unnecessary audio blobs in memory.
 - [x] Revoke unused object URLs.
 - [x] Timing detector does not run when disabled.
@@ -1078,28 +1078,28 @@ This milestone belongs at the end of web-app Phase 1 because voice commands shou
 
 #### Research
 
-- [ ] Review Vosk runtime licensing.
-- [ ] Review candidate Vosk model licensing.
-- [ ] Investigate native Vosk through a Capacitor plugin bridge.
-- [ ] Investigate Vosk WASM feasibility.
-- [ ] Investigate whether wake-word-only detection can be constrained to a tiny grammar.
-- [ ] Investigate mobile CPU/battery implications.
-- [ ] Confirm no GPL or unclear-license dependency is required.
-- [ ] Document recommended direction.
+- [x] Review Vosk runtime licensing.
+- [x] Review candidate Vosk model licensing.
+- [x] Investigate native Vosk through a Capacitor plugin bridge.
+- [x] Investigate Vosk WASM feasibility.
+- [x] Investigate whether wake-word-only detection can be constrained to a tiny grammar.
+- [x] Investigate mobile CPU/battery implications.
+- [x] Confirm no GPL or unclear-license dependency is required.
+- [x] Document recommended direction.
 
 #### Output
 
-- [ ] Write a short decision note:
-  - [ ] recommended wake-word stack,
-  - [ ] rejected alternatives,
-  - [ ] licensing status,
-  - [ ] technical risks,
-  - [ ] proposed Capacitor spike.
+- [x] Write a short decision note:
+  - [x] recommended wake-word stack,
+  - [x] rejected alternatives,
+  - [x] licensing status,
+  - [x] technical risks,
+  - [x] proposed Capacitor spike.
 
 ### Acceptance Criteria
 
 - [x] The app has an input-command abstraction ready for voice commands later.
-- [ ] There is a documented, license-safe candidate stack for Phase 2 voice commands.
+- [x] There is a documented, license-safe candidate stack for Phase 2 voice commands.
 - [x] No wake-word code is required in the Phase 1 browser release.
 
 ---
@@ -1172,23 +1172,23 @@ This can wait until the normal browser app works. PWA work is not a substitute f
 
 Phase 1 is complete when:
 
-- [ ] A user can import a valid Playbook zip.
-- [ ] The Playbook persists locally.
-- [ ] The user can select a role.
-- [ ] The user can start or resume a rehearsal session.
-- [ ] The app plays cues in sequence.
-- [ ] The user can repeat cue, hear line, advance, go back, and pause.
-- [ ] The actor's own reference line can play at 0.4x to 1.3x.
-- [ ] Cues always play at 1.0x.
-- [ ] Speak-along mode works.
-- [ ] Tempo timing can measure hesitation and delivery pace.
-- [ ] Line-specific target hesitation is supported when present.
-- [ ] Timing history is stored locally.
-- [ ] Basic problem-line review exists.
-- [ ] The app works after reload.
+- [x] A user can import a valid Playbook zip.
+- [x] The Playbook persists locally.
+- [x] The user can select a role.
+- [x] The user can start or resume a rehearsal session.
+- [x] The app plays cues in sequence.
+- [x] The user can repeat cue, hear line, advance, go back, and pause.
+- [x] The actor's own reference line can play at 0.4x to 1.3x.
+- [x] Cues always play at 1.0x.
+- [x] Speak-along mode works.
+- [x] Tempo timing can measure hesitation and delivery pace.
+- [x] Line-specific target hesitation is supported when present.
+- [x] Timing history is stored locally.
+- [x] Basic problem-line review exists.
+- [x] The app works after reload.
 - [ ] The app remains offline after import.
-- [ ] Microphone use is transparent and limited.
-- [ ] No GPL-family runtime dependency is present.
-- [ ] Domain logic is tested.
-- [ ] Core browser flows are covered by Playwright.
-- [ ] Architecture is ready for a later Capacitor spike.
+- [x] Microphone use is transparent and limited.
+- [x] No GPL-family runtime dependency is present.
+- [x] Domain logic is tested.
+- [x] Core browser flows are covered by Playwright.
+- [x] Architecture is ready for a later Capacitor spike.
