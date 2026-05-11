@@ -762,54 +762,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               ))}
             </select>
           </label>
-          <details className="practice-options">
-            <summary>Practice Options</summary>
-            <div className="practice-options-panel">
-              <label className="check-setting">
-                <input
-                  type="checkbox"
-                  checked={speakAlongEnabled}
-                  disabled={tempoTimingEnabled}
-                  onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
-                />
-                Speak-along practice
-              </label>
-              <label className="check-setting">
-                <input
-                  type="checkbox"
-                  checked={includeDirections}
-                  onChange={(event) => changeIncludeDirections(event.target.checked)}
-                />
-                Show stage directions
-              </label>
-              <label className="check-setting">
-                <input
-                  type="checkbox"
-                  checked={showLinesByDefault}
-                  onChange={(event) => changeShowLinesByDefault(event.target.checked)}
-                />
-                Show lines by default
-              </label>
-              <label className="check-setting">
-                <input
-                  type="checkbox"
-                  checked={tempoTimingEnabled}
-                  onChange={(event) => {
-                    if (event.target.checked) {
-                      void enableTempoTiming();
-                    } else {
-                      void disableTempoTiming();
-                    }
-                  }}
-                />
-                Enable Tempo Timing
-              </label>
-              <p className="status">
-                Tempo timing uses microphone energy only: no recording, no transcription, no upload.
-              </p>
-            </div>
-          </details>
-          {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {tempoStatus ? (
             <p className="status" aria-live="polite">
               {tempoStatus}
@@ -823,12 +775,59 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbackStatus}
             </p>
           ) : null}
-          <div className="session-actions">
+          <div className="utility-panel">
+            <details className="utility-disclosure">
+              <summary>Practice Options</summary>
+              <div className="practice-options-panel">
+                <label className="check-setting">
+                  <input
+                    type="checkbox"
+                    checked={speakAlongEnabled}
+                    disabled={tempoTimingEnabled}
+                    onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
+                  />
+                  Speak-along practice
+                </label>
+                <label className="check-setting">
+                  <input
+                    type="checkbox"
+                    checked={includeDirections}
+                    onChange={(event) => changeIncludeDirections(event.target.checked)}
+                  />
+                  Show stage directions
+                </label>
+                <label className="check-setting">
+                  <input
+                    type="checkbox"
+                    checked={showLinesByDefault}
+                    onChange={(event) => changeShowLinesByDefault(event.target.checked)}
+                  />
+                  Show lines by default
+                </label>
+                <label className="check-setting">
+                  <input
+                    type="checkbox"
+                    checked={tempoTimingEnabled}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        void enableTempoTiming();
+                      } else {
+                        void disableTempoTiming();
+                      }
+                    }}
+                  />
+                  Enable Tempo Timing
+                </label>
+                <p className="status">
+                  Tempo timing uses microphone energy only: no recording, no transcription, no upload.
+                </p>
+              </div>
+            </details>
             <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
               {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
             </button>
             <details
-              className="review-disclosure"
+              className="utility-disclosure"
               open={isReviewOpen}
               onToggle={(event) => void setReviewVisibility(event.currentTarget.open)}
             >

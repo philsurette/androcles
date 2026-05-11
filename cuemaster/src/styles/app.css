@@ -417,40 +417,6 @@ button:disabled {
   padding: 0.55rem 0.75rem;
 }
 
-.practice-options {
-  grid-column: 1 / -1;
-  border-radius: 1rem;
-  background: rgba(30, 38, 31, 0.06);
-}
-
-.practice-options summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 44px;
-  cursor: pointer;
-  color: var(--quiet);
-  font-weight: 900;
-  list-style: none;
-  padding: 0.65rem 0.9rem;
-}
-
-.practice-options summary::-webkit-details-marker {
-  display: none;
-}
-
-.practice-options summary::after {
-  color: var(--accent);
-  content: "Show";
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.practice-options[open] summary::after {
-  content: "Hide";
-}
-
 .practice-options-panel {
   display: flex;
   flex-wrap: wrap;
@@ -465,16 +431,18 @@ button:disabled {
   margin: 0;
 }
 
-.session-actions {
+.utility-panel {
+  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: max-content minmax(14rem, 1fr);
-  gap: 1rem;
+  grid-template-columns: 1fr max-content 1fr;
+  gap: 0.75rem;
   align-items: start;
   width: 100%;
 }
 
-.session-actions > button {
+.utility-panel > button {
   align-self: start;
+  min-height: 3rem;
 }
 
 .tempo-feedback {
@@ -492,41 +460,42 @@ button:disabled {
   padding-left: 1.25rem;
 }
 
-.review-disclosure {
+.utility-disclosure {
   display: grid;
-  gap: 1rem;
+  gap: 0.75rem;
   min-width: 0;
 }
 
-.review-disclosure summary {
+.utility-disclosure summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 44px;
+  min-height: 3rem;
   border-radius: 1rem;
-  background: rgba(30, 38, 31, 0.08);
+  background: rgba(30, 38, 31, 0.07);
   cursor: pointer;
   color: var(--ink);
   font-family: var(--display-font);
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 900;
   list-style: none;
-  padding: 0.8rem 1.1rem;
+  padding: 0.55rem 0.9rem;
 }
 
-.review-disclosure summary::-webkit-details-marker {
+.utility-disclosure summary::-webkit-details-marker {
   display: none;
 }
 
-.review-disclosure summary::after {
+.utility-disclosure summary::after {
   color: var(--accent);
   content: "Show";
-  font-size: 0.8rem;
+  font-family: var(--body-font);
+  font-size: 0.72rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.review-disclosure[open] summary::after {
+.utility-disclosure[open] summary::after {
   content: "Hide";
 }
 
@@ -622,7 +591,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .session-actions {
+  .utility-panel {
     grid-template-columns: 1fr;
   }
 
@@ -630,7 +599,7 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .session-actions > button {
+  .utility-panel > button {
     justify-self: start;
   }
 
