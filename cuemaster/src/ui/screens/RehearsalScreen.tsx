@@ -657,12 +657,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         ) : null}
 
         {line ? (
-          <div className="rehearsal-grid">
-            <section className="stack" aria-label="Cue">
+          <div className="rehearsal-line-layout">
+            <section className="cue-strip" aria-label="Cue">
               <h2>Cue</h2>
-              {cues.map((cue, index) => (
-                <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
-              ))}
+              <div className="cue-strip-cards">
+                {cues.map((cue, index) => (
+                  <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
+                ))}
+              </div>
             </section>
 
             <section className="stack" aria-label="Your Line">
