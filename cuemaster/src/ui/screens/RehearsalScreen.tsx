@@ -13,9 +13,7 @@ import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
-import { bookmarkRepository } from "../../storage/bookmarkRepository";
-import { sessionRepository } from "../../storage/sessionRepository";
-import { timingAttemptRepository } from "../../storage/timingAttemptRepository";
+import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
@@ -163,7 +161,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextRevealLine = isLineRevealed
   ) {
     try {
-      await sessionRepository.save({
+      await indexedDbStorage.sessions.save({
         playbookId: playbook.id,
         roleId: role.id,
         lineIndex,
@@ -376,7 +374,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       detectionMode: "energy"
     };
     try {
-      await timingAttemptRepository.save(attempt);
+      await indexedDbStorage.timingAttempts.save(attempt);
       setStorageStatus("");
       setLastTimingAttempt(attempt);
       await loadRecentTimingAttempts();
@@ -392,7 +390,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       return;
     }
     try {
-      setLastTimingAttempt((await timingAttemptRepository.latestForLine(playbook.id, role.id, line.id)) ?? null);
+      setLastTimingAttempt((await indexedDbStorage.timingAttempts.latestForLine(playbook.id, role.id, line.id)) ?? null);
       await loadRecentTimingAttempts();
     } catch (error) {
       setLastTimingAttempt(null);
@@ -407,7 +405,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       return;
     }
     try {
-      setRecentTimingAttempts(await timingAttemptRepository.recentForLine(playbook.id, role.id, line.id, 5));
+      setRecentTimingAttempts(await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, line.id, 5));
     } catch (error) {
       setRecentTimingAttempts([]);
       setStorageStatus(userFacingErrorMessage(error));
@@ -416,7 +414,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function loadReviewAttempts() {
     try {
-      setReviewAttempts(await timingAttemptRepository.latestForRole(playbook.id, role.id));
+      setReviewAttempts(await indexedDbStorage.timingAttempts.latestForRole(playbook.id, role.id));
     } catch (error) {
       setReviewAttempts([]);
       setStorageStatus(userFacingErrorMessage(error));
@@ -429,7 +427,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       return;
     }
     try {
-      setIsCurrentLineBookmarked(Boolean(await bookmarkRepository.get(playbook.id, role.id, line.id)));
+      setIsCurrentLineBookmarked(Boolean(await indexedDbStorage.bookmarks.get(playbook.id, role.id, line.id)));
     } catch (error) {
       setIsCurrentLineBookmarked(false);
       setStorageStatus(userFacingErrorMessage(error));
@@ -438,7 +436,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function loadBookmarks() {
     try {
-      setBookmarks(await bookmarkRepository.listForRole(playbook.id, role.id));
+      setBookmarks(await indexedDbStorage.bookmarks.listForRole(playbook.id, role.id));
     } catch (error) {
       setBookmarks([]);
       setStorageStatus(userFacingErrorMessage(error));
@@ -451,10 +449,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     try {
       if (isCurrentLineBookmarked) {
-        await bookmarkRepository.delete(playbook.id, role.id, line.id);
+        await indexedDbStorage.bookmarks.delete(playbook.id, role.id, line.id);
         setIsCurrentLineBookmarked(false);
       } else {
-        await bookmarkRepository.save({
+        await indexedDbStorage.bookmarks.save({
           id: `${playbook.id}:${role.id}:${line.id}`,
           playbookId: playbook.id,
           roleId: role.id,

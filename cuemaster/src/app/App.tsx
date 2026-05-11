@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { Playbook } from "../domain/playbook";
 import type { Role } from "../domain/role";
 import type { RehearsalSession } from "../domain/session";
-import { sessionRepository } from "../storage/sessionRepository";
+import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { LibraryScreen } from "../ui/screens/LibraryScreen";
 import { RehearsalScreen } from "../ui/screens/RehearsalScreen";
 import { RoleSelectScreen } from "../ui/screens/RoleSelectScreen";
@@ -50,7 +50,7 @@ export function App() {
     let latestSession: RehearsalSession | undefined;
     setStorageStatus("");
     try {
-      latestSession = await sessionRepository.getLatestForPlaybook(playbook.id);
+      latestSession = await indexedDbStorage.sessions.getLatestForPlaybook(playbook.id);
     } catch (error) {
       latestSession = undefined;
       setStorageStatus(userFacingErrorMessage(error));
@@ -68,7 +68,7 @@ export function App() {
     setStorageStatus("");
     setSelectedRole(role);
     try {
-      setSelectedSession((await sessionRepository.get(playbook.id, role.id)) ?? null);
+      setSelectedSession((await indexedDbStorage.sessions.get(playbook.id, role.id)) ?? null);
     } catch (error) {
       setStorageStatus(userFacingErrorMessage(error));
       setSelectedSession(null);

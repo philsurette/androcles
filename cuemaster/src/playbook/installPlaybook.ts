@@ -1,6 +1,5 @@
 import type JSZip from "jszip";
-import { audioAssetRepository } from "../storage/audioAssetRepository";
-import { playbookRepository } from "../storage/playbookRepository";
+import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { extractPlaybookZip } from "./extractPlaybookZip";
 import { collectRequiredAudioAssetPaths } from "./playbookAssetIndex";
 import { PlaybookImportError } from "./playbookImportError";
@@ -14,9 +13,9 @@ export async function installPlaybook(file: File) {
     sizeBytes: file.size,
     importedAt: Date.now()
   };
-  await playbookRepository.delete(playbook.id);
+  await indexedDbStorage.playbooks.delete(playbook.id);
   await storeRequiredAudioAssets(playbook.id, extracted.zip, collectRequiredAudioAssetPaths(extracted.manifest));
-  await playbookRepository.save(playbook);
+  await indexedDbStorage.playbooks.save(playbook);
   return playbook;
 }
 
@@ -26,7 +25,7 @@ async function storeRequiredAudioAssets(playbookId: string, zip: JSZip, assetPat
     if (!entry) {
       throw new PlaybookImportError(`Playbook zip is missing required audio asset: ${assetPath}`);
     }
-    await audioAssetRepository.save({
+    await indexedDbStorage.audioAssets.save({
       playbookId,
       path: assetPath,
       blob: await entry.async("blob")

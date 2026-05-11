@@ -1,8 +1,9 @@
 import Dexie from "dexie";
 import type { Bookmark } from "../domain/bookmark";
 import { db } from "./db";
+import type { BookmarkRepository } from "./storage";
 
-export const bookmarkRepository = {
+export const bookmarkRepository: BookmarkRepository = {
   get: (playbookId: string, roleId: string, lineId: string) =>
     db.bookmarks.get([playbookId, roleId, lineId]),
 

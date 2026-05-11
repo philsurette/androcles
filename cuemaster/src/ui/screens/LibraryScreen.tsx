@@ -1,7 +1,7 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import { installPlaybook } from "../../playbook/installPlaybook";
-import { playbookRepository } from "../../storage/playbookRepository";
+import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 type LibraryScreenProps = {
@@ -21,7 +21,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
 
   async function loadPlaybooks() {
     try {
-      setPlaybooks(await playbookRepository.list());
+      setPlaybooks(await indexedDbStorage.playbooks.list());
     } catch (loadError) {
       setPlaybooks([]);
       setError(userFacingErrorMessage(loadError));
@@ -55,7 +55,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
 
   async function deletePlaybook(id: string) {
     try {
-      await playbookRepository.delete(id);
+      await indexedDbStorage.playbooks.delete(id);
       await loadPlaybooks();
     } catch (deleteError) {
       setError(userFacingErrorMessage(deleteError));

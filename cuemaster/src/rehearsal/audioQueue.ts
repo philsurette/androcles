@@ -1,4 +1,4 @@
-import { audioAssetRepository } from "../storage/audioAssetRepository";
+import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { AudioPlayer } from "./audioPlayer";
 
 export type AudioQueueItem = {
@@ -119,7 +119,7 @@ class IndexedDbAudioAssetResolver implements AudioAssetResolver {
   constructor(private readonly playbookId: string) {}
 
   async objectUrlFor(path: string): Promise<string> {
-    const asset = await audioAssetRepository.get(this.playbookId, path);
+    const asset = await indexedDbStorage.audioAssets.get(this.playbookId, path);
     if (!asset) {
       throw new Error(`Audio asset not found in local storage: ${path}. Remove and re-import this Playbook.`);
     }

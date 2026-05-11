@@ -1,10 +1,11 @@
 import type { TimingAttempt } from "../domain/timingAttempt";
 import { db } from "./db";
 import Dexie from "dexie";
+import type { TimingAttemptRepository } from "./storage";
 
 const maxAttemptsPerLine = 20;
 
-export const timingAttemptRepository = {
+export const timingAttemptRepository: TimingAttemptRepository = {
   async save(attempt: TimingAttempt): Promise<void> {
     await db.timingAttempts.put(attempt);
     await trimAttemptsForLine(attempt.playbookId, attempt.roleId, attempt.lineId);

@@ -473,8 +473,8 @@ Persist imported Playbooks and session metadata locally in the browser.
 
 #### IndexedDB storage
 
-- [ ] Define storage interface independent of IndexedDB.
-- [ ] Implement `indexedDbStorage`.
+- [x] Define storage interface independent of IndexedDB.
+- [x] Implement `indexedDbStorage`.
 - [x] Store Playbook manifest.
 - [x] Store asset blobs or extractable asset records.
 - [x] Store import metadata.
@@ -493,7 +493,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 
 #### Tests
 
-- [ ] Unit-test storage interface with memory implementation.
+- [x] Unit-test storage interface with memory implementation.
 - [x] Integration-test IndexedDB implementation where practical.
 - [x] Playwright test: import Playbook, reload page, Playbook remains in library.
 - [x] Playwright test: save session position, reload page, resume works.
@@ -505,7 +505,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [x] Current line position survives page reload.
 - [x] Deleting a Playbook removes its manifest and session state.
 - [x] Deleting a Playbook removes stored audio assets.
-- [ ] Storage code is isolated behind an interface that can later be replaced by Capacitor filesystem/preferences implementations.
+- [x] Storage code is isolated behind an interface that can later be replaced by Capacitor filesystem/preferences implementations.
 
 ---
 

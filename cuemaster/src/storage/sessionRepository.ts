@@ -1,7 +1,8 @@
 import type { RehearsalSession } from "../domain/session";
 import { db } from "./db";
+import type { SessionRepository } from "./storage";
 
-export const sessionRepository = {
+export const sessionRepository: SessionRepository = {
   get: (playbookId: string, roleId: string) => db.sessions.get([playbookId, roleId]),
   async getLatestForPlaybook(playbookId: string) {
     const sessions = await db.sessions.where("playbookId").equals(playbookId).toArray();

@@ -3,8 +3,9 @@ import { audioAssetRepository } from "./audioAssetRepository";
 import { bookmarkRepository } from "./bookmarkRepository";
 import { db } from "./db";
 import { timingAttemptRepository } from "./timingAttemptRepository";
+import type { PlaybookRepository } from "./storage";
 
-export const playbookRepository = {
+export const playbookRepository: PlaybookRepository = {
   list: () => db.playbooks.toArray(),
   get: (id: string) => db.playbooks.get(id),
   save: (playbook: Playbook) => db.playbooks.put(playbook),
