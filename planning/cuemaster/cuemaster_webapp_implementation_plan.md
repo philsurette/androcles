@@ -991,9 +991,9 @@ Make the web app reliable enough to share with real users for early testing.
 
 #### Testing
 
-- [ ] Playwright happy path.
-- [ ] Playwright reload/resume path.
-- [ ] Playwright invalid import path.
+- [x] Playwright happy path.
+- [x] Playwright reload/resume path.
+- [x] Playwright invalid import path.
 - [x] Unit tests for domain/session/tempo.
 - [ ] Manual test with at least one realistic Playbook.
 
