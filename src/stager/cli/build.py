@@ -21,6 +21,7 @@ from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.role_audio_verifier import RoleAudioVerifier
@@ -740,6 +741,29 @@ def playbook(
     )
 
 
+@app.command("recording-request", rich_help_panel="build")
+def recording_request(
+    role: str = typer.Option(..., "--role", "-r", help="Role to build a Recording Request for"),
+    segment: list[str] | None = typer.Option(
+        None,
+        "--segment",
+        help="Limit request to a segment id; repeat for multiple selected segments",
+    ),
+    notes: str | None = typer.Option(None, "--notes", help="Optional request notes for the actor"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Build a LineRecorder Recording Request package."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    zip_path = run_recording_request(
+        role=role,
+        segment_ids=set(segment) if segment else None,
+        notes=notes,
+        paths_config=cfg,
+    )
+    typer.echo(paths.display_path(zip_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -918,6 +942,29 @@ def run_playbook(
         paths=cfg,
         build_type=effective_build_type,
         audio_format=audio_format,
+    )
+    return builder.build()
+
+
+def run_recording_request(
+    *,
+    role: str,
+    segment_ids: set[str] | None = None,
+    notes: str | None = None,
+    paths_config: paths.PathConfig | None = None,
+) -> Path:
+    cfg = paths_config or paths.current()
+    play = PlayTextParser(paths_config=cfg).parse()
+    valid_roles = {candidate.name for candidate in play.roles if not candidate.meta and not candidate.name.startswith("_")}
+    if role not in valid_roles:
+        raise typer.BadParameter(f"Unknown rehearsable role: {role}")
+    builder = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role=role,
+        request_kind="selected_segments" if segment_ids else "full_role",
+        selected_segment_ids=segment_ids,
+        notes=notes,
     )
     return builder.build()
 
