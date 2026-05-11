@@ -6,6 +6,7 @@ import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { TimingAttempt } from "../../domain/timingAttempt";
 import { AudioQueue } from "../../rehearsal/audioQueue";
+import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
@@ -41,6 +42,9 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
   const [cueDepth, setCueDepth] = useState(clampCueDepth(initialSession?.cueDepth ?? 1));
+  const [cueWindowPresetId, setCueWindowPresetId] = useState(
+    cueWindowPresetForId(initialSession?.cueWindowPresetId).id
+  );
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(initialSession?.revealLine ?? false);
@@ -206,7 +210,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextSpeakAlongEnabled = speakAlongEnabled,
     nextTempoTimingPreferred = tempoTimingPreferred,
     nextCueDepth = cueDepth,
-    nextRevealLine = isLineRevealed
+    nextRevealLine = isLineRevealed,
+    nextCueWindowPresetId = cueWindowPresetId
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -216,6 +221,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         cueDepth: nextCueDepth,
         includeDirections: engine.includeDirections(),
         revealLine: nextRevealLine,
+        cueWindowPresetId: nextCueWindowPresetId,
         playbackRate: nextPlaybackRate,
         speakAlongEnabled: nextSpeakAlongEnabled,
         tempoTimingPreferred: nextTempoTimingPreferred,
@@ -232,7 +238,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     setPlaybackStatus("Playing cue...");
     setPlaybackState("playing");
     try {
-      await audioQueue.play(cuePlaybackItems(engine.cuePayloads()));
+      await audioQueue.play(cuePlaybackItems(engine.cuePayloads(), cueWindowPresetId));
       setPlaybackStatus("Cue complete.");
       setPlaybackState("idle");
       beginTimedAttempt();
@@ -266,7 +272,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     setPlaybackStatus("Speak along: playing cue, then your line...");
     setPlaybackState("playing");
     try {
-      await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate));
+      await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate, cueWindowPresetId));
       setPlaybackStatus("Speak-along complete.");
       setPlaybackState("idle");
     } catch (error) {
@@ -304,6 +310,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const clampedPlaybackRate = clampPlaybackRate(nextPlaybackRate);
     setPlaybackRate(clampedPlaybackRate);
     void saveSession(position.index, clampedPlaybackRate);
+  }
+
+  function changeCueWindowPreset(nextCueWindowPresetId: string) {
+    const preset = cueWindowPresetForId(nextCueWindowPresetId);
+    setCueWindowPresetId(preset.id);
+    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, cueDepth, isLineRevealed, preset.id);
   }
 
   function changeCueDepth(nextCueDepth: number) {
@@ -662,6 +674,16 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {cueDepths.map((depth) => (
                 <option key={depth} value={depth}>
                   {depth} cue{depth === 1 ? "" : "s"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Cue length
+            <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
+              {cueWindowPresets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.label}
                 </option>
               ))}
             </select>

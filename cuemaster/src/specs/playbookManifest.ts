@@ -19,6 +19,13 @@ export type ManifestAudioAsset = {
   path: string;
   duration_ms: number;
   required: boolean;
+  cue_start_offsets?: ManifestCueStartOffset[];
+};
+
+export type ManifestCueStartOffset = {
+  requested_window_ms: number;
+  start_ms: number;
+  confidence: "exact" | "boundary" | "fallback";
 };
 
 export type ManifestContextBlock = {

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../src/rehearsal/playbackItems";
+import {
+  cuePlaybackItems,
+  cueStartTimeMs,
+  responsePlaybackItems,
+  speakAlongPlaybackItems
+} from "../../src/rehearsal/playbackItems";
 import type { Cue } from "../../src/domain/cue";
 import type { Line } from "../../src/domain/line";
 
@@ -36,6 +41,33 @@ describe("playbackItems", () => {
     expect(cuePlaybackItems([cue])).toEqual([{ kind: "audio", path: "audio/cue.wav", playbackRate: 1 }]);
   });
 
+  it("starts only the final cue item at the selected absolute cue window", () => {
+    const earlierCue: Cue = { ...cue, audioPath: "audio/earlier-cue.wav", durationMs: 20000 };
+    const finalCue: Cue = { ...cue, audioPath: "audio/final-cue.wav", durationMs: 30000 };
+
+    expect(cuePlaybackItems([earlierCue, finalCue], "last_10s")).toEqual([
+      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1 },
+      { kind: "audio", path: "audio/final-cue.wav", playbackRate: 1, startTimeMs: 20000 }
+    ]);
+  });
+
+  it("plays the full cue when the selected cue window is longer than the cue", () => {
+    expect(cuePlaybackItems([cue], "last_5s")).toEqual([{ kind: "audio", path: "audio/cue.wav", playbackRate: 1 }]);
+  });
+
+  it("prefers Stager-provided cue start offsets when they are present", () => {
+    expect(
+      cueStartTimeMs(
+        {
+          ...cue,
+          durationMs: 30000,
+          cueStartOffsets: [{ requestedWindowMs: 10000, startMs: 18500, confidence: "boundary" }]
+        },
+        "last_10s"
+      )
+    ).toBe(18500);
+  });
+
   it("uses selected response speed for actor lines", () => {
     expect(responsePlaybackItems(line, 0.7)).toEqual([{ kind: "audio", path: "audio/response.wav", playbackRate: 0.7 }]);
   });
@@ -49,8 +81,9 @@ describe("playbackItems", () => {
   });
 
   it("uses line-specific target hesitation for the speak-along delay", () => {
-    expect(speakAlongPlaybackItems([cue], { ...line, timing: { targetHesitationMs: 1200 } }, 0.8)).toEqual([
-      { kind: "audio", path: "audio/cue.wav", playbackRate: 1 },
+    const longCue = { ...cue, durationMs: 30000 };
+    expect(speakAlongPlaybackItems([longCue], { ...line, timing: { targetHesitationMs: 1200 } }, 0.8, "last_10s")).toEqual([
+      { kind: "audio", path: "audio/cue.wav", playbackRate: 1, startTimeMs: 20000 },
       { kind: "delay", durationMs: 1200 },
       { kind: "audio", path: "audio/response.wav", playbackRate: 0.8 }
     ]);

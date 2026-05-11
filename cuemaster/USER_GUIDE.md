@@ -36,7 +36,16 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Stop** stops playback.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
-Your current role, line position, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+Your current role, line position, cue length, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+
+## Cue Length
+
+Use **Cue length** to control how much of a long cue is played:
+
+- **Full cue** plays the whole cue.
+- **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** start near the end of the final cue audio item.
+
+Cue length applies to cue playback and Speak Along. Earlier cue-depth context still plays normally; the selected limit is applied only to the final cue that directly prompts your line.
 
 ## Response Speed
 

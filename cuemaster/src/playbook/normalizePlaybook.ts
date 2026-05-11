@@ -33,7 +33,12 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           speaker: line.cue.speaker,
           text: line.cue.text,
           audioPath: line.cue.audio.path,
-          durationMs: line.cue.audio.duration_ms
+          durationMs: line.cue.audio.duration_ms,
+          cueStartOffsets: line.cue.audio.cue_start_offsets?.map((offset) => ({
+            requestedWindowMs: offset.requested_window_ms,
+            startMs: offset.start_ms,
+            confidence: offset.confidence
+          }))
         },
         responseText: line.response.text,
         responseSegments: line.response.segments.map((segment) => ({

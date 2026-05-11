@@ -45,6 +45,19 @@ describe("AudioPlayer", () => {
     audio.dispatch("ended");
     await playback;
   });
+
+  it("starts playback from a requested content offset", async () => {
+    const audio = new FakeAudioElement();
+    const player = new AudioPlayer(() => audio.element());
+    const playback = player.play("blob://cue.wav", 1, 12500);
+
+    await Promise.resolve();
+
+    expect(audio.currentTime).toBe(12.5);
+
+    audio.dispatch("ended");
+    await playback;
+  });
 });
 
 class FakeAudioElement {
@@ -52,6 +65,7 @@ class FakeAudioElement {
   readonly play = vi.fn(async () => undefined);
   readonly load = vi.fn();
   readonly removeAttribute = vi.fn();
+  currentTime = 0;
   playbackRate = 1;
   preservesPitch?: boolean;
   mozPreservesPitch?: boolean;

@@ -10,6 +10,7 @@ describe("RehearsalSession", () => {
       cueDepth: 1,
       includeDirections: true,
       revealLine: false,
+      cueWindowPresetId: "full",
       playbackRate: 1,
       speakAlongEnabled: false,
       tempoTimingPreferred: true,

@@ -5,6 +5,7 @@ export type AudioQueueItem = {
   kind: "audio";
   path: string;
   playbackRate: number;
+  startTimeMs?: number;
 };
 
 export type DelayQueueItem = {
@@ -15,7 +16,7 @@ export type DelayQueueItem = {
 export type QueueItem = AudioQueueItem | DelayQueueItem;
 
 export type QueueAudioPlayer = {
-  play(src: string, playbackRate: number): Promise<void>;
+  play(src: string, playbackRate: number, startTimeMs?: number): Promise<void>;
   pause(): void;
   resume(): void;
   stop(): void;
@@ -50,7 +51,7 @@ export class AudioQueue {
       await this.waitIfPaused();
       const url = await this.assetResolver.objectUrlFor(item.path);
       try {
-        await this.player.play(url, item.playbackRate);
+        await this.player.play(url, item.playbackRate, item.startTimeMs);
       } finally {
         URL.revokeObjectURL(url);
       }

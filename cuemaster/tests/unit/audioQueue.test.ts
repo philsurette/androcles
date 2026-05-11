@@ -16,8 +16,8 @@ describe("AudioQueue", () => {
     ]);
 
     expect(player.playCalls).toEqual([
-      ["blob://cue.wav", 1],
-      ["blob://response.wav", 0.7]
+      ["blob://cue.wav", 1, undefined],
+      ["blob://response.wav", 0.7, undefined]
     ]);
     expect(URL.revokeObjectURL).toHaveBeenCalledTimes(2);
   });
@@ -33,7 +33,7 @@ describe("AudioQueue", () => {
     ]);
 
     expect(player.stop).toHaveBeenCalledOnce();
-    expect(player.playCalls).toEqual([["blob://cue.wav", 1]]);
+    expect(player.playCalls).toEqual([["blob://cue.wav", 1, undefined]]);
     expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
   });
 
@@ -65,21 +65,30 @@ describe("AudioQueue", () => {
     await promise;
 
     expect(resolver.paths).toEqual(["response.wav"]);
-    expect(player.playCalls).toEqual([["blob://response.wav", 0.8]]);
+    expect(player.playCalls).toEqual([["blob://response.wav", 0.8, undefined]]);
     vi.useRealTimers();
+  });
+
+  it("passes audio start times to the player", async () => {
+    const player = new MockAudioPlayer();
+    const queue = new AudioQueue("playbook", player, new MockAssetResolver());
+
+    await queue.play([{ kind: "audio", path: "cue.wav", playbackRate: 1, startTimeMs: 20000 }]);
+
+    expect(player.playCalls).toEqual([["blob://cue.wav", 1, 20000]]);
   });
 });
 
 class MockAudioPlayer implements QueueAudioPlayer {
-  readonly playCalls: Array<[string, number]> = [];
+  readonly playCalls: Array<[string, number, number | undefined]> = [];
   readonly pause = vi.fn();
   readonly resume = vi.fn();
   readonly stop = vi.fn();
 
   constructor(private readonly onPlay?: () => void) {}
 
-  async play(src: string, playbackRate: number): Promise<void> {
-    this.playCalls.push([src, playbackRate]);
+  async play(src: string, playbackRate: number, startTimeMs?: number): Promise<void> {
+    this.playCalls.push([src, playbackRate, startTimeMs]);
     this.onPlay?.();
   }
 }

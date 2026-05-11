@@ -528,7 +528,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
 - [x] Set cue depth.
-- [ ] Set cue length from shared presets: Full cue, Last 5s, Last 10s, Last 15s, Last 20s.
+- [x] Set cue length from shared presets: Full cue, Last 5s, Last 10s, Last 15s, Last 20s.
 - [ ] Toggle stage directions.
 - [x] Set response playback speed.
 - [x] Toggle speak-along mode.
@@ -642,9 +642,9 @@ This is the second major useful milestone.
 - [x] On session start, play cue for current line.
 - [x] After cue playback, enter waiting state.
 - [x] Repeat cue replays cue without advancing.
-- [ ] Cue playback respects the selected cue-length preset.
-- [ ] Cue-length truncation applies to the final cue audio item only.
-- [ ] Cue playback uses Stager-provided `cue_start_offsets` when present and falls back to exact `duration_ms - selectedWindowMs` when absent.
+- [x] Cue playback respects the selected cue-length preset.
+- [x] Cue-length truncation applies to the final cue audio item only.
+- [x] Cue playback uses Stager-provided `cue_start_offsets` when present and falls back to exact `duration_ms - selectedWindowMs` when absent.
 - [x] Hear My Line plays actor response audio without advancing.
 - [x] Next advances to next actor line and plays next cue after session start.
 - [x] Back moves to previous actor line and plays cue after session start.
@@ -658,15 +658,15 @@ This is the second major useful milestone.
 - [x] Save playback mode safely as idle/waiting on reload; do not resume mid-audio.
 - [x] Save bookmarks.
 - [x] Save reveal-line preference only if desired.
-- [ ] Save cue-length preference per Playbook/role.
+- [x] Save cue-length preference per Playbook/role.
 
 #### Tests
 
 - [x] Unit-test session transitions.
 - [x] Playwright test: start session, click Next, position changes.
 - [x] Playwright test: Repeat Cue does not advance.
-- [ ] Unit-test cue-length preset constants against `planning/specs/cue_window_presets.json`.
-- [ ] Unit-test cue playback start offset selection.
+- [x] Unit-test cue-length preset constants against `planning/specs/cue_window_presets.json`.
+- [x] Unit-test cue playback start offset selection.
 - [x] Playwright test: Hear My Line does not advance.
 - [x] Playwright test: Back returns to previous line.
 - [x] Playwright test: reload offers resume.
@@ -675,7 +675,7 @@ This is the second major useful milestone.
 
 - [x] User can rehearse through a role using on-screen controls.
 - [x] User can repeat cue.
-- [ ] User can choose Full cue, Last 5s, Last 10s, Last 15s, or Last 20s.
+- [x] User can choose Full cue, Last 5s, Last 10s, Last 15s, or Last 20s.
 - [x] User can hear their line.
 - [x] User can advance and go back.
 - [x] User can reload and resume.

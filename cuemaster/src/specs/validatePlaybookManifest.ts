@@ -4,7 +4,16 @@ import type { PlaybookManifest } from "./playbookManifest";
 const audioAssetSchema = z.object({
   path: z.string().min(1),
   duration_ms: z.number().int().nonnegative(),
-  required: z.boolean()
+  required: z.boolean(),
+  cue_start_offsets: z
+    .array(
+      z.object({
+        requested_window_ms: z.number().int().positive(),
+        start_ms: z.number().int().nonnegative(),
+        confidence: z.enum(["exact", "boundary", "fallback"])
+      })
+    )
+    .optional()
 });
 
 const directionSchema = z.object({

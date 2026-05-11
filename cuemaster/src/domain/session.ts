@@ -5,6 +5,7 @@ export type RehearsalSession = {
   cueDepth: number;
   includeDirections: boolean;
   revealLine: boolean;
+  cueWindowPresetId: string;
   playbackRate: number;
   speakAlongEnabled: boolean;
   tempoTimingPreferred: boolean;

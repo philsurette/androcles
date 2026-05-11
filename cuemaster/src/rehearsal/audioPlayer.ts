@@ -9,12 +9,15 @@ export class AudioPlayer {
 
   constructor(private readonly audioElementFactory: AudioElementFactory = createAudioElement) {}
 
-  async play(src: string, playbackRate = 1): Promise<void> {
+  async play(src: string, playbackRate = 1, startTimeMs = 0): Promise<void> {
     this.stop();
     const audio = this.audioElementFactory(src);
     this.currentAudio = audio;
     this.state = "playing";
     audio.playbackRate = playbackRate;
+    if (startTimeMs > 0) {
+      audio.currentTime = startTimeMs / 1000;
+    }
     preservePitch(audio);
 
     try {
