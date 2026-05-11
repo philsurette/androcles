@@ -314,6 +314,12 @@ button:disabled {
   margin: 0;
 }
 
+.line-card {
+  max-height: min(45vh, 34rem);
+  overflow: auto;
+  padding-right: 1.15rem;
+}
+
 .cue-card p:last-child,
 .line-card p:last-child {
   font-size: 1.35rem;
