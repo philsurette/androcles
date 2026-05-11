@@ -47,7 +47,7 @@ describe("tempoFeedback", () => {
   });
 
   it("falls back to default target hesitation", () => {
-    expect(timingTargetsForLine(line).targetHesitationMs).toBe(500);
+    expect(timingTargetsForLine(line).targetHesitationMs).toBe(750);
   });
 
   it("labels pickup timing", () => {
@@ -64,7 +64,7 @@ describe("tempoFeedback", () => {
 
   it("builds nonjudgmental feedback for measured attempts", () => {
     expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 2400 })).toEqual({
-      hesitation: { measuredMs: 600, targetMs: 500, label: "close" },
+      hesitation: { measuredMs: 600, targetMs: 750, label: "close" },
       delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
     });
   });

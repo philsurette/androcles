@@ -1,15 +1,20 @@
 import type { Cue } from "../domain/cue";
 import type { Line } from "../domain/line";
-import type { AudioQueueItem } from "./audioQueue";
+import type { AudioQueueItem, QueueItem } from "./audioQueue";
+import { timingTargetsForLine } from "./tempoFeedback";
 
 export function cuePlaybackItems(cues: Cue[]): AudioQueueItem[] {
-  return cues.map((cue) => ({ path: cue.audioPath, playbackRate: 1 }));
+  return cues.map((cue) => ({ kind: "audio", path: cue.audioPath, playbackRate: 1 }));
 }
 
 export function responsePlaybackItems(line: Line, playbackRate: number): AudioQueueItem[] {
-  return line.responseSegments.map((segment) => ({ path: segment.audioPath, playbackRate }));
+  return line.responseSegments.map((segment) => ({ kind: "audio", path: segment.audioPath, playbackRate }));
 }
 
-export function speakAlongPlaybackItems(cues: Cue[], line: Line, playbackRate: number): AudioQueueItem[] {
-  return [...cuePlaybackItems(cues), ...responsePlaybackItems(line, playbackRate)];
+export function speakAlongPlaybackItems(cues: Cue[], line: Line, playbackRate: number): QueueItem[] {
+  return [
+    ...cuePlaybackItems(cues),
+    { kind: "delay", durationMs: timingTargetsForLine(line).targetHesitationMs },
+    ...responsePlaybackItems(line, playbackRate)
+  ];
 }

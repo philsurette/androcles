@@ -2,9 +2,17 @@ import { audioAssetRepository } from "../storage/audioAssetRepository";
 import { AudioPlayer } from "./audioPlayer";
 
 export type AudioQueueItem = {
+  kind: "audio";
   path: string;
   playbackRate: number;
 };
+
+export type DelayQueueItem = {
+  kind: "delay";
+  durationMs: number;
+};
+
+export type QueueItem = AudioQueueItem | DelayQueueItem;
 
 export type QueueAudioPlayer = {
   play(src: string, playbackRate: number): Promise<void>;
@@ -24,11 +32,15 @@ export class AudioQueue {
     private readonly assetResolver: AudioAssetResolver = new IndexedDbAudioAssetResolver(playbookId)
   ) {}
 
-  async play(items: AudioQueueItem[]): Promise<void> {
+  async play(items: QueueItem[]): Promise<void> {
     this.cancelled = false;
     for (const item of items) {
       if (this.cancelled) {
         return;
+      }
+      if (item.kind === "delay") {
+        await delay(item.durationMs);
+        continue;
       }
       const url = await this.assetResolver.objectUrlFor(item.path);
       try {
@@ -43,6 +55,12 @@ export class AudioQueue {
     this.cancelled = true;
     this.player.stop();
   }
+}
+
+function delay(durationMs: number): Promise<void> {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, durationMs);
+  });
 }
 
 class IndexedDbAudioAssetResolver implements AudioAssetResolver {

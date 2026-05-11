@@ -237,7 +237,7 @@ type SessionConfig = {
   responsePlaybackSpeed: number; // 0.4 to 1.3
   speakAlongEnabled: boolean;
   tempoTimingPreferred: boolean;
-  defaultTargetHesitationMs: number; // default 500
+  defaultTargetHesitationMs: number; // default 750
 };
 
 type SessionState = {
@@ -535,7 +535,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [ ] Set response playback speed.
 - [ ] Toggle speak-along mode.
 - [ ] Toggle tempo timing.
-- [ ] Show default target hesitation setting, initially fixed at 500ms or hidden under advanced settings.
+- [ ] Show default target hesitation setting, initially fixed at 750ms or hidden under advanced settings.
 
 #### UI constraints
 
@@ -776,7 +776,7 @@ This is a technical spike, but it should leave usable code if successful.
 
 Initial internal defaults:
 
-- [x] Default target hesitation: `500ms`.
+- [x] Default target hesitation: `750ms`.
 - [x] Internal pause grace: approximately `750ms`.
 - [x] End-of-line silence threshold: approximately `1500ms`.
 - [x] Make thresholds constants in one place.
@@ -834,7 +834,7 @@ This is the third major useful milestone.
 #### Target values
 
 - [x] Use line-specific `timing.target_hesitation_ms` when present.
-- [x] Fall back to default target hesitation, initially `500ms`.
+- [x] Fall back to default target hesitation, initially `750ms`.
 - [x] Use Playbook response audio duration as target delivery duration.
 - [x] If response has multiple segments, sum their durations.
 - [x] Handle missing duration gracefully.

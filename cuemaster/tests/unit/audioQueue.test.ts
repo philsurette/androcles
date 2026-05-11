@@ -11,8 +11,8 @@ describe("AudioQueue", () => {
     const queue = new AudioQueue("playbook", player, new MockAssetResolver());
 
     await queue.play([
-      { path: "cue.wav", playbackRate: 1 },
-      { path: "response.wav", playbackRate: 0.7 }
+      { kind: "audio", path: "cue.wav", playbackRate: 1 },
+      { kind: "audio", path: "response.wav", playbackRate: 0.7 }
     ]);
 
     expect(player.playCalls).toEqual([
@@ -28,13 +28,34 @@ describe("AudioQueue", () => {
     queue = new AudioQueue("playbook", player, new MockAssetResolver());
 
     await queue.play([
-      { path: "cue.wav", playbackRate: 1 },
-      { path: "response.wav", playbackRate: 0.7 }
+      { kind: "audio", path: "cue.wav", playbackRate: 1 },
+      { kind: "audio", path: "response.wav", playbackRate: 0.7 }
     ]);
 
     expect(player.stop).toHaveBeenCalledOnce();
     expect(player.playCalls).toEqual([["blob://cue.wav", 1]]);
     expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
+  });
+
+  it("waits for delay items without resolving audio assets", async () => {
+    vi.useFakeTimers();
+    const player = new MockAudioPlayer();
+    const resolver = new MockAssetResolver();
+    const queue = new AudioQueue("playbook", player, resolver);
+
+    const promise = queue.play([
+      { kind: "delay", durationMs: 750 },
+      { kind: "audio", path: "response.wav", playbackRate: 0.8 }
+    ]);
+
+    await vi.advanceTimersByTimeAsync(749);
+    expect(player.playCalls).toEqual([]);
+    await vi.advanceTimersByTimeAsync(1);
+    await promise;
+
+    expect(resolver.paths).toEqual(["response.wav"]);
+    expect(player.playCalls).toEqual([["blob://response.wav", 0.8]]);
+    vi.useRealTimers();
   });
 });
 
@@ -51,7 +72,10 @@ class MockAudioPlayer implements QueueAudioPlayer {
 }
 
 class MockAssetResolver implements AudioAssetResolver {
+  readonly paths: string[] = [];
+
   async objectUrlFor(path: string): Promise<string> {
+    this.paths.push(path);
     return `blob://${path}`;
   }
 }

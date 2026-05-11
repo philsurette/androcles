@@ -33,17 +33,26 @@ const line: Line = {
 
 describe("playbackItems", () => {
   it("forces cue playback to normal speed", () => {
-    expect(cuePlaybackItems([cue])).toEqual([{ path: "audio/cue.wav", playbackRate: 1 }]);
+    expect(cuePlaybackItems([cue])).toEqual([{ kind: "audio", path: "audio/cue.wav", playbackRate: 1 }]);
   });
 
   it("uses selected response speed for actor lines", () => {
-    expect(responsePlaybackItems(line, 0.7)).toEqual([{ path: "audio/response.wav", playbackRate: 0.7 }]);
+    expect(responsePlaybackItems(line, 0.7)).toEqual([{ kind: "audio", path: "audio/response.wav", playbackRate: 0.7 }]);
   });
 
-  it("builds speak-along queue as cue then response", () => {
+  it("builds speak-along queue as cue, pickup delay, then response", () => {
     expect(speakAlongPlaybackItems([cue], line, 0.8)).toEqual([
-      { path: "audio/cue.wav", playbackRate: 1 },
-      { path: "audio/response.wav", playbackRate: 0.8 }
+      { kind: "audio", path: "audio/cue.wav", playbackRate: 1 },
+      { kind: "delay", durationMs: 750 },
+      { kind: "audio", path: "audio/response.wav", playbackRate: 0.8 }
+    ]);
+  });
+
+  it("uses line-specific target hesitation for the speak-along delay", () => {
+    expect(speakAlongPlaybackItems([cue], { ...line, timing: { targetHesitationMs: 1200 } }, 0.8)).toEqual([
+      { kind: "audio", path: "audio/cue.wav", playbackRate: 1 },
+      { kind: "delay", durationMs: 1200 },
+      { kind: "audio", path: "audio/response.wav", playbackRate: 0.8 }
     ]);
   });
 });
