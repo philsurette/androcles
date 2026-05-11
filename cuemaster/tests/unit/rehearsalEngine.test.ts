@@ -47,6 +47,12 @@ describe("RehearsalEngine", () => {
     expect(engine.cuePayloads("full").map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
   });
 
+  it("plays no cue for the no-cue preset", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+
+    expect(engine.cuePayloads("none")).toEqual([]);
+  });
+
   it("uses enough preceding cues to satisfy a timed cue-length preset", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
 

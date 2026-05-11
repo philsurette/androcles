@@ -527,7 +527,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Start from beginning.
 - [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
-- [x] Set cue length from shared presets: Full cue, Last 5s, Last 10s, Last 15s, Last 20s.
+- [x] Set cue length from shared presets: No cue, Full cue, Last 2s, Last 5s, Last 10s, Last 15s, Last 20s.
 - [ ] Toggle stage directions.
 - [x] Set response playback speed.
 - [x] Toggle speak-along mode.
@@ -674,7 +674,7 @@ This is the second major useful milestone.
 
 - [x] User can rehearse through a role using on-screen controls.
 - [x] User can repeat cue.
-- [x] User can choose Full cue, Last 5s, Last 10s, Last 15s, or Last 20s.
+- [x] User can choose No cue, Full cue, Last 2s, Last 5s, Last 10s, Last 15s, or Last 20s.
 - [x] User can hear their line.
 - [x] User can advance and go back.
 - [x] User can reload and resume.

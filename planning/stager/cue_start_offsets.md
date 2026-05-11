@@ -56,9 +56,9 @@ Recommended initial rule: implement and validate cue-start offsets for WAV Playb
 
 Use `planning/specs/cue_window_presets.json` as the source of truth for cue-window presets.
 
-`full` is a Cuemaster playback option, but Stager does not need to generate an offset for it.
+`none` and `full` are Cuemaster playback options, but Stager does not need to generate offsets for them.
 
-Stager tests must assert that the analyzer windows match the JSON preset windows with non-null `window_ms` values.
+Stager tests must assert that the analyzer windows match the JSON preset windows with positive `window_ms` values.
 
 ## Boundary Algorithm
 
@@ -102,7 +102,7 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 
 - [ ] Add a `CueStartOffsetAnalyzer` service under the Stager Playbook package.
 - [ ] Inject audio loading/duration helpers so tests can use generated tiny WAV fixtures.
-- [ ] Compute offsets for the timed windows in `planning/specs/cue_window_presets.json`.
+- [ ] Compute offsets for the positive timed windows in `planning/specs/cue_window_presets.json`.
 - [ ] Add a test that fails if Stager's analyzer windows drift from `cue_window_presets.json`.
 - [ ] Unit-test short audio where every requested window should start at `0`.
 - [ ] Unit-test a synthetic cue with silence near a target boundary.

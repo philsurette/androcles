@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { cueWindowPresets } from "../../src/rehearsal/cueWindowPreset";
+import { cueWindowPresetForId, cueWindowPresets, timedCueWindowMsAtLeast } from "../../src/rehearsal/cueWindowPreset";
 
 describe("cueWindowPresets", () => {
   it("matches the shared planning spec used by Stager", () => {
@@ -18,5 +18,13 @@ describe("cueWindowPresets", () => {
         windowMs: preset.window_ms
       }))
     );
+  });
+
+  it("defaults missing stored preferences to full cue", () => {
+    expect(cueWindowPresetForId(undefined).id).toBe("full");
+  });
+
+  it("does not use no-cue as a timed snap target", () => {
+    expect(timedCueWindowMsAtLeast(1)).toBe(2000);
   });
 });

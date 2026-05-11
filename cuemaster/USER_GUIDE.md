@@ -42,8 +42,9 @@ Your current role, line position, cue length, line reveal preference, playback s
 
 Use **Cue length** to control how much of a long cue is played:
 
+- **No cue** skips cue playback.
 - **Full cue** plays only the immediate cue that directly prompts your line.
-- **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** include as many preceding cues as needed to reach the selected length.
+- **Last 2s**, **Last 5s**, **Last 10s**, **Last 15s**, and **Last 20s** include as many preceding cues as needed to reach the selected length.
 
 Cue length applies to cue playback and Speak Along. When the selected length starts inside a preceding cue, Cuemaster snaps up to the next shared cue window so Stager-generated cue offsets can make the start more natural. This may play slightly more cue than the selected length.
 

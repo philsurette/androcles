@@ -67,7 +67,9 @@ Cuemaster cue-length choices and Stager cue-start-offset windows use the machine
 
 Initial presets:
 
+- `none`: skip cue playback.
 - `full`: full cue playback.
+- `last_2s`: last 2 seconds.
 - `last_5s`: last 5 seconds.
 - `last_10s`: last 10 seconds.
 - `last_15s`: last 15 seconds.

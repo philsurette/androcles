@@ -65,6 +65,9 @@ export class RehearsalEngine {
 
   cuePayloads(cueWindowPresetId = "full"): Array<Line["cue"]> {
     const preset = cueWindowPresetForId(cueWindowPresetId);
+    if (preset.windowMs === 0) {
+      return [];
+    }
     if (preset.windowMs === null) {
       const line = this.currentLine();
       return line ? [line.cue] : [];
