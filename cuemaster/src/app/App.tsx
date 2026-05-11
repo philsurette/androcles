@@ -35,7 +35,7 @@ export function App() {
         playbook={selectedPlaybook}
         storageStatus={storageStatus}
         onBack={() => setSelectedPlaybook(null)}
-        onSelectRole={(role) => void selectRole(selectedPlaybook, role)}
+        onSelectRole={(role, startLineId) => void selectRole(selectedPlaybook, role, startLineId)}
       />
     );
   }
@@ -64,11 +64,34 @@ export function App() {
     setSelectedSession(latestRole ? (latestSession ?? null) : null);
   }
 
-  async function selectRole(playbook: Playbook, role: Role) {
+  async function selectRole(playbook: Playbook, role: Role, startLineId?: string) {
     setStorageStatus("");
-    setSelectedRole(role);
     try {
-      setSelectedSession((await indexedDbStorage.sessions.get(playbook.id, role.id)) ?? null);
+      const savedSession = (await indexedDbStorage.sessions.get(playbook.id, role.id)) ?? null;
+      if (!startLineId) {
+        setSelectedRole(role);
+        setSelectedSession(savedSession);
+        return;
+      }
+      const lineIndex = role.lines.findIndex((line) => line.id === startLineId);
+      if (lineIndex < 0) {
+        throw new Error(`Line not found for role ${role.id}: ${startLineId}`);
+      }
+      const nextSession = {
+        playbookId: playbook.id,
+        roleId: role.id,
+        lineIndex,
+        cueDepth: savedSession?.cueDepth ?? 1,
+        includeDirections: savedSession?.includeDirections ?? true,
+        revealLine: savedSession?.revealLine ?? false,
+        cueWindowPresetId: savedSession?.cueWindowPresetId ?? "full",
+        playbackRate: savedSession?.playbackRate ?? 1,
+        speakAlongEnabled: savedSession?.speakAlongEnabled ?? false,
+        tempoTimingPreferred: savedSession?.tempoTimingPreferred ?? false,
+        updatedAt: savedSession?.updatedAt ?? Date.now()
+      };
+      setSelectedSession(nextSession);
+      setSelectedRole(role);
     } catch (error) {
       setStorageStatus(userFacingErrorMessage(error));
       setSelectedSession(null);

@@ -18,6 +18,7 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 3. Choose a `.playbook.zip` file.
 4. Open the imported Playbook.
 5. Select the role you want to rehearse.
+6. Optionally choose a **Start at** section before opening the role.
 
 If import fails, the Playbook is probably missing required data or audio. Ask whoever generated the Playbook to regenerate it with Stager.
 
@@ -38,6 +39,8 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
 Your current role, line position, cue length, stage-direction preference, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+
+If you choose a section from **Start at** on the role screen, Cuemaster starts at the first line for that role in the selected section. Leave it on **Resume saved position / beginning** to continue from saved progress.
 
 ## Cue Length
 
