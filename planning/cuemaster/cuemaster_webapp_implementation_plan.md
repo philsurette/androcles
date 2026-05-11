@@ -528,7 +528,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
 - [x] Set cue length from shared presets: No cue, Full cue, Last 2s, Last 5s, Last 10s, Last 15s, Last 20s.
-- [ ] Toggle stage directions.
+- [x] Toggle stage directions.
 - [x] Set response playback speed.
 - [x] Toggle speak-along mode.
 - [x] Toggle tempo timing.

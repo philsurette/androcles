@@ -46,6 +46,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(initialSession?.revealLine ?? false);
+  const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
@@ -208,7 +209,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextSpeakAlongEnabled = speakAlongEnabled,
     nextTempoTimingPreferred = tempoTimingPreferred,
     nextRevealLine = isLineRevealed,
-    nextCueWindowPresetId = cueWindowPresetId
+    nextCueWindowPresetId = cueWindowPresetId,
+    nextIncludeDirections = includeDirections
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -216,7 +218,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         roleId: role.id,
         lineIndex,
         cueDepth: 1,
-        includeDirections: engine.includeDirections(),
+        includeDirections: nextIncludeDirections,
         revealLine: nextRevealLine,
         cueWindowPresetId: nextCueWindowPresetId,
         playbackRate: nextPlaybackRate,
@@ -319,6 +321,20 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const nextRevealLine = !isLineRevealed;
     setIsLineRevealed(nextRevealLine);
     void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, nextRevealLine);
+  }
+
+  function changeIncludeDirections(nextIncludeDirections: boolean) {
+    engine.setIncludeDirections(nextIncludeDirections);
+    setIncludeDirections(nextIncludeDirections);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      nextIncludeDirections
+    );
   }
 
   function slowDownResponse() {
@@ -551,6 +567,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
             <section className="stack" aria-label="Your Line">
               <h2>Your Line</h2>
+              {includeDirections && line.directions.length > 0 ? <StageDirections directions={line.directions} /> : null}
               {isLineRevealed ? <LineCard line={line} /> : <article className="card hidden-line">Line hidden</article>}
             </section>
           </div>
@@ -641,6 +658,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <label className="check-setting">
             <input
               type="checkbox"
+              checked={includeDirections}
+              onChange={(event) => changeIncludeDirections(event.target.checked)}
+            />
+            Show stage directions
+          </label>
+          <label className="check-setting">
+            <input
+              type="checkbox"
               checked={tempoTimingEnabled}
               onChange={(event) => {
                 if (event.target.checked) {
@@ -712,6 +737,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           {isScriptBrowserOpen ? (
             <ScriptBrowserPanel
               currentLineId={line?.id ?? null}
+              includeDirections={includeDirections}
               lines={role.lines}
               onSelectLine={(lineId) => void jumpToLine(lineId)}
             />
@@ -732,10 +758,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
 function ScriptBrowserPanel({
   currentLineId,
+  includeDirections,
   lines,
   onSelectLine
 }: {
   currentLineId: string | null;
+  includeDirections: boolean;
   lines: Line[];
   onSelectLine: (lineId: string) => void;
 }) {
@@ -750,6 +778,9 @@ function ScriptBrowserPanel({
               <li key={line.id} className={line.id === currentLineId ? "current-script-line" : undefined}>
                 <button type="button" className="secondary" onClick={() => onSelectLine(line.id)}>
                   <span>{line.speaker}</span>
+                  {includeDirections && line.directions.length > 0 ? (
+                    <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
+                  ) : null}
                   {line.responseText.slice(0, 120)}
                 </button>
               </li>
@@ -758,6 +789,16 @@ function ScriptBrowserPanel({
         </section>
       ))}
     </div>
+  );
+}
+
+function StageDirections({ directions }: { directions: Line["directions"] }) {
+  return (
+    <article className="card stage-directions" aria-label="Stage directions">
+      {directions.map((direction) => (
+        <p key={`${direction.segmentId}-${direction.placement}`}>{direction.text}</p>
+      ))}
+    </article>
   );
 }
 

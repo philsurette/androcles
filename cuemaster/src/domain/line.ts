@@ -13,6 +13,12 @@ export type LineTiming = {
   targetHesitationMs?: number;
 };
 
+export type StageDirection = {
+  segmentId: string;
+  text: string;
+  placement: "top_level" | "inline" | "description";
+};
+
 export type Line = {
   id: string;
   partId: number | null;
@@ -22,6 +28,7 @@ export type Line = {
   cue: Cue;
   responseText: string;
   responseSegments: ResponseSegment[];
+  directions: StageDirection[];
   previousRoles: string[];
   timing?: LineTiming;
 };

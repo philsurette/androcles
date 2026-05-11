@@ -69,6 +69,14 @@ describe("RehearsalEngine", () => {
     expect(engine.next()?.timing).toBeUndefined();
   });
 
+  it("tracks whether stage directions should be included", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { includeDirections: false });
+
+    expect(engine.includeDirections()).toBe(false);
+    engine.setIncludeDirections(true);
+    expect(engine.includeDirections()).toBe(true);
+  });
+
   it("raises for unknown roles and start lines", () => {
     expect(() => RehearsalEngine.forRole(playbook, "_NARRATOR")).toThrow("Role not found: _NARRATOR");
     expect(() => RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "missing" })).toThrow(

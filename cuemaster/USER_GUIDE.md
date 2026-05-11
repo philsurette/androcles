@@ -30,13 +30,14 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Previous** moves to the previous line.
 - **Next** moves to the next line.
 - **Reveal Line / Hide Line** shows or hides your expected response.
+- **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
 - **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
 - **Bookmark** marks the current line so you can find it again in Tempo Review.
 - **Stop** stops playback.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
-Your current role, line position, cue length, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+Your current role, line position, cue length, stage-direction preference, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
 
 ## Cue Length
 

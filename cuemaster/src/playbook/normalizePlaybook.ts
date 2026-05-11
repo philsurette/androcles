@@ -49,6 +49,11 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           durationMs: segment.audio.duration_ms,
           simultaneous: segment.simultaneous ?? false
         })),
+        directions: line.directions.map((direction) => ({
+          segmentId: direction.segment_id,
+          text: direction.text,
+          placement: direction.placement
+        })),
         previousRoles: line.previous_roles,
         timing:
           line.timing?.target_hesitation_ms === undefined

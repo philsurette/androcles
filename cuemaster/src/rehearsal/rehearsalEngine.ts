@@ -91,4 +91,8 @@ export class RehearsalEngine {
   includeDirections(): boolean {
     return this.state.includeDirections;
   }
+
+  setIncludeDirections(includeDirections: boolean): void {
+    this.state.includeDirections = includeDirections;
+  }
 }

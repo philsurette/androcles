@@ -33,6 +33,7 @@ const line: Line = {
       simultaneous: false
     }
   ],
+  directions: [],
   previousRoles: ["_NARRATOR"]
 };
 

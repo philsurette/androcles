@@ -32,6 +32,7 @@ function line(id: string, partId: number | null): Line {
     },
     responseText: id,
     responseSegments: [],
+    directions: [],
     previousRoles: []
   };
 }
