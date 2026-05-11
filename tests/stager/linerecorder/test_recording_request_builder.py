@@ -178,8 +178,6 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
             "output_path": "audio/segments/MEGAERA/0_2_1.wav",
             "cue_text": "Well, dear, do you want to see one?",
             "cue_speaker": "ANDROCLES",
-            "previous_text": "Well, dear, do you want to see one?",
-            "previous_speaker": "ANDROCLES",
             "next_text": "Then stay here.",
             "next_speaker": "ANDROCLES",
             "section_id": "part-0",
@@ -214,6 +212,7 @@ def test_recording_request_builder_includes_inline_directions_and_multiple_segme
     assert data["items"][0]["stage_directions"] == ["(_crossing_)"]
     assert data["items"][0]["cue_text"] == "A clearing in the forest."
     assert data["items"][0]["cue_speaker"] == "_NARRATOR"
+    assert "previous_text" not in data["items"][0]
 
 
 def test_recording_request_builder_marks_simultaneous_segments(tmp_path: Path) -> None:

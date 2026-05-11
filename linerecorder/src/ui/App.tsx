@@ -367,6 +367,7 @@ type ItemDetailProps = {
 
 function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
   const { item, status } = progress;
+  const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
     <article className="item-detail">
       <header>
@@ -378,7 +379,7 @@ function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
       </header>
 
       <ContextBlock label="Cue" speaker={item.cueSpeaker} text={item.cueText} />
-      <ContextBlock label="Previous" speaker={item.previousSpeaker} text={item.previousText} />
+      {showPrevious ? <ContextBlock label="Previous" speaker={item.previousSpeaker} text={item.previousText} /> : null}
 
       <section className="line-panel" aria-label="Line to record">
         <p className="eyebrow">Your Line</p>
@@ -596,4 +597,16 @@ function levelStatus(level: MicrophoneReading["level"]): string {
     case "clipping":
       return "Input is clipping. Move back or reduce gain.";
   }
+}
+
+function sameContext(
+  firstSpeaker: string | undefined,
+  firstText: string | undefined,
+  secondSpeaker: string | undefined,
+  secondText: string | undefined
+): boolean {
+  if (!firstText || !secondText) {
+    return false;
+  }
+  return firstSpeaker === secondSpeaker && firstText.trim() === secondText.trim();
 }

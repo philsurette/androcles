@@ -120,6 +120,8 @@ class RecordingRequestBuilder:
         assert self.cue_selector is not None
         cue = self.cue_selector.select_for_block(block)
         previous = self._previous_context(block)
+        if previous is not None and previous.speaker == cue.speaker and previous.text == cue.text:
+            previous = None
         next_context = self._next_context(block)
         section = self._section_for_block(block)
         segment_id = str(segment.segment_id)
