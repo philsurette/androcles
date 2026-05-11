@@ -25,7 +25,7 @@ class AudacityRecordingExporter:
         if self.audacity is None:
             self.audacity = Audacity()
 
-    def export_recordings(self) -> None:
+    def export_recordings(self, *, force: bool = False, role: str | None = None) -> None:
         recordings_dir = self.paths.recordings_dir
         self._logger.info(
             "Checking Audacity exports in %s",
@@ -35,7 +35,7 @@ class AudacityRecordingExporter:
         skipped: list[Path] = []
         errors: list[tuple[Path, Exception]] = []
         try:
-            aup3_paths = self._collect_projects(recordings_dir=recordings_dir)
+            aup3_paths = self._collect_projects(recordings_dir=recordings_dir, role=role)
             if not aup3_paths:
                 self._logger.info("No Audacity projects found in %s", paths.display_path(recordings_dir))
                 return
@@ -45,7 +45,7 @@ class AudacityRecordingExporter:
                     path=aup3_path,
                     export_extension=self.export_extension,
                 )
-                if project.export_is_up_to_date():
+                if not force and project.export_is_up_to_date():
                     skipped.append(aup3_path)
                 else:
                     exportable_projects.append(project)
@@ -69,12 +69,15 @@ class AudacityRecordingExporter:
                 errors=errors,
             )
 
-    def _collect_projects(self, recordings_dir: Path) -> list[Path]:
-        return sorted(
+    def _collect_projects(self, recordings_dir: Path, *, role: str | None = None) -> list[Path]:
+        projects = sorted(
             path
             for path in recordings_dir.iterdir()
             if path.is_file() and path.suffix.lower() == ".aup3"
         )
+        if role is None:
+            return projects
+        return [path for path in projects if path.stem == role]
 
     def _log_summary(
         self,

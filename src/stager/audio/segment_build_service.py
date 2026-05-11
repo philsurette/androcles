@@ -34,7 +34,7 @@ class SegmentBuildService:
             paths_config=self.paths,
             explicit_build_type=build_type,
         ).resolve()
-        AudacityRecordingExporter(paths=self.paths).export_recordings()
+        AudacityRecordingExporter(paths=self.paths).export_recordings(force=force, role=role)
         play = PlayTextParser(paths_config=self.paths).parse()
         splitter = PlaySplitter(
             play=play,
