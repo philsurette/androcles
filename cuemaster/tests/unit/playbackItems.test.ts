@@ -49,12 +49,27 @@ describe("playbackItems", () => {
     ]);
   });
 
-  it("trims the first cue item when a timed window spans multiple cues", () => {
+  it("snaps the first cue trim up to the next shared cue window when a timed window spans multiple cues", () => {
     const earlierCue: Cue = { ...cue, audioPath: "audio/earlier-cue.wav", durationMs: 20000 };
     const finalCue: Cue = { ...cue, audioPath: "audio/final-cue.wav", durationMs: 6000 };
 
     expect(cuePlaybackItems([earlierCue, finalCue], "last_10s")).toEqual([
-      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1, startTimeMs: 16000 },
+      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1, startTimeMs: 15000 },
+      { kind: "audio", path: "audio/final-cue.wav", playbackRate: 1 }
+    ]);
+  });
+
+  it("uses Stager offsets for the snapped cue window", () => {
+    const earlierCue: Cue = {
+      ...cue,
+      audioPath: "audio/earlier-cue.wav",
+      durationMs: 24000,
+      cueStartOffsets: [{ requestedWindowMs: 10000, startMs: 13250, confidence: "boundary" }]
+    };
+    const finalCue: Cue = { ...cue, audioPath: "audio/final-cue.wav", durationMs: 14000 };
+
+    expect(cuePlaybackItems([earlierCue, finalCue], "last_20s")).toEqual([
+      { kind: "audio", path: "audio/earlier-cue.wav", playbackRate: 1, startTimeMs: 13250 },
       { kind: "audio", path: "audio/final-cue.wav", playbackRate: 1 }
     ]);
   });

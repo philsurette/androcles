@@ -20,3 +20,11 @@ export function cueWindowPresetForId(id: string | undefined): CueWindowPreset {
   return cueWindowPresets.find((preset) => preset.id === id) ?? cueWindowPresets[0];
 }
 
+export function timedCueWindowMsAtLeast(durationMs: number): number | null {
+  return (
+    cueWindowPresets
+      .map((preset) => preset.windowMs)
+      .filter((windowMs): windowMs is number => windowMs !== null)
+      .find((windowMs) => windowMs >= durationMs) ?? null
+  );
+}

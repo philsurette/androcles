@@ -1,7 +1,7 @@
 import type { Cue } from "../domain/cue";
 import type { Line } from "../domain/line";
 import type { AudioQueueItem, QueueItem } from "./audioQueue";
-import { cueWindowPresetForId } from "./cueWindowPreset";
+import { cueWindowPresetForId, timedCueWindowMsAtLeast } from "./cueWindowPreset";
 import { timingTargetsForLine } from "./tempoFeedback";
 
 export function cuePlaybackItems(cues: Cue[], cueWindowPresetId = "full"): AudioQueueItem[] {
@@ -51,5 +51,6 @@ function cueWindowMsRemaining(cues: Cue[], index: number, cueWindowPresetId: str
   }
 
   const laterCueDurationMs = cues.slice(1).reduce((totalMs, cue) => totalMs + cue.durationMs, 0);
-  return Math.max(0, preset.windowMs - laterCueDurationMs);
+  const remainingMs = Math.max(0, preset.windowMs - laterCueDurationMs);
+  return timedCueWindowMsAtLeast(remainingMs) ?? remainingMs;
 }
