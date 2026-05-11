@@ -102,3 +102,11 @@ If Tempo Timing does not work:
 - Turn Tempo Timing off and on again to release and reopen the microphone stream.
 
 Cuemaster does not record or upload microphone audio. It only reads volume-like energy values while Tempo Timing is enabled.
+
+## Known Limitations
+
+- Cuemaster is currently a browser app. Imported Playbooks are stored in this browser on this device.
+- Very large Playbooks may pause briefly during import while the zip is checked and stored.
+- Audio playback depends on the browser supporting the Playbook's audio files.
+- Tempo Timing works best in a quiet space and can be confused by speakers, headphones leaking audio, or background noise.
+- If browser storage fills up, remove old Playbooks or clear site data, then re-import the Playbook you need.

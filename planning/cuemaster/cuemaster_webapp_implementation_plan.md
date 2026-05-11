@@ -953,54 +953,54 @@ Make the web app reliable enough to share with real users for early testing.
 
 #### Error handling
 
-- [ ] Handle bad zip.
-- [ ] Handle missing audio.
-- [ ] Handle unsupported audio format.
-- [ ] Handle browser autoplay restrictions.
-- [ ] Handle storage quota errors.
-- [ ] Handle microphone permission denial.
-- [ ] Handle failed audio playback.
-- [ ] Handle stale object URLs.
-- [ ] Handle corrupted IndexedDB records.
+- [x] Handle bad zip.
+- [x] Handle missing audio.
+- [x] Handle unsupported audio format.
+- [x] Handle browser autoplay restrictions.
+- [x] Handle storage quota errors.
+- [x] Handle microphone permission denial.
+- [x] Handle failed audio playback.
+- [x] Handle stale object URLs.
+- [x] Handle corrupted IndexedDB records.
 
 #### Accessibility
 
-- [ ] Large tap targets.
-- [ ] Keyboard navigability.
-- [ ] Screen reader labels.
-- [ ] Visible focus states.
-- [ ] Sufficient contrast.
-- [ ] Reduced-motion friendly UI.
-- [ ] No essential information conveyed only by color.
+- [x] Large tap targets.
+- [x] Keyboard navigability.
+- [x] Screen reader labels.
+- [x] Visible focus states.
+- [x] Sufficient contrast.
+- [x] Reduced-motion friendly UI.
+- [x] No essential information conveyed only by color.
 
 #### Performance
 
 - [ ] Import progress remains responsive.
 - [ ] Large Playbook import does not freeze UI.
-- [ ] App does not keep unnecessary audio blobs in memory.
-- [ ] Revoke unused object URLs.
-- [ ] Timing detector does not run when disabled.
-- [ ] Session screen remains responsive during playback.
+- [x] App does not keep unnecessary audio blobs in memory.
+- [x] Revoke unused object URLs.
+- [x] Timing detector does not run when disabled.
+- [x] Session screen remains responsive during playback.
 
 #### Privacy
 
-- [ ] Microphone explanation appears before permission request.
-- [ ] No audio recording occurs.
-- [ ] No analytics by default.
-- [ ] No network dependency after import.
+- [x] Microphone explanation appears before permission request.
+- [x] No audio recording occurs.
+- [x] No analytics by default.
+- [x] No network dependency after import.
 
 #### Testing
 
 - [ ] Playwright happy path.
 - [ ] Playwright reload/resume path.
 - [ ] Playwright invalid import path.
-- [ ] Unit tests for domain/session/tempo.
+- [x] Unit tests for domain/session/tempo.
 - [ ] Manual test with at least one realistic Playbook.
 
 ### Acceptance Criteria
 
 - [ ] App is good enough for a small group of real actors/testers.
-- [ ] Known limitations are documented.
+- [x] Known limitations are documented.
 - [ ] No major architecture refactor is obviously required before Capacitor work.
 
 ---

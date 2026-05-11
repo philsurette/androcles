@@ -1,8 +1,8 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import { installPlaybook } from "../../playbook/installPlaybook";
-import { PlaybookImportError } from "../../playbook/playbookImportError";
 import { playbookRepository } from "../../storage/playbookRepository";
+import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 type LibraryScreenProps = {
   onSelectPlaybook: (playbook: Playbook) => void;
@@ -20,7 +20,12 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   }, []);
 
   async function loadPlaybooks() {
-    setPlaybooks(await playbookRepository.list());
+    try {
+      setPlaybooks(await playbookRepository.list());
+    } catch (loadError) {
+      setPlaybooks([]);
+      setError(userFacingErrorMessage(loadError));
+    }
   }
 
   async function handleFileSelected(event: ChangeEvent<HTMLInputElement>) {
@@ -41,7 +46,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
       await loadPlaybooks();
       setMessage(`Imported ${playbook.title}`);
     } catch (importError) {
-      setError(toImportErrorMessage(importError));
+      setError(userFacingErrorMessage(importError));
     } finally {
       setIsImporting(false);
       event.target.value = "";
@@ -73,7 +78,11 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
         </div>
 
         {message ? <p className="notice">{message}</p> : null}
-        {error ? <p className="error">{error}</p> : null}
+        {error ? (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        ) : null}
 
         <section className="library-list" aria-label="Imported Playbooks">
           <h2>Library</h2>
@@ -106,11 +115,4 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
       </section>
     </main>
   );
-}
-
-function toImportErrorMessage(error: unknown): string {
-  if (error instanceof PlaybookImportError || error instanceof Error) {
-    return error.message;
-  }
-  return "Playbook import failed";
 }

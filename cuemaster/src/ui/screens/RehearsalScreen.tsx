@@ -18,6 +18,7 @@ import { sessionRepository } from "../../storage/sessionRepository";
 import { timingAttemptRepository } from "../../storage/timingAttemptRepository";
 import { CueCard } from "../components/CueCard";
 import { LineCard } from "../components/LineCard";
+import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -170,7 +171,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       setPlaybackStatus("Cue complete.");
       beginTimedAttempt();
     } catch (error) {
-      setPlaybackStatus(error instanceof Error ? error.message : "Cue playback failed.");
+      setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
 
@@ -183,7 +184,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       await audioQueue.play(responsePlaybackItems(line, playbackRate));
       setPlaybackStatus("Line complete.");
     } catch (error) {
-      setPlaybackStatus(error instanceof Error ? error.message : "Line playback failed.");
+      setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
 
@@ -197,7 +198,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate));
       setPlaybackStatus("Speak-along complete.");
     } catch (error) {
-      setPlaybackStatus(error instanceof Error ? error.message : "Speak-along playback failed.");
+      setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
 
@@ -252,7 +253,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     } catch (error) {
       detector.stop();
       setTempoTimingEnabled(false);
-      setTempoStatus(error instanceof Error ? error.message : "Could not enable tempo timing.");
+      setTempoStatus(userFacingErrorMessage(error));
     }
   }
 
@@ -516,11 +517,19 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
             </button>
           </div>
           {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
-          {tempoStatus ? <p className="status">{tempoStatus}</p> : null}
+          {tempoStatus ? (
+            <p className="status" aria-live="polite">
+              {tempoStatus}
+            </p>
+          ) : null}
           {tempoFeedback ? <TempoFeedbackPanel feedback={tempoFeedback} /> : null}
           {!tempoFeedback && lastTimingAttempt ? <TimingAttemptPanel attempt={lastTimingAttempt} /> : null}
           {recentTimingAttempts.length > 1 ? <RecentAttemptsPanel attempts={recentTimingAttempts} /> : null}
-          {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
+          {playbackStatus ? (
+            <p className="status" aria-live="polite">
+              {playbackStatus}
+            </p>
+          ) : null}
           <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
             {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
           </button>
