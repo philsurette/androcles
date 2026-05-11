@@ -291,14 +291,14 @@ Fields:
 
 Cue-start-offset fields:
 
-- `requested_window_ms`: Cue window, in milliseconds, from `planning/specs/cue_window_presets.json`.
+- `requested_window_ms`: Positive cue window, in milliseconds, from `planning/specs/cue_window_presets.json`. The no-cue preset uses `0`, but Stager does not emit cue-start offsets for disabled cue playback.
 - `start_ms`: Milliseconds from the start of the asset's audible content timeline where playback should begin.
 - `confidence`: `exact`, `boundary`, or `fallback`.
 
 Cue-start-offset rules:
 
 - `cue_start_offsets` is optional for backward-compatible additive manifest changes.
-- `requested_window_ms` values must come from non-`null` `window_ms` values in `planning/specs/cue_window_presets.json`.
+- `requested_window_ms` values must come from positive `window_ms` values in `planning/specs/cue_window_presets.json`.
 - `start_ms` must satisfy `0 <= start_ms < duration_ms`.
 - `start_ms` is a content-timeline offset, not a codec/container timestamp.
 - Offsets must not alter `duration_ms`.
@@ -308,7 +308,7 @@ For schema version 1, WAV remains the baseline segment asset format. Stager may 
 
 For compressed assets, encoder delay or padding must not change rehearsal timing. Stager should validate that the packaged audio has not been materially clipped, stretched, or padded with audible silence, but should not treat MP3 frame/container duration drift as the actor-facing timing duration.
 
-Compressed packaging must validate, adjust, recompute, or omit `cue_start_offsets`; Stager must not assume offsets computed from source WAV samples are valid seek timestamps in a packaged compressed file. The implementation plan is `planning/stager/cue_start_offsets.md`.
+MP3 Playbooks may emit `cue_start_offsets` computed from the source WAV asset. These offsets remain content-timeline values; Cuemaster should tolerate small encoder/player seek drift when applying them to compressed assets. The implementation plan is `planning/stager/cue_start_offsets.md`.
 
 ## Stage Directions
 

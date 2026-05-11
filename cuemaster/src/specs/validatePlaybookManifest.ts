@@ -8,7 +8,7 @@ const audioAssetSchema = z.object({
   cue_start_offsets: z
     .array(
       z.object({
-        requested_window_ms: z.number().int().positive(),
+        requested_window_ms: z.number().int().nonnegative(),
         start_ms: z.number().int().nonnegative(),
         confidence: z.enum(["exact", "boundary", "fallback"])
       })

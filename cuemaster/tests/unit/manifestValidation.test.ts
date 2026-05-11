@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import manifestFixture from "../fixtures/minimal-playbook/manifest.json";
+import type { PlaybookManifest } from "../../src/specs/playbookManifest";
 import { validatePlaybookManifest } from "../../src/specs/validatePlaybookManifest";
 
 describe("validatePlaybookManifest", () => {
@@ -29,5 +30,20 @@ describe("validatePlaybookManifest", () => {
     invalid.roles[0].lines[0].cue.audio.path = "";
 
     expect(() => validatePlaybookManifest(invalid)).toThrow();
+  });
+
+  it("accepts no-cue zero-window offsets emitted by Stager", () => {
+    const manifest = structuredClone(manifestFixture) as PlaybookManifest;
+    manifest.roles[0].lines[0].cue.audio.cue_start_offsets = [
+      {
+        requested_window_ms: 0,
+        start_ms: 0,
+        confidence: "exact"
+      }
+    ];
+
+    expect(validatePlaybookManifest(manifest).roles[0].lines[0].cue.audio.cue_start_offsets?.[0]).toMatchObject({
+      requested_window_ms: 0
+    });
   });
 });
