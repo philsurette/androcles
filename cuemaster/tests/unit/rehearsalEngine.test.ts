@@ -31,6 +31,16 @@ describe("RehearsalEngine", () => {
     expect(engine.previous()?.id).toBe("0_1_ANDROCLES");
   });
 
+  it("updates cue payloads immediately after navigation", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
+
+    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual(["PROLOGUE"]);
+    engine.next();
+    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
+    engine.previous();
+    expect(engine.cuePayloads().map((cue) => cue.text)).toEqual(["PROLOGUE"]);
+  });
+
   it("derives cue payloads using cue depth", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", {
       startLineId: "0_3_ANDROCLES",

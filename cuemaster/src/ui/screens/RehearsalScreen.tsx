@@ -133,7 +133,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     setHasStarted(true);
     setPlaybackStatus("Playing cue...");
     try {
-      await audioQueue.play(cuePlaybackItems(cues));
+      await audioQueue.play(cuePlaybackItems(engine.cuePayloads()));
       setPlaybackStatus("Cue complete.");
       beginTimedAttempt();
     } catch (error) {
