@@ -3,11 +3,12 @@ import type { Role } from "../../domain/role";
 
 type RoleSelectScreenProps = {
   playbook: Playbook;
+  storageStatus?: string;
   onBack: () => void;
   onSelectRole: (role: Role) => void;
 };
 
-export function RoleSelectScreen({ playbook, onBack, onSelectRole }: RoleSelectScreenProps) {
+export function RoleSelectScreen({ playbook, storageStatus = "", onBack, onSelectRole }: RoleSelectScreenProps) {
   return (
     <main className="shell">
       <section className="hero library">
@@ -17,6 +18,11 @@ export function RoleSelectScreen({ playbook, onBack, onSelectRole }: RoleSelectS
         <p className="eyebrow">Choose Role</p>
         <h1>{playbook.title}</h1>
         <p>Select the role you want Cuemaster to prompt.</p>
+        {storageStatus ? (
+          <p className="error" role="alert">
+            {storageStatus}
+          </p>
+        ) : null}
 
         <ul className="role-list">
           {playbook.roles.map((role) => (

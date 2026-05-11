@@ -489,7 +489,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [x] Load Playbook library on app launch.
 - [x] Restore selected role when available.
 - [x] Resume from saved position when available.
-- [ ] Handle missing/corrupt local storage gracefully.
+- [x] Handle missing/corrupt local storage gracefully.
 
 #### Tests
 

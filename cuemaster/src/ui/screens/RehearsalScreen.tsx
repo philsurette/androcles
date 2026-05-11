@@ -24,10 +24,11 @@ type RehearsalScreenProps = {
   playbook: Playbook;
   role: Role;
   initialSession: RehearsalSession | null;
+  initialStorageStatus?: string;
   onBack: () => void;
 };
 
-export function RehearsalScreen({ playbook, role, initialSession, onBack }: RehearsalScreenProps) {
+export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
@@ -53,6 +54,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [recentTimingAttempts, setRecentTimingAttempts] = useState<TimingAttempt[]>([]);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [isScriptBrowserOpen, setIsScriptBrowserOpen] = useState(false);
   const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
@@ -151,16 +153,21 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     nextSpeakAlongEnabled = speakAlongEnabled,
     nextTempoTimingPreferred = tempoTimingPreferred
   ) {
-    await sessionRepository.save({
-      playbookId: playbook.id,
-      roleId: role.id,
-      lineIndex,
-      includeDirections: engine.includeDirections(),
-      playbackRate: nextPlaybackRate,
-      speakAlongEnabled: nextSpeakAlongEnabled,
-      tempoTimingPreferred: nextTempoTimingPreferred,
-      updatedAt: Date.now()
-    });
+    try {
+      await sessionRepository.save({
+        playbookId: playbook.id,
+        roleId: role.id,
+        lineIndex,
+        includeDirections: engine.includeDirections(),
+        playbackRate: nextPlaybackRate,
+        speakAlongEnabled: nextSpeakAlongEnabled,
+        tempoTimingPreferred: nextTempoTimingPreferred,
+        updatedAt: Date.now()
+      });
+      setStorageStatus("");
+    } catch (error) {
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function playCue() {
@@ -310,10 +317,15 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       deliveryLabel: feedback.delivery.label,
       detectionMode: "energy"
     };
-    await timingAttemptRepository.save(attempt);
-    setLastTimingAttempt(attempt);
-    await loadRecentTimingAttempts();
-    await loadReviewAttempts();
+    try {
+      await timingAttemptRepository.save(attempt);
+      setStorageStatus("");
+      setLastTimingAttempt(attempt);
+      await loadRecentTimingAttempts();
+      await loadReviewAttempts();
+    } catch (error) {
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function loadLastTimingAttempt() {
@@ -321,8 +333,14 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       setLastTimingAttempt(null);
       return;
     }
-    setLastTimingAttempt((await timingAttemptRepository.latestForLine(playbook.id, role.id, line.id)) ?? null);
-    await loadRecentTimingAttempts();
+    try {
+      setLastTimingAttempt((await timingAttemptRepository.latestForLine(playbook.id, role.id, line.id)) ?? null);
+      await loadRecentTimingAttempts();
+    } catch (error) {
+      setLastTimingAttempt(null);
+      setRecentTimingAttempts([]);
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function loadRecentTimingAttempts() {
@@ -330,11 +348,21 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       setRecentTimingAttempts([]);
       return;
     }
-    setRecentTimingAttempts(await timingAttemptRepository.recentForLine(playbook.id, role.id, line.id, 5));
+    try {
+      setRecentTimingAttempts(await timingAttemptRepository.recentForLine(playbook.id, role.id, line.id, 5));
+    } catch (error) {
+      setRecentTimingAttempts([]);
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function loadReviewAttempts() {
-    setReviewAttempts(await timingAttemptRepository.latestForRole(playbook.id, role.id));
+    try {
+      setReviewAttempts(await timingAttemptRepository.latestForRole(playbook.id, role.id));
+    } catch (error) {
+      setReviewAttempts([]);
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function loadCurrentBookmark() {
@@ -342,31 +370,46 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       setIsCurrentLineBookmarked(false);
       return;
     }
-    setIsCurrentLineBookmarked(Boolean(await bookmarkRepository.get(playbook.id, role.id, line.id)));
+    try {
+      setIsCurrentLineBookmarked(Boolean(await bookmarkRepository.get(playbook.id, role.id, line.id)));
+    } catch (error) {
+      setIsCurrentLineBookmarked(false);
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function loadBookmarks() {
-    setBookmarks(await bookmarkRepository.listForRole(playbook.id, role.id));
+    try {
+      setBookmarks(await bookmarkRepository.listForRole(playbook.id, role.id));
+    } catch (error) {
+      setBookmarks([]);
+      setStorageStatus(userFacingErrorMessage(error));
+    }
   }
 
   async function toggleBookmark() {
     if (!line) {
       return;
     }
-    if (isCurrentLineBookmarked) {
-      await bookmarkRepository.delete(playbook.id, role.id, line.id);
-      setIsCurrentLineBookmarked(false);
-    } else {
-      await bookmarkRepository.save({
-        id: `${playbook.id}:${role.id}:${line.id}`,
-        playbookId: playbook.id,
-        roleId: role.id,
-        lineId: line.id,
-        createdAt: Date.now()
-      });
-      setIsCurrentLineBookmarked(true);
+    try {
+      if (isCurrentLineBookmarked) {
+        await bookmarkRepository.delete(playbook.id, role.id, line.id);
+        setIsCurrentLineBookmarked(false);
+      } else {
+        await bookmarkRepository.save({
+          id: `${playbook.id}:${role.id}:${line.id}`,
+          playbookId: playbook.id,
+          roleId: role.id,
+          lineId: line.id,
+          createdAt: Date.now()
+        });
+        setIsCurrentLineBookmarked(true);
+      }
+      setStorageStatus("");
+      await loadBookmarks();
+    } catch (error) {
+      setStorageStatus(userFacingErrorMessage(error));
     }
-    await loadBookmarks();
   }
 
   async function toggleTempoReview() {
@@ -391,6 +434,11 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
             Line {position.total === 0 ? 0 : position.index + 1} of {position.total}
           </p>
         </header>
+        {storageStatus ? (
+          <p className="error" role="alert">
+            {storageStatus}
+          </p>
+        ) : null}
 
         {line ? (
           <div className="rehearsal-grid">

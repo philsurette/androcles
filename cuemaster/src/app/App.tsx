@@ -6,11 +6,13 @@ import { sessionRepository } from "../storage/sessionRepository";
 import { LibraryScreen } from "../ui/screens/LibraryScreen";
 import { RehearsalScreen } from "../ui/screens/RehearsalScreen";
 import { RoleSelectScreen } from "../ui/screens/RoleSelectScreen";
+import { userFacingErrorMessage } from "../ui/errors/userFacingErrorMessage";
 
 export function App() {
   const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [selectedSession, setSelectedSession] = useState<RehearsalSession | null>(null);
+  const [storageStatus, setStorageStatus] = useState<string>("");
 
   if (selectedPlaybook && selectedRole) {
     return (
@@ -18,6 +20,7 @@ export function App() {
         playbook={selectedPlaybook}
         role={selectedRole}
         initialSession={selectedSession}
+        initialStorageStatus={storageStatus}
         onBack={() => {
           setSelectedRole(null);
           setSelectedSession(null);
@@ -30,6 +33,7 @@ export function App() {
     return (
       <RoleSelectScreen
         playbook={selectedPlaybook}
+        storageStatus={storageStatus}
         onBack={() => setSelectedPlaybook(null)}
         onSelectRole={(role) => void selectRole(selectedPlaybook, role)}
       />
@@ -43,7 +47,14 @@ export function App() {
   );
 
   async function openPlaybook(playbook: Playbook) {
-    const latestSession = await sessionRepository.getLatestForPlaybook(playbook.id);
+    let latestSession: RehearsalSession | undefined;
+    setStorageStatus("");
+    try {
+      latestSession = await sessionRepository.getLatestForPlaybook(playbook.id);
+    } catch (error) {
+      latestSession = undefined;
+      setStorageStatus(userFacingErrorMessage(error));
+    }
     const latestRole = latestSession
       ? playbook.roles.find((candidate) => candidate.id === latestSession.roleId)
       : undefined;
@@ -54,7 +65,13 @@ export function App() {
   }
 
   async function selectRole(playbook: Playbook, role: Role) {
+    setStorageStatus("");
     setSelectedRole(role);
-    setSelectedSession((await sessionRepository.get(playbook.id, role.id)) ?? null);
+    try {
+      setSelectedSession((await sessionRepository.get(playbook.id, role.id)) ?? null);
+    } catch (error) {
+      setStorageStatus(userFacingErrorMessage(error));
+      setSelectedSession(null);
+    }
   }
 }

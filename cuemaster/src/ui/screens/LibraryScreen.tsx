@@ -54,8 +54,12 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   }
 
   async function deletePlaybook(id: string) {
-    await playbookRepository.delete(id);
-    await loadPlaybooks();
+    try {
+      await playbookRepository.delete(id);
+      await loadPlaybooks();
+    } catch (deleteError) {
+      setError(userFacingErrorMessage(deleteError));
+    }
   }
 
   return (
