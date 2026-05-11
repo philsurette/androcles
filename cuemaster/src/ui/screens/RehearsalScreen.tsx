@@ -910,41 +910,46 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       />
                       Enable Tempo Timing
                     </label>
-                    <label className="timing-setting">
-                      Speak-along pause
-                      <select
-                        value={speakAlongPauseMs}
-                        onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}
-                      >
-                        {practiceTimingOptionsMs.map((optionMs) => (
-                          <option key={optionMs} value={optionMs}>
-                            {formatTimingOption(optionMs)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="timing-setting">
-                      Tempo pickup target
-                      <select
-                        value={tempoTargetHesitationMs}
-                        disabled={syncPracticeTiming}
-                        onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
-                      >
-                        {practiceTimingOptionsMs.map((optionMs) => (
-                          <option key={optionMs} value={optionMs}>
-                            {formatTimingOption(optionMs)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
-                        checked={syncPracticeTiming}
-                        onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
-                      />
-                      🔒 Keep timing targets in sync
-                    </label>
+                    <fieldset className="timing-options">
+                      <legend>Timing targets</legend>
+                      <div className="timing-options-controls">
+                        <label className="timing-setting">
+                          Speak-along pause
+                          <select
+                            value={speakAlongPauseMs}
+                            onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}
+                          >
+                            {practiceTimingOptionsMs.map((optionMs) => (
+                              <option key={optionMs} value={optionMs}>
+                                {formatTimingOption(optionMs)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="timing-setting">
+                          Tempo pickup target
+                          <select
+                            value={tempoTargetHesitationMs}
+                            disabled={syncPracticeTiming}
+                            onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
+                          >
+                            {practiceTimingOptionsMs.map((optionMs) => (
+                              <option key={optionMs} value={optionMs}>
+                                {formatTimingOption(optionMs)}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="check-setting timing-sync">
+                          <input
+                            type="checkbox"
+                            checked={syncPracticeTiming}
+                            onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
+                          />
+                          Keep timing targets in sync
+                        </label>
+                      </div>
+                    </fieldset>
                     <p className="status">
                       Tempo timing uses microphone energy only: no recording, no transcription, no upload.
                     </p>

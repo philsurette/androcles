@@ -417,13 +417,51 @@ button:disabled {
   display: flex;
   flex-wrap: wrap;
   gap: 0.85rem 1.25rem;
-  align-items: center;
+  align-items: flex-start;
   padding: 0.35rem;
 }
 
 .practice-options-panel .status {
   flex-basis: 100%;
   margin: 0;
+}
+
+.timing-options {
+  display: grid;
+  flex-basis: 100%;
+  gap: 0.75rem;
+  border: 1px solid rgba(30, 38, 31, 0.1);
+  border-radius: 0.9rem;
+  margin: 0;
+  padding: 0.85rem;
+}
+
+.timing-options legend {
+  color: var(--accent);
+  font-family: var(--display-font);
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  padding: 0 0.35rem;
+  text-transform: uppercase;
+}
+
+.timing-options-controls {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(2, minmax(10rem, 1fr)) minmax(14rem, 1fr);
+  align-items: end;
+}
+
+.timing-setting {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--quiet);
+  font-weight: 800;
+}
+
+.timing-sync {
+  padding-bottom: 0.6rem;
 }
 
 .utility-drawer {
@@ -581,6 +619,14 @@ button:disabled {
 
   .utility-tabs {
     grid-template-columns: 1fr;
+  }
+
+  .timing-options-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .timing-sync {
+    padding-bottom: 0;
   }
 
   .review-columns {
