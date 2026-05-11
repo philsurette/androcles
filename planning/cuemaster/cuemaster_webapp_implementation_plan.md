@@ -890,23 +890,23 @@ Let the actor see which lines need work, without building a full analytics produ
 
 - [x] Add simple timing history per line.
 - [x] Show last attempt on Session screen.
-- [ ] Show recent attempts for current line.
-- [ ] Add basic Tempo Review screen.
-- [ ] List lines with late pickup.
-- [ ] List lines with slow delivery.
-- [ ] List lines with rushed delivery.
+- [x] Show recent attempts for current line.
+- [x] Add basic Tempo Review screen.
+- [x] List lines with late pickup.
+- [x] List lines with slow delivery.
+- [x] List lines with rushed delivery.
 - [ ] List bookmarked lines.
-- [ ] Allow jumping from review list to line.
-- [ ] Keep calculations local.
-- [ ] Avoid charts unless clearly useful.
+- [x] Allow jumping from review list to line.
+- [x] Keep calculations local.
+- [x] Avoid charts unless clearly useful.
 
 ### Acceptance Criteria
 
-- [ ] Actor can identify late-pickup lines.
-- [ ] Actor can identify slow-delivery lines.
-- [ ] Actor can identify rushed-delivery lines.
-- [ ] Actor can jump directly to a problem line.
-- [ ] Review feature is useful but not overbuilt.
+- [x] Actor can identify late-pickup lines.
+- [x] Actor can identify slow-delivery lines.
+- [x] Actor can identify rushed-delivery lines.
+- [x] Actor can jump directly to a problem line.
+- [x] Review feature is useful but not overbuilt.
 
 ---
 

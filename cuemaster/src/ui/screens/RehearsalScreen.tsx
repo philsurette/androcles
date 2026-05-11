@@ -39,6 +39,9 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [tempoStatus, setTempoStatus] = useState<string>("");
   const [tempoFeedback, setTempoFeedback] = useState<TempoFeedback | null>(null);
   const [lastTimingAttempt, setLastTimingAttempt] = useState<TimingAttempt | null>(null);
+  const [recentTimingAttempts, setRecentTimingAttempts] = useState<TimingAttempt[]>([]);
+  const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
+  const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
@@ -64,6 +67,22 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     if (hasStarted) {
       await playCue();
     }
+  }
+
+  async function jumpToLine(lineId: string) {
+    const targetLine = role.lines.find((candidate) => candidate.id === lineId);
+    if (!targetLine) {
+      throw new Error(`Line not found for role ${role.id}: ${lineId}`);
+    }
+    while (engine.currentLine()?.id !== lineId && !engine.position().atEnd) {
+      engine.next();
+    }
+    while (engine.currentLine()?.id !== lineId && !engine.position().atBeginning) {
+      engine.previous();
+    }
+    updatePosition();
+    setIsLineRevealed(false);
+    setIsTempoReviewOpen(false);
   }
 
   async function goPrevious() {
@@ -244,6 +263,8 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     };
     await timingAttemptRepository.save(attempt);
     setLastTimingAttempt(attempt);
+    await loadRecentTimingAttempts();
+    await loadReviewAttempts();
   }
 
   async function loadLastTimingAttempt() {
@@ -252,6 +273,27 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       return;
     }
     setLastTimingAttempt((await timingAttemptRepository.latestForLine(playbook.id, role.id, line.id)) ?? null);
+    await loadRecentTimingAttempts();
+  }
+
+  async function loadRecentTimingAttempts() {
+    if (!line) {
+      setRecentTimingAttempts([]);
+      return;
+    }
+    setRecentTimingAttempts(await timingAttemptRepository.recentForLine(playbook.id, role.id, line.id, 5));
+  }
+
+  async function loadReviewAttempts() {
+    setReviewAttempts(await timingAttemptRepository.latestForRole(playbook.id, role.id));
+  }
+
+  async function toggleTempoReview() {
+    const nextIsOpen = !isTempoReviewOpen;
+    setIsTempoReviewOpen(nextIsOpen);
+    if (nextIsOpen) {
+      await loadReviewAttempts();
+    }
   }
 
   return (
@@ -363,7 +405,14 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           {tempoStatus ? <p className="status">{tempoStatus}</p> : null}
           {tempoFeedback ? <TempoFeedbackPanel feedback={tempoFeedback} /> : null}
           {!tempoFeedback && lastTimingAttempt ? <TimingAttemptPanel attempt={lastTimingAttempt} /> : null}
+          {recentTimingAttempts.length > 1 ? <RecentAttemptsPanel attempts={recentTimingAttempts} /> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
+          <button type="button" className="secondary" onClick={() => void toggleTempoReview()}>
+            {isTempoReviewOpen ? "Hide Tempo Review" : "Tempo Review"}
+          </button>
+          {isTempoReviewOpen ? (
+            <TempoReviewPanel attempts={reviewAttempts} role={role} onSelectLine={(lineId) => void jumpToLine(lineId)} />
+          ) : null}
         </div>
       </section>
     </main>
@@ -398,6 +447,78 @@ function TimingAttemptPanel({ attempt }: { attempt: TimingAttempt }) {
         Delivery: {attempt.deliveryMs} ms target {attempt.targetDeliveryMs} ms, {attempt.deliveryLabel}.
       </p>
     </div>
+  );
+}
+
+function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
+  return (
+    <div className="tempo-feedback">
+      <p>Recent attempts:</p>
+      <ol className="attempt-list">
+        {attempts.map((attempt) => (
+          <li key={attempt.id}>
+            pickup {attempt.hesitationMs} ms ({attempt.hesitationLabel}), delivery {attempt.deliveryMs} ms (
+            {attempt.deliveryLabel})
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
+function TempoReviewPanel({
+  attempts,
+  role,
+  onSelectLine
+}: {
+  attempts: TimingAttempt[];
+  role: Role;
+  onSelectLine: (lineId: string) => void;
+}) {
+  const linesById = new Map(role.lines.map((line) => [line.id, line]));
+  const latePickupAttempts = attempts.filter((attempt) => attempt.hesitationLabel === "late");
+  const slowDeliveryAttempts = attempts.filter((attempt) => attempt.deliveryLabel === "slow");
+  const rushedDeliveryAttempts = attempts.filter((attempt) => attempt.deliveryLabel === "fast");
+
+  return (
+    <div className="tempo-review">
+      <h2>Tempo Review</h2>
+      <TempoReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+      <TempoReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+      <TempoReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+      {attempts.length === 0 ? <p className="empty">No timing attempts yet.</p> : null}
+    </div>
+  );
+}
+
+function TempoReviewSection({
+  title,
+  attempts,
+  linesById,
+  onSelectLine
+}: {
+  title: string;
+  attempts: TimingAttempt[];
+  linesById: Map<string, NonNullable<ReturnType<RehearsalEngine["currentLine"]>>>;
+  onSelectLine: (lineId: string) => void;
+}) {
+  return (
+    <section>
+      <h3>{title}</h3>
+      {attempts.length === 0 ? (
+        <p className="empty">None.</p>
+      ) : (
+        <ul>
+          {attempts.map((attempt) => (
+            <li key={attempt.id}>
+              <button type="button" className="secondary" onClick={() => onSelectLine(attempt.lineId)}>
+                {linesById.get(attempt.lineId)?.responseText.slice(0, 80) ?? attempt.lineId}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
 

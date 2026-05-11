@@ -32,14 +32,25 @@ describe("timingAttemptRepository", () => {
     expect(attempts.some((candidate) => candidate.id === "attempt-0")).toBe(false);
     expect(attempts.some((candidate) => candidate.id === "attempt-24")).toBe(true);
   });
+
+  it("returns the latest attempt for each line in a role", async () => {
+    await timingAttemptRepository.save(attempt("line-one-old", 1000, "line-one"));
+    await timingAttemptRepository.save(attempt("line-one-new", 2000, "line-one"));
+    await timingAttemptRepository.save(attempt("line-two", 1500, "line-two"));
+
+    expect(await timingAttemptRepository.latestForRole("playbook", "MEGAERA")).toMatchObject([
+      { id: "line-one-new" },
+      { id: "line-two" }
+    ]);
+  });
 });
 
-function attempt(id: string, createdAt: number): TimingAttempt {
+function attempt(id: string, createdAt: number, lineId = "line"): TimingAttempt {
   return {
     id,
     playbookId: "playbook",
     roleId: "MEGAERA",
-    lineId: "line",
+    lineId,
     createdAt,
     hesitationMs: 500,
     deliveryMs: 1200,
