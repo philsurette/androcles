@@ -7,6 +7,7 @@ describe("RehearsalSession", () => {
       playbookId: "playbook",
       roleId: "MEGAERA",
       lineIndex: 0,
+      cueDepth: 1,
       includeDirections: true,
       playbackRate: 1,
       speakAlongEnabled: false,

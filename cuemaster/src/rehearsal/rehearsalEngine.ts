@@ -69,6 +69,14 @@ export class RehearsalEngine {
     return this.state.lines.slice(start, this.state.index + 1).map((line) => line.cue);
   }
 
+  cueDepth(): number {
+    return this.state.cueDepth;
+  }
+
+  setCueDepth(cueDepth: number): void {
+    this.state.cueDepth = cueDepth;
+  }
+
   includeDirections(): boolean {
     return this.state.includeDirections;
   }

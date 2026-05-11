@@ -530,7 +530,7 @@ Allow the actor to choose a role and configure a rehearsal session.
 - [x] Start from beginning.
 - [x] Resume from saved position.
 - [ ] Choose scene/section if manifest structure supports it.
-- [ ] Set cue depth.
+- [x] Set cue depth.
 - [ ] Toggle stage directions.
 - [x] Set response playback speed.
 - [x] Toggle speak-along mode.

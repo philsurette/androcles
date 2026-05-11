@@ -32,12 +32,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
+      cueDepth: clampCueDepth(initialSession?.cueDepth ?? 1),
       includeDirections: initialSession?.includeDirections
     })
   );
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
+  const [cueDepth, setCueDepth] = useState(clampCueDepth(initialSession?.cueDepth ?? 1));
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -151,13 +153,15 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     lineIndex: number,
     nextPlaybackRate = playbackRate,
     nextSpeakAlongEnabled = speakAlongEnabled,
-    nextTempoTimingPreferred = tempoTimingPreferred
+    nextTempoTimingPreferred = tempoTimingPreferred,
+    nextCueDepth = cueDepth
   ) {
     try {
       await sessionRepository.save({
         playbookId: playbook.id,
         roleId: role.id,
         lineIndex,
+        cueDepth: nextCueDepth,
         includeDirections: engine.includeDirections(),
         playbackRate: nextPlaybackRate,
         speakAlongEnabled: nextSpeakAlongEnabled,
@@ -219,6 +223,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const clampedPlaybackRate = clampPlaybackRate(nextPlaybackRate);
     setPlaybackRate(clampedPlaybackRate);
     void saveSession(position.index, clampedPlaybackRate);
+  }
+
+  function changeCueDepth(nextCueDepth: number) {
+    const clampedCueDepth = clampCueDepth(nextCueDepth);
+    engine.setCueDepth(clampedCueDepth);
+    setCueDepth(clampedCueDepth);
+    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, clampedCueDepth);
   }
 
   function slowDownResponse() {
@@ -541,6 +552,19 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             Tempo timing uses microphone energy only: no recording, no transcription, no upload.
           </p>
           <label>
+            Cue depth
+            <select
+              value={cueDepth}
+              onChange={(event) => changeCueDepth(Number(event.target.value))}
+            >
+              {cueDepths.map((depth) => (
+                <option key={depth} value={depth}>
+                  {depth} cue{depth === 1 ? "" : "s"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             Response speed
             <select
               value={playbackRate}
@@ -776,8 +800,15 @@ const maxPlaybackRate = 1.3;
 const defaultPlaybackRate = 1;
 const playbackRateStep = 0.1;
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
+const minCueDepth = 1;
+const maxCueDepth = 3;
+const cueDepths = [1, 2, 3];
 
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
+}
+
+export function clampCueDepth(cueDepth: number): number {
+  return Math.min(maxCueDepth, Math.max(minCueDepth, Math.round(cueDepth)));
 }
