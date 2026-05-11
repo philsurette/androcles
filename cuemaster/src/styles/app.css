@@ -328,8 +328,10 @@ button:disabled {
 
 .inline-stage-direction {
   color: var(--quiet);
+  font-size: 0.82em;
   font-style: italic;
   margin-right: 0.35rem;
+  opacity: 0.85;
 }
 
 .inline-stage-direction::after {
@@ -342,6 +344,11 @@ button:disabled {
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+.inline-speaker {
+  margin-right: 0.55rem;
+  vertical-align: 0.1em;
 }
 
 .transport {
