@@ -5,6 +5,6 @@ export type RehearsalSession = {
   includeDirections: boolean;
   playbackRate: number;
   speakAlongEnabled: boolean;
-  tempoTimingEnabled: boolean;
+  tempoTimingPreferred: boolean;
   updatedAt: number;
 };

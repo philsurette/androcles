@@ -38,8 +38,13 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
-  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingEnabled ?? false);
-  const [tempoStatus, setTempoStatus] = useState<string>("");
+  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
+  const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
+  const [tempoStatus, setTempoStatus] = useState<string>(
+    initialSession?.tempoTimingPreferred
+      ? "Tempo timing was enabled last session. Enable it again to use the microphone."
+      : ""
+  );
   const [tempoFeedback, setTempoFeedback] = useState<TempoFeedback | null>(null);
   const [lastTimingAttempt, setLastTimingAttempt] = useState<TimingAttempt | null>(null);
   const [recentTimingAttempts, setRecentTimingAttempts] = useState<TimingAttempt[]>([]);
@@ -115,7 +120,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     lineIndex: number,
     nextPlaybackRate = playbackRate,
     nextSpeakAlongEnabled = speakAlongEnabled,
-    nextTempoTimingEnabled = tempoTimingEnabled
+    nextTempoTimingPreferred = tempoTimingPreferred
   ) {
     await sessionRepository.save({
       playbookId: playbook.id,
@@ -124,7 +129,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       includeDirections: engine.includeDirections(),
       playbackRate: nextPlaybackRate,
       speakAlongEnabled: nextSpeakAlongEnabled,
-      tempoTimingEnabled: nextTempoTimingEnabled,
+      tempoTimingPreferred: nextTempoTimingPreferred,
       updatedAt: Date.now()
     });
   }
@@ -197,7 +202,10 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     if (nextSpeakAlongEnabled && tempoTimingEnabled) {
       void disableTempoTiming("Tempo timing disabled while speak-along practice is enabled.");
     }
-    void saveSession(position.index, playbackRate, nextSpeakAlongEnabled, nextSpeakAlongEnabled ? false : tempoTimingEnabled);
+    if (nextSpeakAlongEnabled) {
+      setTempoTimingPreferred(false);
+    }
+    void saveSession(position.index, playbackRate, nextSpeakAlongEnabled, nextSpeakAlongEnabled ? false : tempoTimingPreferred);
   }
 
   async function enableTempoTiming() {
@@ -209,6 +217,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
       voiceActivityDetector?.stop();
       setVoiceActivityDetector(detector);
       setTempoTimingEnabled(true);
+      setTempoTimingPreferred(true);
       setSpeakAlongEnabled(false);
       setTempoStatus("Tempo timing enabled. Press Start or Repeat Cue to time an attempt.");
       await saveSession(position.index, playbackRate, false, true);
@@ -223,6 +232,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     voiceActivityDetector?.stop();
     setVoiceActivityDetector(null);
     setTempoTimingEnabled(false);
+    setTempoTimingPreferred(false);
     setTempoStatus(message);
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
   }

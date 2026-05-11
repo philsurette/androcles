@@ -236,7 +236,7 @@ type SessionConfig = {
 
   responsePlaybackSpeed: number; // 0.4 to 1.3
   speakAlongEnabled: boolean;
-  tempoTimingEnabled: boolean;
+  tempoTimingPreferred: boolean;
   defaultTargetHesitationMs: number; // default 500
 };
 
