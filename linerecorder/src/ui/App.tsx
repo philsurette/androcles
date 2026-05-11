@@ -94,7 +94,7 @@ export function App() {
           project={selectedProject}
           acceptedSegmentIds={acceptedSegmentIds}
           onSelectItem={(item) => void selectItem(selectedProject, item)}
-          onAccepted={() => void loadAcceptedSegments(selectedProject.id)}
+          onAccepted={() => loadAcceptedSegments(selectedProject.id)}
         />
       ) : (
         <ProjectLibrary projects={projects} onOpenProject={(project) => void openProject(project)} />
@@ -172,7 +172,7 @@ type ProjectDetailProps = {
   project: RecordingProjectRecord;
   acceptedSegmentIds: Set<string>;
   onSelectItem: (item: RecordingItem) => void;
-  onAccepted: () => void;
+  onAccepted: () => Promise<void>;
 };
 
 function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }: ProjectDetailProps) {
@@ -363,7 +363,7 @@ function ItemList({ progress, selectedSegmentId, onSelectItem }: ItemListProps) 
 type ItemDetailProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress;
-  onAccepted: () => void;
+  onAccepted: () => Promise<void>;
 };
 
 function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
@@ -422,7 +422,7 @@ function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
 type TakeRecorderProps = {
   project: RecordingProjectRecord;
   item: RecordingItem;
-  onAccepted: () => void;
+  onAccepted: () => Promise<void>;
 };
 
 function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
@@ -430,7 +430,8 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
   const playbackUrlRef = useRef<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTake, setCurrentTake] = useState<RecordedWav | null>(null);
-  const [status, setStatus] = useState("No take recorded.");
+  const [acceptedTake, setAcceptedTake] = useState<RecordingTake | null>(null);
+  const [status, setStatus] = useState("Checking saved take...");
 
   useEffect(() => {
     return () => {
@@ -443,9 +444,17 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     recorderRef.current?.stopWithoutResult();
     setIsRecording(false);
     setCurrentTake(null);
-    setStatus("No take recorded.");
+    setAcceptedTake(null);
+    setStatus("Checking saved take...");
     revokePlaybackUrl();
+    void loadAcceptedTake();
   }, [item.segmentId]);
+
+  async function loadAcceptedTake(): Promise<void> {
+    const take = await takeRepository.acceptedForSegment(project.id, item.segmentId);
+    setAcceptedTake(take ?? null);
+    setStatus(take ? `Accepted take saved: ${Math.round(take.durationMs)} ms.` : "No take recorded.");
+  }
 
   async function startRecording(): Promise<void> {
     try {
@@ -477,12 +486,14 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     if (!currentTake) {
       return;
     }
-    revokePlaybackUrl();
-    const url = URL.createObjectURL(currentTake.blob);
-    playbackUrlRef.current = url;
-    const audio = new Audio(url);
-    audio.onended = revokePlaybackUrl;
-    void audio.play();
+    playBlob(currentTake.blob);
+  }
+
+  function playAcceptedTake(): void {
+    if (!acceptedTake) {
+      return;
+    }
+    playBlob(acceptedTake.blob);
   }
 
   async function acceptTake(): Promise<void> {
@@ -501,8 +512,10 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
       blob: currentTake.blob
     };
     await takeRepository.saveAccepted(take);
+    setAcceptedTake(take);
+    setCurrentTake(null);
     setStatus("Take accepted.");
-    onAccepted();
+    await onAccepted();
   }
 
   function retryTake(): void {
@@ -516,6 +529,15 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
       URL.revokeObjectURL(playbackUrlRef.current);
       playbackUrlRef.current = null;
     }
+  }
+
+  function playBlob(blob: Blob): void {
+    revokePlaybackUrl();
+    const url = URL.createObjectURL(blob);
+    playbackUrlRef.current = url;
+    const audio = new Audio(url);
+    audio.onended = revokePlaybackUrl;
+    void audio.play();
   }
 
   return (
@@ -535,10 +557,13 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
           </button>
         )}
         <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={playTake}>
-          Play
+          Play Take
         </button>
         <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={() => void acceptTake()}>
           Accept
+        </button>
+        <button type="button" className="secondary" disabled={!acceptedTake || isRecording} onClick={playAcceptedTake}>
+          Play Saved
         </button>
         <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={retryTake}>
           Retry

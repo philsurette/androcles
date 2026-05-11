@@ -19,6 +19,15 @@ describe("TakeRepository", () => {
       ["take-2", "accepted"]
     ]);
   });
+
+  it("loads the accepted take for a segment", async () => {
+    await takeRepository.saveAccepted(takeFixture("take-1"));
+
+    await expect(takeRepository.acceptedForSegment("androcles:CENTURION", "0_12_1")).resolves.toMatchObject({
+      id: "take-1",
+      status: "accepted"
+    });
+  });
 });
 
 function takeFixture(id: string): RecordingTake {
