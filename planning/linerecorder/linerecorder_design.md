@@ -90,13 +90,15 @@ No backend dependency
 | Language | TypeScript |
 | State management | Zustand |
 | Styling | Plain CSS or CSS modules |
-| Microphone access | Browser `getUserMedia` |
+| Microphone access | Browser `getUserMedia` behind a small platform adapter |
 | Audio capture | Web Audio API + AudioWorklet |
 | Source recording format | WAV |
-| Local draft storage | IndexedDB |
-| Package import/export | Browser File API + `fflate` |
+| Local draft storage | IndexedDB, likely through Dexie for consistency with Cuemaster |
+| Package import/export | Browser File API + `jszip` or `fflate`, chosen deliberately before implementation |
 | Unit testing | Vitest |
 | Browser flow testing | Playwright |
+
+Cuemaster now has a concrete browser app in this repository. LineRecorder should copy its proven local-first app boundaries where they fit: domain code outside React, platform adapters for browser capabilities, repository-style storage, browser flow tests, and dependency license auditing. If LineRecorder diverges from Cuemaster choices such as Dexie or `jszip`, record the reason in this document or a decision note.
 
 ### Why Browser First
 
@@ -165,6 +167,8 @@ Optional hosted/server workflows may be considered in the future, but they must 
 Stager exports a role-specific recording pack for each actor or role. The authoritative contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
 A recording pack is a zip archive with a root `manifest.json`. The manifest contains enough information for LineRecorder to present actor-facing lines and produce correctly named segment recordings. Each recording item maps to a Stager `segment_id`; if a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context.
+
+Stager now emits first-class Playbook `sections` for Cuemaster. Recording packs should use the same parsed play structure for section and scene context so LineRecorder navigation matches Cuemaster rehearsal navigation. Recording packs do not need Playbook cue-start offsets or MP3 asset metadata; LineRecorder's source recording output remains WAV for Stager import.
 
 ---
 
@@ -253,6 +257,17 @@ The app should guide the actor through:
 6. Record a short test phrase.
 7. Play the test back.
 8. Confirm before starting line recording.
+
+Cuemaster already has narrow microphone access for tempo timing in `cuemaster/src/platform/microphone.ts` and app-owned voice activity detection. LineRecorder needs deeper microphone behavior than Cuemaster because it records and exports audio, but the shared boundary should be:
+
+- permission and secure-context checks,
+- device enumeration and selected input device,
+- constraint presets for clean/noisy modes,
+- live level metering,
+- no-signal, too-quiet, and clipping classification,
+- clean shutdown of tracks and audio contexts.
+
+LineRecorder-specific code should own WAV capture, take lifecycle, accepted-take storage, and export metadata. Cuemaster-specific code should own tempo timing and later voice-command recognition. The first LineRecorder implementation may copy small Cuemaster microphone pieces, but it should keep file/module boundaries clear enough that shared microphone code can later move into a common Quince browser module without changing product behavior.
 
 ### Recording Modes
 

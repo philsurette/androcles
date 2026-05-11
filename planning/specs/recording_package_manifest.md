@@ -56,6 +56,8 @@ Example manifest:
       "display_text": "Halt! Orders from the Captain.",
       "segment_text": "Halt! Orders from the Captain.",
       "cue_text": "A bugle is heard far behind on the road.",
+      "section_id": "part-0",
+      "section_title": "Act I",
       "stage_directions": ["stopping"],
       "output_path": "audio/segments/CENTURION/0_12_1.wav"
     }
@@ -76,6 +78,8 @@ Required recording item fields:
 Optional recording item fields:
 
 - `cue_text`
+- `section_id`: Stager/Cuemaster-compatible section id such as `play` or `part-0`.
+- `section_title`: Actor-facing section title for navigation and context.
 - `scene_heading`
 - `stage_directions`
 - `notes`

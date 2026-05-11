@@ -7,9 +7,6 @@ export const rehearsalCommands = [
   "resume",
   "stop",
   "bookmark",
-  "slower",
-  "faster",
-  "normal-speed",
   "start-timing"
 ] as const;
 
