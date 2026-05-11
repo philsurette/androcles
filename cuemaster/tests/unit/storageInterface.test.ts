@@ -138,6 +138,7 @@ function minimalPlaybook(): Playbook {
     title: "Androcles and the Lion",
     authors: ["George Bernard Shaw"],
     schemaVersion: 1,
+    sections: [],
     context: [],
     roles: []
   };

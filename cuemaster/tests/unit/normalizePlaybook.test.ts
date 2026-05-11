@@ -8,6 +8,7 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
+      sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
       context: [
         {
           id: "0_0_1",
@@ -26,6 +27,7 @@ describe("normalizePlaybook", () => {
     const playbook = normalizePlaybook(manifest);
 
     expect(playbook.context[0].speaker).toBe("_NARRATOR");
+    expect(playbook.sections[0].title).toBe("Prologue");
     expect(playbook.roles).toEqual([]);
   });
 
@@ -34,6 +36,7 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
+      sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
       context: [],
       roles: [
         {

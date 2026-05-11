@@ -1,5 +1,6 @@
 import type { ContextBlock } from "./context";
 import type { Role } from "./role";
+import type { Section } from "./section";
 
 export type Playbook = {
   id: string;
@@ -8,6 +9,7 @@ export type Playbook = {
   source?: string;
   schemaVersion: number;
   importMetadata?: PlaybookImportMetadata;
+  sections: Section[];
   context: ContextBlock[];
   roles: Role[];
 };

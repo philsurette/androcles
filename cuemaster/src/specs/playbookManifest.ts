@@ -10,6 +10,7 @@ export type PlaybookManifest = {
     type: string;
     build_type: string;
   };
+  sections: ManifestSection[];
   context: ManifestContextBlock[];
   roles: ManifestRole[];
   assets: ManifestAudioAsset[];
@@ -36,6 +37,14 @@ export type ManifestContextBlock = {
   speaker: "_NARRATOR";
   text: string;
   audio: ManifestAudioAsset;
+};
+
+export type ManifestSection = {
+  id: string;
+  part_id: number | null;
+  block_id: string | null;
+  title: string;
+  ordinal: number;
 };
 
 export type ManifestRole = {

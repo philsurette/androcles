@@ -294,6 +294,15 @@ The mobile app consumes roles and rehearsal line items, not a single flat `snipp
     "id": "androcles",
     "title": "Androcles and the Lion"
   },
+  "sections": [
+    {
+      "id": "part-0",
+      "part_id": 0,
+      "block_id": "0.0",
+      "title": "PROLOGUE",
+      "ordinal": 0
+    }
+  ],
   "roles": [
     {
       "id": "MEGAERA",

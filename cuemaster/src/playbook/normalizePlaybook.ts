@@ -8,6 +8,13 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
     authors: manifest.play.authors,
     source: manifest.play.source,
     schemaVersion: manifest.schema_version,
+    sections: manifest.sections.map((section) => ({
+      id: section.id,
+      partId: section.part_id,
+      blockId: section.block_id,
+      title: section.title,
+      ordinal: section.ordinal
+    })),
     context: manifest.context.map((block) => ({
       id: block.id,
       partId: block.part_id,

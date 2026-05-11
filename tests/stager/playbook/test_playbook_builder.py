@@ -162,6 +162,15 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
     assert line["response"]["segments"][0]["audio"]["path"] == "audio/segments/MEGAERA/0_2_1.wav"
     assert (cfg.build_dir / "app" / line["cue"]["audio"]["path"]).exists()
     assert (cfg.build_dir / "app" / line["response"]["segments"][0]["audio"]["path"]).exists()
+    assert data["sections"] == [
+        {
+            "id": "part-0",
+            "part_id": 0,
+            "block_id": "0.0",
+            "title": "Opening",
+            "ordinal": 0,
+        }
+    ]
     assert data["context"][0]["kind"] == "heading"
     assert data["context"][0]["speaker"] == "_NARRATOR"
     assert data["context"][0]["audio"]["path"] == "audio/segments/_NARRATOR/0_0_1.wav"

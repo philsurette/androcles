@@ -739,6 +739,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               currentLineId={line?.id ?? null}
               includeDirections={includeDirections}
               lines={role.lines}
+              sections={playbook.sections}
               onSelectLine={(lineId) => void jumpToLine(lineId)}
             />
           ) : null}
@@ -760,17 +761,19 @@ function ScriptBrowserPanel({
   currentLineId,
   includeDirections,
   lines,
+  sections,
   onSelectLine
 }: {
   currentLineId: string | null;
   includeDirections: boolean;
   lines: Line[];
+  sections: Playbook["sections"];
   onSelectLine: (lineId: string) => void;
 }) {
   return (
     <div className="script-browser">
       <h2>Script</h2>
-      {scriptBrowserSections(lines).map((section) => (
+      {scriptBrowserSections(lines, sections).map((section) => (
         <section key={section.id}>
           <h3>{section.title}</h3>
           <ol>

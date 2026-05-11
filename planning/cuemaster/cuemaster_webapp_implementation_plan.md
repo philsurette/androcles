@@ -168,8 +168,17 @@ type Playbook = {
   authors: string[];
   source?: string;
   schemaVersion: number;
+  sections: Section[];
   context: ContextBlock[];
   roles: Role[];
+};
+
+type Section = {
+  id: string;
+  partId: number | null;
+  blockId: string | null;
+  title: string;
+  ordinal: number;
 };
 
 type ContextBlock = {

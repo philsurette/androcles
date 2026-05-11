@@ -20,6 +20,7 @@ from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
 from stager.playbook.app_response_segment import AppResponseSegment
 from stager.playbook.app_role import AppRole
+from stager.playbook.app_section import AppSection
 
 
 def _role_block(role: str = "MEGAERA") -> RoleBlock:
@@ -81,6 +82,15 @@ def test_manifest_serializes_schema_one_shape() -> None:
             source="Project Gutenberg",
         ),
         reading=AppReading(type="solo", build_type="custom"),
+        sections=[
+            AppSection(
+                id="part-0",
+                part_id=0,
+                block_id="0.0",
+                title="Opening",
+                ordinal=0,
+            )
+        ],
         context=[
             AppContextBlock(
                 id="0_0_1",
@@ -111,6 +121,13 @@ def test_manifest_serializes_schema_one_shape() -> None:
     assert data["schema_version"] == 1
     assert data["play"]["id"] == "androcles"
     assert data["reading"] == {"type": "solo", "build_type": "custom"}
+    assert data["sections"][0] == {
+        "id": "part-0",
+        "part_id": 0,
+        "block_id": "0.0",
+        "title": "Opening",
+        "ordinal": 0,
+    }
     assert data["context"][0]["kind"] == "heading"
     assert data["context"][0]["speaker"] == "_NARRATOR"
     assert data["roles"][0]["lines"][0]["id"] == "0_5_MEGAERA"

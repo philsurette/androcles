@@ -15,6 +15,18 @@ describe("scriptBrowserSections", () => {
       { id: "play", title: "Play", lines: [{ id: "one" }] }
     ]);
   });
+
+  it("uses explicit Playbook section titles when available", () => {
+    expect(
+      scriptBrowserSections([line("one", 0), line("two", 1)], [
+        { id: "part-0", partId: 0, blockId: "0.0", title: "PROLOGUE", ordinal: 0 },
+        { id: "part-1", partId: 1, blockId: "1.0", title: "ACT I", ordinal: 1 }
+      ])
+    ).toMatchObject([
+      { id: "part-0", title: "PROLOGUE", lines: [{ id: "one" }] },
+      { id: "part-1", title: "ACT I", lines: [{ id: "two" }] }
+    ]);
+  });
 });
 
 function line(id: string, partId: number | null): Line {

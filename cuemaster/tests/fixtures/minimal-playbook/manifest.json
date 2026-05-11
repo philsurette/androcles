@@ -10,6 +10,15 @@
     "type": "solo",
     "build_type": "custom"
   },
+  "sections": [
+    {
+      "id": "part-0",
+      "part_id": 0,
+      "block_id": "0.0",
+      "title": "PROLOGUE",
+      "ordinal": 0
+    }
+  ],
   "context": [
     {
       "id": "0_0_1",

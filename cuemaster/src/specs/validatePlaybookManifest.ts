@@ -22,6 +22,14 @@ const directionSchema = z.object({
   placement: z.enum(["top_level", "inline", "description"])
 });
 
+const sectionSchema = z.object({
+  id: z.string().min(1),
+  part_id: z.number().int().nullable(),
+  block_id: z.string().min(1).nullable(),
+  title: z.string().min(1),
+  ordinal: z.number().int().nonnegative()
+});
+
 const responseSegmentSchema = z.object({
   id: z.string().min(1),
   owners: z.array(z.string().min(1)).min(1),
@@ -76,6 +84,7 @@ const manifestSchema = z.object({
     type: z.string().min(1),
     build_type: z.string().min(1)
   }),
+  sections: z.array(sectionSchema),
   context: z.array(
     z.object({
       id: z.string().min(1),

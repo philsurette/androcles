@@ -21,6 +21,7 @@ from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
 from stager.playbook.app_response_segment import AppResponseSegment
 from stager.playbook.app_role import AppRole
+from stager.playbook.app_section import AppSection
 from stager.playbook.cue_start_offset_analyzer import CueStartOffsetAnalyzer
 from stager.playbook.cue_selection import CueSelection
 from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
@@ -76,9 +77,28 @@ class PlaybookBuilder:
         return AppManifest(
             play=AppPlay.from_play(self.play_id or self.paths.play_name, self.play),
             reading=AppReading.from_play(self.play, build_type=self.build_type),
+            sections=self._build_sections(),
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
         )
+
+    def _build_sections(self) -> list[AppSection]:
+        sections: list[AppSection] = []
+        for ordinal, part in enumerate(self.play.parts):
+            title_block = next((block for block in part.blocks if isinstance(block, TitleBlock)), None)
+            title = part.title or (title_block.heading if title_block else None)
+            if title is None:
+                title = self.play.title if part.part_no is None else f"Part {part.part_no + 1}"
+            sections.append(
+                AppSection(
+                    id="play" if part.part_no is None else f"part-{part.part_no}",
+                    part_id=part.part_no,
+                    block_id=self._block_id_for(title_block) if title_block else None,
+                    title=title,
+                    ordinal=ordinal,
+                )
+            )
+        return sections
 
     def _build_context_blocks(self) -> list[AppContextBlock]:
         context_blocks: list[AppContextBlock] = []
