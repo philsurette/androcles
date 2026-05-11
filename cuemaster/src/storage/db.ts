@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import type { Bookmark } from "../domain/bookmark";
 import type { Playbook } from "../domain/playbook";
 import type { RehearsalSession } from "../domain/session";
 import type { TimingAttempt } from "../domain/timingAttempt";
@@ -9,6 +10,7 @@ export class CuemasterDb extends Dexie {
   sessions!: Table<RehearsalSession, [string, string]>;
   audioAssets!: Table<StoredAudioAsset, [string, string]>;
   timingAttempts!: Table<TimingAttempt, string>;
+  bookmarks!: Table<Bookmark, [string, string, string]>;
 
   constructor() {
     super("cuemaster");
@@ -37,6 +39,13 @@ export class CuemasterDb extends Dexie {
       sessions: "[playbookId+roleId],playbookId,roleId",
       audioAssets: "[playbookId+path],playbookId,path",
       timingAttempts: "id,playbookId,roleId,lineId,[playbookId+roleId+lineId],createdAt"
+    });
+    this.version(5).stores({
+      playbooks: "id,title",
+      sessions: "[playbookId+roleId],playbookId,roleId",
+      audioAssets: "[playbookId+path],playbookId,path",
+      timingAttempts: "id,playbookId,roleId,lineId,[playbookId+roleId+lineId],createdAt",
+      bookmarks: "[playbookId+roleId+lineId],playbookId,roleId,lineId"
     });
   }
 }

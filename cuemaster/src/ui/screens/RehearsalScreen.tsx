@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import type { Bookmark } from "../../domain/bookmark";
+import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
@@ -9,6 +11,7 @@ import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
+import { bookmarkRepository } from "../../storage/bookmarkRepository";
 import { sessionRepository } from "../../storage/sessionRepository";
 import { timingAttemptRepository } from "../../storage/timingAttemptRepository";
 import { CueCard } from "../components/CueCard";
@@ -41,6 +44,8 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [lastTimingAttempt, setLastTimingAttempt] = useState<TimingAttempt | null>(null);
   const [recentTimingAttempts, setRecentTimingAttempts] = useState<TimingAttempt[]>([]);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
@@ -58,7 +63,12 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
 
   useEffect(() => {
     void loadLastTimingAttempt();
+    void loadCurrentBookmark();
   }, [line?.id]);
+
+  useEffect(() => {
+    void loadBookmarks();
+  }, []);
 
   async function goNext() {
     engine.next();
@@ -288,6 +298,38 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     setReviewAttempts(await timingAttemptRepository.latestForRole(playbook.id, role.id));
   }
 
+  async function loadCurrentBookmark() {
+    if (!line) {
+      setIsCurrentLineBookmarked(false);
+      return;
+    }
+    setIsCurrentLineBookmarked(Boolean(await bookmarkRepository.get(playbook.id, role.id, line.id)));
+  }
+
+  async function loadBookmarks() {
+    setBookmarks(await bookmarkRepository.listForRole(playbook.id, role.id));
+  }
+
+  async function toggleBookmark() {
+    if (!line) {
+      return;
+    }
+    if (isCurrentLineBookmarked) {
+      await bookmarkRepository.delete(playbook.id, role.id, line.id);
+      setIsCurrentLineBookmarked(false);
+    } else {
+      await bookmarkRepository.save({
+        id: `${playbook.id}:${role.id}:${line.id}`,
+        playbookId: playbook.id,
+        roleId: role.id,
+        lineId: line.id,
+        createdAt: Date.now()
+      });
+      setIsCurrentLineBookmarked(true);
+    }
+    await loadBookmarks();
+  }
+
   async function toggleTempoReview() {
     const nextIsOpen = !isTempoReviewOpen;
     setIsTempoReviewOpen(nextIsOpen);
@@ -335,6 +377,9 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           </button>
           <button type="button" className="secondary" disabled={!line} onClick={() => setIsLineRevealed(!isLineRevealed)}>
             {isLineRevealed ? "Hide Line" : "Reveal Line"}
+          </button>
+          <button type="button" className="secondary" disabled={!line} onClick={() => void toggleBookmark()}>
+            {isCurrentLineBookmarked ? "Remove Bookmark" : "Bookmark"}
           </button>
           <button type="button" onClick={() => void playResponse()} disabled={!line}>
             Hear My Line
@@ -411,7 +456,12 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
             {isTempoReviewOpen ? "Hide Tempo Review" : "Tempo Review"}
           </button>
           {isTempoReviewOpen ? (
-            <TempoReviewPanel attempts={reviewAttempts} role={role} onSelectLine={(lineId) => void jumpToLine(lineId)} />
+            <TempoReviewPanel
+              attempts={reviewAttempts}
+              bookmarks={bookmarks}
+              role={role}
+              onSelectLine={(lineId) => void jumpToLine(lineId)}
+            />
           ) : null}
         </div>
       </section>
@@ -468,10 +518,12 @@ function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
 
 function TempoReviewPanel({
   attempts,
+  bookmarks,
   role,
   onSelectLine
 }: {
   attempts: TimingAttempt[];
+  bookmarks: Bookmark[];
   role: Role;
   onSelectLine: (lineId: string) => void;
 }) {
@@ -486,7 +538,8 @@ function TempoReviewPanel({
       <TempoReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
       <TempoReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
       <TempoReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-      {attempts.length === 0 ? <p className="empty">No timing attempts yet.</p> : null}
+      <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
+      {attempts.length === 0 && bookmarks.length === 0 ? <p className="empty">No timing attempts or bookmarks yet.</p> : null}
     </div>
   );
 }
@@ -499,7 +552,7 @@ function TempoReviewSection({
 }: {
   title: string;
   attempts: TimingAttempt[];
-  linesById: Map<string, NonNullable<ReturnType<RehearsalEngine["currentLine"]>>>;
+  linesById: Map<string, Line>;
   onSelectLine: (lineId: string) => void;
 }) {
   return (
@@ -513,6 +566,35 @@ function TempoReviewSection({
             <li key={attempt.id}>
               <button type="button" className="secondary" onClick={() => onSelectLine(attempt.lineId)}>
                 {linesById.get(attempt.lineId)?.responseText.slice(0, 80) ?? attempt.lineId}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function BookmarkReviewSection({
+  bookmarks,
+  linesById,
+  onSelectLine
+}: {
+  bookmarks: Bookmark[];
+  linesById: Map<string, Line>;
+  onSelectLine: (lineId: string) => void;
+}) {
+  return (
+    <section>
+      <h3>Bookmarked Lines</h3>
+      {bookmarks.length === 0 ? (
+        <p className="empty">None.</p>
+      ) : (
+        <ul>
+          {bookmarks.map((bookmark) => (
+            <li key={bookmark.id}>
+              <button type="button" className="secondary" onClick={() => onSelectLine(bookmark.lineId)}>
+                {linesById.get(bookmark.lineId)?.responseText.slice(0, 80) ?? bookmark.lineId}
               </button>
             </li>
           ))}

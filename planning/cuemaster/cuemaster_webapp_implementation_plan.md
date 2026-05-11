@@ -895,7 +895,7 @@ Let the actor see which lines need work, without building a full analytics produ
 - [x] List lines with late pickup.
 - [x] List lines with slow delivery.
 - [x] List lines with rushed delivery.
-- [ ] List bookmarked lines.
+- [x] List bookmarked lines.
 - [x] Allow jumping from review list to line.
 - [x] Keep calculations local.
 - [x] Avoid charts unless clearly useful.
@@ -921,10 +921,10 @@ Improve navigation once the core loop works.
 - [ ] Add script browser modal/screen.
 - [ ] Show scenes/parts where manifest structure supports it.
 - [ ] Show current position.
-- [ ] Show bookmarked lines.
+- [x] Show bookmarked lines.
 - [ ] Allow jump to scene.
-- [ ] Allow jump to bookmarked line.
-- [ ] Add bookmark toggle on Session screen.
+- [x] Allow jump to bookmarked line.
+- [x] Add bookmark toggle on Session screen.
 - [ ] Add keyboard shortcuts for desk rehearsal:
   - [ ] Space: play/pause or repeat depending state.
   - [ ] Right arrow: next.
@@ -937,7 +937,7 @@ Improve navigation once the core loop works.
 ### Acceptance Criteria
 
 - [ ] Actor can jump around without walking line by line.
-- [ ] Actor can bookmark and revisit difficult lines.
+- [x] Actor can bookmark and revisit difficult lines.
 - [ ] Desk rehearsal is efficient with keyboard controls.
 
 ---
