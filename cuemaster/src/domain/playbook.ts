@@ -7,6 +7,13 @@ export type Playbook = {
   authors: string[];
   source?: string;
   schemaVersion: number;
+  importMetadata?: PlaybookImportMetadata;
   context: ContextBlock[];
   roles: Role[];
+};
+
+export type PlaybookImportMetadata = {
+  filename: string;
+  sizeBytes: number;
+  importedAt: number;
 };

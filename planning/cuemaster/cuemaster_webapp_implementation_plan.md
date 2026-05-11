@@ -477,7 +477,7 @@ Persist imported Playbooks and session metadata locally in the browser.
 - [ ] Implement `indexedDbStorage`.
 - [x] Store Playbook manifest.
 - [x] Store asset blobs or extractable asset records.
-- [ ] Store import metadata.
+- [x] Store import metadata.
 - [x] Store selected role per Playbook.
 - [x] Store session position per Playbook/role.
 - [x] Store basic session config per Playbook/role.

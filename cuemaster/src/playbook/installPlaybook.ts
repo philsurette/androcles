@@ -9,6 +9,11 @@ import { normalizePlaybook } from "./normalizePlaybook";
 export async function installPlaybook(file: File) {
   const extracted = await extractPlaybookZip(file);
   const playbook = normalizePlaybook(extracted.manifest);
+  playbook.importMetadata = {
+    filename: file.name,
+    sizeBytes: file.size,
+    importedAt: Date.now()
+  };
   await playbookRepository.delete(playbook.id);
   await storeRequiredAudioAssets(playbook.id, extracted.zip, collectRequiredAudioAssetPaths(extracted.manifest));
   await playbookRepository.save(playbook);
