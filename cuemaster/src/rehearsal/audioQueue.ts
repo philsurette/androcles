@@ -37,7 +37,7 @@ export class AudioQueue {
   private async objectUrlFor(path: string): Promise<string> {
     const asset = await audioAssetRepository.get(this.playbookId, path);
     if (!asset) {
-      throw new Error(`Audio asset not found: ${path}`);
+      throw new Error(`Audio asset not found in local storage: ${path}. Remove and re-import this Playbook.`);
     }
     return URL.createObjectURL(asset.blob);
   }

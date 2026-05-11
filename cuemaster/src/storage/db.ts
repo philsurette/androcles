@@ -19,6 +19,17 @@ export class CuemasterDb extends Dexie {
       sessions: "[playbookId+roleId],playbookId,roleId",
       audioAssets: "[playbookId+path],playbookId,path"
     });
+    this.version(3)
+      .stores({
+        playbooks: "id,title",
+        sessions: "[playbookId+roleId],playbookId,roleId",
+        audioAssets: "[playbookId+path],playbookId,path"
+      })
+      .upgrade(async (transaction) => {
+        await transaction.table("playbooks").clear();
+        await transaction.table("sessions").clear();
+        await transaction.table("audioAssets").clear();
+      });
   }
 }
 
