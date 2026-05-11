@@ -4,7 +4,7 @@ import { db, type RecordingProjectRecord } from "./db";
 export class ProjectRepository {
   async saveImportedRequest(request: RecordingRequest): Promise<RecordingProjectRecord> {
     const project: RecordingProjectRecord = {
-      id: `${request.play.id}:${request.role.id}`,
+      id: request.request.id,
       importedAt: new Date().toISOString(),
       currentSegmentId: request.items[0]?.segmentId,
       request
@@ -19,6 +19,10 @@ export class ProjectRepository {
 
   async get(id: string): Promise<RecordingProjectRecord | undefined> {
     return db.projects.get(id);
+  }
+
+  async setCurrentSegment(projectId: string, segmentId: string): Promise<void> {
+    await db.projects.update(projectId, { currentSegmentId: segmentId });
   }
 }
 

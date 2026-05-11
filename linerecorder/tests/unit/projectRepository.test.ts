@@ -9,13 +9,23 @@ describe("ProjectRepository", () => {
     await db.takes.clear();
   });
 
-  it("saves imported requests using play and role identity", async () => {
+  it("saves imported requests using request identity", async () => {
     const project = await projectRepository.saveImportedRequest(packFixture());
 
-    expect(project.id).toBe("androcles:CENTURION");
+    expect(project.id).toBe("androcles-CENTURION-full-2026-05-10");
     expect(project.currentSegmentId).toBe("0_12_1");
     expect(project.request.packageType).toBe("recording_request");
     await expect(projectRepository.list()).resolves.toHaveLength(1);
+  });
+
+  it("updates the current segment", async () => {
+    const project = await projectRepository.saveImportedRequest(packFixture());
+
+    await projectRepository.setCurrentSegment(project.id, "0_14_1");
+
+    await expect(projectRepository.get(project.id)).resolves.toMatchObject({
+      currentSegmentId: "0_14_1"
+    });
   });
 });
 
