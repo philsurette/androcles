@@ -269,6 +269,8 @@ For schema version 1, WAV remains the baseline segment asset format. Stager may 
 
 For compressed assets, encoder delay or padding must not change rehearsal timing. Stager should validate that the packaged audio has not been materially clipped, stretched, or padded with audible silence, but should not treat MP3 frame/container duration drift as the actor-facing timing duration.
 
+A future manifest extension may add optional cue-start offsets to audio assets so Cuemaster can trim long cues near low-volume boundaries. The implementation plan is `planning/stager/cue_start_offsets.md`.
+
 ## Stage Directions
 
 Stage directions should be represented as structured text, not hidden inside response text.

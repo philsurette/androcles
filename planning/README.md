@@ -15,6 +15,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/package_refactor.md](stager/package_refactor.md): Package layout and migration plan for separating shared, audiobook/cue, and Playbook code.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - [stager/playbook_usage.md](stager/playbook_usage.md): Current Stager CLI usage, output layout, tests, and dependencies for Playbook export.
+- [stager/cue_start_offsets.md](stager/cue_start_offsets.md): Plan for Stager-generated cue-start offsets so Cuemaster can trim long cues near word boundaries.
 - Future Stager docs belong in `planning/stager/`.
 
 ## LineRecorder
