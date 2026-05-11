@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Bookmark } from "../../domain/bookmark";
 import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
@@ -994,6 +994,12 @@ function ScriptBrowserPanel({
   sections: Playbook["sections"];
   onSelectLine: (lineId: string) => void;
 }) {
+  const currentLineRef = useRef<HTMLLIElement | null>(null);
+
+  useEffect(() => {
+    currentLineRef.current?.scrollIntoView({ block: "center" });
+  }, [currentLineId]);
+
   return (
     <div className="script-browser">
       <h2>Script</h2>
@@ -1002,7 +1008,11 @@ function ScriptBrowserPanel({
           <h3>{section.title}</h3>
           <ol>
             {section.lines.map((line) => (
-              <li key={line.id} className={line.id === currentLineId ? "current-script-line" : undefined}>
+              <li
+                key={line.id}
+                className={line.id === currentLineId ? "current-script-line" : undefined}
+                ref={line.id === currentLineId ? currentLineRef : undefined}
+              >
                 <button type="button" className="secondary" onClick={() => onSelectLine(line.id)}>
                   <span>{line.speaker}</span>
                   {includeDirections && line.directions.length > 0 ? (
