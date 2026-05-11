@@ -1002,7 +1002,7 @@ Make the web app reliable enough to share with real users for early testing.
 
 - [x] App is good enough for a small group of real actors/testers.
 - [x] Known limitations are documented.
-- [ ] No major architecture refactor is obviously required before Capacitor work.
+- [x] No major architecture refactor is obviously required before Capacitor work.
 
 ---
 
@@ -1018,12 +1018,12 @@ This milestone does **not** implement Capacitor. It prepares for it.
 
 #### Architecture review
 
-- [ ] Browser file access is isolated behind a platform adapter.
-- [ ] IndexedDB storage is isolated behind a storage interface.
-- [ ] Audio playback is isolated behind `AudioPlayer`.
-- [ ] Microphone access is isolated behind a timing/voice input abstraction.
-- [ ] No React component directly calls low-level browser APIs except through adapters.
-- [ ] No web-only assumption is hardcoded into domain logic.
+- [x] Browser file access is isolated behind a platform adapter.
+- [x] IndexedDB storage is isolated behind a storage interface.
+- [x] Audio playback is isolated behind `AudioPlayer`.
+- [x] Microphone access is isolated behind a timing/voice input abstraction.
+- [x] No React component directly calls low-level browser APIs except through adapters.
+- [x] No web-only assumption is hardcoded into domain logic.
 - [ ] No dependency blocks mobile packaging.
 
 #### Licensing review
@@ -1036,18 +1036,18 @@ This milestone does **not** implement Capacitor. It prepares for it.
 
 #### Mobile feature planning
 
-- [ ] Document what must change for Capacitor filesystem.
-- [ ] Document what must change for Capacitor preferences.
-- [ ] Document what must change for native/background audio.
-- [ ] Document what must change for microphone permission.
-- [ ] Document what must change for hardware controls.
-- [ ] Document what can remain unchanged.
+- [x] Document what must change for Capacitor filesystem.
+- [x] Document what must change for Capacitor preferences.
+- [x] Document what must change for native/background audio.
+- [x] Document what must change for microphone permission.
+- [x] Document what must change for hardware controls.
+- [x] Document what can remain unchanged.
 
 ### Acceptance Criteria
 
-- [ ] A developer can identify the adapters that will be replaced or extended in the Capacitor phase.
-- [ ] No known v1 web decision prevents mobile implementation.
-- [ ] The next step can be a focused Capacitor technical spike rather than a rewrite.
+- [x] A developer can identify the adapters that will be replaced or extended in the Capacitor phase.
+- [x] No known v1 web decision prevents mobile implementation.
+- [x] The next step can be a focused Capacitor technical spike rather than a rewrite.
 
 ---
 
