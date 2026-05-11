@@ -55,6 +55,8 @@ class AudacityRecordingExporter:
             with self.audacity.open() as client:
                 for project in exportable_projects:
                     try:
+                        if force:
+                            project.delete_export_if_present()
                         with client.open_project(project=project):
                             client.export_project()
                         exported.append(project.path)

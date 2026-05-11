@@ -62,13 +62,16 @@ def test_export_recordings_skips_up_to_date_exports(tmp_path: Path) -> None:
 
 def test_export_recordings_force_exports_up_to_date_exports(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
-    _touch(cfg.recordings_dir / "DOYLE.aup3", 100)
-    _touch(cfg.recordings_dir / "DOYLE.wav", 200)
+    aup3_path = cfg.recordings_dir / "DOYLE.aup3"
+    wav_path = cfg.recordings_dir / "DOYLE.wav"
+    _touch(aup3_path, 100)
+    _touch(wav_path, 200)
     audacity = FakeAudacity()
 
     AudacityRecordingExporter(paths=cfg, audacity=audacity).export_recordings(force=True)
 
     assert audacity.exported == ["DOYLE"]
+    assert not wav_path.exists()
 
 
 def test_export_recordings_role_limits_forced_export(tmp_path: Path) -> None:
