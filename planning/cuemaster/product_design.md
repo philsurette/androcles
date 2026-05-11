@@ -341,7 +341,7 @@ Important manifest rules:
 - Required cue audio and response audio are expected to exist for every rehearsable non-meta role line.
 - Missing required audio should fail Playbook generation.
 - Callout audio is a separate playback asset. Cuemaster may let users choose whether callouts are played, but callouts do not replace cue audio.
-- Response segment `duration_ms` values are the target delivery durations for tempo training. If a line has multiple response segments, the target delivery duration is the sum of the required response segment durations.
+- Response segment `duration_ms` values are audible content durations and are the target delivery durations for tempo training. If a line has multiple response segments, the target delivery duration is the sum of the required response segment durations. Compressed audio packaging must not include codec/container padding in this timing value.
 - `timing.target_hesitation_ms` is optional. When absent, the app uses the default target hesitation of 500ms.
 - Future manifest versions may support richer timing metadata, but v1 needs only optional line-specific target hesitation.
 

@@ -262,10 +262,12 @@ Audio assets are represented consistently anywhere they appear:
 Fields:
 
 - `path`: Relative path from `manifest.json`.
-- `duration_ms`: Audio length in milliseconds.
+- `duration_ms`: Intended audible content duration in milliseconds, excluding codec/container padding.
 - `required`: Whether Playbook generation should fail if the asset is missing.
 
-For schema version 1, WAV remains the baseline segment asset format. Stager may add an explicit Playbook packaging option for MP3 assets as a storage/import optimization, but it must remain format-aware: manifest paths must use the encoded extension, `duration_ms` must be measured from the packaged file, and Cuemaster must consume assets through manifest paths rather than assuming `.wav`.
+For schema version 1, WAV remains the baseline segment asset format. Stager may add an explicit Playbook packaging option for MP3 assets as a storage/import optimization, but it must remain format-aware: manifest paths must use the encoded extension, `duration_ms` must preserve the source segment's audible content duration, and Cuemaster must consume assets through manifest paths rather than assuming `.wav`.
+
+For compressed assets, encoder delay or padding must not change rehearsal timing. Stager should validate that the packaged audio has not been materially clipped, stretched, or padded with audible silence, but should not treat MP3 frame/container duration drift as the actor-facing timing duration.
 
 ## Stage Directions
 
