@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Directory to save screenshots (change if you prefer)
+OUTDIR="$HOME/Desktop"
+TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
+OUTFILE="$OUTDIR/codex-shot-$TIMESTAMP.png"
+
+# Create directory if it doesn't exist
+mkdir -p "$OUTDIR"
+
+# Capture interactively (-i), no shadow (-o), silent (-x)
+screencapture -iox "$OUTFILE"
+
+# If capture was cancelled, file won't exist
+if [[ ! -f "$OUTFILE" ]]; then
+  echo "Screenshot cancelled."
+  exit 1
+fi
+
+# Print full path
+echo "$OUTFILE"
+
+# Copy path to clipboard
+printf "%s" "$OUTFILE" | pbcopy

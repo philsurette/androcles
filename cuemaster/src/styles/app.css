@@ -24,6 +24,7 @@
 
 .rehearsal {
   width: min(100%, 68rem);
+  padding: clamp(1.25rem, 4vw, 2.5rem);
 }
 
 .eyebrow {
@@ -154,7 +155,32 @@ button:disabled {
   display: grid;
   gap: 1.25rem;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  margin-top: 2rem;
+  margin-top: 1.25rem;
+}
+
+.rehearsal-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.12);
+  margin-top: 1rem;
+  padding-bottom: 0.75rem;
+}
+
+.breadcrumb,
+.line-position {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.95rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.breadcrumb {
+  color: var(--accent);
 }
 
 .stack {

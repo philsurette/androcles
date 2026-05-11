@@ -344,11 +344,14 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         <button type="button" className="secondary" onClick={onBack}>
           Back to Roles
         </button>
-        <p className="eyebrow">{role.displayName}</p>
-        <h1>{playbook.title}</h1>
-        <p>
-          Line {position.total === 0 ? 0 : position.index + 1} of {position.total}
-        </p>
+        <header className="rehearsal-header">
+          <p className="breadcrumb">
+            {playbook.title} / {role.displayName}
+          </p>
+          <p className="line-position">
+            Line {position.total === 0 ? 0 : position.index + 1} of {position.total}
+          </p>
+        </header>
 
         {line ? (
           <div className="rehearsal-grid">
