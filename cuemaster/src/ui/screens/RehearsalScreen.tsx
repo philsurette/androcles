@@ -3,6 +3,7 @@ import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import { AudioQueue } from "../../rehearsal/audioQueue";
+import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { sessionRepository } from "../../storage/sessionRepository";
 import { CueCard } from "../components/CueCard";
@@ -28,6 +29,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
+  const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const line = engine.currentLine();
   const cues = engine.cuePayloads();
 
@@ -59,13 +61,18 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     void saveSession(nextPosition.index, playbackRate);
   }
 
-  async function saveSession(lineIndex: number, nextPlaybackRate = playbackRate) {
+  async function saveSession(
+    lineIndex: number,
+    nextPlaybackRate = playbackRate,
+    nextSpeakAlongEnabled = speakAlongEnabled
+  ) {
     await sessionRepository.save({
       playbookId: playbook.id,
       roleId: role.id,
       lineIndex,
       includeDirections: engine.includeDirections(),
       playbackRate: nextPlaybackRate,
+      speakAlongEnabled: nextSpeakAlongEnabled,
       updatedAt: Date.now()
     });
   }
@@ -74,7 +81,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     setHasStarted(true);
     setPlaybackStatus("Playing cue...");
     try {
-      await audioQueue.play(cues.map((cue) => ({ path: cue.audioPath, playbackRate: 1 })));
+      await audioQueue.play(cuePlaybackItems(cues));
       setPlaybackStatus("Cue complete.");
     } catch (error) {
       setPlaybackStatus(error instanceof Error ? error.message : "Cue playback failed.");
@@ -87,10 +94,24 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     }
     setPlaybackStatus("Playing your line...");
     try {
-      await audioQueue.play(line.responseSegments.map((segment) => ({ path: segment.audioPath, playbackRate })));
+      await audioQueue.play(responsePlaybackItems(line, playbackRate));
       setPlaybackStatus("Line complete.");
     } catch (error) {
       setPlaybackStatus(error instanceof Error ? error.message : "Line playback failed.");
+    }
+  }
+
+  async function speakAlong() {
+    if (!line) {
+      return;
+    }
+    setHasStarted(true);
+    setPlaybackStatus("Speak along: playing cue, then your line...");
+    try {
+      await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate));
+      setPlaybackStatus("Speak-along complete.");
+    } catch (error) {
+      setPlaybackStatus(error instanceof Error ? error.message : "Speak-along playback failed.");
     }
   }
 
@@ -115,6 +136,11 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
 
   function resetResponseSpeed() {
     changePlaybackRate(defaultPlaybackRate);
+  }
+
+  function changeSpeakAlongEnabled(nextSpeakAlongEnabled: boolean) {
+    setSpeakAlongEnabled(nextSpeakAlongEnabled);
+    void saveSession(position.index, playbackRate, nextSpeakAlongEnabled);
   }
 
   return (
@@ -160,6 +186,9 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           <button type="button" onClick={() => void playResponse()} disabled={!line}>
             Hear My Line
           </button>
+          <button type="button" onClick={() => void speakAlong()} disabled={!line}>
+            Speak Along
+          </button>
           <button type="button" disabled={position.atEnd} onClick={() => void goNext()}>
             Next
           </button>
@@ -169,6 +198,14 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         </div>
 
         <div className="session-settings">
+          <label className="check-setting">
+            <input
+              type="checkbox"
+              checked={speakAlongEnabled}
+              onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
+            />
+            Speak-along practice
+          </label>
           <label>
             Response speed
             <select
@@ -193,6 +230,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
               Faster
             </button>
           </div>
+          {speakAlongEnabled ? <p className="status">Speak Along plays the cue, then your line at response speed.</p> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
         </div>
       </section>

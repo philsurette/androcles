@@ -4,5 +4,6 @@ export type RehearsalSession = {
   lineIndex: number;
   includeDirections: boolean;
   playbackRate: number;
+  speakAlongEnabled: boolean;
   updatedAt: number;
 };

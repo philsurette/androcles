@@ -717,23 +717,23 @@ Let the actor speak along with the reference line at the selected response playb
 
 ### Checklist
 
-- [ ] Add speak-along toggle.
-- [ ] Define speak-along behavior:
-  - [ ] cue plays at `1.0x`,
-  - [ ] response audio plays at selected speed,
-  - [ ] actor speaks along,
-  - [ ] app returns to waiting state or offers next/retry.
-- [ ] Ensure speak-along mode does not enable microphone timing at the same time.
-- [ ] Make conflict clear if tempo timing is also enabled.
-- [ ] Add Session screen button: **Speak Along** or reuse **Hear My Line** with mode-aware label.
-- [ ] Persist speak-along preference.
-- [ ] Add tests for cue speed and response speed.
+- [x] Add speak-along toggle.
+- [x] Define speak-along behavior:
+  - [x] cue plays at `1.0x`,
+  - [x] response audio plays at selected speed,
+  - [x] actor speaks along,
+  - [x] app returns to waiting state or offers next/retry.
+- [x] Ensure speak-along mode does not enable microphone timing at the same time.
+- [x] Make conflict clear if tempo timing is also enabled.
+- [x] Add Session screen button: **Speak Along** or reuse **Hear My Line** with mode-aware label.
+- [x] Persist speak-along preference.
+- [x] Add tests for cue speed and response speed.
 
 ### Acceptance Criteria
 
-- [ ] User can play cue then speak along with their line at selected speed.
-- [ ] Speak-along does not trigger timing.
-- [ ] Speak-along is useful before automatic timing exists.
+- [x] User can play cue then speak along with their line at selected speed.
+- [x] Speak-along does not trigger timing.
+- [x] Speak-along is useful before automatic timing exists.
 
 ---
 
