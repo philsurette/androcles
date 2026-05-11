@@ -285,6 +285,47 @@ button:disabled {
   padding: 1rem;
 }
 
+.script-browser {
+  display: grid;
+  gap: 1rem;
+  max-height: 24rem;
+  overflow: auto;
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.34);
+  padding: 1rem;
+}
+
+.script-browser h2,
+.script-browser h3 {
+  margin: 0;
+}
+
+.script-browser ol {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.script-browser button {
+  display: grid;
+  gap: 0.25rem;
+  width: 100%;
+  border-radius: 0.75rem;
+  text-align: left;
+}
+
+.script-browser button span {
+  color: var(--accent);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.current-script-line button {
+  outline: 3px solid rgba(185, 79, 47, 0.35);
+}
+
 .tempo-review h2,
 .tempo-review h3 {
   margin: 0;

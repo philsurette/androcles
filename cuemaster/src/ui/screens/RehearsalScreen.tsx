@@ -9,6 +9,7 @@ import { AudioQueue } from "../../rehearsal/audioQueue";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
+import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
@@ -52,6 +53,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
+  const [isScriptBrowserOpen, setIsScriptBrowserOpen] = useState(false);
   const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
@@ -122,6 +124,7 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
     }
     updatePosition();
     setIsLineRevealed(false);
+    setIsScriptBrowserOpen(false);
     setIsTempoReviewOpen(false);
   }
 
@@ -518,9 +521,19 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
           {!tempoFeedback && lastTimingAttempt ? <TimingAttemptPanel attempt={lastTimingAttempt} /> : null}
           {recentTimingAttempts.length > 1 ? <RecentAttemptsPanel attempts={recentTimingAttempts} /> : null}
           {playbackStatus ? <p className="status">{playbackStatus}</p> : null}
+          <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
+            {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
+          </button>
           <button type="button" className="secondary" onClick={() => void toggleTempoReview()}>
             {isTempoReviewOpen ? "Hide Tempo Review" : "Tempo Review"}
           </button>
+          {isScriptBrowserOpen ? (
+            <ScriptBrowserPanel
+              currentLineId={line?.id ?? null}
+              lines={role.lines}
+              onSelectLine={(lineId) => void jumpToLine(lineId)}
+            />
+          ) : null}
           {isTempoReviewOpen ? (
             <TempoReviewPanel
               attempts={reviewAttempts}
@@ -532,6 +545,37 @@ export function RehearsalScreen({ playbook, role, initialSession, onBack }: Rehe
         </div>
       </section>
     </main>
+  );
+}
+
+function ScriptBrowserPanel({
+  currentLineId,
+  lines,
+  onSelectLine
+}: {
+  currentLineId: string | null;
+  lines: Line[];
+  onSelectLine: (lineId: string) => void;
+}) {
+  return (
+    <div className="script-browser">
+      <h2>Script</h2>
+      {scriptBrowserSections(lines).map((section) => (
+        <section key={section.id}>
+          <h3>{section.title}</h3>
+          <ol>
+            {section.lines.map((line) => (
+              <li key={line.id} className={line.id === currentLineId ? "current-script-line" : undefined}>
+                <button type="button" className="secondary" onClick={() => onSelectLine(line.id)}>
+                  <span>{line.speaker}</span>
+                  {line.responseText.slice(0, 120)}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </section>
+      ))}
+    </div>
   );
 }
 

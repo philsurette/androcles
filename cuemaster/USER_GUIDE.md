@@ -31,6 +31,7 @@ If import fails, the Playbook is probably missing required data or audio. Ask wh
 - **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
 - **Bookmark** marks the current line so you can find it again in Tempo Review.
 - **Stop** stops playback.
+- **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
 Your current role, line position, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
 
@@ -72,6 +73,8 @@ Click **Tempo Review** to see:
 - bookmarked lines.
 
 Click a line in Tempo Review to jump directly to it.
+
+Click **Browse Script** to jump directly to a line from the selected role's script.
 
 ## Keyboard Shortcuts
 

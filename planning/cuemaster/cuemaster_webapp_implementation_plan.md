@@ -918,11 +918,11 @@ Improve navigation once the core loop works.
 
 ### Checklist
 
-- [ ] Add script browser modal/screen.
-- [ ] Show scenes/parts where manifest structure supports it.
-- [ ] Show current position.
+- [x] Add script browser modal/screen.
+- [x] Show scenes/parts where manifest structure supports it.
+- [x] Show current position.
 - [x] Show bookmarked lines.
-- [ ] Allow jump to scene.
+- [x] Allow jump to scene.
 - [x] Allow jump to bookmarked line.
 - [x] Add bookmark toggle on Session screen.
 - [x] Add keyboard shortcuts for desk rehearsal:
@@ -937,7 +937,7 @@ Improve navigation once the core loop works.
 
 ### Acceptance Criteria
 
-- [ ] Actor can jump around without walking line by line.
+- [x] Actor can jump around without walking line by line.
 - [x] Actor can bookmark and revisit difficult lines.
 - [x] Desk rehearsal is efficient with keyboard controls.
 
