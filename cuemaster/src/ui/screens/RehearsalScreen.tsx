@@ -679,7 +679,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               onClick={toggleLineReveal}
             >
               <span aria-hidden="true" className="transport-icon">
-                {isLineRevealed ? "◉" : "◎"}
+                {isLineRevealed ? "🙈" : "👁"}
               </span>
             </button>
             <button
