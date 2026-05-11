@@ -656,7 +656,7 @@ This is the second major useful milestone.
 - [x] Save current line after navigation.
 - [x] Save playback mode safely as idle/waiting on reload; do not resume mid-audio.
 - [x] Save bookmarks.
-- [ ] Save reveal-line preference only if desired.
+- [x] Save reveal-line preference only if desired.
 
 #### Tests
 

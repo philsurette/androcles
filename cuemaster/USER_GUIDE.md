@@ -34,7 +34,7 @@ If import fails, the Playbook is probably missing required data or audio. Ask wh
 - **Stop** stops playback.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
-Your current role, line position, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+Your current role, line position, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
 
 ## Response Speed
 

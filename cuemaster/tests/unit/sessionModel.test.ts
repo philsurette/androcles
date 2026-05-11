@@ -9,6 +9,7 @@ describe("RehearsalSession", () => {
       lineIndex: 0,
       cueDepth: 1,
       includeDirections: true,
+      revealLine: false,
       playbackRate: 1,
       speakAlongEnabled: false,
       tempoTimingPreferred: true,

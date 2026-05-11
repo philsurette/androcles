@@ -44,7 +44,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [cueDepth, setCueDepth] = useState(clampCueDepth(initialSession?.cueDepth ?? 1));
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
-  const [isLineRevealed, setIsLineRevealed] = useState(false);
+  const [isLineRevealed, setIsLineRevealed] = useState(initialSession?.revealLine ?? false);
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
@@ -159,7 +159,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextPlaybackRate = playbackRate,
     nextSpeakAlongEnabled = speakAlongEnabled,
     nextTempoTimingPreferred = tempoTimingPreferred,
-    nextCueDepth = cueDepth
+    nextCueDepth = cueDepth,
+    nextRevealLine = isLineRevealed
   ) {
     try {
       await sessionRepository.save({
@@ -168,6 +169,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         lineIndex,
         cueDepth: nextCueDepth,
         includeDirections: engine.includeDirections(),
+        revealLine: nextRevealLine,
         playbackRate: nextPlaybackRate,
         speakAlongEnabled: nextSpeakAlongEnabled,
         tempoTimingPreferred: nextTempoTimingPreferred,
@@ -269,6 +271,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     engine.setCueDepth(clampedCueDepth);
     setCueDepth(clampedCueDepth);
     void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, clampedCueDepth);
+  }
+
+  function toggleLineReveal() {
+    const nextRevealLine = !isLineRevealed;
+    setIsLineRevealed(nextRevealLine);
+    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, cueDepth, nextRevealLine);
   }
 
   function slowDownResponse() {
@@ -541,7 +549,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             className="secondary"
             aria-label={isLineRevealed ? "Hide your line." : "Reveal your line."}
             disabled={!line}
-            onClick={() => setIsLineRevealed(!isLineRevealed)}
+            onClick={toggleLineReveal}
           >
             {isLineRevealed ? "Hide Line" : "Reveal Line"}
           </button>
