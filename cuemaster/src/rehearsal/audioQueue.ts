@@ -16,6 +16,8 @@ export type QueueItem = AudioQueueItem | DelayQueueItem;
 
 export type QueueAudioPlayer = {
   play(src: string, playbackRate: number): Promise<void>;
+  pause(): void;
+  resume(): void;
   stop(): void;
 };
 
@@ -25,6 +27,8 @@ export type AudioAssetResolver = {
 
 export class AudioQueue {
   private cancelled = false;
+  private paused = false;
+  private readonly pauseListeners = new Set<() => void>();
 
   constructor(
     private readonly playbookId: string,
@@ -34,14 +38,16 @@ export class AudioQueue {
 
   async play(items: QueueItem[]): Promise<void> {
     this.cancelled = false;
+    this.paused = false;
     for (const item of items) {
       if (this.cancelled) {
         return;
       }
       if (item.kind === "delay") {
-        await delay(item.durationMs);
+        await this.delay(item.durationMs);
         continue;
       }
+      await this.waitIfPaused();
       const url = await this.assetResolver.objectUrlFor(item.path);
       try {
         await this.player.play(url, item.playbackRate);
@@ -51,9 +57,53 @@ export class AudioQueue {
     }
   }
 
+  pause(): void {
+    if (this.paused) {
+      return;
+    }
+    this.paused = true;
+    this.player.pause();
+  }
+
+  resume(): void {
+    if (!this.paused) {
+      return;
+    }
+    this.paused = false;
+    this.player.resume();
+    for (const listener of this.pauseListeners) {
+      listener();
+    }
+    this.pauseListeners.clear();
+  }
+
   cancel(): void {
     this.cancelled = true;
+    this.paused = false;
+    for (const listener of this.pauseListeners) {
+      listener();
+    }
+    this.pauseListeners.clear();
     this.player.stop();
+  }
+
+  private async delay(durationMs: number): Promise<void> {
+    let remainingMs = durationMs;
+    while (remainingMs > 0 && !this.cancelled) {
+      await this.waitIfPaused();
+      const delayMs = Math.min(remainingMs, delaySliceMs);
+      await delay(delayMs);
+      remainingMs -= delayMs;
+    }
+  }
+
+  private waitIfPaused(): Promise<void> {
+    if (!this.paused || this.cancelled) {
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.pauseListeners.add(resolve);
+    });
   }
 }
 
@@ -62,6 +112,8 @@ function delay(durationMs: number): Promise<void> {
     window.setTimeout(resolve, durationMs);
   });
 }
+
+const delaySliceMs = 50;
 
 class IndexedDbAudioAssetResolver implements AudioAssetResolver {
   constructor(private readonly playbookId: string) {}

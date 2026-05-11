@@ -1,4 +1,4 @@
-export type RehearsalShortcut = "repeat-cue" | "next" | "previous" | "hear-line" | "stop";
+export type RehearsalShortcut = "toggle-playback" | "repeat-cue" | "next" | "previous" | "hear-line" | "stop";
 
 export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): RehearsalShortcut | null {
   if (isEditableTarget(event.target)) {
@@ -8,6 +8,7 @@ export function shortcutForKey(event: Pick<KeyboardEvent, "key" | "target">): Re
   switch (event.key) {
     case " ":
     case "Spacebar":
+      return "toggle-playback";
     case "r":
     case "R":
       return "repeat-cue";

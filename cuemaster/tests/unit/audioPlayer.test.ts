@@ -29,6 +29,22 @@ describe("AudioPlayer", () => {
     expect(audio.pause).not.toHaveBeenCalled();
     expect(player.playbackState()).toBe("idle");
   });
+
+  it("resumes paused playback", async () => {
+    const audio = new FakeAudioElement();
+    const player = new AudioPlayer(() => audio.element());
+    const playback = player.play("blob://line.wav");
+
+    await Promise.resolve();
+    player.pause();
+    player.resume();
+
+    expect(audio.play).toHaveBeenCalledTimes(2);
+    expect(player.playbackState()).toBe("playing");
+
+    audio.dispatch("ended");
+    await playback;
+  });
 });
 
 class FakeAudioElement {

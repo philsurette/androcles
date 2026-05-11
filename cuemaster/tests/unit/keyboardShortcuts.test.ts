@@ -3,7 +3,7 @@ import { shortcutForKey } from "../../src/rehearsal/keyboardShortcuts";
 
 describe("shortcutForKey", () => {
   it("maps desk rehearsal keys to actions", () => {
-    expect(shortcutForKey({ key: " ", target: null })).toBe("repeat-cue");
+    expect(shortcutForKey({ key: " ", target: null })).toBe("toggle-playback");
     expect(shortcutForKey({ key: "R", target: null })).toBe("repeat-cue");
     expect(shortcutForKey({ key: "ArrowRight", target: null })).toBe("next");
     expect(shortcutForKey({ key: "ArrowLeft", target: null })).toBe("previous");

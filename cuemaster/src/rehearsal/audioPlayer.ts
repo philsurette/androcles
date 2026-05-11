@@ -38,6 +38,16 @@ export class AudioPlayer {
     this.state = "paused";
   }
 
+  resume(): void {
+    if (!this.currentAudio || this.state !== "paused") {
+      return;
+    }
+    this.state = "playing";
+    void this.currentAudio.play().catch(() => {
+      this.state = "failed";
+    });
+  }
+
   stop(): void {
     if (!this.currentAudio) {
       return;

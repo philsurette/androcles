@@ -567,7 +567,7 @@ This milestone does not yet require the full rehearsal UI.
 - [x] Create `AudioPlayer` class/wrapper around `HTMLAudioElement`.
 - [x] Support loading an audio asset by app asset ID/path.
 - [x] Support play.
-- [x] Support pause.
+- [x] Support low-level pause in `AudioPlayer`.
 - [x] Support stop.
 - [x] Support ended event.
 - [x] Support error event.
@@ -649,6 +649,7 @@ This is the second major useful milestone.
 - [x] Back moves to previous actor line and plays cue after session start.
 - [x] Stop stops playback and saves state.
 - [x] Resume restores line position and can replay current cue.
+- [x] Add actor-facing pause/resume behavior: `AudioQueue` pause/resume, a Pause/Resume control, and Space toggling pause/resume while audio is active.
 
 #### State persistence
 
@@ -926,7 +927,7 @@ Improve navigation once the core loop works.
 - [x] Allow jump to bookmarked line.
 - [x] Add bookmark toggle on Session screen.
 - [x] Add keyboard shortcuts for desk rehearsal:
-  - [x] Space: play/pause or repeat depending state.
+  - [x] Space: start cue, pause/resume while audio is active.
   - [x] Right arrow: next.
   - [x] Left arrow: back.
   - [x] R: repeat cue.

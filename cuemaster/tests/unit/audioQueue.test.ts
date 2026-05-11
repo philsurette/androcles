@@ -37,6 +37,17 @@ describe("AudioQueue", () => {
     expect(URL.revokeObjectURL).toHaveBeenCalledOnce();
   });
 
+  it("pauses and resumes the active player", () => {
+    const player = new MockAudioPlayer();
+    const queue = new AudioQueue("playbook", player, new MockAssetResolver());
+
+    queue.pause();
+    queue.resume();
+
+    expect(player.pause).toHaveBeenCalledOnce();
+    expect(player.resume).toHaveBeenCalledOnce();
+  });
+
   it("waits for delay items without resolving audio assets", async () => {
     vi.useFakeTimers();
     const player = new MockAudioPlayer();
@@ -61,6 +72,8 @@ describe("AudioQueue", () => {
 
 class MockAudioPlayer implements QueueAudioPlayer {
   readonly playCalls: Array<[string, number]> = [];
+  readonly pause = vi.fn();
+  readonly resume = vi.fn();
   readonly stop = vi.fn();
 
   constructor(private readonly onPlay?: () => void) {}

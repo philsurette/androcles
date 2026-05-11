@@ -24,6 +24,7 @@ If import fails, the Playbook is probably missing required data or audio. Ask wh
 ## Rehearsing
 
 - **Start / Repeat Cue** plays the current cue.
+- **Pause / Resume** pauses or resumes active playback.
 - **Previous** moves to the previous line.
 - **Next** moves to the next line.
 - **Reveal Line / Hide Line** shows or hides your expected response.
@@ -82,7 +83,7 @@ Keyboard shortcuts work on the rehearsal screen unless you are focused in a form
 
 | Shortcut | Action |
 |---|---|
-| `Space` | Start or repeat cue |
+| `Space` | Start cue, or pause/resume while audio is active |
 | `R` | Repeat cue |
 | `Right Arrow` | Next line |
 | `Left Arrow` | Previous line |

@@ -28,6 +28,8 @@ type RehearsalScreenProps = {
   onBack: () => void;
 };
 
+type PlaybackUiState = "idle" | "playing" | "paused";
+
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
@@ -40,6 +42,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
   const [cueDepth, setCueDepth] = useState(clampCueDepth(initialSession?.cueDepth ?? 1));
+  const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [isLineRevealed, setIsLineRevealed] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
@@ -90,7 +93,9 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         return;
       }
       event.preventDefault();
-      if (shortcut === "repeat-cue") {
+      if (shortcut === "toggle-playback") {
+        void togglePlayback();
+      } else if (shortcut === "repeat-cue") {
         void playCue();
       } else if (shortcut === "next" && !engine.position().atEnd) {
         void goNext();
@@ -177,11 +182,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   async function playCue() {
     setHasStarted(true);
     setPlaybackStatus("Playing cue...");
+    setPlaybackState("playing");
     try {
       await audioQueue.play(cuePlaybackItems(engine.cuePayloads()));
       setPlaybackStatus("Cue complete.");
+      setPlaybackState("idle");
       beginTimedAttempt();
     } catch (error) {
+      setPlaybackState("idle");
       setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
@@ -191,10 +199,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       return;
     }
     setPlaybackStatus("Playing your line...");
+    setPlaybackState("playing");
     try {
       await audioQueue.play(responsePlaybackItems(line, playbackRate));
       setPlaybackStatus("Line complete.");
+      setPlaybackState("idle");
     } catch (error) {
+      setPlaybackState("idle");
       setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
@@ -205,16 +216,44 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     setHasStarted(true);
     setPlaybackStatus("Speak along: playing cue, then your line...");
+    setPlaybackState("playing");
     try {
       await audioQueue.play(speakAlongPlaybackItems(cues, line, playbackRate));
       setPlaybackStatus("Speak-along complete.");
+      setPlaybackState("idle");
     } catch (error) {
+      setPlaybackState("idle");
       setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
 
+  async function togglePlayback() {
+    if (playbackState === "playing") {
+      pausePlayback();
+      return;
+    }
+    if (playbackState === "paused") {
+      resumePlayback();
+      return;
+    }
+    await playCue();
+  }
+
+  function pausePlayback() {
+    audioQueue.pause();
+    setPlaybackState("paused");
+    setPlaybackStatus("Playback paused.");
+  }
+
+  function resumePlayback() {
+    audioQueue.resume();
+    setPlaybackState("playing");
+    setPlaybackStatus("Playback resumed.");
+  }
+
   function stopPlayback() {
     audioQueue.cancel();
+    setPlaybackState("idle");
     setPlaybackStatus("Playback stopped.");
     setTempoStatus(tempoTimingEnabled ? "Tempo timing is idle." : tempoStatus);
   }
@@ -473,6 +512,21 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <button type="button" aria-label="Start or repeat cue. Shortcut: Space or R." onClick={() => void playCue()}>
             {hasStarted ? "Repeat Cue" : "Start"}
           </button>
+          {playbackState === "paused" ? (
+            <button type="button" aria-label="Resume playback. Shortcut: Space." onClick={resumePlayback}>
+              Resume
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="secondary"
+              aria-label="Pause playback. Shortcut: Space."
+              disabled={playbackState !== "playing"}
+              onClick={pausePlayback}
+            >
+              Pause
+            </button>
+          )}
           <button
             type="button"
             className="secondary"
