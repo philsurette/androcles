@@ -152,6 +152,7 @@ function session(playbookId: string, roleId: string, lineIndex: number): Rehears
     cueDepth: 1,
     includeDirections: true,
     revealLine: false,
+    showLinesByDefault: false,
     cueWindowPresetId: "full",
     playbackRate: 1,
     speakAlongEnabled: false,

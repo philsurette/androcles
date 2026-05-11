@@ -31,6 +31,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Previous** moves to the previous line.
 - **Next** moves to the next line.
 - **Reveal Line / Hide Line** shows or hides your expected response.
+- **Show lines by default** opens each line with your expected response visible, useful when you are first learning the role.
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
 - **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
@@ -39,7 +40,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Section** jumps to the first line for your role in the selected section.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
 
-Your current role, line position, cue length, stage-direction preference, line reveal preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
+Your current role, line position, cue length, stage-direction preference, line visibility preference, playback speed, speak-along preference, bookmarks, and timing history are saved locally.
 
 If you choose a section from **Start at** on the role screen, Cuemaster starts at the first line for that role in the selected section. Leave it on **Resume saved position / beginning** to continue from saved progress.
 

@@ -37,6 +37,19 @@ test("hear my line does not advance the current line", async ({ page }) => {
   await expect(page.getByText("Line 1 of 2")).toBeVisible();
 });
 
+test("show lines by default reveals each line while navigating", async ({ page }) => {
+  await openAndroclesRole(page);
+
+  await expect(page.getByText("Line hidden")).toBeVisible();
+  await page.getByLabel("Show lines by default").check();
+  await expect(page.getByText("Not bloody likely.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /hide your line/i })).toBeVisible();
+
+  await page.getByRole("button", { name: "Next" }).click();
+  await expect(page.getByText("It is the best sense I can make of it.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /hide your line/i })).toBeVisible();
+});
+
 test("back returns to the previous line", async ({ page }) => {
   await openAndroclesRole(page);
 

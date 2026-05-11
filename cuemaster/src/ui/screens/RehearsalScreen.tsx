@@ -46,7 +46,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   );
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
-  const [isLineRevealed, setIsLineRevealed] = useState(initialSession?.revealLine ?? false);
+  const [showLinesByDefault, setShowLinesByDefault] = useState(
+    initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
+  );
+  const [isLineRevealed, setIsLineRevealed] = useState(
+    initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
+  );
   const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
@@ -166,8 +171,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function goNext() {
     engine.next();
-    updatePosition();
-    setIsLineRevealed(false);
+    updatePosition({ revealLine: showLinesByDefault });
+    setIsLineRevealed(showLinesByDefault);
     if (hasStarted) {
       await playCue();
     }
@@ -184,8 +189,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     while (engine.currentLine()?.id !== lineId && !engine.position().atBeginning) {
       engine.previous();
     }
-    updatePosition();
-    setIsLineRevealed(false);
+    updatePosition({ revealLine: showLinesByDefault });
+    setIsLineRevealed(showLinesByDefault);
     setIsScriptBrowserOpen(false);
     setIsTempoReviewOpen(false);
   }
@@ -200,18 +205,25 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function goPrevious() {
     engine.previous();
-    updatePosition();
-    setIsLineRevealed(false);
+    updatePosition({ revealLine: showLinesByDefault });
+    setIsLineRevealed(showLinesByDefault);
     if (hasStarted) {
       await playCue();
     }
   }
 
-  function updatePosition() {
+  function updatePosition(options: { revealLine?: boolean } = {}) {
     const nextPosition = engine.position();
+    const nextRevealLine = options.revealLine ?? isLineRevealed;
     setPosition(nextPosition);
     setTempoFeedback(null);
-    void saveSession(nextPosition.index, playbackRate);
+    void saveSession(
+      nextPosition.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      nextRevealLine
+    );
   }
 
   async function saveSession(
@@ -221,7 +233,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextTempoTimingPreferred = tempoTimingPreferred,
     nextRevealLine = isLineRevealed,
     nextCueWindowPresetId = cueWindowPresetId,
-    nextIncludeDirections = includeDirections
+    nextIncludeDirections = includeDirections,
+    nextShowLinesByDefault = showLinesByDefault
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -231,6 +244,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         cueDepth: 1,
         includeDirections: nextIncludeDirections,
         revealLine: nextRevealLine,
+        showLinesByDefault: nextShowLinesByDefault,
         cueWindowPresetId: nextCueWindowPresetId,
         playbackRate: nextPlaybackRate,
         speakAlongEnabled: nextSpeakAlongEnabled,
@@ -332,6 +346,21 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const nextRevealLine = !isLineRevealed;
     setIsLineRevealed(nextRevealLine);
     void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, nextRevealLine);
+  }
+
+  function changeShowLinesByDefault(nextShowLinesByDefault: boolean) {
+    setShowLinesByDefault(nextShowLinesByDefault);
+    setIsLineRevealed(nextShowLinesByDefault);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      nextShowLinesByDefault,
+      cueWindowPresetId,
+      includeDirections,
+      nextShowLinesByDefault
+    );
   }
 
   function changeIncludeDirections(nextIncludeDirections: boolean) {
@@ -673,6 +702,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               onChange={(event) => changeIncludeDirections(event.target.checked)}
             />
             Show stage directions
+          </label>
+          <label className="check-setting">
+            <input
+              type="checkbox"
+              checked={showLinesByDefault}
+              onChange={(event) => changeShowLinesByDefault(event.target.checked)}
+            />
+            Show lines by default
           </label>
           <label className="check-setting">
             <input
