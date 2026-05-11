@@ -9,6 +9,7 @@ from stager.domain.play import Play, Reader, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.playbook.app_audio_asset import AppAudioAsset
+from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_cue import AppCue
 from stager.playbook.app_direction import AppDirection
@@ -132,6 +133,33 @@ def test_solo_role_metadata_uses_default_reader() -> None:
     assert role.display_name == "MEGAERA"
     assert role.reader == "Phil"
     assert role.parts == [0]
+
+
+def test_audio_asset_serializes_cue_start_offsets() -> None:
+    asset = AppAudioAsset(
+        path=PurePosixPath("audio/segments/ANDROCLES/0_1_1.wav"),
+        duration_ms=16000,
+        cue_start_offsets=[
+            AppCueStartOffset(
+                requested_window_ms=10000,
+                start_ms=5920,
+                confidence="boundary",
+            )
+        ],
+    )
+
+    assert asset.to_dict() == {
+        "path": "audio/segments/ANDROCLES/0_1_1.wav",
+        "duration_ms": 16000,
+        "required": True,
+        "cue_start_offsets": [
+            {
+                "requested_window_ms": 10000,
+                "start_ms": 5920,
+                "confidence": "boundary",
+            }
+        ],
+    }
 
 
 def test_dramatic_role_metadata_uses_role_reader() -> None:

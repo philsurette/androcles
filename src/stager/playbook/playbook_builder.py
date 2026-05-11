@@ -12,6 +12,7 @@ from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechS
 from stager.playbook.app_audio_asset import AppAudioAsset
 from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_cue import AppCue
+from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
 from stager.playbook.app_manifest import AppManifest
@@ -20,6 +21,7 @@ from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
 from stager.playbook.app_response_segment import AppResponseSegment
 from stager.playbook.app_role import AppRole
+from stager.playbook.cue_start_offset_analyzer import CueStartOffsetAnalyzer
 from stager.playbook.cue_selection import CueSelection
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.shared import paths
@@ -32,12 +34,15 @@ class PlaybookBuilder:
     play_id: str | None = None
     build_type: str = "custom"
     selector: PlaybookCueSelector | None = None
+    cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
         if self.selector is None:
             self.selector = PlaybookCueSelector(play=self.play, paths=self.paths)
+        if self.cue_start_offset_analyzer is None:
+            self.cue_start_offset_analyzer = CueStartOffsetAnalyzer()
 
     @property
     def app_dir(self) -> Path:
@@ -194,10 +199,15 @@ class PlaybookBuilder:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, destination)
         duration_ms = self.paths.get_audio_length_ms(source_path)
+        cue_start_offsets: list[AppCueStartOffset] = []
+        if category == "cue":
+            assert self.cue_start_offset_analyzer is not None
+            cue_start_offsets = self.cue_start_offset_analyzer.analyze(source_path, duration_ms)
         return AppAudioAsset(
             path=PurePosixPath(destination.relative_to(self.app_dir).as_posix()),
             duration_ms=duration_ms,
             required=True,
+            cue_start_offsets=cue_start_offsets,
         )
 
     def _write_zip(self) -> None:

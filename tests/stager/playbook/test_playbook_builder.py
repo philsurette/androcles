@@ -12,6 +12,7 @@ from stager.domain.block_id import BlockId
 from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
+from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.shared import paths
 
@@ -113,6 +114,17 @@ def _play(blocks) -> Play:
     )
 
 
+class _FakeCueStartOffsetAnalyzer:
+    def analyze(self, audio_path: Path, duration_ms: int) -> list[AppCueStartOffset]:
+        return [
+            AppCueStartOffset(
+                requested_window_ms=5000,
+                start_ms=0,
+                confidence="exact",
+            )
+        ]
+
+
 def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -142,6 +154,33 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
         assert "manifest.json" in archive.namelist()
         assert line["cue"]["audio"]["path"] in archive.namelist()
         assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
+
+
+def test_playbook_builder_attaches_offsets_to_cue_audio_only(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+
+    PlaybookBuilder(
+        play=play,
+        paths=cfg,
+        cue_start_offset_analyzer=_FakeCueStartOffsetAnalyzer(),
+    ).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    line = next(role for role in data["roles"] if role["id"] == "MEGAERA")["lines"][0]
+    assert line["cue"]["audio"]["cue_start_offsets"] == [
+        {
+            "requested_window_ms": 5000,
+            "start_ms": 0,
+            "confidence": "exact",
+        }
+    ]
+    assert "cue_start_offsets" not in line["response"]["segments"][0]["audio"]
 
 
 def test_playbook_builder_exports_narrator_context_blocks(tmp_path: Path) -> None:
