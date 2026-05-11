@@ -4,10 +4,10 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "tsc -b && vite build",
     "build:static": "tsc -b && vite build --base=./",
-    "preview": "vite preview",
+    "preview": "vite preview --port 5174",
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",

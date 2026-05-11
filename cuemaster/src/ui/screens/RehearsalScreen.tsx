@@ -70,7 +70,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [isScriptBrowserOpen, setIsScriptBrowserOpen] = useState(false);
-  const [isTempoReviewOpen, setIsTempoReviewOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
@@ -183,7 +183,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
     setIsScriptBrowserOpen(false);
-    setIsTempoReviewOpen(false);
+    setIsReviewOpen(false);
   }
 
   async function jumpToSection(sectionId: string) {
@@ -547,9 +547,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
   }
 
-  async function toggleTempoReview() {
-    const nextIsOpen = !isTempoReviewOpen;
-    setIsTempoReviewOpen(nextIsOpen);
+  async function setReviewVisibility(nextIsOpen: boolean) {
+    setIsReviewOpen(nextIsOpen);
     if (nextIsOpen) {
       await loadReviewAttempts();
     }
@@ -814,9 +813,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <button type="button" className="secondary" onClick={() => setIsScriptBrowserOpen(!isScriptBrowserOpen)}>
             {isScriptBrowserOpen ? "Hide Script" : "Browse Script"}
           </button>
-          <button type="button" className="secondary" onClick={() => void toggleTempoReview()}>
-            {isTempoReviewOpen ? "Hide Tempo Review" : "Tempo Review"}
-          </button>
           {isScriptBrowserOpen ? (
             <ScriptBrowserPanel
               currentLineId={line?.id ?? null}
@@ -826,14 +822,19 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               onSelectLine={(lineId) => void jumpToLine(lineId)}
             />
           ) : null}
-          {isTempoReviewOpen ? (
-            <TempoReviewPanel
+          <details
+            className="review-disclosure"
+            open={isReviewOpen}
+            onToggle={(event) => void setReviewVisibility(event.currentTarget.open)}
+          >
+            <summary>Review</summary>
+            <ReviewPanel
               attempts={reviewAttempts}
               bookmarks={bookmarks}
               role={role}
               onSelectLine={(lineId) => void jumpToLine(lineId)}
             />
-          ) : null}
+          </details>
         </div>
       </section>
     </main>
@@ -935,7 +936,7 @@ function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
   );
 }
 
-function TempoReviewPanel({
+function ReviewPanel({
   attempts,
   bookmarks,
   role,
@@ -952,18 +953,26 @@ function TempoReviewPanel({
   const rushedDeliveryAttempts = attempts.filter((attempt) => attempt.deliveryLabel === "fast");
 
   return (
-    <div className="tempo-review">
-      <h2>Tempo Review</h2>
-      <TempoReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-      <TempoReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-      <TempoReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-      <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
+    <div className="review-panel">
+      <h2>Review</h2>
+      <div className="review-columns">
+        <section className="review-card">
+          <h3>Bookmarks</h3>
+          <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
+        </section>
+        <section className="review-card">
+          <h3>Timing</h3>
+          <TimingReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+          <TimingReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+          <TimingReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+        </section>
+      </div>
       {attempts.length === 0 && bookmarks.length === 0 ? <p className="empty">No timing attempts or bookmarks yet.</p> : null}
     </div>
   );
 }
 
-function TempoReviewSection({
+function TimingReviewSection({
   title,
   attempts,
   linesById,
@@ -1004,8 +1013,7 @@ function BookmarkReviewSection({
   onSelectLine: (lineId: string) => void;
 }) {
   return (
-    <section>
-      <h3>Bookmarked Lines</h3>
+    <>
       {bookmarks.length === 0 ? (
         <p className="empty">None.</p>
       ) : (
@@ -1019,7 +1027,7 @@ function BookmarkReviewSection({
           ))}
         </ul>
       )}
-    </section>
+    </>
   );
 }
 

@@ -390,12 +390,50 @@ button:disabled {
   padding-left: 1.25rem;
 }
 
-.tempo-review {
+.review-disclosure {
+  display: grid;
+  gap: 1rem;
+}
+
+.review-disclosure summary {
+  cursor: pointer;
+  color: var(--ink);
+  font-family: var(--display-font);
+  font-size: 1.15rem;
+  font-weight: 900;
+  list-style-position: inside;
+}
+
+.review-disclosure summary::marker {
+  color: var(--accent);
+}
+
+.review-panel {
   display: grid;
   gap: 1rem;
   border-radius: 1.25rem;
   background: rgba(255, 255, 255, 0.34);
   padding: 1rem;
+}
+
+.review-columns {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+}
+
+.review-card {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.28);
+  padding: 1rem;
+}
+
+.review-card section {
+  display: grid;
+  gap: 0.5rem;
 }
 
 .script-browser {
@@ -444,12 +482,12 @@ button:disabled {
   outline: 3px solid rgba(185, 79, 47, 0.35);
 }
 
-.tempo-review h2,
-.tempo-review h3 {
+.review-panel h2,
+.review-panel h3 {
   margin: 0;
 }
 
-.tempo-review ul {
+.review-panel ul {
   display: grid;
   gap: 0.5rem;
   list-style: none;
@@ -459,6 +497,10 @@ button:disabled {
 
 @media (max-width: 760px) {
   .rehearsal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .review-columns {
     grid-template-columns: 1fr;
   }
 }

@@ -35,7 +35,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
 - **Speak Along** plays the cue, waits for the pickup target, then plays your line at the selected response speed.
-- **Bookmark** marks the current line so you can find it again in Tempo Review.
+- **Bookmark** marks the current line so you can find it again in Review.
 - **Stop** stops playback.
 - **Section** jumps to the first line for your role in the selected section.
 - **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
@@ -78,16 +78,16 @@ Cuemaster reports:
 
 Tempo Timing is not automatically re-enabled when you reopen a Playbook. If it was enabled last session, Cuemaster reminds you to enable it again before using the microphone.
 
-## Tempo Review And Bookmarks
+## Review
 
-Click **Tempo Review** to see:
+Click **Review** to open the review section. It has separate areas for:
 
+- bookmarked lines,
 - lines with late pickup,
 - lines with slow delivery,
-- lines with rushed delivery,
-- bookmarked lines.
+- lines with rushed delivery.
 
-Click a line in Tempo Review to jump directly to it.
+Click a line in Review to jump directly to it.
 
 Click **Browse Script** to jump directly to a line from the selected role's script.
 

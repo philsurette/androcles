@@ -14,7 +14,7 @@ npm run test
 npm run build
 ```
 
-The LineRecorder dev server is pinned to `http://127.0.0.1:5174`.
+The LineRecorder dev server is pinned to `http://127.0.0.1:5174/` so it can run beside Cuemaster on Vite's default `5173`.
 
 ## Boundaries
 
