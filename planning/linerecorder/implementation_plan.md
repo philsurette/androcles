@@ -8,29 +8,30 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 - Cuemaster now has a real React/Vite/TypeScript app under `cuemaster/`. LineRecorder should follow its local-first layout, testing setup, storage style, and license-audit pattern unless a recording-specific need argues otherwise.
 - Cuemaster microphone access is isolated in `cuemaster/src/platform/microphone.ts`, and voice-activity timing is app-owned. LineRecorder should start with its own recording-focused microphone classes, but keep the browser permission/device-selection/metering boundary small enough to move into a shared Quince browser module or copy back into Cuemaster.
-- Stager Playbook generation now emits explicit `sections`, supports MP3 Playbook packaging, cue-window presets, cue-start offsets, and strict required audio. None of those invalidate the LineRecorder recording package contract, but recording packs should include section context from the same parsed Play model rather than relying only on ad hoc scene text.
+- Stager Playbook generation now emits explicit `sections`, supports MP3 Playbook packaging, cue-window presets, cue-start offsets, and strict required audio. None of those invalidate the LineRecorder recording package contract, but Recording Requests should include section context from the same parsed Play model rather than relying only on ad hoc scene text.
 - Playbook generation must remain strict. LineRecorder may export partial `role_recordings`, but Stager import must not make incomplete recordings look Playbook-ready.
 - Cuemaster currently uses `jszip` and Dexie-backed IndexedDB. The LineRecorder app should either reuse those choices for consistency or document a deliberate reason for choosing `fflate` or raw IndexedDB.
 
 ## Phase 0: Contracts And Fixtures
 
-- [ ] Keep [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md) as the source of truth for recording pack and recording package schemas.
+- [ ] Keep [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md) as the source of truth for Recording Request and recording package schemas.
 - [ ] Add small Stager test fixtures with one role, multiple segments, inline directions, and simultaneous speech.
 - [ ] Define fixture WAV files with deterministic short audio.
-- [ ] Add schema-validation tests for `role_recording_pack`.
+- [ ] Add schema-validation tests for `recording_request`.
 - [ ] Add schema-validation tests for `role_recordings`.
-- [ ] Keep re-record request tests out of MVP unless Cuemaster export work begins.
+- [ ] Keep Cuemaster-generated Recording Request tests out of MVP unless Cuemaster export work begins.
 - [ ] Decide whether LineRecorder lives as a sibling app beside `cuemaster/` or inside a future shared app workspace.
 - [ ] Identify copyable shared-browser candidates from Cuemaster before coding: microphone platform access, storage estimates, zip import/export helpers, license audit script, and Playwright/Vitest setup.
 
-## Phase 1: Stager Recording Pack Export
+## Phase 1: Stager Recording Request Export
 
-- [ ] Add Stager dataclasses for recording pack manifest records under `src/stager/linerecorder/`.
-- [ ] Export role-specific recording packs from parsed `Play` data.
+- [ ] Add Stager dataclasses for Recording Request manifest records under `src/stager/linerecorder/`.
+- [ ] Export role-specific Recording Requests from parsed `Play` data.
+- [ ] Support `full_role` requests first, with manifest fields that also support later `selected_segments` and `rerecord` requests.
 - [ ] Use actor-facing `line_id` for UI display and Stager `segment_id` for audio identity.
 - [ ] Emit one recording item per speakable role segment.
 - [ ] If one displayed source line contains multiple speakable segments, emit multiple recording items with shared display context.
-- [ ] Include cue text, stage directions, part/scene context, and expected `output_path` when available.
+- [ ] Include cue text, previous/next local context, stage directions, part/scene context, item reason, and expected `output_path` when available.
 - [ ] Include section metadata compatible with Stager's Playbook `sections` model so actors can navigate by act, scene, or synthetic play section.
 - [ ] Reuse the same parsed play/segment model patterns as `PlaybookBuilder` for role lines, simultaneous speech, and meta-role exclusion.
 - [ ] Add tests for solo and dramatic readings.
@@ -42,7 +43,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 - [ ] Create React + Vite + TypeScript app structure.
 - [ ] Mirror Cuemaster's app organization where it applies: domain code outside React, platform adapters, storage repositories, browser tests, and license audit.
-- [ ] Implement local import of `role_recording_pack` zip files.
+- [ ] Implement local import of `recording_request` zip files.
 - [ ] Validate manifest shape and reject unsupported `schema_version`.
 - [ ] Store imported projects and accepted takes in IndexedDB, likely through Dexie for consistency with Cuemaster.
 - [ ] Show actor-facing line list backed by `segment_id`.
@@ -56,7 +57,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 ## Phase 3: Export Recording Packages
 
-- [ ] Export accepted WAV files to the paths declared by the recording pack.
+- [ ] Export accepted WAV files to the paths declared by the Recording Request.
 - [ ] Write `role_recordings` manifest with `complete` and `missing_segment_ids`.
 - [ ] Allow partial export, but mark it incomplete.
 - [ ] Export only the current accepted take for each segment by default.
@@ -83,8 +84,8 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 ## Later
 
-- [ ] Import Cuemaster re-record request files.
+- [ ] Import Cuemaster-generated Recording Request files.
 - [ ] Export replacement-only packages.
-- [ ] Mark changed items from updated Stager packs.
+- [ ] Mark changed items from updated Stager requests.
 - [ ] Add Capacitor wrapper if browser MVP proves useful.
 - [ ] Add optional package checksums/signatures.

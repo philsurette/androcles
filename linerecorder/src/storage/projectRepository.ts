@@ -1,13 +1,13 @@
-import type { RecordingPack } from "../domain/recordingPack";
+import type { RecordingRequest } from "../domain/recordingRequest";
 import { db, type RecordingProjectRecord } from "./db";
 
 export class ProjectRepository {
-  async saveImportedPack(pack: RecordingPack): Promise<RecordingProjectRecord> {
+  async saveImportedRequest(request: RecordingRequest): Promise<RecordingProjectRecord> {
     const project: RecordingProjectRecord = {
-      id: `${pack.play.id}:${pack.role.id}`,
+      id: `${request.play.id}:${request.role.id}`,
       importedAt: new Date().toISOString(),
-      currentSegmentId: pack.items[0]?.segmentId,
-      pack
+      currentSegmentId: request.items[0]?.segmentId,
+      request
     };
     await db.projects.put(project);
     return project;

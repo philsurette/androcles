@@ -1,12 +1,12 @@
 import Dexie, { type Table } from "dexie";
-import type { RecordingPack } from "../domain/recordingPack";
+import type { RecordingRequest } from "../domain/recordingRequest";
 import type { RecordingTake } from "../domain/take";
 
 export type RecordingProjectRecord = {
   id: string;
   importedAt: string;
   currentSegmentId?: string;
-  pack: RecordingPack;
+  request: RecordingRequest;
 };
 
 export class LineRecorderDb extends Dexie {
@@ -16,7 +16,7 @@ export class LineRecorderDb extends Dexie {
   constructor() {
     super("linerecorder");
     this.version(1).stores({
-      projects: "id, importedAt, pack.play.id, pack.role.id",
+      projects: "id, importedAt, request.play.id, request.role.id",
       takes: "id, projectId, segmentId, status, recordedAt, [projectId+segmentId]"
     });
   }

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import type { RecordingPack } from "../../src/domain/recordingPack";
+import type { RecordingRequest } from "../../src/domain/recordingRequest";
 import { db } from "../../src/storage/db";
 import { projectRepository } from "../../src/storage/projectRepository";
 
@@ -9,19 +9,26 @@ describe("ProjectRepository", () => {
     await db.takes.clear();
   });
 
-  it("saves imported packs using play and role identity", async () => {
-    const project = await projectRepository.saveImportedPack(packFixture());
+  it("saves imported requests using play and role identity", async () => {
+    const project = await projectRepository.saveImportedRequest(packFixture());
 
     expect(project.id).toBe("androcles:CENTURION");
     expect(project.currentSegmentId).toBe("0_12_1");
+    expect(project.request.packageType).toBe("recording_request");
     await expect(projectRepository.list()).resolves.toHaveLength(1);
   });
 });
 
-function packFixture(): RecordingPack {
+function packFixture(): RecordingRequest {
   return {
     schemaVersion: 1,
-    packageType: "role_recording_pack",
+    packageType: "recording_request",
+    request: {
+      id: "androcles-CENTURION-full-2026-05-10",
+      kind: "full_role",
+      createdAt: "2026-05-10T14:00:00Z",
+      createdBy: "stager"
+    },
     play: {
       id: "androcles",
       title: "Androcles and the Lion"

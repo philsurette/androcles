@@ -4,11 +4,11 @@
 
 This document describes the primary use cases for LineRecorder, the actor-facing recording tool in the Quince production system.
 
-LineRecorder helps actors record their role lines one at a time from a Stager-generated recording pack. In the UI these are lines; in package contracts and Stager code they are segment-backed recording items. The actor can review, accept, retry, re-record individual items, and export a package of audio files for the stage manager or director to import back into Stager.
+LineRecorder helps actors record their role lines one at a time from a Stager-generated Recording Request. In the UI these are lines; in package contracts and Stager code they are segment-backed recording items. The actor can review, accept, retry, re-record individual items, and export a package of audio files for the stage manager or director to import back into Stager.
 
 The system must work without server infrastructure. All core workflows are local, offline-capable, and file-based.
 
-The authoritative file contract for recording packs, recording packages, and future re-record requests is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
+The authoritative file contract for Recording Requests and recording packages is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
 ---
 
@@ -16,11 +16,11 @@ The authoritative file contract for recording packs, recording packages, and fut
 
 ### Actor
 
-The primary user. The actor imports a recording pack, records their lines, reviews takes, re-records as needed, and exports the finished or partial segment recordings.
+The primary user. The actor imports a Recording Request, records their lines, reviews takes, re-records as needed, and exports the finished or partial segment recordings.
 
 ### Stage Manager / Director / Production Organizer
 
-Creates or manages the Stager script, exports recording packs, receives actor recordings, imports recordings into Stager, and builds Playbooks.
+Creates or manages the Stager script, exports Recording Requests, receives actor recordings, imports recordings into Stager, and builds Playbooks.
 
 ### Cuemaster User
 
@@ -30,15 +30,15 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ## Core Recording Use Cases
 
-### UC-001: Import a Role Recording Pack
+### UC-001: Import a Recording Request
 
 **Actor goal:** Start recording a role from a Stager-generated package.
 
 **Scenario:**
 
-1. The actor receives a role recording pack from the stage manager.
+1. The actor receives a Recording Request from the stage manager.
 2. The actor opens LineRecorder.
-3. The actor chooses **Import Recording Pack**.
+3. The actor chooses **Import Recording Request**.
 4. The actor selects the local zip file.
 5. LineRecorder validates the package.
 6. LineRecorder displays the play title, role name, and recording item count.
@@ -65,7 +65,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 **Notes:**
 
 - Accepted takes should persist locally in IndexedDB.
-- The actor should not need to re-import the pack every time.
+- The actor should not need to re-import the request every time.
 
 ---
 
@@ -248,7 +248,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 **Scenario:**
 
-1. The stage manager sends an updated recording pack or re-record request.
+1. The stage manager sends an updated Recording Request.
 2. LineRecorder marks changed recording items.
 3. The actor records only the changed segment-backed items.
 4. The actor exports a replacement package.
@@ -269,7 +269,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 1. The actor rehearses with Cuemaster.
 2. The actor hears a reference line that is wrong, stale, or no longer useful.
 3. The actor marks the line for re-recording.
-4. Cuemaster exports a local re-record request file.
+4. Cuemaster exports a local Recording Request file.
 5. The actor imports that request into LineRecorder.
 6. LineRecorder opens the requested line or list of segment-backed recording items.
 7. The actor records replacements.
@@ -372,13 +372,13 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 **Notes:**
 
-- This supports Cuemaster re-record requests and production updates.
+- This supports Cuemaster-generated Recording Requests and production updates.
 
 ---
 
 ## Export and Sharing Use Cases
 
-### UC-019: Export a Complete Role Recording Package
+### UC-019: Export a Complete Recording Package
 
 **Actor goal:** Send all accepted recordings to the stage manager.
 
@@ -459,7 +459,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 ## Stage Manager / Stager Use Cases
 
-### UC-023: Export Recording Packs from Stager
+### UC-023: Export Recording Requests from Stager
 
 **Stage manager goal:** Prepare segment-backed line lists for actors to record.
 
@@ -467,13 +467,13 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 1. The stage manager curates the play in Stager.
 2. Stager identifies each role's actor-facing lines and segment IDs.
-3. Stager exports a recording pack for a role.
-4. The stage manager sends the pack to the actor.
+3. Stager exports a Recording Request for a role.
+4. The stage manager sends the request to the actor.
 
 **Notes:**
 
-- Recording packs should be small because they contain metadata, not all production audio.
-- The pack should be human-debuggable where possible.
+- Recording Requests should be small because they contain metadata, not all production audio.
+- The request should be human-debuggable where possible.
 
 ---
 
@@ -483,7 +483,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 
 **Scenario:**
 
-1. The stage manager receives a role recording package.
+1. The stage manager receives a recording package.
 2. The stage manager imports it into Stager.
 3. Stager validates play ID, role ID, segment IDs, optional line IDs, and audio files.
 4. Stager places audio in the correct production asset paths.
@@ -566,7 +566,7 @@ Usually the actor. While rehearsing in Cuemaster, the user may discover that a l
 **Scenario:**
 
 1. The actor opens LineRecorder.
-2. The actor imports a local recording pack.
+2. The actor imports a local Recording Request.
 3. The actor records and exports files.
 4. No account is created.
 
@@ -724,7 +724,7 @@ The following should not drive MVP implementation:
 
 The MVP should support:
 
-- import role recording pack,
+- import Recording Request,
 - resume local recording project,
 - select/test microphone,
 - record current line,
@@ -744,9 +744,9 @@ The MVP should support:
 
 Good later candidates:
 
-- import Cuemaster re-record request,
+- import Cuemaster-generated Recording Request,
 - export replacement-only package,
-- mark changed lines from updated Stager pack,
+- mark changed lines from updated Stager requests,
 - optional MP3 export,
 - Capacitor mobile wrapper,
 - improved mobile microphone support,
