@@ -92,6 +92,7 @@ button:focus-visible,
 .empty-state,
 .project-card,
 .summary-panel,
+.microphone-panel,
 .item-detail,
 .context-panel,
 .line-panel {
@@ -153,6 +154,87 @@ button:focus-visible,
 }
 
 .notes {
+  grid-column: 1 / -1;
+  color: var(--muted);
+}
+
+.microphone-panel {
+  display: grid;
+  grid-template-columns: minmax(160px, 0.75fr) minmax(360px, 2fr);
+  gap: 16px 24px;
+  align-items: end;
+}
+
+.microphone-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 0.75fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+select {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--ink);
+  background: #fffdf6;
+  font: inherit;
+  font-weight: 800;
+}
+
+.meter-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(160px, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.meter {
+  height: 18px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-muted);
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  max-width: 100%;
+  border-radius: inherit;
+  background: #1f5c3b;
+  transition: width 120ms linear;
+}
+
+.meter-label {
+  min-width: 84px;
+  color: var(--muted);
+  font-weight: 800;
+  text-align: right;
+}
+
+.meter-label.too-quiet {
+  color: #8a6b1f;
+}
+
+.meter-label.good {
+  color: #1f5c3b;
+}
+
+.meter-label.clipping {
+  color: var(--accent);
+}
+
+.microphone-status {
   grid-column: 1 / -1;
   color: var(--muted);
 }
@@ -280,8 +362,18 @@ button:focus-visible,
   }
 
   .summary-panel,
+  .microphone-panel,
   .recording-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .microphone-controls,
+  .meter-row {
+    grid-template-columns: 1fr;
+  }
+
+  .meter-label {
+    text-align: left;
   }
 
   .summary-panel dl,

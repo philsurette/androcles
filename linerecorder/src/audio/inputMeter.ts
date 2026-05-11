@@ -1,6 +1,6 @@
 export type InputLevel = "no-signal" | "too-quiet" | "good" | "clipping";
 
-export function rootMeanSquareEnergy(samples: Uint8Array): number {
+export function rootMeanSquareEnergy(samples: Uint8Array<ArrayBufferLike>): number {
   let sum = 0;
   for (const sample of samples) {
     const normalized = (sample - 128) / 128;

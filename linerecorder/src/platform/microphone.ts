@@ -27,7 +27,7 @@ export async function requestMicrophoneStream(deviceId?: string, mode: Microphon
   assertMicrophoneApiAvailable();
   try {
     return await navigator.mediaDevices.getUserMedia({
-      audio: microphoneConstraints(deviceId, mode),
+      audio: createMicrophoneConstraints(deviceId, mode),
       video: false
     });
   } catch (error) {
@@ -50,7 +50,7 @@ function assertMicrophoneApiAvailable(): void {
   }
 }
 
-function microphoneConstraints(deviceId: string | undefined, mode: MicrophoneMode): MediaTrackConstraints {
+export function createMicrophoneConstraints(deviceId: string | undefined, mode: MicrophoneMode): MediaTrackConstraints {
   return {
     deviceId: deviceId ? { exact: deviceId } : undefined,
     channelCount: 1,

@@ -81,18 +81,16 @@ Cuemaster reports:
 
 Tempo Timing is not automatically re-enabled when you reopen a Playbook. If it was enabled last session, Cuemaster reminds you to enable it again before using the microphone.
 
-## Review
+## Drawer
 
-Click **Review** to open the review section. It has separate areas for:
+The bottom drawer has four tabs:
 
-- bookmarked lines,
-- lines with late pickup,
-- lines with slow delivery,
-- lines with rushed delivery.
+- **Script** jumps directly to a line from the selected role's script.
+- **Bookmarks** shows bookmarked lines.
+- **Timing Issues** shows lines with late pickup, slow delivery, or rushed delivery.
+- **Options** contains practice and timing settings.
 
-Click a line in Review to jump directly to it.
-
-Click **Browse Script** to jump directly to a line from the selected role's script.
+Click a line in Script, Bookmarks, or Timing Issues to jump directly to it.
 
 ## Keyboard Shortcuts
 

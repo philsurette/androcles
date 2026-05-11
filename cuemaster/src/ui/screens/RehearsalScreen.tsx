@@ -31,7 +31,7 @@ type RehearsalScreenProps = {
 };
 
 type PlaybackUiState = "idle" | "playing" | "paused";
-type UtilityPanel = "script" | "options" | "review";
+type UtilityPanel = "script" | "bookmarks" | "timing" | "options";
 
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
@@ -623,7 +623,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   async function showUtilityPanel(panel: UtilityPanel) {
     const nextPanel = activeUtilityPanel === panel ? null : panel;
     setActiveUtilityPanel(nextPanel);
-    if (nextPanel === "review") {
+    if (nextPanel === "timing") {
       await loadReviewAttempts();
     }
   }
@@ -848,7 +848,26 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 aria-pressed={activeUtilityPanel === "script"}
                 onClick={() => void showUtilityPanel("script")}
               >
+                <span aria-hidden="true">▤</span>
                 Script
+              </button>
+              <button
+                type="button"
+                className={activeUtilityPanel === "bookmarks" ? "utility-tab active" : "utility-tab"}
+                aria-pressed={activeUtilityPanel === "bookmarks"}
+                onClick={() => void showUtilityPanel("bookmarks")}
+              >
+                <span aria-hidden="true">★</span>
+                Bookmarks
+              </button>
+              <button
+                type="button"
+                className={activeUtilityPanel === "timing" ? "utility-tab active" : "utility-tab"}
+                aria-pressed={activeUtilityPanel === "timing"}
+                onClick={() => void showUtilityPanel("timing")}
+              >
+                <span aria-hidden="true">⏱</span>
+                Timing Issues
               </button>
               <button
                 type="button"
@@ -856,15 +875,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 aria-pressed={activeUtilityPanel === "options"}
                 onClick={() => void showUtilityPanel("options")}
               >
+                <span aria-hidden="true">⚙</span>
                 Options
-              </button>
-              <button
-                type="button"
-                className={activeUtilityPanel === "review" ? "utility-tab active" : "utility-tab"}
-                aria-pressed={activeUtilityPanel === "review"}
-                onClick={() => void showUtilityPanel("review")}
-              >
-                Review
               </button>
             </div>
             {activeUtilityPanel ? (
@@ -964,13 +976,15 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     onSelectLine={(lineId) => void jumpToLine(lineId)}
                   />
                 ) : null}
-                {activeUtilityPanel === "review" ? (
-              <ReviewPanel
-                attempts={reviewAttempts}
-                bookmarks={bookmarks}
-                role={role}
-                onSelectLine={(lineId) => void jumpToLine(lineId)}
-              />
+                {activeUtilityPanel === "bookmarks" ? (
+                  <BookmarksPanel bookmarks={bookmarks} role={role} onSelectLine={(lineId) => void jumpToLine(lineId)} />
+                ) : null}
+                {activeUtilityPanel === "timing" ? (
+                  <TimingIssuesPanel
+                    attempts={reviewAttempts}
+                    role={role}
+                    onSelectLine={(lineId) => void jumpToLine(lineId)}
+                  />
                 ) : null}
               </div>
             ) : null}
@@ -1086,14 +1100,31 @@ function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
   );
 }
 
-function ReviewPanel({
-  attempts,
+function BookmarksPanel({
   bookmarks,
   role,
   onSelectLine
 }: {
-  attempts: TimingAttempt[];
   bookmarks: Bookmark[];
+  role: Role;
+  onSelectLine: (lineId: string) => void;
+}) {
+  const linesById = new Map(role.lines.map((line) => [line.id, line]));
+
+  return (
+    <div className="review-panel">
+      <h2>Bookmarks</h2>
+      <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
+    </div>
+  );
+}
+
+function TimingIssuesPanel({
+  attempts,
+  role,
+  onSelectLine
+}: {
+  attempts: TimingAttempt[];
   role: Role;
   onSelectLine: (lineId: string) => void;
 }) {
@@ -1104,20 +1135,13 @@ function ReviewPanel({
 
   return (
     <div className="review-panel">
-      <h2>Review</h2>
-      <div className="review-columns">
-        <section className="review-card">
-          <h3>Bookmarks</h3>
-          <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
-        </section>
-        <section className="review-card">
-          <h3>Timing</h3>
-          <TimingReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-          <TimingReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-          <TimingReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-        </section>
+      <h2>Timing Issues</h2>
+      <div className="timing-review-grid">
+        <TimingReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+        <TimingReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
+        <TimingReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
       </div>
-      {attempts.length === 0 && bookmarks.length === 0 ? <p className="empty">No timing attempts or bookmarks yet.</p> : null}
+      {attempts.length === 0 ? <p className="empty">No timing attempts yet.</p> : null}
     </div>
   );
 }

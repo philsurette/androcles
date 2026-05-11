@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
+import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
 import { takeRepository } from "../storage/takeRepository";
 import type { RecordingProjectRecord } from "../storage/db";
@@ -178,10 +180,116 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem }: ProjectDet
   return (
     <section className="project-detail" aria-label="Recording Request detail">
       <ProjectSummary project={project} progress={progress} />
+      <MicrophoneSetup />
       <div className="recording-workspace">
         <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
         {selectedItem ? <ItemDetail progress={selectedItem} /> : null}
       </div>
+    </section>
+  );
+}
+
+function MicrophoneSetup() {
+  const sessionRef = useRef<MicrophoneSession | null>(null);
+  const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState("");
+  const [mode, setMode] = useState<MicrophoneMode>("clean");
+  const [reading, setReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
+  const [status, setStatus] = useState("Microphone not started.");
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      sessionRef.current?.stop();
+    };
+  }, []);
+
+  async function refreshDevices(): Promise<void> {
+    const availableDevices = await listMicrophoneDevices();
+    setDevices(availableDevices);
+    if (!selectedDeviceId && availableDevices[0]) {
+      setSelectedDeviceId(availableDevices[0].deviceId);
+    }
+  }
+
+  async function startMicrophone(): Promise<void> {
+    try {
+      setStatus("Requesting microphone permission...");
+      await refreshDevices();
+      const session = new MicrophoneSession((nextReading) => {
+        setReading(nextReading);
+        setStatus(levelStatus(nextReading.level));
+      });
+      sessionRef.current = session;
+      await session.start(selectedDeviceId, mode);
+      setIsActive(true);
+    } catch (error) {
+      const message =
+        error instanceof MicrophonePermissionError ? error.message : "Unable to start microphone setup.";
+      setStatus(message);
+      setIsActive(false);
+    }
+  }
+
+  function stopMicrophone(): void {
+    sessionRef.current?.stop();
+    sessionRef.current = null;
+    setIsActive(false);
+    setReading({ energy: 0, level: "no-signal" });
+    setStatus("Microphone stopped.");
+  }
+
+  return (
+    <section className="microphone-panel" aria-label="Microphone setup">
+      <div>
+        <p className="eyebrow">Microphone</p>
+        <h2>Setup</h2>
+      </div>
+      <div className="microphone-controls">
+        <label>
+          Input
+          <select
+            value={selectedDeviceId}
+            disabled={isActive}
+            onFocus={() => void refreshDevices()}
+            onChange={(event) => setSelectedDeviceId(event.target.value)}
+          >
+            {devices.length === 0 ? <option value="">Default microphone</option> : null}
+            {devices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Mode
+          <select
+            value={mode}
+            disabled={isActive}
+            onChange={(event) => setMode(event.target.value as MicrophoneMode)}
+          >
+            <option value="clean">Clean room</option>
+            <option value="noisy">Noisy room</option>
+          </select>
+        </label>
+        {isActive ? (
+          <button type="button" className="secondary" onClick={stopMicrophone}>
+            Stop Mic
+          </button>
+        ) : (
+          <button type="button" onClick={() => void startMicrophone()}>
+            Start Setup
+          </button>
+        )}
+      </div>
+      <div className="meter-row">
+        <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
+          <span style={{ width: `${Math.min(reading.energy * 140, 1) * 100}%` }} />
+        </div>
+        <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
+      </div>
+      <p className="microphone-status">{status}</p>
     </section>
   );
 }
@@ -326,4 +434,30 @@ function requestKindLabel(kind: string): string {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function levelLabel(level: MicrophoneReading["level"]): string {
+  switch (level) {
+    case "no-signal":
+      return "No signal";
+    case "too-quiet":
+      return "Too quiet";
+    case "good":
+      return "Good";
+    case "clipping":
+      return "Clipping";
+  }
+}
+
+function levelStatus(level: MicrophoneReading["level"]): string {
+  switch (level) {
+    case "no-signal":
+      return "No microphone signal detected.";
+    case "too-quiet":
+      return "Input is too quiet.";
+    case "good":
+      return "Microphone level looks good.";
+    case "clipping":
+      return "Input is clipping. Move back or reduce gain.";
+  }
 }
