@@ -9,6 +9,7 @@ import logging
 from pathlib import Path, PurePosixPath
 import re
 import shutil
+import subprocess
 import wave
 import zipfile
 
@@ -64,9 +65,71 @@ class RoleRecordingImportJob:
     segment_id: str
     segment_content_hash: str | None
     audio_path: str
+    recorded_at: str | None
+    floor_noise_id: str | None
     manifest_duration_ms: int
     member: zipfile.ZipInfo
     target_path: Path
+    floor_noise: "FloorNoiseImportItem | None" = None
+
+
+@dataclass
+class FloorNoiseImportItem:
+    id: str
+    audio_path: str
+    recorded_at: str
+    duration_ms: int
+    member: zipfile.ZipInfo
+    artifact_path: Path | None = None
+
+
+@dataclass
+class RecordingImportProcessingOptions:
+    denoise: bool = False
+    trim_silence: bool = False
+
+
+class RecordingImportAudioProcessor:
+    def process(
+        self,
+        *,
+        input_path: Path,
+        output_path: Path,
+        floor_noise_path: Path | None,
+        floor_noise_duration_ms: int | None,
+        options: RecordingImportProcessingOptions,
+    ) -> None:
+        filters = []
+        command = ["ffmpeg", "-y"]
+        if options.denoise and floor_noise_path is not None and floor_noise_duration_ms is not None:
+            floor_noise_seconds = floor_noise_duration_ms / 1000
+            command.extend(["-i", str(floor_noise_path), "-i", str(input_path)])
+            filter_chain = (
+                f"[0:a][1:a]concat=n=2:v=0:a=1,"
+                f"asendcmd=0.0 afftdn sn start,"
+                f"asendcmd={floor_noise_seconds:.3f} afftdn sn stop,"
+                f"afftdn=nr=10:nf=-50,"
+                f"atrim=start={floor_noise_seconds:.3f},asetpts=PTS-STARTPTS"
+            )
+            if options.trim_silence:
+                filter_chain += "," + self._silence_trim_filter()
+            command.extend(["-filter_complex", filter_chain])
+        else:
+            command.extend(["-i", str(input_path)])
+            if options.trim_silence:
+                filters.append(self._silence_trim_filter())
+            if filters:
+                command.extend(["-af", ",".join(filters)])
+        command.extend([str(output_path)])
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        subprocess.run(command, check=True, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+
+    def _silence_trim_filter(self) -> str:
+        return (
+            "silenceremove="
+            "start_periods=1:start_duration=0.10:start_threshold=-50dB:"
+            "stop_periods=1:stop_duration=0.20:stop_threshold=-50dB"
+        )
 
 
 @dataclass(frozen=True)
@@ -82,12 +145,19 @@ class ExpectedRecordingSegment:
 class RoleRecordingsImporter:
     paths: paths.PathConfig
     play: Play | None = None
+    audio_processor: RecordingImportAudioProcessor = field(default_factory=RecordingImportAudioProcessor)
 
-    def import_package(self, package_path: Path) -> RoleRecordingsImportResult:
+    def import_package(
+        self,
+        package_path: Path,
+        processing_options: RecordingImportProcessingOptions | None = None,
+    ) -> RoleRecordingsImportResult:
+        options = processing_options or RecordingImportProcessingOptions()
         with zipfile.ZipFile(package_path) as archive:
             manifest = self._read_manifest(archive, package_path)
             self._validate_manifest(manifest, package_path)
             role = manifest["role"]["id"]
+            floor_noise_items = self._floor_noise_items(archive, manifest, package_path)
             written_paths = []
             import_jobs = []
 
@@ -102,11 +172,14 @@ class RoleRecordingsImporter:
                         segment_id=recording["segment_id"],
                         segment_content_hash=recording.get("segment_content_hash"),
                         audio_path=audio_path,
+                        recorded_at=recording.get("recorded_at"),
+                        floor_noise_id=recording.get("floor_noise_id"),
                         manifest_duration_ms=recording["duration_ms"],
                         member=self._audio_member(archive, audio_path, package_path),
                         target_path=target_path,
                     )
                 )
+            self._assign_floor_noise(import_jobs, floor_noise_items)
 
             issues = self._analyze_package_audio(archive, import_jobs, package_path)
             issues.extend(self._extra_audio_issues(archive, import_jobs))
@@ -115,14 +188,29 @@ class RoleRecordingsImporter:
                 package_path=package_path,
                 manifest=manifest,
                 import_jobs=import_jobs,
+                floor_noise_items=floor_noise_items,
                 issues=issues,
+                processing_options=options,
             )
 
             for import_job in import_jobs:
                 target_path = import_job.target_path
                 incoming_path = transaction_manifest_path.parent / "incoming" / import_job.audio_path
+                processed_path = transaction_manifest_path.parent / "processed" / import_job.audio_path
+                copy_source_path = incoming_path
+                if options.denoise or options.trim_silence:
+                    if options.denoise and import_job.floor_noise is None:
+                        logger.info("No floor noise available for %s; importing without denoise", import_job.segment_id)
+                    self.audio_processor.process(
+                        input_path=incoming_path,
+                        output_path=processed_path,
+                        floor_noise_path=import_job.floor_noise.artifact_path if import_job.floor_noise else None,
+                        floor_noise_duration_ms=import_job.floor_noise.duration_ms if import_job.floor_noise else None,
+                        options=options,
+                    )
+                    copy_source_path = processed_path
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(incoming_path, target_path)
+                shutil.copy2(copy_source_path, target_path)
                 written_paths.append(target_path)
                 logger.info("Imported LineRecorder segment %s", paths.display_path(target_path))
 
@@ -201,6 +289,7 @@ class RoleRecordingsImporter:
 
         for recording in manifest["recordings"]:
             self._validate_recording(recording, role, package_path)
+        self._validate_floor_noise_recordings(manifest, package_path)
         self._validate_play_segments(manifest, role, package_path)
 
     def _validate_recording(self, recording: dict, role: str, package_path: Path) -> None:
@@ -213,6 +302,42 @@ class RoleRecordingsImporter:
         if recording.get("status") != "accepted":
             raise RuntimeError(f"Unexpected recording status in {paths.display_path(package_path)}")
         self._target_path(role, segment_id, audio_path)
+
+    def _validate_floor_noise_recordings(self, manifest: dict, package_path: Path) -> None:
+        floor_noise_recordings = manifest.get("floor_noise_recordings", [])
+        if floor_noise_recordings is None:
+            return
+        if not isinstance(floor_noise_recordings, list):
+            raise RuntimeError(f"Invalid floor_noise_recordings in {paths.display_path(package_path)}")
+        floor_noise_ids = set()
+        for floor_noise in floor_noise_recordings:
+            floor_noise_id = floor_noise.get("id")
+            audio_path = floor_noise.get("audio_path")
+            if not isinstance(floor_noise_id, str) or not floor_noise_id:
+                raise RuntimeError(f"Invalid floor noise id in {paths.display_path(package_path)}")
+            if floor_noise_id in floor_noise_ids:
+                raise RuntimeError(f"Duplicate floor noise id {floor_noise_id} in {paths.display_path(package_path)}")
+            floor_noise_ids.add(floor_noise_id)
+            self._validate_relative_zip_path(audio_path, package_path, "floor noise audio path")
+            if not isinstance(floor_noise.get("recorded_at"), str):
+                raise RuntimeError(f"Invalid floor noise recorded_at in {paths.display_path(package_path)}")
+            if not isinstance(floor_noise.get("duration_ms"), int) or floor_noise["duration_ms"] <= 0:
+                raise RuntimeError(f"Invalid floor noise duration in {paths.display_path(package_path)}")
+        for recording in manifest["recordings"]:
+            floor_noise_id = recording.get("floor_noise_id")
+            if floor_noise_id is not None and floor_noise_id not in floor_noise_ids:
+                raise RuntimeError(
+                    f"Unknown floor noise id {floor_noise_id!r} for segment {recording.get('segment_id')} "
+                    f"in {paths.display_path(package_path)}"
+                )
+
+    def _validate_relative_zip_path(self, value: object, package_path: Path, field_name: str) -> PurePosixPath:
+        if not isinstance(value, str) or not value:
+            raise RuntimeError(f"Invalid {field_name} in {paths.display_path(package_path)}")
+        relative_path = PurePosixPath(value)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise RuntimeError(f"Unsafe {field_name} in {paths.display_path(package_path)}: {value}")
+        return relative_path
 
     def _validate_production_id(self, value: object, field_name: str, package_path: Path) -> None:
         if not isinstance(value, str) or not PRODUCTION_ID_RE.match(value):
@@ -307,6 +432,52 @@ class RoleRecordingsImporter:
             raise RuntimeError(
                 f"Missing audio file {audio_path} in {paths.display_path(package_path)}"
             ) from exc
+
+    def _floor_noise_items(
+        self,
+        archive: zipfile.ZipFile,
+        manifest: dict,
+        package_path: Path,
+    ) -> list[FloorNoiseImportItem]:
+        items = []
+        for floor_noise in manifest.get("floor_noise_recordings", []) or []:
+            audio_path = floor_noise["audio_path"]
+            try:
+                member = archive.getinfo(audio_path)
+            except KeyError as exc:
+                raise RuntimeError(
+                    f"Missing floor noise audio file {audio_path} in {paths.display_path(package_path)}"
+                ) from exc
+            items.append(
+                FloorNoiseImportItem(
+                    id=floor_noise["id"],
+                    audio_path=audio_path,
+                    recorded_at=floor_noise["recorded_at"],
+                    duration_ms=floor_noise["duration_ms"],
+                    member=member,
+                )
+            )
+        return sorted(items, key=lambda item: item.recorded_at)
+
+    def _assign_floor_noise(
+        self,
+        import_jobs: list[RoleRecordingImportJob],
+        floor_noise_items: list[FloorNoiseImportItem],
+    ) -> None:
+        floor_noise_by_id = {floor_noise.id: floor_noise for floor_noise in floor_noise_items}
+        for import_job in import_jobs:
+            if import_job.floor_noise_id is not None:
+                import_job.floor_noise = floor_noise_by_id[import_job.floor_noise_id]
+                continue
+            if import_job.recorded_at is None:
+                continue
+            candidates = [
+                floor_noise
+                for floor_noise in floor_noise_items
+                if floor_noise.recorded_at <= import_job.recorded_at
+            ]
+            if candidates:
+                import_job.floor_noise = candidates[-1]
 
     def _analyze_package_audio(
         self,
@@ -459,20 +630,32 @@ class RoleRecordingsImporter:
         package_path: Path,
         manifest: dict,
         import_jobs: list[RoleRecordingImportJob],
+        floor_noise_items: list[FloorNoiseImportItem],
         issues: list[RoleRecordingImportIssue],
+        processing_options: RecordingImportProcessingOptions,
     ) -> Path:
         transaction_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         transaction_dir = self.paths.build_dir / "linerecorder" / "imports" / transaction_id
         imported = []
 
+        for floor_noise in floor_noise_items:
+            artifact_path = transaction_dir / "floor_noise" / floor_noise.audio_path
+            artifact_path.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(floor_noise.member) as source, artifact_path.open("wb") as target:
+                target.write(source.read())
+            floor_noise.artifact_path = artifact_path
+
         for import_job in import_jobs:
+            original_path = transaction_dir / "original" / import_job.audio_path
             incoming_path = transaction_dir / "incoming" / import_job.audio_path
             backup_path = transaction_dir / "backups" / import_job.audio_path
             existed_before = import_job.target_path.exists()
 
-            incoming_path.parent.mkdir(parents=True, exist_ok=True)
-            with archive.open(import_job.member) as source, incoming_path.open("wb") as target:
+            original_path.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(import_job.member) as source, original_path.open("wb") as target:
                 target.write(source.read())
+            incoming_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(original_path, incoming_path)
 
             if existed_before:
                 backup_path.parent.mkdir(parents=True, exist_ok=True)
@@ -482,12 +665,14 @@ class RoleRecordingsImporter:
                 "segment_id": import_job.segment_id,
                 "target_path": import_job.audio_path,
                 "incoming_path": paths.display_path(incoming_path),
+                "original_path": paths.display_path(original_path),
                 "existed_before": existed_before,
             }
             self._put_optional(item, "id", import_job.id)
             self._put_optional(item, "line_id", import_job.line_id)
             self._put_optional(item, "line_content_hash", import_job.line_content_hash)
             self._put_optional(item, "segment_content_hash", import_job.segment_content_hash)
+            self._put_optional(item, "floor_noise_id", import_job.floor_noise.id if import_job.floor_noise else None)
             if existed_before:
                 item["backup_path"] = paths.display_path(backup_path)
             imported.append(item)
@@ -503,6 +688,10 @@ class RoleRecordingsImporter:
                     "role_id": manifest["role"]["id"],
                     "complete": manifest["complete"],
                     "missing_segment_ids": list(manifest.get("missing_segment_ids", [])),
+                    "processing": {
+                        "denoise": processing_options.denoise,
+                        "trim_silence": processing_options.trim_silence,
+                    },
                     "issues": [issue.to_dict() for issue in issues],
                     "imported": imported,
                 },

@@ -69,8 +69,20 @@ export type RoleRecordingsManifest = {
     id: string;
     display_name: string;
   };
+  floor_noise_recordings?: FloorNoiseRecordingManifestItem[];
   recordings: RoleRecordingManifestItem[];
   missing_segment_ids: string[];
+};
+
+export type FloorNoiseRecordingManifestItem = {
+  id: string;
+  audio_path: string;
+  recorded_at: string;
+  duration_ms: number;
+  sample_rate_hz: number;
+  channels: number;
+  device_label: string;
+  mode: string;
 };
 
 export type RoleRecordingManifestItem = {
@@ -82,6 +94,7 @@ export type RoleRecordingManifestItem = {
   segment_content_hash: string;
   audio_path: string;
   recorded_at: string;
+  floor_noise_id?: string;
   duration_ms: number;
   sample_rate_hz: number;
   channels: number;

@@ -17,6 +17,7 @@ const recordingSchema = z.object({
   segment_content_hash: z.string().regex(/^sha256:[0-9a-f]{64}$/),
   audio_path: z.string().min(1),
   recorded_at: z.string().min(1),
+  floor_noise_id: z.string().min(1).optional(),
   duration_ms: z.number().int().nonnegative(),
   sample_rate_hz: z.number().int().positive(),
   channels: z.number().int().positive(),
@@ -34,6 +35,17 @@ const recordingSchema = z.object({
   status: z.literal("accepted")
 });
 
+const floorNoiseRecordingSchema = z.object({
+  id: z.string().min(1),
+  audio_path: z.string().min(1),
+  recorded_at: z.string().min(1),
+  duration_ms: z.number().int().nonnegative(),
+  sample_rate_hz: z.number().int().positive(),
+  channels: z.number().int().positive(),
+  device_label: z.string().min(1),
+  mode: z.string().min(1)
+});
+
 const roleRecordingsSchema = z.object({
   schema_version: z.literal(1),
   package_type: z.literal("role_recordings"),
@@ -47,6 +59,7 @@ const roleRecordingsSchema = z.object({
     id: z.string().min(1),
     display_name: z.string().min(1)
   }),
+  floor_noise_recordings: z.array(floorNoiseRecordingSchema).optional(),
   recordings: z.array(recordingSchema),
   missing_segment_ids: z.array(productionIdSchema)
 });

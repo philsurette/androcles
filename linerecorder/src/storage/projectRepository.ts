@@ -26,8 +26,9 @@ export class ProjectRepository {
   }
 
   async delete(projectId: string): Promise<void> {
-    await db.transaction("rw", db.projects, db.takes, async () => {
+    await db.transaction("rw", db.projects, db.takes, db.floorNoiseRecordings, async () => {
       await db.takes.where("projectId").equals(projectId).delete();
+      await db.floorNoiseRecordings.where("projectId").equals(projectId).delete();
       await db.projects.delete(projectId);
     });
   }

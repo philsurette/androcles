@@ -16,6 +16,18 @@ describe("validateRoleRecordingsManifest", () => {
         id: "CENTURION",
         display_name: "Centurion"
       },
+      floor_noise_recordings: [
+        {
+          id: "floor-20260511T115900Z",
+          audio_path: "noise/floor-20260511T115900Z.wav",
+          recorded_at: "2026-05-11T11:59:00Z",
+          duration_ms: 5000,
+          sample_rate_hz: 48000,
+          channels: 1,
+          device_label: "USB Microphone",
+          mode: "clean"
+        }
+      ],
       recordings: [
         {
           id: "I-12:s1",
@@ -26,6 +38,7 @@ describe("validateRoleRecordingsManifest", () => {
           segment_content_hash: segment12Hash,
           audio_path: "audio/segments/CENTURION/0_12_1.wav",
           recorded_at: "2026-05-11T12:00:00Z",
+          floor_noise_id: "floor-20260511T115900Z",
           duration_ms: 1840,
           sample_rate_hz: 48000,
           channels: 1,
@@ -47,6 +60,8 @@ describe("validateRoleRecordingsManifest", () => {
     expect(manifest.package_type).toBe("role_recordings");
     expect(manifest.recordings[0].id).toBe("I-12:s1");
     expect(manifest.recordings[0].segment_id).toBe("0_12_1");
+    expect(manifest.recordings[0].floor_noise_id).toBe("floor-20260511T115900Z");
+    expect(manifest.floor_noise_recordings?.[0].audio_path).toBe("noise/floor-20260511T115900Z.wav");
     expect(manifest.recordings[0].input_quality?.level_counts.good).toBe(24);
     expect(manifest.missing_segment_ids).toEqual(["I-14:s1"]);
   });

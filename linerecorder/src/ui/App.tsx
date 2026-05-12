@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
 import { meterFillPercentForLevel } from "../audio/inputMeter";
 import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio/wavRecorder";
+import type { FloorNoiseRecording } from "../domain/floorNoiseRecording";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
 import { nextProgress, previousProgress, selectedProgressIndex } from "../domain/recordingNavigation";
@@ -10,6 +11,7 @@ import { exportRoleRecordings, RoleRecordingsExportError } from "../package/expo
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
 import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
+import { floorNoiseRepository } from "../storage/floorNoiseRepository";
 import { takeRepository } from "../storage/takeRepository";
 import type { RecordingProjectRecord } from "../storage/db";
 
@@ -76,7 +78,8 @@ export function App() {
     setStatus("Exporting role recordings...");
     try {
       const acceptedTakes = await takeRepository.acceptedForProject(project.id);
-      const exported = await exportRoleRecordings(project, acceptedTakes);
+      const floorNoiseRecordings = await floorNoiseRepository.forProject(project.id);
+      const exported = await exportRoleRecordings(project, acceptedTakes, floorNoiseRecordings);
       downloadBlob(exported.blob, exported.fileName);
       const exportedCount = exported.manifest.recordings.length;
       const missingCount = exported.manifest.missing_segment_ids.length;
@@ -258,7 +261,7 @@ function ProjectDetail({
         onBack={onBack}
         isExporting={isExporting}
       />
-      <MicrophoneSetup onReady={setMicrophoneConfig} />
+      <MicrophoneSetup project={project} onReady={setMicrophoneConfig} />
       <div className={isExplorerOpen ? "recording-workspace" : "recording-workspace explorer-collapsed"}>
         <ItemList
           progress={progress}
@@ -287,26 +290,31 @@ function ProjectDetail({
 
 type MicrophoneConfig = {
   deviceId: string;
+  deviceLabel: string;
   mode: MicrophoneMode;
 };
 
 type MicrophoneSetupProps = {
+  project: RecordingProjectRecord;
   onReady: (config: MicrophoneConfig | null) => void;
 };
 
-function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
+function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
   const sessionRef = useRef<MicrophoneSession | null>(null);
+  const floorNoiseRecorderRef = useRef<WavRecorder | null>(null);
   const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
   const [mode, setMode] = useState<MicrophoneMode>("clean");
   const [reading, setReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
   const [status, setStatus] = useState("Microphone not started.");
   const [isActive, setIsActive] = useState(false);
+  const [isCapturingFloorNoise, setIsCapturingFloorNoise] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
 
   useEffect(() => {
     return () => {
       sessionRef.current?.stop();
+      floorNoiseRecorderRef.current?.stopWithoutResult();
     };
   }, []);
 
@@ -328,7 +336,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
       });
       sessionRef.current = session;
       await session.start(selectedDeviceId, mode);
-      onReady({ deviceId: selectedDeviceId, mode });
+      onReady({ deviceId: selectedDeviceId, deviceLabel: selectedDeviceLabel(), mode });
       setIsActive(true);
       setShowSettings(false);
     } catch (error) {
@@ -340,18 +348,70 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   }
 
   function stopMicrophone(): void {
+    floorNoiseRecorderRef.current?.stopWithoutResult();
+    floorNoiseRecorderRef.current = null;
     sessionRef.current?.stop();
     sessionRef.current = null;
     onReady(null);
     setIsActive(false);
+    setIsCapturingFloorNoise(false);
     setShowSettings(true);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
   }
 
+  async function captureFloorNoise(): Promise<void> {
+    if (!isActive) {
+      return;
+    }
+    try {
+      setIsCapturingFloorNoise(true);
+      setStatus("Stay silent...");
+      const recorder = new WavRecorder();
+      floorNoiseRecorderRef.current = recorder;
+      await recorder.start(selectedDeviceId, mode);
+      await sleep(5000);
+      const recorded = recorder.stop();
+      floorNoiseRecorderRef.current = null;
+      if (!isUsableFloorNoise(recorded)) {
+        setStatus("Room tone was too loud. Try again while silent.");
+        return;
+      }
+      const recordedAt = new Date().toISOString();
+      const floorNoise: FloorNoiseRecording = {
+        id: `floor-${recordedAt.replace(/[-:.]/g, "").replace("Z", "Z")}`,
+        projectId: project.id,
+        recordedAt,
+        durationMs: recorded.durationMs,
+        sampleRateHz: recorded.sampleRateHz,
+        channels: recorded.channels,
+        deviceId: selectedDeviceId,
+        deviceLabel: selectedDeviceLabel(),
+        mode,
+        inputQuality: recordingInputQuality(recorded),
+        blob: recorded.blob
+      };
+      await floorNoiseRepository.save(floorNoise);
+      setStatus(`Room tone captured ${new Date(recordedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}.`);
+    } catch {
+      floorNoiseRecorderRef.current?.stopWithoutResult();
+      floorNoiseRecorderRef.current = null;
+      setStatus("Unable to capture room tone.");
+    } finally {
+      setIsCapturingFloorNoise(false);
+    }
+  }
+
+  function selectedDeviceLabel(): string {
+    return devices.find((device) => device.deviceId === selectedDeviceId)?.label || "Default microphone";
+  }
+
   const showStatus =
     status === "Requesting microphone permission..." ||
     status === "Unable to start microphone setup." ||
+    status === "Stay silent..." ||
+    status.startsWith("Room tone") ||
+    status === "Unable to capture room tone." ||
     status.startsWith("Microphone access");
 
   return (
@@ -407,6 +467,14 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
         </div>
       ) : isActive ? (
         <div className="microphone-compact-actions">
+          <button
+            type="button"
+            className="secondary"
+            disabled={isCapturingFloorNoise}
+            onClick={() => void captureFloorNoise()}
+          >
+            {isCapturingFloorNoise ? "Capturing..." : "Room Tone"}
+          </button>
           <button type="button" className="secondary" onClick={stopMicrophone}>
             Stop Mic
           </button>
@@ -1006,6 +1074,31 @@ function levelStatus(level: MicrophoneReading["level"]): string {
     case "clipping":
       return "Input is clipping. Move back or reduce gain.";
   }
+}
+
+function sleep(durationMs: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, durationMs));
+}
+
+function recordingInputQuality(recording: RecordedWav) {
+  return {
+    peakEnergy: recording.inputQuality.peakEnergy,
+    levelCounts: {
+      noSignal: recording.inputQuality.levelCounts["no-signal"],
+      tooQuiet: recording.inputQuality.levelCounts["too-quiet"],
+      good: recording.inputQuality.levelCounts.good,
+      clipping: recording.inputQuality.levelCounts.clipping
+    }
+  };
+}
+
+function isUsableFloorNoise(recording: RecordedWav): boolean {
+  const levelCounts = recording.inputQuality.levelCounts;
+  const total = Object.values(levelCounts).reduce((sum, count) => sum + count, 0);
+  if (total === 0 || levelCounts.clipping > 0) {
+    return false;
+  }
+  return levelCounts.good / total < 0.25;
 }
 
 function sameContext(

@@ -8,6 +8,7 @@ describe("ProjectRepository", () => {
   beforeEach(async () => {
     await db.projects.clear();
     await db.takes.clear();
+    await db.floorNoiseRecordings.clear();
   });
 
   it("saves imported requests using request identity", async () => {
@@ -42,11 +43,24 @@ describe("ProjectRepository", () => {
       channels: 1,
       blob: new Blob(["fake wav"], { type: "audio/wav" })
     });
+    await db.floorNoiseRecordings.put({
+      id: "floor-1",
+      projectId: project.id,
+      recordedAt: "2026-05-11T11:59:00Z",
+      durationMs: 5000,
+      sampleRateHz: 48000,
+      channels: 1,
+      deviceId: "default",
+      deviceLabel: "Default microphone",
+      mode: "clean",
+      blob: new Blob(["floor wav"], { type: "audio/wav" })
+    });
 
     await projectRepository.delete(project.id);
 
     await expect(projectRepository.list()).resolves.toEqual([]);
     await expect(takeRepository.acceptedForProject(project.id)).resolves.toEqual([]);
+    await expect(db.floorNoiseRecordings.where("projectId").equals(project.id).toArray()).resolves.toEqual([]);
   });
 });
 

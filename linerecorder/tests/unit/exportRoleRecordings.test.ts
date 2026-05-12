@@ -47,8 +47,29 @@ describe("exportRoleRecordings", () => {
     expect(result.manifest.missing_segment_ids).toEqual([]);
   });
 
+  it("exports floor noise recordings and associates them with later takes", async () => {
+    const result = await exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")], [floorNoiseFixture()]);
+    const zip = await JSZip.loadAsync(result.blob);
+    const manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
+
+    expect(manifest.floor_noise_recordings).toEqual([
+      {
+        id: "floor-20260511T115900Z",
+        audio_path: "noise/floor-20260511T115900Z.wav",
+        recorded_at: "2026-05-11T11:59:00Z",
+        duration_ms: 5000,
+        sample_rate_hz: 48000,
+        channels: 1,
+        device_label: "USB Microphone",
+        mode: "clean"
+      }
+    ]);
+    expect(manifest.recordings[0].floor_noise_id).toBe("floor-20260511T115900Z");
+    await expect(zip.file("noise/floor-20260511T115900Z.wav")!.async("string")).resolves.toBe("floor wav");
+  });
+
   it("reports package generation failures with an export-specific error", async () => {
-    await expect(exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")], failingZipGenerator())).rejects.toThrow(
+    await expect(exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")], [], failingZipGenerator())).rejects.toThrow(
       RoleRecordingsExportError
     );
   });
@@ -139,6 +160,21 @@ function takeFixture(segmentId: string): RecordingTake {
       }
     },
     blob: new Blob(["fake wav"], { type: "audio/wav" })
+  };
+}
+
+function floorNoiseFixture() {
+  return {
+    id: "floor-20260511T115900Z",
+    projectId: "androcles:CENTURION",
+    recordedAt: "2026-05-11T11:59:00Z",
+    durationMs: 5000,
+    sampleRateHz: 48000,
+    channels: 1,
+    deviceId: "usb",
+    deviceLabel: "USB Microphone",
+    mode: "clean" as const,
+    blob: new Blob(["floor wav"], { type: "audio/wav" })
   };
 }
 

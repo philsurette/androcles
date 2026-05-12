@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import type { FloorNoiseRecording } from "../domain/floorNoiseRecording";
 import type { RecordingTake } from "../domain/take";
 import type { RoleRecordingsManifest } from "../specs/recordingPackageManifest";
 import type { RecordingProjectRecord } from "../storage/db";
@@ -24,11 +25,19 @@ export type RoleRecordingsZipGenerator = {
 export async function exportRoleRecordings(
   project: RecordingProjectRecord,
   acceptedTakes: RecordingTake[],
+  floorNoiseRecordings: FloorNoiseRecording[] = [],
   zipGenerator: RoleRecordingsZipGenerator = new JsZipRoleRecordingsZipGenerator()
 ): Promise<RoleRecordingsExport> {
   const acceptedByItemId = new Map(acceptedTakes.map((take) => [take.segmentId, take]));
+  const sortedFloorNoiseRecordings = [...floorNoiseRecordings].sort((a, b) =>
+    a.recordedAt.localeCompare(b.recordedAt)
+  );
   const recordings = [];
   const missingSegmentIds = [];
+
+  for (const floorNoise of sortedFloorNoiseRecordings) {
+    zipGenerator.file(floorNoisePath(floorNoise), floorNoise.blob);
+  }
 
   for (const item of project.request.items) {
     const take = acceptedByItemId.get(item.id);
@@ -38,6 +47,7 @@ export async function exportRoleRecordings(
     }
 
     zipGenerator.file(item.outputPath, take.blob);
+    const floorNoise = floorNoiseForTake(sortedFloorNoiseRecordings, take);
     recordings.push({
       id: item.id,
       line_id: item.lineId,
@@ -47,6 +57,7 @@ export async function exportRoleRecordings(
       segment_content_hash: item.segmentContentHash,
       audio_path: item.outputPath,
       recorded_at: take.recordedAt,
+      floor_noise_id: floorNoise?.id,
       duration_ms: Math.round(take.durationMs),
       sample_rate_hz: take.sampleRateHz,
       channels: take.channels,
@@ -78,6 +89,16 @@ export async function exportRoleRecordings(
       id: project.request.role.id,
       display_name: project.request.role.displayName
     },
+    floor_noise_recordings: sortedFloorNoiseRecordings.map((floorNoise) => ({
+      id: floorNoise.id,
+      audio_path: floorNoisePath(floorNoise),
+      recorded_at: floorNoise.recordedAt,
+      duration_ms: Math.round(floorNoise.durationMs),
+      sample_rate_hz: floorNoise.sampleRateHz,
+      channels: floorNoise.channels,
+      device_label: floorNoise.deviceLabel,
+      mode: floorNoise.mode
+    })),
     recordings,
     missing_segment_ids: missingSegmentIds
   };
@@ -98,6 +119,19 @@ export async function exportRoleRecordings(
     manifest,
     fileName: `${project.request.role.id}.role-recordings.zip`
   };
+}
+
+function floorNoisePath(floorNoise: FloorNoiseRecording): string {
+  return `noise/${floorNoise.id}.wav`;
+}
+
+function floorNoiseForTake(
+  floorNoiseRecordings: FloorNoiseRecording[],
+  take: RecordingTake
+): FloorNoiseRecording | undefined {
+  return floorNoiseRecordings
+    .filter((floorNoise) => floorNoise.recordedAt <= take.recordedAt)
+    .at(-1);
 }
 
 class JsZipRoleRecordingsZipGenerator implements RoleRecordingsZipGenerator {

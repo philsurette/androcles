@@ -32,7 +32,7 @@ from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
-from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
+from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.role_audio_verifier import RoleAudioVerifier
@@ -890,12 +890,19 @@ def recording_request(
 @app.command("recording-import", rich_help_panel="build")
 def recording_import(
     package: Path = typer.Argument(..., help="LineRecorder role recordings zip to import"),
+    denoise: bool = typer.Option(False, "--denoise", help="Use included floor-noise recordings for import-time denoising"),
+    trim_silence: bool = typer.Option(False, "--trim-silence", help="Trim leading and trailing silence during import"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Import a LineRecorder role recordings package into Stager segments."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    result = run_recording_import(package_path=package, paths_config=cfg)
+    result = run_recording_import(
+        package_path=package,
+        denoise=denoise,
+        trim_silence=trim_silence,
+        paths_config=cfg,
+    )
     status = "complete" if result.complete else "partial"
     typer.echo(
         f"Imported {result.imported_count} {status} recordings for {result.role}"
@@ -1140,11 +1147,16 @@ def selected_recording_item_ids(item_ids: list[str] | None, segment_ids: list[st
 def run_recording_import(
     *,
     package_path: Path,
+    denoise: bool = False,
+    trim_silence: bool = False,
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
     play = load_production_play(cfg)
-    return RoleRecordingsImporter(paths=cfg, play=play).import_package(package_path)
+    return RoleRecordingsImporter(paths=cfg, play=play).import_package(
+        package_path,
+        processing_options=RecordingImportProcessingOptions(denoise=denoise, trim_silence=trim_silence),
+    )
 
 
 def run_recording_import_undo(

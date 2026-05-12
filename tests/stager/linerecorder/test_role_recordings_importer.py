@@ -13,7 +13,7 @@ from stager.domain.block_id import BlockId
 from stager.domain.play import Play
 from stager.domain.segment import SpeechSegment
 from stager.domain.segment_id import SegmentId
-from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
+from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths
@@ -149,6 +149,103 @@ def test_role_recordings_importer_records_new_segment_without_backup(tmp_path: P
     assert transaction["imported"][0]["existed_before"] is False
     assert "backup_path" not in transaction["imported"][0]
     assert not (result.transaction_manifest_path.parent / "backups").exists()
+
+
+def test_role_recordings_importer_processes_recordings_with_floor_noise(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "floor_noise_recordings": [
+                {
+                    "id": "floor-20260511T115900Z",
+                    "audio_path": "noise/floor-20260511T115900Z.wav",
+                    "recorded_at": "2026-05-11T11:59:00Z",
+                    "duration_ms": 5000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "device_label": "USB Microphone",
+                    "mode": "clean",
+                }
+            ],
+            "recordings": [
+                {
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "floor_noise_id": "floor-20260511T115900Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={
+            "audio/segments/CENTURION/0_12_1.wav": _wav_bytes(),
+            "noise/floor-20260511T115900Z.wav": _wav_bytes(b"\x00\x00"),
+        },
+    )
+    audio_processor = FakeAudioProcessor()
+
+    result = RoleRecordingsImporter(paths=cfg, audio_processor=audio_processor).import_package(
+        package_path,
+        processing_options=RecordingImportProcessingOptions(denoise=True, trim_silence=True),
+    )
+
+    assert (cfg.segments_dir / "CENTURION" / "0_12_1.wav").read_bytes() == b"processed wav"
+    assert audio_processor.calls[0]["floor_noise_path"].read_bytes() == _wav_bytes(b"\x00\x00")
+    assert audio_processor.calls[0]["floor_noise_duration_ms"] == 5000
+    assert audio_processor.calls[0]["options"].denoise is True
+    transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
+    assert transaction["processing"] == {"denoise": True, "trim_silence": True}
+    assert transaction["imported"][0]["floor_noise_id"] == "floor-20260511T115900Z"
+    assert "original_path" in transaction["imported"][0]
+
+
+def test_role_recordings_importer_rejects_unknown_floor_noise_reference(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "floor_noise_id": "missing-floor",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes()},
+    )
+
+    with pytest.raises(RuntimeError, match="Unknown floor noise id"):
+        RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
 
 def test_role_recordings_importer_undo_restores_existing_segment(tmp_path: Path) -> None:
@@ -632,6 +729,32 @@ def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes
         archive.writestr("manifest.json", json.dumps(manifest))
         for name, data in files.items():
             archive.writestr(name, data)
+
+
+class FakeAudioProcessor:
+    def __init__(self) -> None:
+        self.calls = []
+
+    def process(
+        self,
+        *,
+        input_path: Path,
+        output_path: Path,
+        floor_noise_path: Path | None,
+        floor_noise_duration_ms: int | None,
+        options: RecordingImportProcessingOptions,
+    ) -> None:
+        self.calls.append(
+            {
+                "input_path": input_path,
+                "output_path": output_path,
+                "floor_noise_path": floor_noise_path,
+                "floor_noise_duration_ms": floor_noise_duration_ms,
+                "options": options,
+            }
+        )
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_bytes(b"processed wav")
 
 
 def _wav_bytes(frame: bytes = b"\x01\x00") -> bytes:
