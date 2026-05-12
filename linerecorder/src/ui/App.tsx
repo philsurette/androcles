@@ -474,6 +474,13 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     void loadAcceptedTake();
   }, [item.segmentId]);
 
+  useEffect(() => {
+    if (microphoneConfig && statusTone === "warning" && status === "Start microphone setup before recording.") {
+      setStatus(currentTake ? "Ready to accept or retry take." : acceptedTake ? `Accepted take saved: ${Math.round(acceptedTake.durationMs)} ms.` : "Ready to record.");
+      setStatusTone("normal");
+    }
+  }, [microphoneConfig, status, statusTone, currentTake, acceptedTake]);
+
   async function loadAcceptedTake(): Promise<void> {
     const take = await takeRepository.acceptedForSegment(project.id, item.segmentId);
     setAcceptedTake(take ?? null);
