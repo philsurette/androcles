@@ -23,20 +23,20 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 
 ## Milestone 1: Production Model Loading
 
-- [ ] Add a production-script loader for locked `production.md`.
-- [ ] Validate required metadata.
-- [ ] Validate every addressable script line has a production id.
-- [ ] Parse headings, descriptions, directions, role lines, simultaneous lines, and inline directions.
+- [x] Add a production-script loader for locked `production.md`.
+- [x] Validate required metadata.
+- [x] Validate every addressable script line has a production id.
+- [x] Parse headings, descriptions, directions, role lines, simultaneous lines, and inline directions.
 - [ ] Preserve source locations for diagnostics.
-- [ ] Add parser/loader tests with valid and invalid locked `production.md`.
+- [x] Add parser/loader tests with valid and invalid locked `production.md`.
 
 ## Milestone 2: Model Adapter
 
-- [ ] Decide whether to adapt locked production scripts into existing `Play`/`Part`/`Block`/`Segment` models or introduce a parallel production model.
-- [ ] Preserve enough block/segment identity for existing audio workflows during transition.
-- [ ] Ensure role extraction works from locked `production.md`.
-- [ ] Ensure narrator/context extraction works from headings, descriptions, and directions.
-- [ ] Add unit tests for model conversion.
+- [x] Decide whether to adapt locked production scripts into existing `Play`/`Part`/`Block`/`Segment` models or introduce a parallel production model.
+- [x] Preserve enough block/segment identity for existing audio workflows during transition.
+- [x] Ensure role extraction works from locked `production.md`.
+- [x] Ensure narrator/context extraction works from headings, descriptions, and directions.
+- [x] Add unit tests for model conversion.
 
 ## Milestone 3: CLI Source Selection
 
@@ -49,8 +49,8 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 
 ## Milestone 4: Existing Artifact Builds
 
-- [ ] Verify `./main text` from locked `production.md`.
-- [ ] Verify role markdown generation from locked `production.md`.
+- [x] Verify `./main text` from locked `production.md`.
+- [x] Verify role markdown generation from locked `production.md`.
 - [ ] Verify segment planning from locked `production.md`.
 - [ ] Verify audiobook/audioplay generation still works or explicitly document any temporary unsupported command.
 - [ ] Verify Playbook generation still works with current manifest shape before production-id adoption.
@@ -70,4 +70,3 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 - [ ] Normal Stager builds do not silently read `play.txt`.
 - [ ] Existing core build outputs can be generated from locked `production.md`.
 - [ ] Tests cover loader, model conversion, CLI source selection, and at least one core artifact build.
-
