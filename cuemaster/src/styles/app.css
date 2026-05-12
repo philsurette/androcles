@@ -286,7 +286,21 @@ button:disabled {
   margin: 0;
 }
 
+.cue-strip .cue-card .cue-text-window {
+  display: flex;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.cue-overflow-prefix {
+  flex: 0 0 auto;
+  color: var(--quiet);
+}
+
 .cue-strip .cue-card .cue-text-clip {
+  flex: 1 1 auto;
+  min-width: 0;
   overflow: hidden;
   white-space: nowrap;
 }
