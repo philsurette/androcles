@@ -99,6 +99,7 @@ button:focus-visible,
 .microphone-panel,
 .item-detail,
 .context-panel,
+.stage-directions-panel,
 .line-panel,
 .take-panel {
   padding: 24px;
@@ -432,14 +433,102 @@ select {
   line-height: 1;
 }
 
-.context-panel h3 {
-  margin: 0 0 8px;
-  color: var(--accent);
-  font-size: 1rem;
-  letter-spacing: 0.06em;
+.context-panel {
+  display: grid;
+  gap: 0.75rem;
+  padding: 14px 18px;
 }
 
-.context-panel p,
+.context-toggle {
+  display: grid;
+  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  gap: 0.75rem;
+  align-items: baseline;
+  width: 100%;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: transparent;
+  text-align: left;
+}
+
+.context-label,
+.context-speaker {
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.context-speaker {
+  color: var(--muted);
+}
+
+.context-text-window {
+  display: flex;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.context-overflow-prefix {
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.context-text-clip {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.context-disclosure {
+  position: relative;
+  justify-self: end;
+  width: 16px;
+  height: 16px;
+  align-self: center;
+}
+
+.context-disclosure::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-35%, -50%);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--muted);
+  content: "";
+}
+
+.context-panel.expanded .context-disclosure::before {
+  transform: translate(-50%, -35%);
+  border-top: 7px solid var(--muted);
+  border-right: 5px solid transparent;
+  border-bottom: 0;
+  border-left: 5px solid transparent;
+}
+
+.context-expanded-text {
+  margin: 0;
+  padding-left: calc(0.75rem + 4.5rem);
+  font-size: 1.1rem;
+  line-height: 1.45;
+}
+
+.context-panel p {
+  margin: 0;
+}
+
+.context-panel.expanded .context-text-window {
+  visibility: hidden;
+}
+
 .line-panel p {
   font-size: 1.2rem;
   line-height: 1.4;
@@ -454,7 +543,7 @@ select {
   font-weight: 800;
 }
 
-.context-panel ul {
+.stage-directions-panel ul {
   margin: 0;
   padding-left: 20px;
 }
@@ -538,5 +627,17 @@ button:disabled {
 
   .summary-actions {
     justify-content: flex-start;
+  }
+
+  .context-toggle {
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+  }
+
+  .context-speaker {
+    display: none;
+  }
+
+  .context-expanded-text {
+    padding-left: 0;
   }
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
 import { meterFillPercentForLevel } from "../audio/inputMeter";
 import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio/wavRecorder";
@@ -541,7 +541,7 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
       </section>
 
       {item.stageDirections.length > 0 ? (
-        <section className="context-panel">
+        <section className="stage-directions-panel">
           <p className="eyebrow">Stage Directions</p>
           <ul>
             {item.stageDirections.map((direction) => (
@@ -799,14 +799,57 @@ type ContextBlockProps = {
 };
 
 function ContextBlock({ label, speaker, text }: ContextBlockProps) {
+  const textRef = useRef<HTMLParagraphElement | null>(null);
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useLayoutEffect(() => {
+    function scrollTextToEnd() {
+      const textElement = textRef.current;
+      if (!textElement) {
+        return;
+      }
+      setIsOverflowing(textElement.scrollWidth > textElement.clientWidth);
+      textElement.scrollLeft = textElement.scrollWidth - textElement.clientWidth;
+    }
+
+    scrollTextToEnd();
+    const resizeObserver = new ResizeObserver(scrollTextToEnd);
+    if (textRef.current) {
+      resizeObserver.observe(textRef.current);
+    }
+    return () => resizeObserver.disconnect();
+  }, [text, isOverflowing]);
+
   if (!text) {
     return null;
   }
+  const contentId = `context-${label.toLowerCase().replace(/\s+/g, "-")}-${speaker ?? "text"}`;
   return (
-    <section className="context-panel">
-      <p className="eyebrow">{label}</p>
-      {speaker ? <h3>{speaker}</h3> : null}
-      <p>{text}</p>
+    <section className={isExpanded ? "context-panel expanded" : "context-panel"}>
+      <button
+        type="button"
+        className="context-toggle"
+        aria-expanded={isExpanded}
+        aria-controls={contentId}
+        title={isExpanded ? `Collapse ${label.toLowerCase()}` : `Expand ${label.toLowerCase()}`}
+        onClick={() => setIsExpanded((current) => !current)}
+      >
+        <span className="context-label">{label}</span>
+        {speaker ? <span className="context-speaker">{speaker}</span> : null}
+        <span className="context-text-window">
+          {isOverflowing && !isExpanded ? <span className="context-overflow-prefix" aria-hidden="true">…</span> : null}
+          <p className="context-text-clip" id={contentId} ref={textRef}>
+            {text}
+          </p>
+        </span>
+        <span className="context-disclosure" aria-hidden="true" />
+      </button>
+      {isExpanded ? (
+        <p className="context-expanded-text" aria-hidden="true">
+          {text}
+        </p>
+      ) : null}
     </section>
   );
 }
