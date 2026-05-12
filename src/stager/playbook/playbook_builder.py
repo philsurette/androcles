@@ -24,8 +24,10 @@ from stager.playbook.app_role import AppRole
 from stager.playbook.app_section import AppSection
 from stager.playbook.cue_start_offset_analyzer import CueStartOffsetAnalyzer
 from stager.playbook.cue_selection import CueSelection
+from stager.playbook.playbook_audio_work_item import PlaybookAudioWorkItem
 from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
+from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.shared import paths
 
 
@@ -39,6 +41,7 @@ class PlaybookBuilder:
     selector: PlaybookCueSelector | None = None
     cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
     audio_packager: PlaybookAudioPackager | None = None
+    progress_reporter: PlaybookProgressReporter | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -65,7 +68,12 @@ class PlaybookBuilder:
         if self.app_dir.exists():
             shutil.rmtree(self.app_dir)
         self.app_dir.mkdir(parents=True, exist_ok=True)
+        audio_work_items = self.plan_audio_work()
+        if self.progress_reporter is not None:
+            self.progress_reporter.start_audio_packaging(len(audio_work_items))
         manifest = self.build_manifest()
+        if self.progress_reporter is not None:
+            self.progress_reporter.finish_audio_packaging()
         manifest_path = self.app_dir / "manifest.json"
         manifest_path.write_text(manifest.to_json(), encoding="utf-8")
         self._logger.info("Wrote Playbook manifest %s", paths.display_path(manifest_path))
@@ -81,6 +89,12 @@ class PlaybookBuilder:
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
         )
+
+    def plan_audio_work(self) -> list[PlaybookAudioWorkItem]:
+        work_items: list[PlaybookAudioWorkItem] = []
+        work_items.extend(self._role_audio_work_items())
+        work_items.extend(self._context_audio_work_items())
+        return work_items
 
     def _build_sections(self) -> list[AppSection]:
         sections: list[AppSection] = []
@@ -100,13 +114,60 @@ class PlaybookBuilder:
             )
         return sections
 
+    def _context_blocks(self) -> list[TitleBlock | DescriptionBlock | DirectionBlock]:
+        return [
+            block
+            for block in self.play.blocks
+            if isinstance(block, (TitleBlock, DescriptionBlock, DirectionBlock)) and block.segments
+        ]
+
+    def _context_audio_work_items(self) -> list[PlaybookAudioWorkItem]:
+        work_items: list[PlaybookAudioWorkItem] = []
+        for block in self._context_blocks():
+            segment_id = str(block.segments[0].segment_id)
+            work_items.append(
+                PlaybookAudioWorkItem(
+                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                    role="_NARRATOR",
+                    segment_id=segment_id,
+                    category="context",
+                )
+            )
+        return work_items
+
+    def _role_audio_work_items(self) -> list[PlaybookAudioWorkItem]:
+        work_items: list[PlaybookAudioWorkItem] = []
+        for role in self.play.roles:
+            if role.meta or role.name.startswith("_"):
+                continue
+            for block in role.blocks:
+                response_segments = self._response_segments_for_role(block, role.name)
+                if not response_segments:
+                    continue
+                cue_selection = self.selector.select_for_block(block)
+                work_items.append(
+                    PlaybookAudioWorkItem(
+                        source_path=cue_selection.audio_path,
+                        role=cue_selection.source_role,
+                        segment_id=cue_selection.audio_path.stem,
+                        category="cue",
+                    )
+                )
+                for segment in response_segments:
+                    segment_id = str(segment.segment_id)
+                    work_items.append(
+                        PlaybookAudioWorkItem(
+                            source_path=self.paths.segments_dir / role.name / f"{segment_id}.wav",
+                            role=role.name,
+                            segment_id=segment_id,
+                            category="response",
+                        )
+                    )
+        return work_items
+
     def _build_context_blocks(self) -> list[AppContextBlock]:
         context_blocks: list[AppContextBlock] = []
-        for block in self.play.blocks:
-            if not isinstance(block, (TitleBlock, DescriptionBlock, DirectionBlock)):
-                continue
-            if not block.segments:
-                continue
+        for block in self._context_blocks():
             segment = block.segments[0]
             segment_id = str(segment.segment_id)
             context_blocks.append(
@@ -237,6 +298,8 @@ class PlaybookBuilder:
             source_path,
             self.app_dir / "audio" / "segments" / role,
         )
+        if self.progress_reporter is not None:
+            self.progress_reporter.audio_packaged(role, segment_id, category)
         return AppAudioAsset(
             path=packaged_audio.manifest_path,
             duration_ms=duration_ms,

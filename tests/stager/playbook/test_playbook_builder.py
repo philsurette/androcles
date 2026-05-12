@@ -141,6 +141,22 @@ class _FakeMp3Packager:
         )
 
 
+class _FakeProgressReporter:
+    def __init__(self) -> None:
+        self.started_total: int | None = None
+        self.packaged: list[tuple[str, str, str]] = []
+        self.finished = False
+
+    def start_audio_packaging(self, total: int) -> None:
+        self.started_total = total
+
+    def audio_packaged(self, role: str, segment_id: str, category: str) -> None:
+        self.packaged.append((role, segment_id, category))
+
+    def finish_audio_packaging(self) -> None:
+        self.finished = True
+
+
 def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -179,6 +195,75 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
         assert "manifest.json" in archive.namelist()
         assert line["cue"]["audio"]["path"] in archive.namelist()
         assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
+
+
+def test_playbook_builder_plans_context_cue_and_response_audio(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    title_block = _title_block()
+    description_block = _description_block(0, 1, "A path through a forest.")
+    direction_block = _direction_block(0, 2, "Androcles enters.")
+    response_block = _speech_block(0, 3, "MEGAERA", "I won't go another step.")
+    play = _play([title_block, description_block, direction_block, response_block])
+
+    work_items = PlaybookBuilder(play=play, paths=cfg).plan_audio_work()
+
+    assert [(item.role, item.segment_id, item.category) for item in work_items] == [
+        ("_NARRATOR", "0_2_1", "cue"),
+        ("MEGAERA", "0_3_1", "response"),
+        ("_NARRATOR", "0_0_1", "context"),
+        ("_NARRATOR", "0_1_1", "context"),
+        ("_NARRATOR", "0_2_1", "context"),
+    ]
+
+
+def test_playbook_builder_reports_audio_packaging_progress(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    title_block = _title_block()
+    description_block = _description_block(0, 1, "A path through a forest.")
+    direction_block = _direction_block(0, 2, "Androcles enters.")
+    response_block = _speech_block(0, 3, "MEGAERA", "I won't go another step.")
+    play = _play([title_block, description_block, direction_block, response_block])
+    for segment_id in ("0_0_1", "0_1_1", "0_2_1"):
+        _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_3_1.wav")
+    reporter = _FakeProgressReporter()
+
+    PlaybookBuilder(play=play, paths=cfg, progress_reporter=reporter).build()
+
+    assert reporter.started_total == 5
+    assert reporter.packaged == [
+        ("_NARRATOR", "0_2_1", "cue"),
+        ("MEGAERA", "0_3_1", "response"),
+        ("_NARRATOR", "0_0_1", "context"),
+        ("_NARRATOR", "0_1_1", "context"),
+        ("_NARRATOR", "0_2_1", "context"),
+    ]
+    assert reporter.finished is True
+
+
+def test_playbook_builder_reports_mp3_packaging_progress(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    response_block = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav")
+    reporter = _FakeProgressReporter()
+
+    PlaybookBuilder(
+        play=play,
+        paths=cfg,
+        audio_format="mp3",
+        audio_packager=_FakeMp3Packager(),
+        progress_reporter=reporter,
+    ).build()
+
+    assert reporter.started_total == 3
+    assert reporter.packaged == [
+        ("_NARRATOR", "0_0_1", "cue"),
+        ("MEGAERA", "0_1_1", "response"),
+        ("_NARRATOR", "0_0_1", "context"),
+    ]
+    assert reporter.finished is True
 
 
 def test_playbook_builder_attaches_offsets_to_cue_audio_only(tmp_path: Path) -> None:

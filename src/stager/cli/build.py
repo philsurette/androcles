@@ -9,6 +9,15 @@ import time
 
 from stager.shared import paths
 import typer
+from rich.progress import (
+    BarColumn,
+    MofNCompleteColumn,
+    Progress,
+    TaskID,
+    TextColumn,
+    TimeElapsedColumn,
+    TimeRemainingColumn,
+)
 
 from stager.audio.segment_build_service import SegmentBuildService
 from stager.verification.recording_checker import RecordingChecker
@@ -20,6 +29,7 @@ from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
@@ -79,6 +89,30 @@ MODEL_NAME_MAP = {
     "med": "medium.en",
 }
 SUMMARY_FORMATS = {"text", "yaml"}
+
+
+class RichPlaybookProgressReporter:
+    def __init__(self, progress: Progress) -> None:
+        self.progress = progress
+        self.task_id: TaskID | None = None
+
+    def start_audio_packaging(self, total: int) -> None:
+        self.task_id = self.progress.add_task("Packaging Playbook audio", total=total)
+
+    def audio_packaged(self, role: str, segment_id: str, category: str) -> None:
+        if self.task_id is None:
+            return
+        self.progress.update(
+            self.task_id,
+            description=f"Packaging {category} {role} {segment_id}",
+            advance=1,
+        )
+
+    def finish_audio_packaging(self) -> None:
+        if self.task_id is None:
+            return
+        self.progress.update(self.task_id, description="Packaged Playbook audio")
+        self.progress.stop_task(self.task_id)
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -757,11 +791,20 @@ def playbook(
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    run_playbook(
-        paths_config=cfg,
-        build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
-        audio_format=audio_format,
-    )
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+    ) as progress:
+        run_playbook(
+            paths_config=cfg,
+            build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
+            audio_format=audio_format,
+            progress_reporter=RichPlaybookProgressReporter(progress),
+        )
 
 
 @app.command("recording-request", rich_help_panel="build")
@@ -984,6 +1027,7 @@ def run_playbook(
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
     audio_format: str = "wav",
+    progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
         raise typer.BadParameter("audio-format must be one of: wav, mp3")
@@ -998,6 +1042,7 @@ def run_playbook(
         paths=cfg,
         build_type=effective_build_type,
         audio_format=audio_format,
+        progress_reporter=progress_reporter,
     )
     return builder.build()
 
