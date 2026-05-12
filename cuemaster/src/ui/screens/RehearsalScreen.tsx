@@ -807,29 +807,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               ))}
             </select>
           </label>
-          <label>
-            Cue length
-            <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
-              {cueWindowPresets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
-                  {preset.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Response speed
-            <select
-              value={playbackRate}
-              onChange={(event) => changePlaybackRate(Number(event.target.value))}
-            >
-              {playbackRates.map((rate) => (
-                <option key={rate} value={rate}>
-                  {rate.toFixed(1)}x
-                </option>
-              ))}
-            </select>
-          </label>
           {tempoStatus ? (
             <p className="status" aria-live="polite">
               {tempoStatus}
@@ -886,6 +863,29 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               <div className="utility-content">
                 {activeUtilityPanel === "options" ? (
                   <div className="practice-options-panel">
+                    <label className="timing-setting">
+                      Cue length
+                      <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
+                        {cueWindowPresets.map((preset) => (
+                          <option key={preset.id} value={preset.id}>
+                            {preset.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="timing-setting">
+                      Response speed
+                      <select
+                        value={playbackRate}
+                        onChange={(event) => changePlaybackRate(Number(event.target.value))}
+                      >
+                        {playbackRates.map((rate) => (
+                          <option key={rate} value={rate}>
+                            {rate.toFixed(1)}x
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                     <label className="check-setting">
                       <input
                         type="checkbox"
