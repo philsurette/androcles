@@ -75,9 +75,9 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 ## Phase 5: Hardening
 
-- [ ] Add a license review checklist for runtime dependencies.
-- [ ] Decide whether Clean Recording Mode or Noisy Room Mode is the default.
-- [ ] Decide whether LineRecorder preserves device sample rate or resamples before export.
+- [x] Add a license review checklist for runtime dependencies.
+- [x] Decide whether Clean Recording Mode or Noisy Room Mode is the default.
+- [x] Decide whether LineRecorder preserves device sample rate or resamples before export.
 - [ ] Decide whether shared microphone code should be copied between apps, factored into a shared package, or deferred until the Capacitor spike.
 - [ ] Document browser support after AudioWorklet/WAV prototype results.
 - [ ] Add user-facing troubleshooting for microphone permission, no signal, clipping, and storage quota.

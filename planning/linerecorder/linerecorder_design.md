@@ -207,6 +207,8 @@ mono
 
 The app should not fight the device too hard. If browser capture produces a different sample rate, Stager can resample later during final processing. LineRecorder should record cleanly and document the actual sample rate in the output manifest.
 
+Decision: LineRecorder preserves the browser/device sample rate and records that value in the export manifest. Stager owns later production resampling. See [ADR 0002](../decisions/0002-linerecorder-audio-capture-policy.md).
+
 ### Audio Cleanup in LineRecorder
 
 LineRecorder should provide light recording assistance, not full mastering.
@@ -304,6 +306,8 @@ Suggested constraints:
 ```
 
 The app should explain that Noisy Room Mode may reduce background noise but can also affect vocal quality.
+
+Clean Recording Mode is the default. Noisy Room Mode is available as an explicit fallback for imperfect rooms or laptop microphones. See [ADR 0002](../decisions/0002-linerecorder-audio-capture-policy.md).
 
 ---
 
@@ -622,8 +626,8 @@ Potential future features:
 ## Open Questions
 
 1. **WAV encoding path:** Implement app-owned WAV encoding from AudioWorklet PCM, or use a small permissively licensed helper?
-2. **Sample rate:** Prefer 48kHz mono, but should LineRecorder preserve the device sample rate and let Stager resample?
-3. **Noise suppression default:** Should Clean Recording Mode or Noisy Room Mode be default?
+2. **Sample rate:** Decided in ADR 0002. LineRecorder preserves the device/browser sample rate and lets Stager resample later.
+3. **Noise suppression default:** Decided in ADR 0002. Clean Recording Mode is the default.
 4. **Partial exports:** Should actors be allowed to export incomplete packages? Initial answer: yes, with clear missing-segment metadata.
 5. **Take retention:** Should old takes be retained after a line is re-recorded? Initial answer: locally yes, exported no.
 6. **Changed lines:** How should Stager communicate changed lines to an actor after a Recording Request has already been started?
