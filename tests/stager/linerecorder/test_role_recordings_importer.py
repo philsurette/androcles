@@ -416,6 +416,79 @@ def test_role_recordings_importer_rejects_unreadable_wav(tmp_path: Path) -> None
         RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
 
+def test_role_recordings_importer_reports_audio_quality_issues(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "quiet.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_12_CENTURION",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={
+            "audio/segments/CENTURION/0_12_1.wav": _wav_bytes_from_samples([0] * 48000),
+            "audio/segments/CENTURION/extra.wav": _wav_bytes(),
+        },
+    )
+
+    result = RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+    assert {issue.code for issue in result.issues} >= {"silent", "extra_audio"}
+    transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
+    assert {issue["code"] for issue in transaction["issues"]} >= {"silent", "extra_audio"}
+
+
+def test_role_recordings_importer_reports_clipped_and_suspicious_duration(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "clipped.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_12_CENTURION",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes_from_samples([32767])},
+    )
+
+    result = RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+    assert {issue.code for issue in result.issues} >= {"clipped", "suspicious_duration"}
+
+
 def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes]) -> None:
     with zipfile.ZipFile(package_path, "w") as archive:
         archive.writestr("manifest.json", json.dumps(manifest))
@@ -424,12 +497,16 @@ def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes
 
 
 def _wav_bytes(frame: bytes = b"\x01\x00") -> bytes:
+    return _wav_bytes_from_samples([int.from_bytes(frame, "little", signed=True)])
+
+
+def _wav_bytes_from_samples(samples: list[int]) -> bytes:
     buffer = io.BytesIO()
     with wave.open(buffer, "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)
         wav.setframerate(48000)
-        wav.writeframes(frame)
+        wav.writeframes(b"".join(sample.to_bytes(2, "little", signed=True) for sample in samples))
     return buffer.getvalue()
 
 

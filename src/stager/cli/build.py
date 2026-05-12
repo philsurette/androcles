@@ -779,6 +779,8 @@ def recording_import(
         f"Imported {result.imported_count} {status} recordings for {result.role}"
         f" ({len(result.missing_segment_ids)} missing)"
     )
+    for issue in result.issues:
+        typer.echo(f"Warning [{issue.code}]: {issue.message}")
     typer.echo(paths.display_path(result.transaction_manifest_path))
 
 

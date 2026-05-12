@@ -24,6 +24,7 @@ class RoleRecordingsImportResult:
     missing_segment_ids: list[str]
     complete: bool
     transaction_manifest_path: Path
+    issues: list["RoleRecordingImportIssue"] = field(default_factory=list)
     written_paths: list[Path] = field(default_factory=list)
 
 
@@ -35,9 +36,26 @@ class RoleRecordingsUndoResult:
 
 
 @dataclass
+class RoleRecordingImportIssue:
+    code: str
+    message: str
+    segment_id: str | None = None
+
+    def to_dict(self) -> dict[str, str]:
+        data = {
+            "code": self.code,
+            "message": self.message,
+        }
+        if self.segment_id is not None:
+            data["segment_id"] = self.segment_id
+        return data
+
+
+@dataclass
 class RoleRecordingImportJob:
     segment_id: str
     audio_path: str
+    manifest_duration_ms: int
     member: zipfile.ZipInfo
     target_path: Path
 
@@ -62,17 +80,20 @@ class RoleRecordingsImporter:
                     RoleRecordingImportJob(
                         segment_id=recording["segment_id"],
                         audio_path=audio_path,
+                        manifest_duration_ms=recording["duration_ms"],
                         member=self._audio_member(archive, audio_path, package_path),
                         target_path=target_path,
                     )
                 )
 
-            self._validate_package_audio(archive, import_jobs, package_path)
+            issues = self._analyze_package_audio(archive, import_jobs, package_path)
+            issues.extend(self._extra_audio_issues(archive, import_jobs))
             transaction_manifest_path = self._write_import_transaction(
                 archive=archive,
                 package_path=package_path,
                 manifest=manifest,
                 import_jobs=import_jobs,
+                issues=issues,
             )
 
             for import_job in import_jobs:
@@ -89,6 +110,7 @@ class RoleRecordingsImporter:
             missing_segment_ids=list(manifest.get("missing_segment_ids", [])),
             complete=bool(manifest["complete"]),
             transaction_manifest_path=transaction_manifest_path,
+            issues=issues,
             written_paths=written_paths,
         )
 
@@ -192,12 +214,13 @@ class RoleRecordingsImporter:
                 f"Missing audio file {audio_path} in {paths.display_path(package_path)}"
             ) from exc
 
-    def _validate_package_audio(
+    def _analyze_package_audio(
         self,
         archive: zipfile.ZipFile,
         import_jobs: list[RoleRecordingImportJob],
         package_path: Path,
-    ) -> None:
+    ) -> list[RoleRecordingImportIssue]:
+        issues = []
         for import_job in import_jobs:
             with archive.open(import_job.member) as source:
                 audio_bytes = source.read()
@@ -215,10 +238,125 @@ class RoleRecordingsImporter:
                         raise RuntimeError(
                             f"Empty WAV for segment {import_job.segment_id} in {paths.display_path(package_path)}"
                         )
+                    channels = wav.getnchannels()
+                    sample_width = wav.getsampwidth()
+                    sample_rate = wav.getframerate()
+                    frame_count = wav.getnframes()
+                    frames = wav.readframes(frame_count)
             except wave.Error as exc:
                 raise RuntimeError(
                     f"Unreadable WAV for segment {import_job.segment_id} in {paths.display_path(package_path)}"
                 ) from exc
+            issues.extend(
+                self._audio_quality_issues(
+                    import_job=import_job,
+                    channels=channels,
+                    sample_width=sample_width,
+                    sample_rate=sample_rate,
+                    frame_count=frame_count,
+                    frames=frames,
+                )
+            )
+        return issues
+
+    def _audio_quality_issues(
+        self,
+        *,
+        import_job: RoleRecordingImportJob,
+        channels: int,
+        sample_width: int,
+        sample_rate: int,
+        frame_count: int,
+        frames: bytes,
+    ) -> list[RoleRecordingImportIssue]:
+        issues = []
+        duration_ms = round(frame_count / sample_rate * 1000)
+        duration_delta_ms = abs(duration_ms - import_job.manifest_duration_ms)
+        if duration_delta_ms > 250 and duration_delta_ms > max(250, import_job.manifest_duration_ms * 0.2):
+            issues.append(
+                RoleRecordingImportIssue(
+                    code="suspicious_duration",
+                    segment_id=import_job.segment_id,
+                    message=(
+                        f"{import_job.segment_id} manifest duration {import_job.manifest_duration_ms} ms "
+                        f"differs from WAV duration {duration_ms} ms"
+                    ),
+                )
+            )
+
+        samples = self._normalized_samples(frames, sample_width)
+        if not samples:
+            return issues
+        peak = max(abs(sample) for sample in samples)
+        rms = (sum(sample * sample for sample in samples) / len(samples)) ** 0.5
+        clipped_count = sum(1 for sample in samples if abs(sample) >= 0.999)
+        if peak <= 0.0001:
+            issues.append(
+                RoleRecordingImportIssue(
+                    code="silent",
+                    segment_id=import_job.segment_id,
+                    message=f"{import_job.segment_id} appears silent",
+                )
+            )
+        elif rms < 0.01:
+            issues.append(
+                RoleRecordingImportIssue(
+                    code="too_quiet",
+                    segment_id=import_job.segment_id,
+                    message=f"{import_job.segment_id} appears too quiet",
+                )
+            )
+        if clipped_count / len(samples) >= 0.01:
+            issues.append(
+                RoleRecordingImportIssue(
+                    code="clipped",
+                    segment_id=import_job.segment_id,
+                    message=f"{import_job.segment_id} appears clipped",
+                )
+            )
+        if channels > 1:
+            issues.append(
+                RoleRecordingImportIssue(
+                    code="unexpected_channels",
+                    segment_id=import_job.segment_id,
+                    message=f"{import_job.segment_id} has {channels} channels",
+                )
+            )
+        return issues
+
+    def _normalized_samples(self, frames: bytes, sample_width: int) -> list[float]:
+        samples = []
+        for offset in range(0, len(frames), sample_width):
+            sample_bytes = frames[offset : offset + sample_width]
+            if len(sample_bytes) != sample_width:
+                break
+            if sample_width == 1:
+                sample = (sample_bytes[0] - 128) / 128
+            elif sample_width == 2:
+                sample = int.from_bytes(sample_bytes, "little", signed=True) / 32768
+            elif sample_width == 3:
+                sample = int.from_bytes(sample_bytes + (b"\xff" if sample_bytes[-1] & 0x80 else b"\x00"), "little", signed=True) / 8388608
+            elif sample_width == 4:
+                sample = int.from_bytes(sample_bytes, "little", signed=True) / 2147483648
+            else:
+                return []
+            samples.append(sample)
+        return samples
+
+    def _extra_audio_issues(
+        self,
+        archive: zipfile.ZipFile,
+        import_jobs: list[RoleRecordingImportJob],
+    ) -> list[RoleRecordingImportIssue]:
+        expected_paths = {import_job.audio_path for import_job in import_jobs}
+        return [
+            RoleRecordingImportIssue(
+                code="extra_audio",
+                message=f"Package contains unreferenced audio file {name}",
+            )
+            for name in archive.namelist()
+            if name.startswith("audio/") and name.endswith(".wav") and name not in expected_paths
+        ]
 
     def _write_import_transaction(
         self,
@@ -227,6 +365,7 @@ class RoleRecordingsImporter:
         package_path: Path,
         manifest: dict,
         import_jobs: list[RoleRecordingImportJob],
+        issues: list[RoleRecordingImportIssue],
     ) -> Path:
         transaction_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         transaction_dir = self.paths.build_dir / "linerecorder" / "imports" / transaction_id
@@ -266,6 +405,7 @@ class RoleRecordingsImporter:
                     "role_id": manifest["role"]["id"],
                     "complete": manifest["complete"],
                     "missing_segment_ids": list(manifest.get("missing_segment_ids", [])),
+                    "issues": [issue.to_dict() for issue in issues],
                     "imported": imported,
                 },
                 indent=2,

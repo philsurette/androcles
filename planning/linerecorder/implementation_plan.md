@@ -68,7 +68,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 - [x] Add Stager import service for LineRecorder `role_recordings` packages.
 - [x] Validate play id, role id, segment ids, audio paths, and WAV readability.
-- [ ] Report missing, extra, silent, clipped, too-quiet, and suspicious-duration recordings.
+- [x] Report missing, extra, silent, clipped, too-quiet, and suspicious-duration recordings.
 - [x] Copy accepted WAVs into Stager's segment tree only after validation.
 - [x] Permit partial imports explicitly, but keep Playbook generation strict.
 - [ ] Add tests that imported segment files can be consumed by Playbook generation.
