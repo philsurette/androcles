@@ -110,25 +110,6 @@ export function App() {
 
   return (
     <main className="app-shell">
-      <section className="toolbar">
-        <div>
-          <p className="eyebrow">Quince</p>
-          <h1>LineRecorder</h1>
-        </div>
-        <div className="toolbar-actions">
-          {selectedProject ? (
-            <button type="button" className="secondary" onClick={() => setSelectedProject(null)}>
-              Library
-            </button>
-          ) : null}
-          <ImportRequestButton isImporting={isImporting} onImport={importRequest} />
-        </div>
-      </section>
-
-      <p className="status" role="status">
-        {status}
-      </p>
-
       {selectedProject ? (
         <ProjectDetail
           project={selectedProject}
@@ -137,14 +118,31 @@ export function App() {
           onAccepted={() => loadAcceptedSegments(selectedProject.id)}
           onExport={() => void exportProject(selectedProject)}
           onDelete={() => void deleteProject(selectedProject)}
+          onBack={() => setSelectedProject(null)}
           isExporting={isExporting}
         />
       ) : (
-        <ProjectLibrary
-          projects={projects}
-          onOpenProject={(project) => void openProject(project)}
-          onDeleteProject={(project) => void deleteProject(project)}
-        />
+        <>
+          <section className="toolbar">
+            <div>
+              <p className="eyebrow">Quince</p>
+              <h1>LineRecorder</h1>
+            </div>
+            <div className="toolbar-actions">
+              <ImportRequestButton isImporting={isImporting} onImport={importRequest} />
+            </div>
+          </section>
+
+          <p className="status" role="status">
+            {status}
+          </p>
+
+          <ProjectLibrary
+            projects={projects}
+            onOpenProject={(project) => void openProject(project)}
+            onDeleteProject={(project) => void deleteProject(project)}
+          />
+        </>
       )}
     </main>
   );
@@ -228,6 +226,7 @@ type ProjectDetailProps = {
   onAccepted: () => Promise<void>;
   onExport: () => void;
   onDelete: () => void;
+  onBack: () => void;
   isExporting: boolean;
 };
 
@@ -238,6 +237,7 @@ function ProjectDetail({
   onAccepted,
   onExport,
   onDelete,
+  onBack,
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
@@ -254,6 +254,7 @@ function ProjectDetail({
         progress={progress}
         onExport={onExport}
         onDelete={onDelete}
+        onBack={onBack}
         isExporting={isExporting}
       />
       <MicrophoneSetup onReady={setMicrophoneConfig} />
@@ -414,16 +415,22 @@ type ProjectSummaryProps = {
   progress: RecordingItemProgress[];
   onExport: () => void;
   onDelete: () => void;
+  onBack: () => void;
   isExporting: boolean;
 };
 
-function ProjectSummary({ project, progress, onExport, onDelete, isExporting }: ProjectSummaryProps) {
+function ProjectSummary({ project, progress, onExport, onDelete, onBack, isExporting }: ProjectSummaryProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   return (
     <article className="summary-panel">
-      <div>
-        <p className="eyebrow">{project.request.play.title}</p>
-        <h2>{project.request.role.displayName}</h2>
+      <div className="summary-title">
+        <button type="button" className="secondary" onClick={onBack}>
+          Back
+        </button>
+        <div>
+          <p className="eyebrow">{project.request.play.title}</p>
+          <h2>{project.request.role.displayName}</h2>
+        </div>
       </div>
       <dl>
         <div>
