@@ -32,6 +32,7 @@ from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
+from stager.linerecorder.recording_request_progress_reporter import RecordingRequestProgressReporter
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
@@ -112,6 +113,34 @@ class RichPlaybookProgressReporter:
         if self.task_id is None:
             return
         self.progress.update(self.task_id, description="Packaged Playbook audio")
+        self.progress.stop_task(self.task_id)
+
+
+class RichRecordingRequestProgressReporter:
+    def __init__(self, progress: Progress, role: str) -> None:
+        self.progress = progress
+        self.role = role
+        self.task_id: TaskID | None = None
+
+    def start_item_building(self, total: int) -> None:
+        self.task_id = self.progress.add_task(
+            f"Building {self.role} recording request",
+            total=total,
+        )
+
+    def item_built(self, item_id: str, sequence: int) -> None:
+        if self.task_id is None:
+            return
+        self.progress.update(
+            self.task_id,
+            description=f"Adding {self.role} item {item_id}",
+            advance=1,
+        )
+
+    def finish_item_building(self) -> None:
+        if self.task_id is None:
+            return
+        self.progress.update(self.task_id, description=f"Built {self.role} recording request")
         self.progress.stop_task(self.task_id)
 
 
@@ -821,12 +850,21 @@ def recording_request(
     """Build a LineRecorder Recording Request package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    zip_path = run_recording_request(
-        role=role,
-        segment_ids=set(segment) if segment else None,
-        notes=notes,
-        paths_config=cfg,
-    )
+    with Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+    ) as progress:
+        zip_path = run_recording_request(
+            role=role,
+            segment_ids=set(segment) if segment else None,
+            notes=notes,
+            paths_config=cfg,
+            progress_reporter=RichRecordingRequestProgressReporter(progress, role),
+        )
     typer.echo(paths.display_path(zip_path))
 
 
@@ -1053,6 +1091,7 @@ def run_recording_request(
     segment_ids: set[str] | None = None,
     notes: str | None = None,
     paths_config: paths.PathConfig | None = None,
+    progress_reporter: RecordingRequestProgressReporter | None = None,
 ) -> Path:
     cfg = paths_config or paths.current()
     play = load_production_play(cfg)
@@ -1066,6 +1105,7 @@ def run_recording_request(
         request_kind="selected_segments" if segment_ids else "full_role",
         selected_segment_ids=segment_ids,
         notes=notes,
+        progress_reporter=progress_reporter,
     )
     return builder.build()
 
