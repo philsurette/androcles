@@ -73,6 +73,9 @@ Examples:
 
 ```text
 3.2-15       line 15 in scene 2 of act 3
+P-14         line 14 in the prologue
+P.1-3        line 3 in scene 1 of the prologue
+II.3-12      line 12 in scene 3 of act II
 3.2-15.1     inserted line after 3.2-15
 3.2-15a      revised version of 3.2-15
 3.2-15.1a    revised version of inserted line 3.2-15.1
@@ -84,13 +87,16 @@ Examples:
 Rules:
 
 - `.` inside the structure identifies hierarchy, such as act/scene.
+- Each structural component may be numeric, such as `3`, or uppercase alphabetic/alphanumeric, such as `P`, `E`, `II`, or `INT1`.
 - `-` separates structural location from the line id.
 - `.` after the line id identifies inserted lines.
 - A trailing lowercase letter identifies a text revision of the line.
 - `:` identifies a sub-line unit.
 - `sN` identifies spoken segment `N` inside the line.
 - `dN` identifies stage direction `N` inside the line.
-- Ids are case-sensitive only for the revision suffix and segment type. Use lowercase revision and segment suffixes.
+- Use uppercase alphabetic structural components. Do not use lowercase structural components, because lowercase is reserved for revision and sub-line suffixes.
+- Roman numerals are allowed as structural labels, but they are labels, not numbers.
+- Script order comes from `production.txt` file order and manifest sequence/order fields, not from sorting production ids as strings.
 
 ## Structural IDs
 
@@ -99,15 +105,18 @@ The structure portion should be explicit enough for a director's working script.
 Examples:
 
 ```text
-0-1      prologue line 1
+P-1      prologue line 1
+P.1-3    prologue, scene 1, line 3
 1-0      act 1 heading
 1-1      act 1 line 1, if no scenes are defined
 1.2-0    act 1, scene 2 heading
 1.2-15   act 1, scene 2, line 15
+I.2-15   act I, scene 2, line 15, if roman numerals are preferred
 E-1      epilogue line 1, if epilogue is retained as a named structure
+INT-2    interlude line 2
 ```
 
-Stager should support a play with only top-level parts and a play with director-added scenes. If scenes are added later, existing production ids should not be renumbered automatically without an explicit reconciliation operation.
+Stager should support a play with only top-level parts and a play with director-added scenes. Structural ids are director-facing labels, not ordering instructions. If scenes are added later, existing production ids should not be renumbered automatically without an explicit reconciliation operation.
 
 ## Line Identity
 

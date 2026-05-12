@@ -47,6 +47,8 @@ The implementation must support two workflows:
 - [ ] Define allowed `production_ids` values: `draft`, `locked`.
 - [ ] Define that comments are only comments when they start a line after optional whitespace; inline `//` inside dialogue is normal text.
 - [ ] Define strict parse behavior for malformed metadata, unknown `production_ids` states, duplicate metadata keys, and ids in the wrong source kind.
+- [ ] Define valid production id syntax, including uppercase alphabetic structural components such as `P`, `E`, `II`, and `INT`.
+- [ ] Define that script order comes from file order, not production id string sorting.
 - [ ] Cross-link `script_text_format.md` from `planning/README.md`.
 - [ ] Cross-link `script_text_format.md` from `planning/specs/production_script_ids.md`.
 
@@ -74,6 +76,8 @@ The implementation must support two workflows:
 - [ ] Add metadata header parsing before script paragraph parsing.
 - [ ] Add strict metadata validation.
 - [ ] Add production id prefix parsing for `production.txt`.
+- [ ] Accept uppercase alphabetic/alphanumeric structural components in production ids.
+- [ ] Reject lowercase structural components.
 - [ ] Reject missing production ids in `production.txt`.
 - [ ] Reject production ids in `play.txt`, unless the spec explicitly allows them later.
 - [ ] Preserve source locations in diagnostics using `paths.display_location()`.
@@ -83,6 +87,7 @@ The implementation must support two workflows:
 
 - [ ] Add a service class that converts parsed `play.txt` into `production.txt`.
 - [ ] Generate deterministic ids for headings, descriptions, top-level directions, role blocks, inline direction subunits, and spoken subunits.
+- [ ] Preserve director-chosen structural labels such as `P`, `E`, `I`, `II`, and `INT` when generating from source headings where possible.
 - [ ] Generate a metadata header with `production_ids: draft`.
 - [ ] Keep generated text editor-friendly and close to source formatting.
 - [ ] Refuse to overwrite `production.txt` when it is locked unless the caller passes an explicit force option.
@@ -138,4 +143,3 @@ The implementation must support two workflows:
 - [ ] Recording Requests and recording packages use production ids as canonical recording item `id` values.
 - [ ] Content hashes detect changed text even if an id is accidentally reused.
 - [ ] Tests cover parser behavior, generation behavior, lifecycle behavior, and manifest output.
-
