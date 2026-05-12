@@ -7,6 +7,7 @@ import io
 import json
 import logging
 from pathlib import Path, PurePosixPath
+import re
 import shutil
 import wave
 import zipfile
@@ -18,6 +19,7 @@ from stager.playbook.app_line import AppLine
 from stager.shared import paths
 
 logger = logging.getLogger(__name__)
+PRODUCTION_ID_RE = re.compile(r"^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdm][0-9]+)?$")
 
 
 @dataclass
@@ -192,6 +194,8 @@ class RoleRecordingsImporter:
             raise RuntimeError(f"Invalid recordings list in {paths.display_path(package_path)}")
         if not isinstance(manifest.get("missing_segment_ids"), list):
             raise RuntimeError(f"Invalid missing_segment_ids in {paths.display_path(package_path)}")
+        for missing_segment_id in manifest["missing_segment_ids"]:
+            self._validate_production_id(missing_segment_id, "missing_segment_ids", package_path)
         if not isinstance(manifest.get("complete"), bool):
             raise RuntimeError(f"Invalid complete flag in {paths.display_path(package_path)}")
 
@@ -200,6 +204,8 @@ class RoleRecordingsImporter:
         self._validate_play_segments(manifest, role, package_path)
 
     def _validate_recording(self, recording: dict, role: str, package_path: Path) -> None:
+        self._validate_production_id(recording.get("id"), "id", package_path)
+        self._validate_production_id(recording.get("line_id"), "line_id", package_path)
         segment_id = recording.get("segment_id")
         audio_path = recording.get("audio_path")
         if not segment_id or not audio_path:
@@ -207,6 +213,12 @@ class RoleRecordingsImporter:
         if recording.get("status") != "accepted":
             raise RuntimeError(f"Unexpected recording status in {paths.display_path(package_path)}")
         self._target_path(role, segment_id, audio_path)
+
+    def _validate_production_id(self, value: object, field_name: str, package_path: Path) -> None:
+        if not isinstance(value, str) or not PRODUCTION_ID_RE.match(value):
+            raise RuntimeError(
+                f"Invalid {field_name} production id in {paths.display_path(package_path)}: {value!r}"
+            )
 
     def _validate_play_segments(self, manifest: dict, role: str, package_path: Path) -> None:
         if self.play is None:

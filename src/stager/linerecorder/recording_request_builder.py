@@ -163,7 +163,9 @@ class RecordingRequestBuilder:
         return self.request_kind
 
     def _segment_request_id(self, segment: SpeechSegment | SimultaneousSegment) -> str:
-        return segment.production_id or str(segment.segment_id)
+        if segment.production_id is None:
+            raise RuntimeError(f"Missing production id for recording request segment {segment.segment_id}")
+        return segment.production_id
 
     def _response_segments_for_role(self, block: RoleBlock) -> list[SpeechSegment | SimultaneousSegment]:
         segments: list[SpeechSegment | SimultaneousSegment] = []

@@ -27,7 +27,7 @@ class AppLine:
     def line_id_for(cls, block: RoleBlock, role: str) -> str:
         if block.production_id is not None:
             return block.production_id
-        return f"{block.block_id}_{role}"
+        raise RuntimeError(f"Missing production id for role line {block.block_id} ({role})")
 
     @classmethod
     def block_id_for(cls, block: RoleBlock) -> str:

@@ -54,9 +54,10 @@ def _title_block() -> TitleBlock:
     return TitleBlock(
         block_id=block_id,
         text="## 0: Opening ##",
-        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text="## 0: Opening ##")],
+        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text="## 0: Opening ##", production_id="I-0:m1")],
         part_id=0,
         heading="Opening",
+        production_id="I-0",
     )
 
 
@@ -72,8 +73,10 @@ def _speech_block(part_id: int, block_no: int, role: str, text: str) -> RoleBloc
                 segment_id=SegmentId(block_id, 1),
                 text=text,
                 role=role,
+                production_id=f"I-{block_no}:s1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -86,8 +89,10 @@ def _description_block(part_id: int, block_no: int, text: str) -> DescriptionBlo
             DescriptionSegment(
                 segment_id=SegmentId(block_id, 1),
                 text=text,
+                production_id=f"I-{block_no}:d1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -100,8 +105,10 @@ def _direction_block(part_id: int, block_no: int, text: str) -> DirectionBlock:
             DirectionSegment(
                 segment_id=SegmentId(block_id, 1),
                 text=text,
+                production_id=f"I-{block_no}:d1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 

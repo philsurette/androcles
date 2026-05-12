@@ -239,15 +239,17 @@ Do not mix moved implementation and wrapper behavior in the same file. After a m
 - [x] Run `./main --help`.
 - [x] Run a representative safe CLI command such as `./main text`.
 
-## Commit Slices
+## Historical Commit Slices
 
-- [ ] Commit 1: add package directories, move domain modules, keep wrappers, move domain tests.
-- [ ] Commit 2: move shared config/path modules and tests.
-- [ ] Commit 3: move text modules and tests.
-- [ ] Commit 4: move audio modules and tests.
-- [ ] Commit 5: move audiobook and cue modules and tests.
-- [ ] Commit 6: move verification and transcription modules and tests.
-- [ ] Commit 7: move CLI entrypoint and update `./main`.
+These slices were implementation guidance for the package refactor. The refactor is complete; the actual work did not need to preserve these exact commit boundaries.
+
+- [x] Commit 1: add package directories, move domain modules, keep wrappers, move domain tests.
+- [x] Commit 2: move shared config/path modules and tests.
+- [x] Commit 3: move text modules and tests.
+- [x] Commit 4: move audio modules and tests.
+- [x] Commit 5: move audiobook and cue modules and tests.
+- [x] Commit 6: move verification and transcription modules and tests.
+- [x] Commit 7: move CLI entrypoint and update `./main`.
 - [x] Commit 8: remove compatibility wrappers once no imports require them.
 
 ## Notes

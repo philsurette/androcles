@@ -16,8 +16,10 @@ class AppDirection:
 
     @classmethod
     def from_segment(cls, segment: DescriptionSegment | DirectionSegment, placement: str) -> "AppDirection":
+        if segment.production_id is None:
+            raise RuntimeError(f"Missing production id for direction segment {segment.segment_id}")
         return cls(
-            id=segment.production_id or str(segment.segment_id),
+            id=segment.production_id,
             text=segment.text,
             placement=placement,
             segment_id=str(segment.segment_id),

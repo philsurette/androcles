@@ -41,7 +41,8 @@ def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path)
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -52,7 +53,7 @@ def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path)
                     "status": "accepted",
                 }
             ],
-            "missing_segment_ids": ["0_14_1"],
+            "missing_segment_ids": ["I-14:s1"],
         },
         files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes()},
     )
@@ -62,7 +63,7 @@ def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path)
     assert result.role == "CENTURION"
     assert result.imported_count == 1
     assert result.complete is False
-    assert result.missing_segment_ids == ["0_14_1"]
+    assert result.missing_segment_ids == ["I-14:s1"]
     assert (cfg.segments_dir / "CENTURION" / "0_12_1.wav").read_bytes() == _wav_bytes()
 
 
@@ -82,7 +83,8 @@ def test_role_recordings_importer_records_existing_segment_before_overwrite(tmp_
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -124,7 +126,8 @@ def test_role_recordings_importer_records_new_segment_without_backup(tmp_path: P
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -164,7 +167,8 @@ def test_role_recordings_importer_undo_restores_existing_segment(tmp_path: Path)
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -203,7 +207,8 @@ def test_role_recordings_importer_undo_removes_new_segment(tmp_path: Path) -> No
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -242,7 +247,8 @@ def test_role_recordings_importer_undo_rejects_changed_segment(tmp_path: Path) -
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -278,7 +284,8 @@ def test_role_recordings_importer_rejects_path_traversal(tmp_path: Path) -> None
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "../0_12_1.wav",
@@ -332,7 +339,8 @@ def test_role_recordings_importer_rejects_missing_audio_file(tmp_path: Path) -> 
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -365,7 +373,8 @@ def test_role_recordings_importer_rejects_unknown_play_segment(tmp_path: Path) -
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_99_CENTURION",
+                    "id": "I-99:s1",
+                    "line_id": "I-99",
                     "block_id": "0.99",
                     "segment_id": "0_99_1",
                     "audio_path": "audio/segments/CENTURION/0_99_1.wav",
@@ -479,7 +488,8 @@ def test_role_recordings_importer_rejects_unreadable_wav(tmp_path: Path) -> None
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -512,7 +522,8 @@ def test_role_recordings_importer_reports_audio_quality_issues(tmp_path: Path) -
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -551,7 +562,8 @@ def test_role_recordings_importer_reports_clipped_and_suspicious_duration(tmp_pa
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_12_CENTURION",
+                    "id": "I-12:s1",
+                    "line_id": "I-12",
                     "block_id": "0.12",
                     "segment_id": "0_12_1",
                     "audio_path": "audio/segments/CENTURION/0_12_1.wav",
@@ -586,7 +598,8 @@ def test_imported_role_recordings_can_be_used_by_playbook_builder(tmp_path: Path
             "role": {"id": "CENTURION", "display_name": "Centurion"},
             "recordings": [
                 {
-                    "line_id": "0_2_CENTURION",
+                    "id": "I-2:s1",
+                    "line_id": "I-2",
                     "block_id": "0.2",
                     "segment_id": "0_2_1",
                     "audio_path": "audio/segments/CENTURION/0_2_1.wav",
@@ -654,8 +667,10 @@ def _play() -> Play:
                         segment_id=SegmentId(block_id, 1),
                         text="Halt!",
                         role="CENTURION",
+                        production_id="I-12:s1",
                     )
                 ],
+                production_id="I-12",
             )
         ]
     )
@@ -676,8 +691,10 @@ def _play_with_cue_and_response() -> Play:
                         segment_id=SegmentId(cue_block_id, 1),
                         text="Who goes there?",
                         role="ANDROCLES",
+                        production_id="I-1:s1",
                     )
                 ],
+                production_id="I-1",
             ),
             RoleBlock(
                 block_id=response_block_id,
@@ -689,8 +706,10 @@ def _play_with_cue_and_response() -> Play:
                         segment_id=SegmentId(response_block_id, 1),
                         text="A friend.",
                         role="CENTURION",
+                        production_id="I-2:s1",
                     )
                 ],
+                production_id="I-2",
             ),
         ]
     )

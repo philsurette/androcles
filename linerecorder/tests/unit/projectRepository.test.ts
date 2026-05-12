@@ -76,7 +76,7 @@ function packFixture(): RecordingRequest {
     items: [
       {
         id: "I-12:s1",
-        lineId: "0_12_CENTURION",
+        lineId: "I-12",
         blockId: "0.12",
         segmentId: "0_12_1",
         lineContentHash: line12Hash,

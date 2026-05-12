@@ -30,9 +30,10 @@ def _title_block() -> TitleBlock:
     return TitleBlock(
         block_id=block_id,
         text="## 0: Opening ##",
-        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text="## 0: Opening ##")],
+        segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text="## 0: Opening ##", production_id="I-0:m1")],
         part_id=0,
         heading="Opening",
+        production_id="I-0",
     )
 
 
@@ -48,8 +49,10 @@ def _speech_block(part_id: int | None, block_no: int, role: str, text: str) -> R
                 segment_id=SegmentId(block_id, 1),
                 text=text,
                 role=role,
+                production_id=f"I-{block_no}:s1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -65,17 +68,21 @@ def _inline_direction_block(part_id: int, block_no: int, role: str) -> RoleBlock
                 segment_id=SegmentId(block_id, 1),
                 text="Go on.",
                 role=role,
+                production_id=f"I-{block_no}:s1",
             ),
             DirectionSegment(
                 segment_id=SegmentId(block_id, 2),
                 text="(_crossing_)",
+                production_id=f"I-{block_no}:d1",
             ),
             SpeechSegment(
                 segment_id=SegmentId(block_id, 3),
                 text="I will follow.",
                 role=role,
+                production_id=f"I-{block_no}:s2",
             ),
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -91,8 +98,10 @@ def _simultaneous_block(part_id: int, block_no: int, roles: list[str], text: str
                 segment_id=SegmentId(block_id, 1),
                 text=text,
                 roles=roles,
+                production_id=f"I-{block_no}:s1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -105,8 +114,10 @@ def _description_block(part_id: int, block_no: int, text: str) -> DescriptionBlo
             DescriptionSegment(
                 segment_id=SegmentId(block_id, 1),
                 text=text,
+                production_id=f"I-{block_no}:d1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -119,8 +130,10 @@ def _direction_block(part_id: int, block_no: int, text: str) -> DirectionBlock:
             DirectionSegment(
                 segment_id=SegmentId(block_id, 1),
                 text=text,
+                production_id=f"I-{block_no}:d1",
             )
         ],
+        production_id=f"I-{block_no}",
     )
 
 
@@ -170,8 +183,8 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
     }
     assert data["items"] == [
         {
-            "id": "0_2_1",
-            "line_id": "0_2_MEGAERA",
+            "id": "I-2:s1",
+            "line_id": "I-2",
             "block_id": "0.2",
             "segment_id": "0_2_1",
             "sequence": 1,
@@ -229,7 +242,7 @@ def test_recording_request_builder_marks_simultaneous_segments(tmp_path: Path) -
         created_at="2026-05-10T14:00:00Z",
     ).build_manifest().to_dict()
 
-    assert data["items"][0]["line_id"] == "0_1_CENTURION"
+    assert data["items"][0]["line_id"] == "I-1"
     assert data["items"][0]["segment_id"] == "0_1_1"
     assert data["items"][0]["simultaneous"] is True
     assert data["items"][0]["cue_text"] == "Opening"
@@ -246,7 +259,7 @@ def test_recording_request_builder_can_emit_selected_segments(tmp_path: Path) ->
         paths=cfg,
         role="MEGAERA",
         request_kind="selected_segments",
-        selected_segment_ids={"0_2_1"},
+        selected_segment_ids={"I-2:s1"},
         created_at="2026-05-10T14:00:00Z",
     ).build_manifest().to_dict()
 
@@ -266,7 +279,7 @@ def test_recording_request_builder_can_set_selected_item_reason(tmp_path: Path) 
         paths=cfg,
         role="MEGAERA",
         request_kind="selected_segments",
-        selected_segment_ids={"0_2_1"},
+        selected_segment_ids={"I-2:s1"},
         item_reason="director_request",
         created_at="2026-05-10T14:00:00Z",
     ).build_manifest().to_dict()

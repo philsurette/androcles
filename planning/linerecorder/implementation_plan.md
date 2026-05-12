@@ -85,6 +85,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 
 ## Later
 
+- [ ] Capture optional floor-noise samples and use them for Stager import denoising as planned in [floor_noise_reduction_plan.md](floor_noise_reduction_plan.md).
 - [ ] Import Cuemaster-generated Recording Request files.
 - [ ] Export replacement-only packages.
 - [ ] Mark changed items from updated Stager requests.

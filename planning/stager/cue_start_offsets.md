@@ -92,46 +92,46 @@ The exact threshold should be test-driven with real cues from Androcles and Fair
 
 ### Phase 1: Contract And Dataclasses
 
-- [ ] Update `planning/specs/playbook_manifest.md` with the optional `cue_start_offsets` field on audio assets.
-- [ ] Add optional cue-start-offset dataclasses to the Playbook manifest model.
-- [ ] Allow `cue_start_offsets` in manifest JSON validation.
-- [ ] Add fixture tests proving existing manifests without offsets still validate.
-- [ ] Add fixture tests proving offsets serialize with audio assets.
+- [x] Update `planning/specs/playbook_manifest.md` with the optional `cue_start_offsets` field on audio assets.
+- [x] Add optional cue-start-offset dataclasses to the Playbook manifest model.
+- [x] Allow `cue_start_offsets` in manifest JSON validation.
+- [x] Add fixture tests proving existing manifests without offsets still validate.
+- [x] Add fixture tests proving offsets serialize with audio assets.
 
 ### Phase 2: Audio Analysis Service
 
-- [ ] Add a `CueStartOffsetAnalyzer` service under the Stager Playbook package.
-- [ ] Inject audio loading/duration helpers so tests can use generated tiny WAV fixtures.
-- [ ] Compute offsets for the positive timed windows in `planning/specs/cue_window_presets.json`.
-- [ ] Add a test that fails if Stager's analyzer windows drift from `cue_window_presets.json`.
-- [ ] Unit-test short audio where every requested window should start at `0`.
-- [ ] Unit-test a synthetic cue with silence near a target boundary.
-- [ ] Unit-test fallback behavior when no quiet boundary is available.
+- [x] Add a `CueStartOffsetAnalyzer` service under the Stager Playbook package.
+- [x] Inject audio loading/duration helpers so tests can use generated tiny WAV fixtures.
+- [x] Compute offsets for the positive timed windows in `planning/specs/cue_window_presets.json`.
+- [x] Add a test that fails if Stager's analyzer windows drift from `cue_window_presets.json`.
+- [x] Unit-test short audio where every requested window should start at `0`.
+- [x] Unit-test a synthetic cue with silence near a target boundary.
+- [x] Unit-test fallback behavior when no quiet boundary is available.
 
 ### Phase 3: Playbook Builder Integration
 
-- [ ] Run the analyzer for cue audio assets used by rehearsable role lines.
-- [ ] Attach offsets to the relevant manifest audio asset objects.
-- [ ] Do not analyze response-only assets unless they are also used as cues.
-- [ ] Keep Playbook generation strict: missing cue audio remains an exception.
-- [ ] Verify Stager still writes valid Playbooks without requiring Cuemaster changes.
+- [x] Run the analyzer for cue audio assets used by rehearsable role lines.
+- [x] Attach offsets to the relevant manifest audio asset objects.
+- [x] Do not analyze response-only assets unless they are also used as cues.
+- [x] Keep Playbook generation strict: missing cue audio remains an exception.
+- [x] Verify Stager still writes valid Playbooks without requiring Cuemaster changes.
 
 ### Phase 3.5: Compressed Packaging Compatibility
 
-- [ ] Treat source-WAV offsets as content-timeline metadata.
-- [ ] If Playbook audio format is WAV, emit offsets directly.
-- [ ] If Playbook audio format is MP3, emit source-WAV-derived offsets.
-- [ ] Add tests proving MP3 packaging preserves cue-start offsets in the manifest.
-- [ ] Document that MP3 playback may have small encoder/player seek drift.
+- [x] Treat source-WAV offsets as content-timeline metadata.
+- [x] If Playbook audio format is WAV, emit offsets directly.
+- [x] If Playbook audio format is MP3, emit source-WAV-derived offsets.
+- [x] Add tests proving MP3 packaging preserves cue-start offsets in the manifest.
+- [x] Document that MP3 playback may have small encoder/player seek drift.
 
 ### Phase 4: Cuemaster Integration
 
-- [ ] Add max-cue-length session preference.
-- [ ] Add a cue-length selector in the rehearsal UI.
-- [ ] Use `cue_start_offsets` for the final cue item when available.
-- [ ] Fall back to exact `duration_ms - selectedWindowMs` when offsets are absent.
-- [ ] Persist the actor's cue-length preference.
-- [ ] Update the user guide.
+- [x] Add max-cue-length session preference.
+- [x] Add a cue-length selector in the rehearsal UI.
+- [x] Use `cue_start_offsets` for the final cue item when available.
+- [x] Fall back to exact `duration_ms - selectedWindowMs` when offsets are absent.
+- [x] Persist the actor's cue-length preference.
+- [x] Update the user guide.
 
 ### Phase 5: Real Play Validation
 

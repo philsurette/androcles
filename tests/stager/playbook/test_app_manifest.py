@@ -35,8 +35,10 @@ def _role_block(role: str = "MEGAERA") -> RoleBlock:
                 segment_id=SegmentId(block_id, 1),
                 role=role,
                 text="I won't go another step.",
+                production_id="I-5:s1",
             )
         ],
+        production_id="I-5",
     )
 
 
@@ -65,7 +67,7 @@ def test_manifest_serializes_schema_one_shape() -> None:
             text="I won't go another step.",
             segments=[
                 AppResponseSegment(
-                    id=str(block.segments[0].segment_id),
+                    id=block.segments[0].production_id,
                     owners=["MEGAERA"],
                     text="I won't go another step.",
                     audio=response_audio,
@@ -93,7 +95,7 @@ def test_manifest_serializes_schema_one_shape() -> None:
         ],
         context=[
             AppContextBlock(
-                id="0_0_1",
+                id="I-0",
                 part_id=0,
                 block_id="0.0",
                 kind="heading",
@@ -130,10 +132,10 @@ def test_manifest_serializes_schema_one_shape() -> None:
     }
     assert data["context"][0]["kind"] == "heading"
     assert data["context"][0]["speaker"] == "_NARRATOR"
-    assert data["roles"][0]["lines"][0]["id"] == "0_5_MEGAERA"
+    assert data["roles"][0]["lines"][0]["id"] == "I-5"
     assert data["roles"][0]["lines"][0]["block_id"] == "0.5"
     assert data["roles"][0]["lines"][0]["cue"]["audio"]["required"] is True
-    assert data["roles"][0]["lines"][0]["response"]["segments"][0]["id"] == "0_5_1"
+    assert data["roles"][0]["lines"][0]["response"]["segments"][0]["id"] == "I-5:s1"
 
 
 def test_solo_role_metadata_uses_default_reader() -> None:
@@ -202,6 +204,7 @@ def test_directions_preserve_inline_and_top_level_placement() -> None:
     inline_segment = DirectionSegment(
         segment_id=SegmentId(block_id, 2),
         text="(_suddenly throwing down her stick_)",
+        production_id="I-7:d1",
     )
     top_level_block_id = BlockId(0, 6)
     top_level_block = DirectionBlock(
@@ -211,15 +214,17 @@ def test_directions_preserve_inline_and_top_level_placement() -> None:
             DirectionSegment(
                 segment_id=SegmentId(top_level_block_id, 1),
                 text="Androcles and Megæra come along the path.",
+                production_id="I-6:d1",
             )
         ],
+        production_id="I-6",
     )
 
     inline = AppDirection.from_segment(inline_segment, placement="inline")
     top_level = AppDirection.from_segment(top_level_block.segments[0], placement="top_level")
 
     assert inline.to_dict() == {
-        "id": "0_7_2",
+        "id": "I-7:d1",
         "segment_id": "0_7_2",
         "text": "(_suddenly throwing down her stick_)",
         "placement": "inline",
@@ -236,7 +241,7 @@ def test_simultaneous_response_segment_records_all_owners() -> None:
         roles=["GLADIATOR-1", "GLADIATOR-2"],
     )
     response_segment = AppResponseSegment(
-        id=str(segment.segment_id),
+        id="II.3-73:s1",
         owners=segment.roles,
         text=segment.text,
         audio=AppAudioAsset(
@@ -248,6 +253,6 @@ def test_simultaneous_response_segment_records_all_owners() -> None:
 
     data = response_segment.to_dict()
 
-    assert data["id"] == "2_73_1"
+    assert data["id"] == "II.3-73:s1"
     assert data["owners"] == ["GLADIATOR-1", "GLADIATOR-2"]
     assert data["simultaneous"] is True

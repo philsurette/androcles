@@ -172,7 +172,7 @@ class PlaybookBuilder:
             segment_id = str(segment.segment_id)
             context_blocks.append(
                 AppContextBlock(
-                    id=block.production_id or segment.production_id or segment_id,
+                    id=self._required_production_id(block.production_id, f"context block {block.block_id}"),
                     part_id=block.block_id.part_id,
                     block_id=self._block_id_for(block),
                     kind=self._context_kind_for(block),
@@ -273,7 +273,7 @@ class PlaybookBuilder:
         )
         owners = [segment.role] if isinstance(segment, SpeechSegment) else list(segment.roles)
         return AppResponseSegment(
-            id=segment.production_id or str(segment.segment_id),
+            id=self._required_production_id(segment.production_id, f"response segment {segment.segment_id}"),
             segment_id=str(segment.segment_id),
             content_hash=segment.content_hash,
             owners=owners,
@@ -281,6 +281,11 @@ class PlaybookBuilder:
             audio=asset,
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
+
+    def _required_production_id(self, production_id: str | None, description: str) -> str:
+        if production_id is None:
+            raise RuntimeError(f"Missing production id for {description}")
+        return production_id
 
     def _copy_required_audio(self, source_path: Path, role: str, segment_id: str, category: str) -> AppAudioAsset:
         if not source_path.exists():

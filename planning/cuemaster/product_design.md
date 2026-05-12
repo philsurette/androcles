@@ -309,7 +309,7 @@ The mobile app consumes roles and rehearsal line items, not a single flat `snipp
       "display_name": "Megæra",
       "lines": [
         {
-          "id": "0_5_MEGAERA",
+          "id": "I-5",
           "block_id": "0.5",
           "cue": {
             "speaker": "_NARRATOR",
@@ -324,7 +324,7 @@ The mobile app consumes roles and rehearsal line items, not a single flat `snipp
             "text": "I won't go another step.",
             "segments": [
               {
-                "id": "0_5_2",
+                "id": "I-5:s1",
                 "audio": {
                   "path": "audio/segments/MEGAERA/0_5_2.wav",
                   "duration_ms": 4200,
