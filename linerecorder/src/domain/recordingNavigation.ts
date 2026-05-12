@@ -12,15 +12,19 @@ export function selectedProgressIndex(progress: RecordingItemProgress[], itemId:
 }
 
 export function previousProgress(progress: RecordingItemProgress[], selectedIndex: number): RecordingItemProgress | undefined {
-  if (selectedIndex <= 0) {
-    return undefined;
+  for (let index = selectedIndex - 1; index >= 0; index -= 1) {
+    if (progress[index].status === "missing") {
+      return progress[index];
+    }
   }
-  return progress[selectedIndex - 1];
+  return undefined;
 }
 
 export function nextProgress(progress: RecordingItemProgress[], selectedIndex: number): RecordingItemProgress | undefined {
-  if (selectedIndex < 0 || selectedIndex >= progress.length - 1) {
-    return undefined;
+  for (let index = selectedIndex + 1; index < progress.length; index += 1) {
+    if (progress[index].status === "missing") {
+      return progress[index];
+    }
   }
-  return progress[selectedIndex + 1];
+  return undefined;
 }

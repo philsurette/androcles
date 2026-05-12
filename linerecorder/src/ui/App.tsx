@@ -579,8 +579,8 @@ function ItemDetail({
             type="button"
             className="secondary icon-button"
             disabled={!previousItem}
-            aria-label="Previous line"
-            title="Previous line"
+            aria-label="Previous unaccepted line"
+            title="Previous unaccepted line"
             onClick={() => previousItem && onNavigate(previousItem.item)}
           >
             &larr;
@@ -589,8 +589,8 @@ function ItemDetail({
             type="button"
             className="secondary icon-button"
             disabled={!nextItem}
-            aria-label="Next line"
-            title="Next line"
+            aria-label="Next unaccepted line"
+            title="Next unaccepted line"
             onClick={() => nextItem && onNavigate(nextItem.item)}
           >
             &rarr;
