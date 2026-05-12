@@ -3,12 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import filecmp
+import io
 import json
 import logging
 from pathlib import Path, PurePosixPath
 import shutil
+import wave
 import zipfile
 
+from stager.domain.play import Play
 from stager.shared import paths
 
 logger = logging.getLogger(__name__)
@@ -42,6 +45,7 @@ class RoleRecordingImportJob:
 @dataclass
 class RoleRecordingsImporter:
     paths: paths.PathConfig
+    play: Play | None = None
 
     def import_package(self, package_path: Path) -> RoleRecordingsImportResult:
         with zipfile.ZipFile(package_path) as archive:
@@ -63,6 +67,7 @@ class RoleRecordingsImporter:
                     )
                 )
 
+            self._validate_package_audio(archive, import_jobs, package_path)
             transaction_manifest_path = self._write_import_transaction(
                 archive=archive,
                 package_path=package_path,
@@ -150,6 +155,7 @@ class RoleRecordingsImporter:
 
         for recording in manifest["recordings"]:
             self._validate_recording(recording, role, package_path)
+        self._validate_play_segments(manifest, role, package_path)
 
     def _validate_recording(self, recording: dict, role: str, package_path: Path) -> None:
         segment_id = recording.get("segment_id")
@@ -160,6 +166,24 @@ class RoleRecordingsImporter:
             raise RuntimeError(f"Unexpected recording status in {paths.display_path(package_path)}")
         self._target_path(role, segment_id, audio_path)
 
+    def _validate_play_segments(self, manifest: dict, role: str, package_path: Path) -> None:
+        if self.play is None:
+            return
+        segment_maps = self.play.build_segment_maps()
+        if role not in segment_maps:
+            raise RuntimeError(f"Unknown role {role!r} in {paths.display_path(package_path)}")
+        expected_segment_ids = {
+            segment_id
+            for segment_ids in segment_maps[role].values()
+            for segment_id in segment_ids
+        }
+        imported_segment_ids = {recording["segment_id"] for recording in manifest["recordings"]}
+        unknown_segment_ids = sorted(imported_segment_ids - expected_segment_ids)
+        if unknown_segment_ids:
+            raise RuntimeError(
+                f"Unknown segment ids for role {role} in {paths.display_path(package_path)}: {', '.join(unknown_segment_ids)}"
+            )
+
     def _audio_member(self, archive: zipfile.ZipFile, audio_path: str, package_path: Path) -> zipfile.ZipInfo:
         try:
             return archive.getinfo(audio_path)
@@ -167,6 +191,34 @@ class RoleRecordingsImporter:
             raise RuntimeError(
                 f"Missing audio file {audio_path} in {paths.display_path(package_path)}"
             ) from exc
+
+    def _validate_package_audio(
+        self,
+        archive: zipfile.ZipFile,
+        import_jobs: list[RoleRecordingImportJob],
+        package_path: Path,
+    ) -> None:
+        for import_job in import_jobs:
+            with archive.open(import_job.member) as source:
+                audio_bytes = source.read()
+            try:
+                with wave.open(io.BytesIO(audio_bytes), "rb") as wav:
+                    if wav.getnchannels() < 1:
+                        raise RuntimeError(
+                            f"Invalid WAV channel count for segment {import_job.segment_id} in {paths.display_path(package_path)}"
+                        )
+                    if wav.getframerate() < 1:
+                        raise RuntimeError(
+                            f"Invalid WAV sample rate for segment {import_job.segment_id} in {paths.display_path(package_path)}"
+                        )
+                    if wav.getnframes() < 1:
+                        raise RuntimeError(
+                            f"Empty WAV for segment {import_job.segment_id} in {paths.display_path(package_path)}"
+                        )
+            except wave.Error as exc:
+                raise RuntimeError(
+                    f"Unreadable WAV for segment {import_job.segment_id} in {paths.display_path(package_path)}"
+                ) from exc
 
     def _write_import_transaction(
         self,

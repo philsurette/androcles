@@ -1007,7 +1007,8 @@ def run_recording_import(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
-    return RoleRecordingsImporter(paths=cfg).import_package(package_path)
+    play = PlayTextParser(paths_config=cfg).parse()
+    return RoleRecordingsImporter(paths=cfg, play=play).import_package(package_path)
 
 
 def run_recording_import_undo(

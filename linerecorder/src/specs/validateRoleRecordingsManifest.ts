@@ -1,0 +1,35 @@
+import { z } from "zod";
+import type { RoleRecordingsManifest } from "./recordingPackageManifest";
+
+const recordingSchema = z.object({
+  line_id: z.string().min(1),
+  block_id: z.string().min(1),
+  segment_id: z.string().min(1),
+  audio_path: z.string().min(1),
+  recorded_at: z.string().min(1),
+  duration_ms: z.number().int().nonnegative(),
+  sample_rate_hz: z.number().int().positive(),
+  channels: z.number().int().positive(),
+  status: z.literal("accepted")
+});
+
+const roleRecordingsSchema = z.object({
+  schema_version: z.literal(1),
+  package_type: z.literal("role_recordings"),
+  complete: z.boolean(),
+  play: z.object({
+    id: z.string().min(1),
+    title: z.string().min(1),
+    version: z.string().optional()
+  }),
+  role: z.object({
+    id: z.string().min(1),
+    display_name: z.string().min(1)
+  }),
+  recordings: z.array(recordingSchema),
+  missing_segment_ids: z.array(z.string().min(1))
+});
+
+export function validateRoleRecordingsManifest(value: unknown): RoleRecordingsManifest {
+  return roleRecordingsSchema.parse(value) satisfies RoleRecordingsManifest;
+}
