@@ -14,6 +14,7 @@ from stager.domain.play import Play
 from stager.domain.segment import SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
+from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.shared import paths
 
 
@@ -489,6 +490,48 @@ def test_role_recordings_importer_reports_clipped_and_suspicious_duration(tmp_pa
     assert {issue.code for issue in result.issues} >= {"clipped", "suspicious_duration"}
 
 
+def test_imported_role_recordings_can_be_used_by_playbook_builder(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    play = _play_with_cue_and_response()
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_2_CENTURION",
+                    "block_id": "0.2",
+                    "segment_id": "0_2_1",
+                    "audio_path": "audio/segments/CENTURION/0_2_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_2_1.wav": _wav_bytes_from_samples([1000] * 4800)},
+    )
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "title.wav")
+
+    RoleRecordingsImporter(paths=cfg, play=play).import_package(package_path)
+    PlaybookBuilder(play=play, paths=cfg).build()
+    manifest = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    centurion = next(role for role in manifest["roles"] if role["id"] == "CENTURION")
+    line = centurion["lines"][0]
+    assert line["response"]["segments"][0]["audio"]["path"] == "audio/segments/CENTURION/0_2_1.wav"
+    assert (cfg.build_dir / "app" / "audio" / "segments" / "CENTURION" / "0_2_1.wav").exists()
+
+
 def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes]) -> None:
     with zipfile.ZipFile(package_path, "w") as archive:
         archive.writestr("manifest.json", json.dumps(manifest))
@@ -510,6 +553,11 @@ def _wav_bytes_from_samples(samples: list[int]) -> bytes:
     return buffer.getvalue()
 
 
+def _write_wav(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(_wav_bytes_from_samples([1000] * 4800))
+
+
 def _play() -> Play:
     block_id = BlockId(0, 12)
     return Play(
@@ -527,5 +575,40 @@ def _play() -> Play:
                     )
                 ],
             )
+        ]
+    )
+
+
+def _play_with_cue_and_response() -> Play:
+    cue_block_id = BlockId(0, 1)
+    response_block_id = BlockId(0, 2)
+    return Play(
+        blocks=[
+            RoleBlock(
+                block_id=cue_block_id,
+                role_names=["ANDROCLES"],
+                callout="ANDROCLES",
+                text="Who goes there?",
+                segments=[
+                    SpeechSegment(
+                        segment_id=SegmentId(cue_block_id, 1),
+                        text="Who goes there?",
+                        role="ANDROCLES",
+                    )
+                ],
+            ),
+            RoleBlock(
+                block_id=response_block_id,
+                role_names=["CENTURION"],
+                callout="CENTURION",
+                text="A friend.",
+                segments=[
+                    SpeechSegment(
+                        segment_id=SegmentId(response_block_id, 1),
+                        text="A friend.",
+                        role="CENTURION",
+                    )
+                ],
+            ),
         ]
     )

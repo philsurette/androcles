@@ -71,7 +71,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Report missing, extra, silent, clipped, too-quiet, and suspicious-duration recordings.
 - [x] Copy accepted WAVs into Stager's segment tree only after validation.
 - [x] Permit partial imports explicitly, but keep Playbook generation strict.
-- [ ] Add tests that imported segment files can be consumed by Playbook generation.
+- [x] Add tests that imported segment files can be consumed by Playbook generation.
 
 ## Phase 5: Hardening
 
