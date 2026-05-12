@@ -97,7 +97,7 @@ class RecordingRequestBuilder:
                 continue
             response_segments = self._response_segments_for_role(block)
             for segment in response_segments:
-                segment_id = str(segment.segment_id)
+                segment_id = self._segment_request_id(segment)
                 if self.selected_segment_ids is not None and segment_id not in self.selected_segment_ids:
                     continue
                 matched_segment_ids.add(segment_id)
@@ -126,9 +126,12 @@ class RecordingRequestBuilder:
         section = self._section_for_block(block)
         segment_id = str(segment.segment_id)
         return RecordingRequestItem(
+            id=self._segment_request_id(segment),
             line_id=AppLine.line_id_for(block, self.role),
             block_id=AppLine.block_id_for(block),
             segment_id=segment_id,
+            line_content_hash=block.content_hash,
+            segment_content_hash=segment.content_hash,
             sequence=sequence,
             display_text=block.text,
             segment_text=segment.text,
@@ -150,6 +153,9 @@ class RecordingRequestBuilder:
             reason="initial_recording" if self.request_kind == "full_role" else self.request_kind,
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
+
+    def _segment_request_id(self, segment: SpeechSegment | SimultaneousSegment) -> str:
+        return segment.production_id or str(segment.segment_id)
 
     def _response_segments_for_role(self, block: RoleBlock) -> list[SpeechSegment | SimultaneousSegment]:
         segments: list[SpeechSegment | SimultaneousSegment] = []

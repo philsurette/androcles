@@ -16,6 +16,8 @@ class Block(ABC):
     block_id: BlockId
     text: str
     segments: List[Segment] = field(default_factory=list)
+    production_id: str | None = field(default=None, kw_only=True)
+    content_hash: str | None = field(default=None, kw_only=True)
 
     def __str__(self) -> str:
         return self.text

@@ -2,7 +2,7 @@
 """Segment model objects."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from abc import ABC
 
 from stager.domain.segment_id import SegmentId
@@ -12,6 +12,8 @@ from stager.domain.segment_id import SegmentId
 class Segment(ABC):
     segment_id: SegmentId
     text: str
+    production_id: str | None = field(default=None, kw_only=True)
+    content_hash: str | None = field(default=None, kw_only=True)
 
     def __str__(self) -> str:
         return self.text

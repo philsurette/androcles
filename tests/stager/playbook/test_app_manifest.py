@@ -219,6 +219,7 @@ def test_directions_preserve_inline_and_top_level_placement() -> None:
     top_level = AppDirection.from_segment(top_level_block.segments[0], placement="top_level")
 
     assert inline.to_dict() == {
+        "id": "0_7_2",
         "segment_id": "0_7_2",
         "text": "(_suddenly throwing down her stick_)",
         "placement": "inline",

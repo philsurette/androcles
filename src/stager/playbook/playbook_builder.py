@@ -111,12 +111,13 @@ class PlaybookBuilder:
             segment_id = str(segment.segment_id)
             context_blocks.append(
                 AppContextBlock(
-                    id=segment_id,
+                    id=block.production_id or segment.production_id or segment_id,
                     part_id=block.block_id.part_id,
                     block_id=self._block_id_for(block),
                     kind=self._context_kind_for(block),
                     speaker="_NARRATOR",
                     text=self._context_text_for(block),
+                    content_hash=block.content_hash,
                     audio=self._copy_required_audio(
                         source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
                         role="_NARRATOR",
@@ -142,6 +143,7 @@ class PlaybookBuilder:
                     block_id=AppLine.block_id_for(block),
                     role=role.name,
                     speaker=block.callout or role.name,
+                    content_hash=block.content_hash,
                     cue=self._build_cue(cue_selection),
                     response=AppResponse(
                         text=" ".join(segment.text for segment in response_segments),
@@ -210,7 +212,9 @@ class PlaybookBuilder:
         )
         owners = [segment.role] if isinstance(segment, SpeechSegment) else list(segment.roles)
         return AppResponseSegment(
-            id=str(segment.segment_id),
+            id=segment.production_id or str(segment.segment_id),
+            segment_id=str(segment.segment_id),
+            content_hash=segment.content_hash,
             owners=owners,
             text=segment.text,
             audio=asset,

@@ -12,6 +12,7 @@ from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
+from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
 
 
@@ -169,6 +170,7 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
     }
     assert data["items"] == [
         {
+            "id": "0_2_1",
             "line_id": "0_2_MEGAERA",
             "block_id": "0.2",
             "segment_id": "0_2_1",
@@ -295,3 +297,37 @@ def test_recording_request_builder_rejects_meta_roles(tmp_path: Path) -> None:
             paths=cfg,
             role="_NARRATOR",
         ).build_manifest()
+
+
+def test_recording_request_builder_uses_production_ids_and_hashes(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+I-2 MEGAERA: I won't go another step.
+""",
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        selected_segment_ids={"I-2:s1"},
+        request_kind="selected_segments",
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    item = data["items"][0]
+    assert item["id"] == "I-2:s1"
+    assert item["line_id"] == "I-2"
+    assert item["segment_id"] == "1_2_1"
+    assert item["line_content_hash"].startswith("sha256:")
+    assert item["segment_content_hash"].startswith("sha256:")
+    assert "production_id" not in json.dumps(data)

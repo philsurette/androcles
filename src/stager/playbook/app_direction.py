@@ -8,21 +8,27 @@ from stager.domain.segment import DescriptionSegment, DirectionSegment
 
 @dataclass
 class AppDirection:
-    segment_id: str
+    id: str
     text: str
     placement: str
+    segment_id: str | None = None
+    content_hash: str | None = None
 
     @classmethod
     def from_segment(cls, segment: DescriptionSegment | DirectionSegment, placement: str) -> "AppDirection":
         return cls(
-            segment_id=str(segment.segment_id),
+            id=segment.production_id or str(segment.segment_id),
             text=segment.text,
             placement=placement,
+            segment_id=str(segment.segment_id),
+            content_hash=segment.content_hash,
         )
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "segment_id": self.segment_id,
+            "id": self.id,
             "text": self.text,
             "placement": self.placement,
+            **({"segment_id": self.segment_id} if self.segment_id is not None else {}),
+            **({"content_hash": self.content_hash} if self.content_hash is not None else {}),
         }

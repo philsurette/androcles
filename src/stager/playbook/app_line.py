@@ -18,12 +18,15 @@ class AppLine:
     speaker: str
     cue: AppCue
     response: AppResponse
+    content_hash: str | None = None
     directions: list[AppDirection] = field(default_factory=list)
     previous_roles: list[str] = field(default_factory=list)
     simultaneous: bool = False
 
     @classmethod
     def line_id_for(cls, block: RoleBlock, role: str) -> str:
+        if block.production_id is not None:
+            return block.production_id
         return f"{block.block_id}_{role}"
 
     @classmethod
@@ -43,6 +46,8 @@ class AppLine:
             "directions": [direction.to_dict() for direction in self.directions],
             "previous_roles": list(self.previous_roles),
         }
+        if self.content_hash is not None:
+            data["content_hash"] = self.content_hash
         if self.simultaneous:
             data["simultaneous"] = True
         return data

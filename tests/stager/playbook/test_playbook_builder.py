@@ -16,6 +16,7 @@ from stager.domain.segment_id import SegmentId
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.playbook_audio_packager import PackagedAudio
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
 
 
@@ -323,3 +324,40 @@ def test_playbook_builder_keeps_path_configs_isolated(tmp_path: Path) -> None:
     assert second_zip.exists()
     assert (first_cfg.build_dir / "app" / "manifest.json").exists()
     assert (second_cfg.build_dir / "app" / "manifest.json").exists()
+
+
+def test_playbook_manifest_uses_production_ids_and_hashes(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+I-2 MEGAERA: (_suddenly_) I won't go another step.
+""",
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "1_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_1.wav")
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "1_2_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "1_2_2.wav")
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    megaera = next(role for role in data["roles"] if role["id"] == "MEGAERA")
+    line = megaera["lines"][0]
+    assert line["id"] == "I-2"
+    assert line["content_hash"].startswith("sha256:")
+    assert line["block_id"] == "1.2"
+    assert line["response"]["segments"][0]["id"] == "I-2:s1"
+    assert line["response"]["segments"][0]["segment_id"] == "1_2_2"
+    assert line["response"]["segments"][0]["content_hash"].startswith("sha256:")
+    assert line["directions"][0]["id"] == "I-2:d1"
+    assert line["directions"][0]["segment_id"] == "1_2_1"
+    assert line["directions"][0]["content_hash"].startswith("sha256:")
+    assert "production_id" not in json.dumps(data)

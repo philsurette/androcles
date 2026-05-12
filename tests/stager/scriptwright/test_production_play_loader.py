@@ -61,6 +61,15 @@ I-4 CAPTAIN, MEGAERA: Together.
         (1, 4, "CAPTAIN"),
         (1, 4, "MEGAERA"),
     ]
+    assert play.blocks[0].production_id == "I-0"
+    assert play.blocks[0].content_hash.startswith("sha256:")
+    assert play.blocks[1].production_id == "I-1"
+    assert play.blocks[1].segments[0].production_id == "I-1:d1"
+    assert play.blocks[3].production_id == "I-3"
+    assert play.blocks[3].segments[0].production_id == "I-3:s1"
+    assert play.blocks[3].segments[1].production_id == "I-3:d1"
+    assert play.blocks[3].segments[2].production_id == "I-3:s2"
+    assert play.blocks[4].segments[0].production_id == "I-4:s1"
 
 
 def test_load_rejects_draft_production_markdown(tmp_path):

@@ -69,6 +69,7 @@ class RecordingPreferences:
 
 @dataclass
 class RecordingRequestItem:
+    id: str
     line_id: str
     block_id: str
     segment_id: str
@@ -76,6 +77,8 @@ class RecordingRequestItem:
     display_text: str
     segment_text: str
     output_path: str
+    line_content_hash: str | None = None
+    segment_content_hash: str | None = None
     cue_text: str | None = None
     cue_speaker: str | None = None
     previous_text: str | None = None
@@ -97,6 +100,7 @@ class RecordingRequestItem:
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {
+            "id": self.id,
             "line_id": self.line_id,
             "block_id": self.block_id,
             "segment_id": self.segment_id,
@@ -105,6 +109,8 @@ class RecordingRequestItem:
             "segment_text": self.segment_text,
             "output_path": self.output_path,
         }
+        self._put_optional(data, "line_content_hash", self.line_content_hash)
+        self._put_optional(data, "segment_content_hash", self.segment_content_hash)
         self._put_optional(data, "cue_text", self.cue_text)
         self._put_optional(data, "cue_speaker", self.cue_speaker)
         self._put_optional(data, "previous_text", self.previous_text)

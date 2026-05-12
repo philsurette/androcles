@@ -1,7 +1,7 @@
 """Load locked production markdown into existing Stager play models."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import logging
 
@@ -12,6 +12,7 @@ from stager.domain.block_id import BlockId
 from stager.domain.play import Play, Reader, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment
 from stager.domain.segment_id import SegmentId
+from stager.scriptwright.content_hasher import ContentHasher
 from stager.scriptwright.production_script import ProductionEntry, ProductionEntryKind
 from stager.scriptwright.production_script_parser import ProductionScriptParser
 from stager.shared import paths
@@ -24,6 +25,7 @@ class ProductionPlayLoader:
     """Adapt locked `production.md` into the existing `Play` domain model."""
 
     paths_config: paths.PathConfig
+    content_hasher: ContentHasher = field(default_factory=ContentHasher)
 
     def load(self) -> Play:
         if not self.paths_config.production_markdown.exists():
@@ -92,26 +94,59 @@ class ProductionPlayLoader:
     def _title_block(self, entry: ProductionEntry, part_no: int) -> TitleBlock:
         block_id = BlockId(part_no, 0)
         source_text = f"## {part_no}: {entry.text} ##"
+        content_hash = self.content_hasher.hash_line(entry.kind.value, entry.text)
         return TitleBlock(
             block_id=block_id,
             text=source_text,
-            segments=[MetaSegment(segment_id=SegmentId(block_id, 1), text=source_text)],
+            segments=[
+                MetaSegment(
+                    segment_id=SegmentId(block_id, 1),
+                    text=source_text,
+                    production_id=self._segment_production_id(entry, 1, "m"),
+                    content_hash=self.content_hasher.hash_segment("meta", entry.text),
+                )
+            ],
             part_id=part_no,
             heading=entry.text,
+            production_id=entry.production_id,
+            content_hash=content_hash,
         )
 
     def _script_block(self, entry: ProductionEntry, block_id: BlockId):
+        content_hash = self.content_hasher.hash_line(
+            entry.kind.value,
+            entry.text,
+            entry.roles,
+        )
         if entry.kind == ProductionEntryKind.DESCRIPTION:
             return DescriptionBlock(
                 block_id=block_id,
                 text=entry.text,
-                segments=[DescriptionSegment(segment_id=SegmentId(block_id, 1), text=entry.text)],
+                production_id=entry.production_id,
+                content_hash=content_hash,
+                segments=[
+                    DescriptionSegment(
+                        segment_id=SegmentId(block_id, 1),
+                        text=entry.text,
+                        production_id=self._segment_production_id(entry, 1, "d"),
+                        content_hash=self.content_hasher.hash_segment("description", entry.text),
+                    )
+                ],
             )
         if entry.kind == ProductionEntryKind.DIRECTION:
             return DirectionBlock(
                 block_id=block_id,
                 text=entry.text,
-                segments=[DirectionSegment(segment_id=SegmentId(block_id, 1), text=entry.text)],
+                production_id=entry.production_id,
+                content_hash=content_hash,
+                segments=[
+                    DirectionSegment(
+                        segment_id=SegmentId(block_id, 1),
+                        text=entry.text,
+                        production_id=self._segment_production_id(entry, 1, "d"),
+                        content_hash=self.content_hasher.hash_segment("direction", entry.text),
+                    )
+                ],
             )
         if entry.kind == ProductionEntryKind.ROLE:
             roles = list(entry.roles)
@@ -121,22 +156,45 @@ class ProductionPlayLoader:
                     role_names=roles,
                     callout=roles[0],
                     text=entry.text,
+                    production_id=entry.production_id,
+                    content_hash=content_hash,
                     segments=[
                         SimultaneousSegment(
                             segment_id=SegmentId(block_id, 1),
                             text=entry.text,
                             roles=roles,
+                            production_id=self._segment_production_id(entry, 1, "s"),
+                            content_hash=self.content_hasher.hash_segment("simultaneous", entry.text, ",".join(roles)),
                         )
                     ],
                 )
+            segments = RoleBlock.split_block_segments(entry.text, block_id, roles[0])
+            speech_count = 0
+            direction_count = 0
+            for segment in segments:
+                if isinstance(segment, DirectionSegment):
+                    direction_count += 1
+                    segment.production_id = self._segment_production_id(entry, direction_count, "d")
+                    segment.content_hash = self.content_hasher.hash_segment("direction", segment.text)
+                else:
+                    speech_count += 1
+                    segment.production_id = self._segment_production_id(entry, speech_count, "s")
+                    segment.content_hash = self.content_hasher.hash_segment("speech", segment.text, roles[0])
             return RoleBlock(
                 block_id=block_id,
                 role_names=roles,
                 callout=roles[0],
                 text=entry.text,
-                segments=RoleBlock.split_block_segments(entry.text, block_id, roles[0]),
+                production_id=entry.production_id,
+                content_hash=content_hash,
+                segments=segments,
             )
         raise RuntimeError(f"Unsupported production entry kind: {entry.kind}")
+
+    def _segment_production_id(self, entry: ProductionEntry, index: int, prefix: str) -> str | None:
+        if entry.production_id is None:
+            return None
+        return f"{entry.production_id}:{prefix}{index}"
 
     def _load_source_text_metadata(self) -> SourceTextMetadata:
         meta_path = self.paths_config.play_dir / "source_text_metadata.yaml"

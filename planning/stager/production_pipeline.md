@@ -47,7 +47,7 @@ This plan tracks the three implementation milestones. Each milestone has its own
 - [x] A show runner can convert idless or provisional draft `production.md` to locked `production.md`.
 - [x] Stager normal build commands do not read `play.txt` directly.
 - [x] Stager rejects missing, draft, or idless `production.md` for normal builds.
-- [ ] Playbook manifests use production ids as canonical script-unit `id` values.
+- [x] Playbook manifests use production ids as canonical script-unit `id` values.
 - [ ] Recording Requests and recording packages use production ids as canonical recording item `id` values.
 - [ ] Cuemaster and LineRecorder display production ids where they currently display ordinal line numbers.
 - [ ] Content hashes detect changed text even if a production id is accidentally reused.

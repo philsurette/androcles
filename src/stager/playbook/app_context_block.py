@@ -15,9 +15,10 @@ class AppContextBlock:
     speaker: str
     text: str
     audio: AppAudioAsset
+    content_hash: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "id": self.id,
             "part_id": self.part_id,
             "block_id": self.block_id,
@@ -26,3 +27,6 @@ class AppContextBlock:
             "text": self.text,
             "audio": self.audio.to_dict(),
         }
+        if self.content_hash is not None:
+            data["content_hash"] = self.content_hash
+        return data
