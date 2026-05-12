@@ -3,9 +3,12 @@ import type { RecordingRequest } from "../domain/recordingRequest";
 import type { RecordingRequestManifest } from "./recordingPackageManifest";
 
 const itemSchema = z.object({
+  id: z.string().min(1),
   line_id: z.string().min(1),
   block_id: z.string().min(1),
   segment_id: z.string().min(1),
+  line_content_hash: z.string().min(1).optional(),
+  segment_content_hash: z.string().min(1).optional(),
   sequence: z.number().int().positive(),
   display_text: z.string(),
   segment_text: z.string(),
@@ -84,9 +87,12 @@ export function validateRecordingRequestManifest(value: unknown): RecordingReque
       sourceFormat: manifest.recording.source_format
     },
     items: manifest.items.map((item) => ({
+      id: item.id,
       lineId: item.line_id,
       blockId: item.block_id,
       segmentId: item.segment_id,
+      lineContentHash: item.line_content_hash,
+      segmentContentHash: item.segment_content_hash,
       sequence: item.sequence,
       displayText: item.display_text,
       segmentText: item.segment_text,

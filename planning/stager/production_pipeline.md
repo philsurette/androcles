@@ -48,6 +48,6 @@ This plan tracks the three implementation milestones. Each milestone has its own
 - [x] Stager normal build commands do not read `play.txt` directly.
 - [x] Stager rejects missing, draft, or idless `production.md` for normal builds.
 - [x] Playbook manifests use production ids as canonical script-unit `id` values.
-- [ ] Recording Requests and recording packages use production ids as canonical recording item `id` values.
+- [x] Recording Requests and recording packages use production ids as canonical recording item `id` values.
 - [ ] Cuemaster and LineRecorder display production ids where they currently display ordinal line numbers.
 - [ ] Content hashes detect changed text even if a production id is accidentally reused.

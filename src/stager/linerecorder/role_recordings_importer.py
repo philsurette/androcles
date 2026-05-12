@@ -11,7 +11,10 @@ import shutil
 import wave
 import zipfile
 
+from stager.domain.block import RoleBlock
 from stager.domain.play import Play
+from stager.domain.segment import SimultaneousSegment, SpeechSegment
+from stager.playbook.app_line import AppLine
 from stager.shared import paths
 
 logger = logging.getLogger(__name__)
@@ -53,11 +56,24 @@ class RoleRecordingImportIssue:
 
 @dataclass
 class RoleRecordingImportJob:
+    id: str | None
+    line_id: str | None
+    line_content_hash: str | None
     segment_id: str
+    segment_content_hash: str | None
     audio_path: str
     manifest_duration_ms: int
     member: zipfile.ZipInfo
     target_path: Path
+
+
+@dataclass(frozen=True)
+class ExpectedRecordingSegment:
+    id: str | None
+    line_id: str
+    segment_id: str
+    line_content_hash: str | None
+    segment_content_hash: str | None
 
 
 @dataclass
@@ -78,7 +94,11 @@ class RoleRecordingsImporter:
                 target_path = self._target_path(role, recording["segment_id"], audio_path)
                 import_jobs.append(
                     RoleRecordingImportJob(
+                        id=recording.get("id"),
+                        line_id=recording.get("line_id"),
+                        line_content_hash=recording.get("line_content_hash"),
                         segment_id=recording["segment_id"],
+                        segment_content_hash=recording.get("segment_content_hash"),
                         audio_path=audio_path,
                         manifest_duration_ms=recording["duration_ms"],
                         member=self._audio_member(archive, audio_path, package_path),
@@ -191,19 +211,81 @@ class RoleRecordingsImporter:
     def _validate_play_segments(self, manifest: dict, role: str, package_path: Path) -> None:
         if self.play is None:
             return
-        segment_maps = self.play.build_segment_maps()
-        if role not in segment_maps:
+        expected_segments = self._expected_segments_for_role(role)
+        if not expected_segments:
             raise RuntimeError(f"Unknown role {role!r} in {paths.display_path(package_path)}")
-        expected_segment_ids = {
-            segment_id
-            for segment_ids in segment_maps[role].values()
-            for segment_id in segment_ids
-        }
+        expected_segment_ids = set(expected_segments)
         imported_segment_ids = {recording["segment_id"] for recording in manifest["recordings"]}
         unknown_segment_ids = sorted(imported_segment_ids - expected_segment_ids)
         if unknown_segment_ids:
             raise RuntimeError(
                 f"Unknown segment ids for role {role} in {paths.display_path(package_path)}: {', '.join(unknown_segment_ids)}"
+            )
+        for recording in manifest["recordings"]:
+            self._validate_recording_against_play(
+                recording=recording,
+                expected=expected_segments[recording["segment_id"]],
+                package_path=package_path,
+            )
+
+    def _expected_segments_for_role(self, role: str) -> dict[str, ExpectedRecordingSegment]:
+        assert self.play is not None
+        expected: dict[str, ExpectedRecordingSegment] = {}
+        for block in self.play.blocks:
+            if not isinstance(block, RoleBlock):
+                continue
+            for segment in block.segments:
+                if isinstance(segment, SpeechSegment) and segment.role == role:
+                    expected[str(segment.segment_id)] = self._expected_segment(block, segment, role)
+                elif isinstance(segment, SimultaneousSegment) and role in segment.roles:
+                    expected[str(segment.segment_id)] = self._expected_segment(block, segment, role)
+        return expected
+
+    def _expected_segment(
+        self,
+        block: RoleBlock,
+        segment: SpeechSegment | SimultaneousSegment,
+        role: str,
+    ) -> ExpectedRecordingSegment:
+        segment_id = str(segment.segment_id)
+        return ExpectedRecordingSegment(
+            id=segment.production_id,
+            line_id=AppLine.line_id_for(block, role),
+            segment_id=segment_id,
+            line_content_hash=block.content_hash,
+            segment_content_hash=segment.content_hash,
+        )
+
+    def _validate_recording_against_play(
+        self,
+        *,
+        recording: dict,
+        expected: ExpectedRecordingSegment,
+        package_path: Path,
+    ) -> None:
+        self._validate_required_match(recording, "id", expected.id, package_path)
+        self._validate_required_match(recording, "line_id", expected.line_id, package_path)
+        self._validate_required_match(recording, "line_content_hash", expected.line_content_hash, package_path)
+        self._validate_required_match(recording, "segment_content_hash", expected.segment_content_hash, package_path)
+
+    def _validate_required_match(
+        self,
+        recording: dict,
+        field_name: str,
+        expected_value: str | None,
+        package_path: Path,
+    ) -> None:
+        if expected_value is None:
+            return
+        actual_value = recording.get(field_name)
+        if actual_value is None:
+            raise RuntimeError(
+                f"Missing {field_name} for segment {recording['segment_id']} in {paths.display_path(package_path)}"
+            )
+        if actual_value != expected_value:
+            raise RuntimeError(
+                f"Unexpected {field_name} for segment {recording['segment_id']} in {paths.display_path(package_path)}: "
+                f"{actual_value!r} != {expected_value!r}"
             )
 
     def _audio_member(self, archive: zipfile.ZipFile, audio_path: str, package_path: Path) -> zipfile.ZipInfo:
@@ -390,6 +472,10 @@ class RoleRecordingsImporter:
                 "incoming_path": paths.display_path(incoming_path),
                 "existed_before": existed_before,
             }
+            self._put_optional(item, "id", import_job.id)
+            self._put_optional(item, "line_id", import_job.line_id)
+            self._put_optional(item, "line_content_hash", import_job.line_content_hash)
+            self._put_optional(item, "segment_content_hash", import_job.segment_content_hash)
             if existed_before:
                 item["backup_path"] = paths.display_path(backup_path)
             imported.append(item)
@@ -415,6 +501,10 @@ class RoleRecordingsImporter:
         )
         logger.info("Wrote LineRecorder import transaction %s", paths.display_path(transaction_manifest_path))
         return transaction_manifest_path
+
+    def _put_optional(self, item: dict, key: str, value: str | None) -> None:
+        if value is not None:
+            item[key] = value
 
     def _transaction_target_path(self, target_path: str) -> Path:
         relative_path = PurePosixPath(target_path)

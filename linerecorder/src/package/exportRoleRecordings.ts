@@ -33,12 +33,13 @@ export async function exportRoleRecordings(
   for (const item of project.request.items) {
     const take = acceptedBySegmentId.get(item.segmentId);
     if (!take) {
-      missingSegmentIds.push(item.segmentId);
+      missingSegmentIds.push(item.id);
       continue;
     }
 
     zipGenerator.file(item.outputPath, take.blob);
-    recordings.push({
+    const recording = {
+      id: item.id,
       line_id: item.lineId,
       block_id: item.blockId,
       segment_id: item.segmentId,
@@ -59,7 +60,14 @@ export async function exportRoleRecordings(
           }
         : undefined,
       status: "accepted" as const
-    });
+    };
+    if (item.lineContentHash !== undefined) {
+      Object.assign(recording, { line_content_hash: item.lineContentHash });
+    }
+    if (item.segmentContentHash !== undefined) {
+      Object.assign(recording, { segment_content_hash: item.segmentContentHash });
+    }
+    recordings.push(recording);
   }
 
   const manifest: RoleRecordingsManifest = {

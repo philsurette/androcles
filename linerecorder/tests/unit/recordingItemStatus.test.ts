@@ -19,6 +19,7 @@ describe("recordingItemProgress", () => {
 
 function itemFixture(segmentId: string): RecordingItem {
   return {
+    id: segmentId,
     lineId: `${segmentId}_CENTURION`,
     blockId: "0.1",
     segmentId,

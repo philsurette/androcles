@@ -15,6 +15,7 @@ from stager.domain.segment import SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths
 
 
@@ -384,6 +385,87 @@ def test_role_recordings_importer_rejects_unknown_play_segment(tmp_path: Path) -
         RoleRecordingsImporter(paths=cfg, play=_play()).import_package(package_path)
 
 
+def test_role_recordings_importer_accepts_production_ids_and_hashes(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    play = _production_play(cfg, line_text="I won't go another step.")
+    block, segment = _production_role_segment(play, "MEGAERA")
+    package_path = tmp_path / "MEGAERA.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "MEGAERA", "display_name": "MEGAERA"},
+            "recordings": [
+                {
+                    "id": segment.production_id,
+                    "line_id": block.production_id,
+                    "block_id": str(block.block_id),
+                    "segment_id": str(segment.segment_id),
+                    "line_content_hash": block.content_hash,
+                    "segment_content_hash": segment.content_hash,
+                    "audio_path": f"audio/segments/MEGAERA/{segment.segment_id}.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={f"audio/segments/MEGAERA/{segment.segment_id}.wav": _wav_bytes()},
+    )
+
+    result = RoleRecordingsImporter(paths=cfg, play=play).import_package(package_path)
+
+    transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
+    assert transaction["imported"][0]["id"] == "I-2:s1"
+    assert transaction["imported"][0]["line_content_hash"].startswith("sha256:")
+    assert (cfg.segments_dir / "MEGAERA" / f"{segment.segment_id}.wav").exists()
+
+
+def test_role_recordings_importer_rejects_stale_production_hashes(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    old_play = _production_play(cfg, line_text="I won't go another step.")
+    old_block, old_segment = _production_role_segment(old_play, "MEGAERA")
+    current_play = _production_play(cfg, line_text="I won't go another inch.")
+    package_path = tmp_path / "MEGAERA.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "MEGAERA", "display_name": "MEGAERA"},
+            "recordings": [
+                {
+                    "id": old_segment.production_id,
+                    "line_id": old_block.production_id,
+                    "block_id": str(old_block.block_id),
+                    "segment_id": str(old_segment.segment_id),
+                    "line_content_hash": old_block.content_hash,
+                    "segment_content_hash": old_segment.content_hash,
+                    "audio_path": f"audio/segments/MEGAERA/{old_segment.segment_id}.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={f"audio/segments/MEGAERA/{old_segment.segment_id}.wav": _wav_bytes()},
+    )
+
+    with pytest.raises(RuntimeError, match="Unexpected line_content_hash"):
+        RoleRecordingsImporter(paths=cfg, play=current_play).import_package(package_path)
+
+
 def test_role_recordings_importer_rejects_unreadable_wav(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     package_path = tmp_path / "bad-audio.role-recordings.zip"
@@ -612,3 +694,33 @@ def _play_with_cue_and_response() -> Play:
             ),
         ]
     )
+
+
+def _production_play(cfg: paths.PathConfig, *, line_text: str) -> Play:
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        f"""// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+I-2 MEGAERA: {line_text}
+""",
+        encoding="utf-8",
+    )
+    return ProductionPlayLoader(paths_config=cfg).load()
+
+
+def _production_role_segment(play: Play, role: str) -> tuple[RoleBlock, SpeechSegment]:
+    block = next(
+        candidate
+        for candidate in play.blocks
+        if isinstance(candidate, RoleBlock) and role in candidate.role_names
+    )
+    segment = next(
+        candidate
+        for candidate in block.segments
+        if isinstance(candidate, SpeechSegment) and candidate.role == role
+    )
+    return block, segment

@@ -1,7 +1,10 @@
 export type RecordingItem = {
+  id: string;
   lineId: string;
   blockId: string;
   segmentId: string;
+  lineContentHash?: string;
+  segmentContentHash?: string;
   sequence: number;
   displayText: string;
   segmentText: string;

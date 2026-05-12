@@ -29,6 +29,7 @@ describe("recording navigation", () => {
 function progressFixture(): RecordingItemProgress[] {
   return ["0_1_1", "0_2_1", "0_3_1"].map((segmentId, index) => ({
     item: {
+      id: segmentId,
       lineId: `${segmentId}_CENTURION`,
       blockId: `0.${index + 1}`,
       segmentId,

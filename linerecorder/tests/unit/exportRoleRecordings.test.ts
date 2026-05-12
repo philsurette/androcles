@@ -16,9 +16,12 @@ describe("exportRoleRecordings", () => {
       complete: false,
       recordings: [
         {
+          id: "I-12:s1",
           line_id: "0_12_CENTURION",
           block_id: "0.12",
           segment_id: "0_12_1",
+          line_content_hash: "sha256:line-12",
+          segment_content_hash: "sha256:segment-12",
           audio_path: "audio/segments/CENTURION/0_12_1.wav",
           input_quality: {
             peak_energy: 0.14,
@@ -32,7 +35,7 @@ describe("exportRoleRecordings", () => {
           status: "accepted"
         }
       ],
-      missing_segment_ids: ["0_14_1"]
+      missing_segment_ids: ["I-14:s1"]
     });
     await expect(zip.file("audio/segments/CENTURION/0_12_1.wav")!.async("string")).resolves.toBe("fake wav");
   });
@@ -86,9 +89,12 @@ function projectFixture(): RecordingProjectRecord {
       },
       items: [
         {
+          id: "I-12:s1",
           lineId: "0_12_CENTURION",
           blockId: "0.12",
           segmentId: "0_12_1",
+          lineContentHash: "sha256:line-12",
+          segmentContentHash: "sha256:segment-12",
           sequence: 1,
           displayText: "Halt!",
           segmentText: "Halt!",
@@ -96,9 +102,12 @@ function projectFixture(): RecordingProjectRecord {
           stageDirections: []
         },
         {
+          id: "I-14:s1",
           lineId: "0_14_CENTURION",
           blockId: "0.14",
           segmentId: "0_14_1",
+          lineContentHash: "sha256:line-14",
+          segmentContentHash: "sha256:segment-14",
           sequence: 2,
           displayText: "Stand aside.",
           segmentText: "Stand aside.",

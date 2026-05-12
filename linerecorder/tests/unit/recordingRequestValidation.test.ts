@@ -29,9 +29,12 @@ describe("validateRecordingRequestManifest", () => {
       },
       items: [
         {
+          id: "I-12:s1",
           line_id: "0_12_CENTURION",
           block_id: "0.12",
           segment_id: "0_12_1",
+          line_content_hash: "sha256:line-12",
+          segment_content_hash: "sha256:segment-12",
           sequence: 1,
           display_text: "Halt!",
           segment_text: "Halt!",
@@ -54,8 +57,11 @@ describe("validateRecordingRequestManifest", () => {
     expect(request.play.id).toBe("androcles");
     expect(request.role.displayName).toBe("Centurion");
     expect(request.items[0]).toMatchObject({
+      id: "I-12:s1",
       lineId: "0_12_CENTURION",
       segmentId: "0_12_1",
+      lineContentHash: "sha256:line-12",
+      segmentContentHash: "sha256:segment-12",
       cueSpeaker: "_NARRATOR",
       previousSpeaker: "FERROVIUS",
       nextSpeaker: "ANDROCLES",

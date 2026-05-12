@@ -2,9 +2,12 @@ import { z } from "zod";
 import type { RoleRecordingsManifest } from "./recordingPackageManifest";
 
 const recordingSchema = z.object({
+  id: z.string().min(1),
   line_id: z.string().min(1),
   block_id: z.string().min(1),
   segment_id: z.string().min(1),
+  line_content_hash: z.string().min(1).optional(),
+  segment_content_hash: z.string().min(1).optional(),
   audio_path: z.string().min(1),
   recorded_at: z.string().min(1),
   duration_ms: z.number().int().nonnegative(),

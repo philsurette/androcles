@@ -46,9 +46,9 @@ Adopt production ids and content hashes across Stager manifests, Cuemaster, and 
 - [x] Update Recording Request item `id` to production segment id.
 - [x] Add parent `line_id`.
 - [x] Add `line_content_hash` and `segment_content_hash`.
-- [ ] Preserve ids and hashes in LineRecorder recording packages.
-- [ ] Make Stager import validate ids and hashes before accepting recordings as current.
-- [ ] Add tests for stale recording rejection when text changes behind a reused id.
+- [x] Preserve ids and hashes in LineRecorder recording packages.
+- [x] Make Stager import validate ids and hashes before accepting recordings as current.
+- [x] Add tests for stale recording rejection when text changes behind a reused id.
 
 ## Milestone 4: Cuemaster
 
@@ -80,8 +80,8 @@ Adopt production ids and content hashes across Stager manifests, Cuemaster, and 
 
 - [x] Playbook manifests use production ids as canonical ids.
 - [x] Recording Requests use production segment ids as canonical recording item ids.
-- [ ] Recording packages preserve production ids and content hashes.
-- [ ] Stager detects stale recordings when text changes behind a reused id.
+- [x] Recording packages preserve production ids and content hashes.
+- [x] Stager detects stale recordings when text changes behind a reused id.
 - [ ] Cuemaster displays production ids instead of ordinal line labels.
 - [ ] LineRecorder displays production ids instead of ordinal line labels.
 - [ ] Tests cover Stager manifest generation, recording package import/export, Cuemaster import/display, and LineRecorder import/export.

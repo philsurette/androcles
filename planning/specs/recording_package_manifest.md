@@ -64,8 +64,8 @@ Example manifest:
   },
   "items": [
     {
-      "id": "0-12:s1",
-      "line_id": "0-12",
+      "id": "I-12:s1",
+      "line_id": "I-12",
       "block_id": "0.12",
       "segment_id": "0_12_1",
       "line_content_hash": "sha256:...",
@@ -83,7 +83,7 @@ Example manifest:
       "section_title": "Act I",
       "stage_directions": ["stopping"],
       "reason": "initial_recording",
-      "output_path": "audio/segments/CENTURION/0-12_s1.wav"
+      "output_path": "audio/segments/CENTURION/0_12_1.wav"
     }
   ]
 }
@@ -151,9 +151,9 @@ CENTURION-recordings.zip
 └── audio/
     └── segments/
         └── CENTURION/
-            ├── 0-12_s1.wav
-            ├── 0-14_s1.wav
-            └── 0-19_s1.wav
+            ├── 0_12_1.wav
+            ├── 0_14_1.wav
+            └── 0_19_1.wav
 ```
 
 Example manifest:
@@ -174,13 +174,13 @@ Example manifest:
   },
   "recordings": [
     {
-      "id": "0-12:s1",
-      "line_id": "0-12",
+      "id": "I-12:s1",
+      "line_id": "I-12",
       "block_id": "0.12",
       "segment_id": "0_12_1",
       "line_content_hash": "sha256:...",
       "segment_content_hash": "sha256:...",
-      "audio_path": "audio/segments/CENTURION/0-12_s1.wav",
+      "audio_path": "audio/segments/CENTURION/0_12_1.wav",
       "recorded_at": "2026-05-10T14:30:00Z",
       "duration_ms": 1840,
       "sample_rate_hz": 48000,
@@ -197,7 +197,7 @@ Example manifest:
       "status": "accepted"
     }
   ],
-  "missing_ids": ["0-14:s1"]
+  "missing_segment_ids": ["I-14:s1"]
 }
 ```
 

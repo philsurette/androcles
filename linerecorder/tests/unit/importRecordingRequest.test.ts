@@ -7,6 +7,7 @@ describe("importRecordingRequest", () => {
     const request = await importRecordingRequest(await zipFileWithManifest(manifestFixture()));
 
     expect(request.request.id).toBe("androcles-CENTURION-full-2026-05-10");
+    expect(request.items[0].id).toBe("I-12:s1");
     expect(request.items[0].segmentId).toBe("0_12_1");
   });
 
@@ -51,9 +52,12 @@ function manifestFixture() {
     },
     items: [
       {
+        id: "I-12:s1",
         line_id: "0_12_CENTURION",
         block_id: "0.12",
         segment_id: "0_12_1",
+        line_content_hash: "sha256:line-12",
+        segment_content_hash: "sha256:segment-12",
         sequence: 1,
         display_text: "Halt!",
         segment_text: "Halt!",

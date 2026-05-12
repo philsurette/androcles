@@ -75,6 +75,7 @@ function packFixture(): RecordingRequest {
     },
     items: [
       {
+        id: "0_12_1",
         lineId: "0_12_CENTURION",
         blockId: "0.12",
         segmentId: "0_12_1",

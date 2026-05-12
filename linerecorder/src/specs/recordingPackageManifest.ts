@@ -26,9 +26,12 @@ export type RecordingRequestManifest = {
 };
 
 export type RecordingRequestItemManifest = {
+  id: string;
   line_id: string;
   block_id: string;
   segment_id: string;
+  line_content_hash?: string;
+  segment_content_hash?: string;
   sequence: number;
   display_text: string;
   segment_text: string;
@@ -71,9 +74,12 @@ export type RoleRecordingsManifest = {
 };
 
 export type RoleRecordingManifestItem = {
+  id: string;
   line_id: string;
   block_id: string;
   segment_id: string;
+  line_content_hash?: string;
+  segment_content_hash?: string;
   audio_path: string;
   recorded_at: string;
   duration_ms: number;
