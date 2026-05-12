@@ -10,6 +10,17 @@ const recordingSchema = z.object({
   duration_ms: z.number().int().nonnegative(),
   sample_rate_hz: z.number().int().positive(),
   channels: z.number().int().positive(),
+  input_quality: z
+    .object({
+      peak_energy: z.number().nonnegative(),
+      level_counts: z.object({
+        no_signal: z.number().int().nonnegative(),
+        too_quiet: z.number().int().nonnegative(),
+        good: z.number().int().nonnegative(),
+        clipping: z.number().int().nonnegative()
+      })
+    })
+    .optional(),
   status: z.literal("accepted")
 });
 

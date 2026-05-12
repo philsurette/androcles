@@ -26,6 +26,15 @@ describe("validateRoleRecordingsManifest", () => {
           duration_ms: 1840,
           sample_rate_hz: 48000,
           channels: 1,
+          input_quality: {
+            peak_energy: 0.14,
+            level_counts: {
+              no_signal: 1,
+              too_quiet: 2,
+              good: 24,
+              clipping: 0
+            }
+          },
           status: "accepted"
         }
       ],
@@ -34,6 +43,7 @@ describe("validateRoleRecordingsManifest", () => {
 
     expect(manifest.package_type).toBe("role_recordings");
     expect(manifest.recordings[0].segment_id).toBe("0_12_1");
+    expect(manifest.recordings[0].input_quality?.level_counts.good).toBe(24);
     expect(manifest.missing_segment_ids).toEqual(["0_14_1"]);
   });
 

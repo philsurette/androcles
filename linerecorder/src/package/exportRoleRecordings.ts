@@ -47,6 +47,17 @@ export async function exportRoleRecordings(
       duration_ms: Math.round(take.durationMs),
       sample_rate_hz: take.sampleRateHz,
       channels: take.channels,
+      input_quality: take.inputQuality
+        ? {
+            peak_energy: take.inputQuality.peakEnergy,
+            level_counts: {
+              no_signal: take.inputQuality.levelCounts.noSignal,
+              too_quiet: take.inputQuality.levelCounts.tooQuiet,
+              good: take.inputQuality.levelCounts.good,
+              clipping: take.inputQuality.levelCounts.clipping
+            }
+          }
+        : undefined,
       status: "accepted" as const
     });
   }

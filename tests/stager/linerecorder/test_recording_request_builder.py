@@ -35,7 +35,7 @@ def _title_block() -> TitleBlock:
     )
 
 
-def _speech_block(part_id: int, block_no: int, role: str, text: str) -> RoleBlock:
+def _speech_block(part_id: int | None, block_no: int, role: str, text: str) -> RoleBlock:
     block_id = BlockId(part_id, block_no)
     return RoleBlock(
         block_id=block_id,
@@ -251,6 +251,23 @@ def test_recording_request_builder_can_emit_selected_segments(tmp_path: Path) ->
     assert data["request"]["kind"] == "selected_segments"
     assert [item["segment_id"] for item in data["items"]] == ["0_2_1"]
     assert data["items"][0]["reason"] == "selected_segments"
+
+
+def test_recording_request_builder_uses_synthetic_play_section_for_no_part_material(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    response_block = _speech_block(None, 1, "MEGAERA", "I won't go another step.")
+    play = _play([response_block])
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    assert data["items"][0]["section_id"] == "play"
+    assert data["items"][0]["section_title"] == "Androcles and the Lion"
+    assert data["items"][0]["scene_heading"] == "Androcles and the Lion"
 
 
 def test_recording_request_builder_rejects_unknown_selected_segments(tmp_path: Path) -> None:

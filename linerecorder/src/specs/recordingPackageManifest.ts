@@ -79,5 +79,14 @@ export type RoleRecordingManifestItem = {
   duration_ms: number;
   sample_rate_hz: number;
   channels: number;
+  input_quality?: {
+    peak_energy: number;
+    level_counts: {
+      no_signal: number;
+      too_quiet: number;
+      good: number;
+      clipping: number;
+    };
+  };
   status: "accepted";
 };

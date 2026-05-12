@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import type { RecordingRequest } from "../../src/domain/recordingRequest";
 import { db } from "../../src/storage/db";
 import { projectRepository } from "../../src/storage/projectRepository";
+import { takeRepository } from "../../src/storage/takeRepository";
 
 describe("ProjectRepository", () => {
   beforeEach(async () => {
@@ -26,6 +27,26 @@ describe("ProjectRepository", () => {
     await expect(projectRepository.get(project.id)).resolves.toMatchObject({
       currentSegmentId: "0_14_1"
     });
+  });
+
+  it("deletes the project and its takes", async () => {
+    const project = await projectRepository.saveImportedRequest(packFixture());
+    await takeRepository.saveAccepted({
+      id: "take-1",
+      projectId: project.id,
+      segmentId: "0_12_1",
+      status: "accepted",
+      recordedAt: "2026-05-11T12:00:00Z",
+      durationMs: 1000,
+      sampleRateHz: 48000,
+      channels: 1,
+      blob: new Blob(["fake wav"], { type: "audio/wav" })
+    });
+
+    await projectRepository.delete(project.id);
+
+    await expect(projectRepository.list()).resolves.toEqual([]);
+    await expect(takeRepository.acceptedForProject(project.id)).resolves.toEqual([]);
   });
 });
 

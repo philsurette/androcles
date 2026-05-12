@@ -19,9 +19,9 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Define fixture WAV files with deterministic short audio.
 - [x] Add schema-validation tests for `recording_request`.
 - [x] Add schema-validation tests for `role_recordings`.
-- [ ] Keep Cuemaster-generated Recording Request tests out of MVP unless Cuemaster export work begins.
+- [x] Keep Cuemaster-generated Recording Request tests out of MVP unless Cuemaster export work begins.
 - [x] Decide whether LineRecorder lives as a sibling app beside `cuemaster/` or inside a future shared app workspace.
-- [ ] Identify copyable shared-browser candidates from Cuemaster before coding: microphone platform access, storage estimates, zip import/export helpers, license audit script, and Playwright/Vitest setup.
+- [x] Identify copyable shared-browser candidates from Cuemaster before coding: microphone platform access, storage estimates, zip import/export helpers, license audit script, and Playwright/Vitest setup.
 
 ## Phase 1: Stager Recording Request Export
 
@@ -32,11 +32,11 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Emit one recording item per speakable role segment.
 - [x] If one displayed source line contains multiple speakable segments, emit multiple recording items with shared display context.
 - [x] Include cue text, previous/next local context, stage directions, part/scene context, item reason, and expected `output_path` when available.
-- [ ] Include section metadata compatible with Stager's Playbook `sections` model so actors can navigate by act, scene, or synthetic play section.
-- [ ] Reuse the same parsed play/segment model patterns as `PlaybookBuilder` for role lines, simultaneous speech, and meta-role exclusion.
+- [x] Include section metadata compatible with Stager's Playbook `sections` model so actors can navigate by act, scene, or synthetic play section.
+- [x] Reuse the same parsed play/segment model patterns as `PlaybookBuilder` for role lines, simultaneous speech, and meta-role exclusion.
 - [x] Add tests for solo and dramatic readings.
 - [x] Add tests for inline directions and simultaneous speech.
-- [ ] Add tests for section context and no-part synthetic section behavior.
+- [x] Add tests for section context and no-part synthetic section behavior.
 - [x] Add a thin Stager CLI command after the service is tested.
 
 ## Phase 2: LineRecorder Browser MVP
@@ -49,11 +49,12 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Show actor-facing line list backed by `segment_id`.
 - [x] Implement microphone setup with explicit device selection, browser permission handling, and input meter.
 - [x] Keep microphone access and metering behind a small platform/domain boundary that can later be shared with Cuemaster timing and voice-command work.
-- [ ] Prototype AudioWorklet WAV capture in desktop Chrome and Safari.
-- [ ] Capture actual sample rate, channel count, clipping, too-quiet, and no-signal metadata for export and troubleshooting.
+- [x] Prototype AudioWorklet WAV capture in desktop Chrome and Safari.
+- [x] Capture actual sample rate, channel count, clipping, too-quiet, and no-signal metadata for export and troubleshooting.
 - [ ] Verify mobile Safari and Android Chrome constraints before committing to mobile MVP support.
 - [x] Record, stop, play, accept, retry, next, previous, and jump-to-item flows.
 - [x] Persist accepted takes across reloads.
+- [x] Delete local projects and take blobs for storage recovery.
 
 ## Phase 3: Export Recording Packages
 
@@ -79,7 +80,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Decide whether Clean Recording Mode or Noisy Room Mode is the default.
 - [x] Decide whether LineRecorder preserves device sample rate or resamples before export.
 - [x] Decide whether shared microphone code should be copied between apps, factored into a shared package, or deferred until the Capacitor spike.
-- [ ] Document browser support after AudioWorklet/WAV prototype results.
+- [x] Document browser support after AudioWorklet/WAV prototype results.
 - [x] Add user-facing troubleshooting for microphone permission, no signal, clipping, and storage quota.
 
 ## Later

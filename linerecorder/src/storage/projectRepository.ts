@@ -24,6 +24,13 @@ export class ProjectRepository {
   async setCurrentSegment(projectId: string, segmentId: string): Promise<void> {
     await db.projects.update(projectId, { currentSegmentId: segmentId });
   }
+
+  async delete(projectId: string): Promise<void> {
+    await db.transaction("rw", db.projects, db.takes, async () => {
+      await db.takes.where("projectId").equals(projectId).delete();
+      await db.projects.delete(projectId);
+    });
+  }
 }
 
 export const projectRepository = new ProjectRepository();

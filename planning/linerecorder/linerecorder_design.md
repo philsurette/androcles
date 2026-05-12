@@ -597,6 +597,7 @@ LineRecorder MVP should include:
 - jump to any line,
 - re-record accepted lines,
 - persist draft recordings locally,
+- delete local projects and takes for storage recovery,
 - export WAV recording package,
 - show missing-item checklist,
 - no server dependency.
@@ -639,7 +640,7 @@ Potential future features:
 
 ## Open Questions
 
-1. **WAV encoding path:** Implement app-owned WAV encoding from AudioWorklet PCM, or use a small permissively licensed helper?
+1. **WAV encoding path:** Decided for MVP. Use app-owned WAV encoding from Web Audio PCM. The current implementation prefers AudioWorklet and falls back to ScriptProcessor if worklet setup is unavailable.
 2. **Sample rate:** Decided in ADR 0002. LineRecorder preserves the device/browser sample rate and lets Stager resample later.
 3. **Noise suppression default:** Decided in ADR 0002. Clean Recording Mode is the default.
 4. **Partial exports:** Should actors be allowed to export incomplete packages? Initial answer: yes, with clear missing-segment metadata.
@@ -651,23 +652,33 @@ Potential future features:
 
 ---
 
+## Browser Support Notes
+
+Desktop Chrome and desktop Safari have both manually passed the LineRecorder microphone setup, recording, playback, accept, and saved-playback flow with the AudioWorklet-first recorder.
+
+Safari required meter-display tuning. The text level classifier responded correctly, but raw energy-to-width scaling made the visual bar appear stuck. The meter now uses smoothing and a level-aware fill floor so Safari's gauge follows the same no-signal, too-quiet, good, and clipping states as the text indicator.
+
+The browser MVP support target is desktop Chrome and desktop Safari. Mobile Safari and Android Chrome remain unverified and should be treated as later hardening or Capacitor-readiness work.
+
+---
+
 ## Definition of Done for MVP
 
 LineRecorder MVP is complete when:
 
-- [ ] A user can import a Recording Request from Stager.
-- [ ] The app validates and displays the role recording item list.
-- [ ] The user can select and test a microphone.
-- [ ] The app warns about no signal, too-quiet input, and clipping.
-- [ ] The user can record a line.
-- [ ] The user can play back the recorded take.
-- [ ] The user can accept or retry the take.
-- [ ] The user can advance through the role recording item list.
-- [ ] The user can jump back and re-record an accepted line.
-- [ ] Accepted recordings persist locally after reload.
-- [ ] The user can export a recording package as a zip.
-- [ ] Exported audio files are named according to Stager segment IDs.
-- [ ] Exported manifest maps recordings to segment IDs and preserves actor-facing line IDs where useful.
-- [ ] Stager can import and validate the package.
-- [ ] No server is required.
-- [ ] No GPL-family runtime dependency is included.
+- [x] A user can import a Recording Request from Stager.
+- [x] The app validates and displays the role recording item list.
+- [x] The user can select and test a microphone.
+- [x] The app warns about no signal, too-quiet input, and clipping.
+- [x] The user can record a line.
+- [x] The user can play back the recorded take.
+- [x] The user can accept or retry the take.
+- [x] The user can advance through the role recording item list.
+- [x] The user can jump back and re-record an accepted line.
+- [x] Accepted recordings persist locally after reload.
+- [x] The user can export a recording package as a zip.
+- [x] Exported audio files are named according to Stager segment IDs.
+- [x] Exported manifest maps recordings to segment IDs and preserves actor-facing line IDs where useful.
+- [x] Stager can import and validate the package.
+- [x] No server is required.
+- [x] No GPL-family runtime dependency is included.

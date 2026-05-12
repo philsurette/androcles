@@ -92,6 +92,22 @@ export function App() {
     }
   }
 
+  async function deleteProject(project: RecordingProjectRecord): Promise<void> {
+    const confirmed = window.confirm(
+      `Delete ${project.request.role.displayName} for ${project.request.play.title}? This removes the local request and all saved takes from this browser.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    await projectRepository.delete(project.id);
+    if (selectedProject?.id === project.id) {
+      setSelectedProject(null);
+    }
+    await loadProjects();
+    setStatus(`Deleted local recordings for ${project.request.role.displayName}.`);
+  }
+
   return (
     <main className="app-shell">
       <section className="toolbar">
@@ -120,10 +136,15 @@ export function App() {
           onSelectItem={(item) => void selectItem(selectedProject, item)}
           onAccepted={() => loadAcceptedSegments(selectedProject.id)}
           onExport={() => void exportProject(selectedProject)}
+          onDelete={() => void deleteProject(selectedProject)}
           isExporting={isExporting}
         />
       ) : (
-        <ProjectLibrary projects={projects} onOpenProject={(project) => void openProject(project)} />
+        <ProjectLibrary
+          projects={projects}
+          onOpenProject={(project) => void openProject(project)}
+          onDeleteProject={(project) => void deleteProject(project)}
+        />
       )}
     </main>
   );
@@ -157,9 +178,10 @@ function ImportRequestButton({ isImporting, onImport }: ImportRequestButtonProps
 type ProjectLibraryProps = {
   projects: RecordingProjectRecord[];
   onOpenProject: (project: RecordingProjectRecord) => void;
+  onDeleteProject: (project: RecordingProjectRecord) => void;
 };
 
-function ProjectLibrary({ projects, onOpenProject }: ProjectLibraryProps) {
+function ProjectLibrary({ projects, onOpenProject, onDeleteProject }: ProjectLibraryProps) {
   return (
     <section className="project-list" aria-label="Recording projects">
       {projects.length === 0 ? (
@@ -184,9 +206,14 @@ function ProjectLibrary({ projects, onOpenProject }: ProjectLibraryProps) {
                 <dd>{project.request.items.length}</dd>
               </div>
             </dl>
-            <button type="button" onClick={() => onOpenProject(project)}>
-              Open
-            </button>
+            <div className="project-card-actions">
+              <button type="button" onClick={() => onOpenProject(project)}>
+                Open
+              </button>
+              <button type="button" className="secondary danger" onClick={() => onDeleteProject(project)}>
+                Delete
+              </button>
+            </div>
           </article>
         ))
       )}
@@ -200,10 +227,19 @@ type ProjectDetailProps = {
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
   onExport: () => void;
+  onDelete: () => void;
   isExporting: boolean;
 };
 
-function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted, onExport, isExporting }: ProjectDetailProps) {
+function ProjectDetail({
+  project,
+  acceptedSegmentIds,
+  onSelectItem,
+  onAccepted,
+  onExport,
+  onDelete,
+  isExporting
+}: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
   const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
   const selectedIndex = selectedProgressIndex(progress, project.currentSegmentId);
@@ -213,7 +249,13 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted, 
 
   return (
     <section className="project-detail" aria-label="Recording Request detail">
-      <ProjectSummary project={project} progress={progress} onExport={onExport} isExporting={isExporting} />
+      <ProjectSummary
+        project={project}
+        progress={progress}
+        onExport={onExport}
+        onDelete={onDelete}
+        isExporting={isExporting}
+      />
       <MicrophoneSetup onReady={setMicrophoneConfig} />
       <div className="recording-workspace">
         <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
@@ -353,10 +395,11 @@ type ProjectSummaryProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress[];
   onExport: () => void;
+  onDelete: () => void;
   isExporting: boolean;
 };
 
-function ProjectSummary({ project, progress, onExport, isExporting }: ProjectSummaryProps) {
+function ProjectSummary({ project, progress, onExport, onDelete, isExporting }: ProjectSummaryProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   return (
     <article className="summary-panel">
@@ -381,6 +424,9 @@ function ProjectSummary({ project, progress, onExport, isExporting }: ProjectSum
         </div>
       </dl>
       <div className="summary-actions">
+        <button type="button" className="secondary danger" onClick={onDelete}>
+          Delete Project
+        </button>
         <button type="button" disabled={acceptedCount === 0 || isExporting} onClick={onExport}>
           {isExporting ? "Exporting..." : "Export Recordings"}
         </button>
@@ -613,6 +659,15 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
       durationMs: currentTake.durationMs,
       sampleRateHz: currentTake.sampleRateHz,
       channels: currentTake.channels,
+      inputQuality: {
+        peakEnergy: currentTake.inputQuality.peakEnergy,
+        levelCounts: {
+          noSignal: currentTake.inputQuality.levelCounts["no-signal"],
+          tooQuiet: currentTake.inputQuality.levelCounts["too-quiet"],
+          good: currentTake.inputQuality.levelCounts.good,
+          clipping: currentTake.inputQuality.levelCounts.clipping
+        }
+      },
       blob: currentTake.blob
     };
     await takeRepository.saveAccepted(take);

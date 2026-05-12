@@ -174,6 +174,15 @@ Example manifest:
       "duration_ms": 1840,
       "sample_rate_hz": 48000,
       "channels": 1,
+      "input_quality": {
+        "peak_energy": 0.14,
+        "level_counts": {
+          "no_signal": 1,
+          "too_quiet": 2,
+          "good": 24,
+          "clipping": 0
+        }
+      },
       "status": "accepted"
     }
   ],
@@ -187,6 +196,7 @@ Rules:
 - `complete: false` is allowed for LineRecorder export, but Stager must treat the package as partial.
 - `recordings[].segment_id` is the authoritative identity for placing audio into Stager's segment tree.
 - `audio_path` must point to a WAV file inside the zip.
+- `input_quality` records browser capture meter observations for troubleshooting. It is informational; Stager still validates the WAV itself during import.
 - LineRecorder should export only the current accepted take for each segment by default.
 
 ## Relationship To Playbooks

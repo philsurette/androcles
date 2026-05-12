@@ -20,6 +20,15 @@ describe("exportRoleRecordings", () => {
           block_id: "0.12",
           segment_id: "0_12_1",
           audio_path: "audio/segments/CENTURION/0_12_1.wav",
+          input_quality: {
+            peak_energy: 0.14,
+            level_counts: {
+              no_signal: 1,
+              too_quiet: 2,
+              good: 24,
+              clipping: 0
+            }
+          },
           status: "accepted"
         }
       ],
@@ -111,6 +120,15 @@ function takeFixture(segmentId: string): RecordingTake {
     durationMs: 1000.4,
     sampleRateHz: 48000,
     channels: 1,
+    inputQuality: {
+      peakEnergy: 0.14,
+      levelCounts: {
+        noSignal: 1,
+        tooQuiet: 2,
+        good: 24,
+        clipping: 0
+      }
+    },
     blob: new Blob(["fake wav"], { type: "audio/wav" })
   };
 }

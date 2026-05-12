@@ -1,5 +1,5 @@
 import { requestMicrophoneStream, stopMicrophoneStream, type MicrophoneMode } from "../platform/microphone";
-import { classifyInputLevel, rootMeanSquareFloatEnergy, smoothMeterEnergy } from "./inputMeter";
+import { classifyInputLevel, rootMeanSquareFloatEnergy, smoothMeterEnergy, type InputLevel } from "./inputMeter";
 import { encodeWav } from "./wavEncoder";
 
 export type RecordedWav = {
@@ -7,6 +7,12 @@ export type RecordedWav = {
   durationMs: number;
   sampleRateHz: number;
   channels: number;
+  inputQuality: RecordedWavInputQuality;
+};
+
+export type RecordedWavInputQuality = {
+  peakEnergy: number;
+  levelCounts: Record<InputLevel, number>;
 };
 
 export type WavRecorderReading = {
@@ -40,6 +46,13 @@ export class WavRecorder {
   private chunks: Float32Array[] = [];
   private displayedEnergy = 0;
   private startedAtMs = 0;
+  private peakEnergy = 0;
+  private levelCounts: Record<InputLevel, number> = {
+    "no-signal": 0,
+    "too-quiet": 0,
+    good: 0,
+    clipping: 0
+  };
 
   constructor(
     private readonly onReading: ((reading: WavRecorderReading) => void) | null = null,
@@ -106,14 +119,15 @@ export class WavRecorder {
 
   private captureSamples(samples: Float32Array): void {
     this.chunks.push(samples);
-    if (this.onReading) {
-      const energy = rootMeanSquareFloatEnergy(samples);
-      this.displayedEnergy = smoothMeterEnergy(this.displayedEnergy, energy);
-      this.onReading({
-        energy: this.displayedEnergy,
-        level: classifyInputLevel(this.displayedEnergy)
-      });
-    }
+    const energy = rootMeanSquareFloatEnergy(samples);
+    this.peakEnergy = Math.max(this.peakEnergy, energy);
+    this.displayedEnergy = smoothMeterEnergy(this.displayedEnergy, energy);
+    const level = classifyInputLevel(this.displayedEnergy);
+    this.levelCounts[level] += 1;
+    this.onReading?.({
+      energy: this.displayedEnergy,
+      level
+    });
   }
 
   stop(): RecordedWav {
@@ -127,12 +141,18 @@ export class WavRecorder {
       sampleRateHz,
       channels: 1
     });
+    const peakEnergy = this.peakEnergy;
+    const levelCounts = { ...this.levelCounts };
     this.stopWithoutResult();
     return {
       blob,
       durationMs,
       sampleRateHz,
-      channels: 1
+      channels: 1,
+      inputQuality: {
+        peakEnergy,
+        levelCounts
+      }
     };
   }
 
@@ -159,6 +179,13 @@ export class WavRecorder {
     this.audioContext = null;
     this.chunks = [];
     this.displayedEnergy = 0;
+    this.peakEnergy = 0;
+    this.levelCounts = {
+      "no-signal": 0,
+      "too-quiet": 0,
+      good: 0,
+      clipping: 0
+    };
     this.startedAtMs = 0;
   }
 }
