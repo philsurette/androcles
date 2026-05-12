@@ -34,6 +34,7 @@ class RecordingRequestBuilder:
     request_id: str | None = None
     created_at: str | None = None
     notes: str | None = None
+    item_reason: str | None = None
     selected_segment_ids: set[str] | None = None
     cue_selector: PlaybookCueSelector | None = None
     _logger: logging.Logger = field(init=False, repr=False)
@@ -150,9 +151,16 @@ class RecordingRequestBuilder:
                 for direction in block.segments
                 if isinstance(direction, DirectionSegment)
             ],
-            reason="initial_recording" if self.request_kind == "full_role" else self.request_kind,
+            reason=self._item_reason(),
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
+
+    def _item_reason(self) -> str:
+        if self.item_reason is not None:
+            return self.item_reason
+        if self.request_kind == "full_role":
+            return "initial_recording"
+        return self.request_kind
 
     def _segment_request_id(self, segment: SpeechSegment | SimultaneousSegment) -> str:
         return segment.production_id or str(segment.segment_id)

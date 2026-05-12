@@ -849,11 +849,18 @@ def playbook(
 @app.command("recording-request", rich_help_panel="build")
 def recording_request(
     role: str = typer.Option(..., "--role", "-r", help="Role to build a Recording Request for"),
+    item: list[str] | None = typer.Option(
+        None,
+        "--item",
+        "-i",
+        help="Limit request to a recording item id such as 5-32:s1; repeat for multiple selected items",
+    ),
     segment: list[str] | None = typer.Option(
         None,
         "--segment",
-        help="Limit request to a segment id; repeat for multiple selected segments",
+        help="Deprecated alias for --item; accepts old Stager segment ids or production recording item ids",
     ),
+    reason: str | None = typer.Option(None, "--reason", help="Reason shown for selected recording items"),
     notes: str | None = typer.Option(None, "--notes", help="Optional request notes for the actor"),
     play: str | None = PLAY_OPTION,
 ) -> None:
@@ -862,7 +869,8 @@ def recording_request(
     setup_logging(cfg)
     zip_path = run_recording_request(
         role=role,
-        segment_ids=set(segment) if segment else None,
+        item_ids=selected_recording_item_ids(item, segment),
+        item_reason=reason,
         notes=notes,
         paths_config=cfg,
     )
@@ -1092,7 +1100,8 @@ def run_playbook(
 def run_recording_request(
     *,
     role: str,
-    segment_ids: set[str] | None = None,
+    item_ids: set[str] | None = None,
+    item_reason: str | None = None,
     notes: str | None = None,
     paths_config: paths.PathConfig | None = None,
 ) -> Path:
@@ -1105,11 +1114,17 @@ def run_recording_request(
         play=play,
         paths=cfg,
         role=role,
-        request_kind="selected_segments" if segment_ids else "full_role",
-        selected_segment_ids=segment_ids,
+        request_kind="selected_segments" if item_ids else "full_role",
+        selected_segment_ids=item_ids,
+        item_reason=item_reason,
         notes=notes,
     )
     return builder.build()
+
+
+def selected_recording_item_ids(item_ids: list[str] | None, segment_ids: list[str] | None) -> set[str] | None:
+    selected = [*(item_ids or []), *(segment_ids or [])]
+    return set(selected) if selected else None
 
 
 def run_recording_import(
