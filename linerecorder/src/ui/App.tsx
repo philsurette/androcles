@@ -241,6 +241,7 @@ function ProjectDetail({
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
+  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
   const progress = recordingItemProgress(project.request.items, acceptedItemIds);
   const selectedIndex = selectedProgressIndex(progress, project.currentItemId);
   const selectedItem = selectedIndex === -1 ? undefined : progress[selectedIndex];
@@ -258,8 +259,14 @@ function ProjectDetail({
         isExporting={isExporting}
       />
       <MicrophoneSetup onReady={setMicrophoneConfig} />
-      <div className="recording-workspace">
-        <ItemList progress={progress} selectedItemId={selectedItem?.item.id} onSelectItem={onSelectItem} />
+      <div className={isExplorerOpen ? "recording-workspace" : "recording-workspace explorer-collapsed"}>
+        <ItemList
+          progress={progress}
+          selectedItemId={selectedItem?.item.id}
+          isOpen={isExplorerOpen}
+          onToggleOpen={() => setIsExplorerOpen((current) => !current)}
+          onSelectItem={onSelectItem}
+        />
         {selectedItem ? (
           <ItemDetail
             project={project}
@@ -293,7 +300,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   const [reading, setReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
   const [status, setStatus] = useState("Microphone not started.");
   const [isActive, setIsActive] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [showSettings, setShowSettings] = useState(true);
 
   useEffect(() => {
     return () => {
@@ -321,7 +328,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
       await session.start(selectedDeviceId, mode);
       onReady({ deviceId: selectedDeviceId, mode });
       setIsActive(true);
-      setIsExpanded(false);
+      setShowSettings(false);
     } catch (error) {
       const message =
         error instanceof MicrophonePermissionError ? error.message : "Unable to start microphone setup.";
@@ -335,25 +342,30 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
     sessionRef.current = null;
     onReady(null);
     setIsActive(false);
-    setIsExpanded(true);
+    setShowSettings(true);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
   }
 
+  const showStatus =
+    status === "Requesting microphone permission..." ||
+    status === "Unable to start microphone setup." ||
+    status.startsWith("Microphone access");
+
   return (
-    <section className={isExpanded ? "microphone-panel" : "microphone-panel compact"} aria-label="Microphone setup">
+    <section className="microphone-panel compact" aria-label="Microphone setup">
       <div className="microphone-heading">
         <div>
           <p className="eyebrow">Microphone</p>
           <h2>{isActive ? "Ready" : "Setup"}</h2>
         </div>
-        {!isExpanded ? (
-          <button type="button" className="secondary" onClick={() => setIsExpanded(true)}>
+        {isActive && !showSettings ? (
+          <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
             Mic Settings
           </button>
         ) : null}
       </div>
-      {isExpanded ? (
+      {showSettings ? (
         <div className="microphone-controls">
           <label>
             Input
@@ -392,20 +404,20 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
             </button>
           )}
         </div>
-      ) : (
+      ) : isActive ? (
         <div className="microphone-compact-actions">
           <button type="button" className="secondary" onClick={stopMicrophone}>
             Stop Mic
           </button>
         </div>
-      )}
+      ) : null}
       <div className="meter-row">
         <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
           <span style={{ width: `${meterFillPercentForLevel(reading.energy, reading.level)}%` }} />
         </div>
         <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
       </div>
-      {isExpanded ? <p className="microphone-status">{status}</p> : null}
+      {showStatus ? <p className="microphone-status">{status}</p> : null}
     </section>
   );
 }
@@ -464,27 +476,52 @@ function ProjectSummary({ project, progress, onExport, onDelete, onBack, isExpor
 type ItemListProps = {
   progress: RecordingItemProgress[];
   selectedItemId: string | undefined;
+  isOpen: boolean;
+  onToggleOpen: () => void;
   onSelectItem: (item: RecordingItem) => void;
 };
 
-function ItemList({ progress, selectedItemId, onSelectItem }: ItemListProps) {
+function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem }: ItemListProps) {
+  const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
+  if (!isOpen) {
+    return (
+      <aside className="item-explorer collapsed" aria-label="Recording items">
+        <button type="button" className="explorer-disclosure-button" aria-label="Show line list" title="Show line list" onClick={onToggleOpen}>
+          <span className="context-disclosure" aria-hidden="true" />
+        </button>
+        <span className="explorer-progress" aria-label={`${acceptedCount} of ${progress.length} accepted`}>
+          {acceptedCount}/{progress.length}
+        </span>
+      </aside>
+    );
+  }
+
   return (
-    <section className="item-list" aria-label="Recording items">
-      {progress.map(({ item, status }) => (
-        <button
-          key={item.id}
-          type="button"
-          className={item.id === selectedItemId ? "item-row selected" : "item-row"}
-          onClick={() => onSelectItem(item)}
-        >
-          <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
-          <span className="item-row-text">
+    <aside className="item-explorer" aria-label="Recording items">
+      <div className="item-explorer-header">
+        <div>
+          <p className="eyebrow">Lines</p>
+          <strong>{acceptedCount}/{progress.length}</strong>
+        </div>
+        <button type="button" className="explorer-disclosure-button expanded" aria-label="Hide line list" title="Hide line list" onClick={onToggleOpen}>
+          <span className="context-disclosure" aria-hidden="true" />
+        </button>
+      </div>
+      <div className="item-list">
+        {progress.map(({ item, status }) => (
+          <button
+            key={item.id}
+            type="button"
+            className={item.id === selectedItemId ? "item-row selected" : "item-row"}
+            onClick={() => onSelectItem(item)}
+          >
+            <span className={status === "accepted" ? "status-dot accepted" : "status-dot"} aria-label={status} title={status} />
             <strong>{item.id}</strong>
             <span>{item.segmentText}</span>
-          </span>
-        </button>
-      ))}
-    </section>
+          </button>
+        ))}
+      </div>
+    </aside>
   );
 }
 
@@ -744,12 +781,20 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
       <div className="take-status-row">
         <p className={statusTone === "warning" ? "take-status warning" : "take-status"}>{status}</p>
       </div>
-      <div className="take-controls">
-        {isRecording ? (
+      {isRecording ? (
+        <div className="take-controls recording-active">
           <button type="button" className="record-control stop-control" aria-label="Stop recording" title="Stop recording" onClick={stopRecording}>
             <span aria-hidden="true">■</span>
           </button>
-        ) : (
+          <div className="meter-row take-meter">
+            <div className="meter" aria-label={`Recording input level: ${levelLabel(recordingReading.level)}`}>
+              <span style={{ width: `${meterFillPercentForLevel(recordingReading.energy, recordingReading.level)}%` }} />
+            </div>
+            <span className={`meter-label ${recordingReading.level}`}>{levelLabel(recordingReading.level)}</span>
+          </div>
+        </div>
+      ) : (
+        <div className="take-controls">
           <button
             type="button"
             className="record-control"
@@ -759,70 +804,62 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
           >
             <span aria-hidden="true">●</span>
           </button>
-        )}
-        {playingSource === "take" ? (
-          <button type="button" className="secondary recorder-icon-button" aria-label="Stop playback" title="Stop playback" onClick={stopPlayback}>
-            <span aria-hidden="true">■</span>
-          </button>
-        ) : (
+          {playingSource === "take" ? (
+            <button type="button" className="secondary recorder-icon-button" aria-label="Stop playback" title="Stop playback" onClick={stopPlayback}>
+              <span aria-hidden="true">■</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="secondary recorder-icon-button"
+              disabled={!currentTake || isRecording || Boolean(playingSource)}
+              aria-label="Play current take"
+              title="Play current take"
+              onClick={playTake}
+            >
+              <span aria-hidden="true">▶</span>
+            </button>
+          )}
           <button
             type="button"
-            className="secondary recorder-icon-button"
-            disabled={!currentTake || isRecording || Boolean(playingSource)}
-            aria-label="Play current take"
-            title="Play current take"
-            onClick={playTake}
+            className="secondary recorder-icon-button accept-control"
+            disabled={!currentTake || isRecording}
+            aria-label="Accept take"
+            title="Accept take"
+            onClick={() => void acceptTake()}
           >
-            <span aria-hidden="true">▶</span>
+            <span aria-hidden="true">✓</span>
           </button>
-        )}
-        <button
-          type="button"
-          className="secondary recorder-icon-button accept-control"
-          disabled={!currentTake || isRecording}
-          aria-label="Accept take"
-          title="Accept take"
-          onClick={() => void acceptTake()}
-        >
-          <span aria-hidden="true">✓</span>
-        </button>
-        {playingSource === "saved" ? (
-          <button type="button" className="secondary recorder-icon-button" aria-label="Stop saved playback" title="Stop saved playback" onClick={stopPlayback}>
-            <span aria-hidden="true">■</span>
-          </button>
-        ) : (
-          <button
-            type="button"
-            className="secondary recorder-icon-button"
-            disabled={!acceptedTake || isRecording || Boolean(playingSource)}
-            aria-label="Play saved take"
-            title="Play saved take"
-            onClick={playAcceptedTake}
-          >
-            <span aria-hidden="true">▶︎</span>
-          </button>
-        )}
-        {currentTake ? (
-          <button
-            type="button"
-            className="secondary recorder-icon-button discard-control"
-            disabled={isRecording}
-            aria-label="Discard current take"
-            title="Discard current take"
-            onClick={discardTake}
-          >
-            <span aria-hidden="true">×</span>
-          </button>
-        ) : null}
-      </div>
-      {isRecording ? (
-        <div className="meter-row take-meter">
-          <div className="meter" aria-label={`Recording input level: ${levelLabel(recordingReading.level)}`}>
-            <span style={{ width: `${meterFillPercentForLevel(recordingReading.energy, recordingReading.level)}%` }} />
-          </div>
-          <span className={`meter-label ${recordingReading.level}`}>{levelLabel(recordingReading.level)}</span>
+          {playingSource === "saved" ? (
+            <button type="button" className="secondary recorder-icon-button" aria-label="Stop saved playback" title="Stop saved playback" onClick={stopPlayback}>
+              <span aria-hidden="true">■</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="secondary recorder-icon-button"
+              disabled={!acceptedTake || isRecording || Boolean(playingSource)}
+              aria-label="Play saved take"
+              title="Play saved take"
+              onClick={playAcceptedTake}
+            >
+              <span aria-hidden="true">▶︎</span>
+            </button>
+          )}
+          {currentTake ? (
+            <button
+              type="button"
+              className="secondary recorder-icon-button discard-control"
+              disabled={isRecording}
+              aria-label="Discard current take"
+              title="Discard current take"
+              onClick={discardTake}
+            >
+              <span aria-hidden="true">×</span>
+            </button>
+          ) : null}
         </div>
-      ) : null}
+      )}
     </section>
   );
 }
