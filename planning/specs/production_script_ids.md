@@ -10,15 +10,15 @@ The shared script-format source of truth is `planning/specs/script_text_format.m
 
 ## Source Artifacts
 
-`play.txt` remains the raw import/source artifact.
+`play.txt` remains a raw import/source artifact. Draft `production.md` is also a source artifact when it is marked `production_ids: draft`.
 
-Stager should add an initial script-hardening step that reads `play.txt` and creates an editable production script artifact:
+PlayIngester should read supported source formats and create or lock the editable production script artifact:
 
 ```text
 plays/<play_id>/production.md
 ```
 
-`production.md` should keep a text-editor-friendly line-oriented format, but every addressable script unit must have an explicit production id. While `production.md` is marked `production_ids: draft`, Stager may regenerate it from `play.txt`. Once it is marked `production_ids: locked`, it becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
+`production.md` should keep a text-editor-friendly line-oriented format. While it is marked `production_ids: draft`, ids are optional and any present ids are provisional; PlayIngester may add or replace them. Once it is marked `production_ids: locked`, every addressable script unit must have an explicit stable production id and the file becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
 
 The artifact name is **Production script**. The filename is `production.md`. The name matches theatre vocabulary and signals that this is the director-maintained script used after initial import.
 
@@ -31,6 +31,8 @@ The draft/locked state belongs in a leading metadata comment block:
 ```
 
 The lock-state line is metadata expressed as a comment, not a new script paragraph type.
+
+The presence of ids alone does not imply lock state. Draft `production.md` may contain provisional ids that PlayIngester is allowed to replace.
 
 ## Production Script Format
 
@@ -47,7 +49,7 @@ I.2-17 @description: A dusty Roman road at noon.
 ### I.2-18 Scene transition
 ```
 
-Stager should parse the leading production id, then parse the remainder of the line using the canonical production entry grammar in `planning/specs/script_text_format.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
+Stager should parse locked `production.md` only after production ids have been assigned. PlayIngester should parse source formats, including current `play.txt` and draft `production.md`, then emit locked `production.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
 
 Headings are addressable lines too. Use `-0` for the heading that establishes a structure when that is natural, then number performed script units from `-1`.
 
@@ -291,9 +293,9 @@ Do not rely on filename transformation as identity. Manifests should carry the c
 
 The first implementation should be strict:
 
-- If `production.md` exists, Stager should use it by default.
-- If `production.md` is missing, Stager may parse `play.txt` only for commands that explicitly allow raw input.
-- A hardening command should generate `production.md` and fail if it cannot assign deterministic ids.
+- Stager build commands should use locked `production.md` by default.
+- Stager build commands should reject missing, idless, or draft `production.md` unless a command explicitly accepts source input for diagnostics.
+- PlayIngester should generate locked `production.md` and fail if it cannot assign deterministic ids.
 - A future reconciliation command should compare raw/new script text against `production.md`, preserve existing ids when possible, and suggest inserted/revised/deleted ids.
 - Stager should not decide that existing audio is reusable from production id alone. It should also compare the relevant content fingerprint.
 
