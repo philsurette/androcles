@@ -353,9 +353,12 @@ select {
 .item-explorer {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: 8px;
   max-height: min(62vh, 680px);
   min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
 }
 
 .item-explorer.collapsed {
@@ -373,9 +376,8 @@ select {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
@@ -416,8 +418,6 @@ select {
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
-  border: 1px solid var(--border);
-  border-radius: 8px;
   background: var(--surface);
 }
 
