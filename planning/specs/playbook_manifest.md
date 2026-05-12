@@ -4,6 +4,8 @@ This document defines the first app-facing export contract for Cuemaster, an act
 
 `planning/cuemaster/product_design.md` describes Cuemaster product behavior. This document is the source of truth for the Stager-generated manifest and Playbook structure consumed by Cuemaster.
 
+Permanent production-script identifiers and content fingerprints are defined in `planning/specs/production_script_ids.md`. Playbook manifests use production ids as canonical `id` values for script units; this document defines where they appear but does not redefine the id syntax or fingerprint rules.
+
 ## Intended Consumer
 
 The primary consumer is Cuemaster, an offline-first actor rehearsal app.
@@ -196,7 +198,8 @@ Each line item describes one expected response opportunity for one role.
 
 ```json
 {
-  "id": "0_5_MEGAERA",
+  "id": "0-5",
+  "content_hash": "sha256:...",
   "part_id": 0,
   "block_id": "0.5",
   "role": "MEGAERA",
@@ -214,7 +217,9 @@ Each line item describes one expected response opportunity for one role.
     "text": "I won’t go another step.",
     "segments": [
       {
-        "id": "0_5_2",
+        "id": "0-5:s1",
+        "segment_id": "0_5_2",
+        "content_hash": "sha256:...",
         "text": "I won’t go another step.",
         "audio": {
           "path": "audio/segments/MEGAERA/0_5_2.wav",
@@ -233,7 +238,8 @@ Each line item describes one expected response opportunity for one role.
 
 Line fields:
 
-- `id`: Stable Cuemaster line id. It should include block identity and role id.
+- `id`: Permanent production-script id for this line, such as `3.2-15`.
+- `content_hash`: Normalized content fingerprint for detecting changed text behind a reused production id.
 - `part_id`: Numeric play part id, or `null` for no-part preamble material.
 - `block_id`: Human-readable block id using dot format, e.g. `0.2`.
 - `role`: Role being rehearsed.
@@ -286,6 +292,9 @@ Rules:
 
 - `response.text` is the concatenated expected spoken text for the selected role in the block.
 - `response.segments` preserves segment-level identity and audio assets.
+- `response.segments[].id` is the production sub-line segment id, such as `3.2-15:s1`.
+- `response.segments[].segment_id` may carry Stager's parser/audio segment id, such as `0_5_2`.
+- `response.segments[].content_hash` should identify changed recordable text even if the production id was reused accidentally.
 - For inline directions, directions should not be merged into spoken response text.
 - Missing response audio should fail Playbook generation.
 
@@ -342,7 +351,9 @@ Stage directions should be represented as structured text, not hidden inside res
 
 ```json
 {
+  "id": "4-1:d1",
   "segment_id": "4_1_2",
+  "content_hash": "sha256:...",
   "text": "(_suddenly throwing down her stick_)",
   "placement": "inline"
 }
@@ -350,7 +361,8 @@ Stage directions should be represented as structured text, not hidden inside res
 
 Fields:
 
-- `segment_id`: Segment id when available.
+- `id`: Production direction id.
+- `segment_id`: Stager parser/audio segment id when available.
 - `text`: Direction text exactly as produced by the parser.
 - `placement`: `top_level`, `inline`, or `description`.
 
@@ -445,7 +457,8 @@ Open decision for `planning/stager/missing_audio_policy.md`: exact exception cla
       "parts": [0],
       "lines": [
         {
-          "id": "0_5_MEGAERA",
+          "id": "0-5",
+          "content_hash": "sha256:...",
           "part_id": 0,
           "block_id": "0.5",
           "role": "MEGAERA",
@@ -463,7 +476,9 @@ Open decision for `planning/stager/missing_audio_policy.md`: exact exception cla
             "text": "I won’t go another step.",
             "segments": [
               {
-                "id": "0_5_2",
+                "id": "0-5:s1",
+                "segment_id": "0_5_2",
+                "content_hash": "sha256:...",
                 "owners": ["MEGAERA"],
                 "text": "I won’t go another step.",
                 "audio": {

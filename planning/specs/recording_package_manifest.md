@@ -2,7 +2,9 @@
 
 This document is the source of truth for file contracts exchanged between Stager, LineRecorder, and future Cuemaster recording request workflows.
 
-LineRecorder uses actor-facing language such as "line" in the UI, but manifest identity is segment-based. A recording item maps to one Stager `segment_id` and one expected output audio file. If a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context and distinct `segment_id` values.
+LineRecorder uses actor-facing language such as "line" in the UI, but recording-item identity is production-segment-based. A recording item maps to one production segment id, one Stager `segment_id`, and one expected output audio file. If a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context and distinct production segment ids.
+
+Permanent production-script identifiers and content fingerprints are defined in `planning/specs/production_script_ids.md`. Recording manifests use production ids as canonical `id` values for script units; this document defines where they appear but does not redefine the id syntax or fingerprint rules.
 
 ## Package Types
 
@@ -62,9 +64,12 @@ Example manifest:
   },
   "items": [
     {
-      "line_id": "0_12_CENTURION",
+      "id": "0-12:s1",
+      "line_id": "0-12",
       "block_id": "0.12",
       "segment_id": "0_12_1",
+      "line_content_hash": "sha256:...",
+      "segment_content_hash": "sha256:...",
       "sequence": 1,
       "display_text": "Halt! Orders from the Captain.",
       "segment_text": "Halt! Orders from the Captain.",
@@ -78,7 +83,7 @@ Example manifest:
       "section_title": "Act I",
       "stage_directions": ["stopping"],
       "reason": "initial_recording",
-      "output_path": "audio/segments/CENTURION/0_12_1.wav"
+      "output_path": "audio/segments/CENTURION/0-12_s1.wav"
     }
   ]
 }
@@ -93,9 +98,12 @@ Required request fields:
 
 Required recording item fields:
 
-- `line_id`: User-facing stable item id. This may include role identity.
+- `id`: Production segment id for this recording item, such as `3.2-15a:s1`.
+- `line_id`: Parent production line id, such as `3.2-15a`.
 - `block_id`: Stager block id such as `0.12`.
 - `segment_id`: Stager segment id and primary audio identity, such as `0_12_1`.
+- `line_content_hash`: Normalized content fingerprint for the production-script line. Required once Stager supports Production scripts.
+- `segment_content_hash`: Normalized content fingerprint for the recordable segment. Required once Stager supports Production scripts.
 - `sequence`: Role-local display order.
 - `display_text`: Text shown to the actor for this recording item.
 - `segment_text`: Exact text represented by this `segment_id`.
@@ -143,9 +151,9 @@ CENTURION-recordings.zip
 └── audio/
     └── segments/
         └── CENTURION/
-            ├── 0_12_1.wav
-            ├── 0_14_1.wav
-            └── 0_19_1.wav
+            ├── 0-12_s1.wav
+            ├── 0-14_s1.wav
+            └── 0-19_s1.wav
 ```
 
 Example manifest:
@@ -166,10 +174,13 @@ Example manifest:
   },
   "recordings": [
     {
-      "line_id": "0_12_CENTURION",
+      "id": "0-12:s1",
+      "line_id": "0-12",
       "block_id": "0.12",
       "segment_id": "0_12_1",
-      "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+      "line_content_hash": "sha256:...",
+      "segment_content_hash": "sha256:...",
+      "audio_path": "audio/segments/CENTURION/0-12_s1.wav",
       "recorded_at": "2026-05-10T14:30:00Z",
       "duration_ms": 1840,
       "sample_rate_hz": 48000,
@@ -186,7 +197,7 @@ Example manifest:
       "status": "accepted"
     }
   ],
-  "missing_segment_ids": ["0_14_1"]
+  "missing_ids": ["0-14:s1"]
 }
 ```
 
@@ -194,7 +205,10 @@ Rules:
 
 - `complete: true` means every required recording item from the imported Recording Request has an accepted recording.
 - `complete: false` is allowed for LineRecorder export, but Stager must treat the package as partial.
-- `recordings[].segment_id` is the authoritative identity for placing audio into Stager's segment tree.
+- `recordings[].id` is the authoritative production identity for this recording item.
+- `recordings[].segment_id` is Stager's parser/audio segment id and may be used for import placement.
+- `recordings[].id` and `recordings[].line_id` should be preserved from the Recording Request so Stager can detect script revisions and targeted re-recordings.
+- `recordings[].line_content_hash` and `recordings[].segment_content_hash` should be preserved with the recording so Stager can reject stale recordings when text changes behind a reused production id.
 - `audio_path` must point to a WAV file inside the zip.
 - `input_quality` records browser capture meter observations for troubleshooting. It is informational; Stager still validates the WAV itself during import.
 - LineRecorder should export only the current accepted take for each segment by default.
