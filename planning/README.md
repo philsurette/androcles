@@ -35,6 +35,7 @@ LineRecorder is the actor-facing recording tool that consumes Stager-generated R
 - [linerecorder/linerecorder_design.md](linerecorder/linerecorder_design.md): Product and technical design for actor-side recording.
 - [linerecorder/linerecorder_use_cases.md](linerecorder/linerecorder_use_cases.md): Actor, stage-manager, export/import, privacy, and recovery use cases.
 - [linerecorder/implementation_plan.md](linerecorder/implementation_plan.md): Resumable implementation plan for Stager integration and the browser MVP.
+- [linerecorder/floor_noise_reduction_plan.md](linerecorder/floor_noise_reduction_plan.md): Plan for optional room-tone capture, `afftdn` import denoising, and leading/trailing silence trimming.
 - Future LineRecorder docs belong in `planning/linerecorder/`.
 
 ## Cuemaster

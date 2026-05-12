@@ -148,6 +148,9 @@ Example archive:
 ```text
 CENTURION-recordings.zip
 ├── manifest.json
+├── noise/
+│   ├── floor-20260510T142955Z.wav
+│   └── floor-20260510T151022Z.wav
 └── audio/
     └── segments/
         └── CENTURION/
@@ -172,6 +175,18 @@ Example manifest:
     "id": "CENTURION",
     "display_name": "Centurion"
   },
+  "floor_noise_recordings": [
+    {
+      "id": "floor-20260510T142955Z",
+      "audio_path": "noise/floor-20260510T142955Z.wav",
+      "recorded_at": "2026-05-10T14:29:55Z",
+      "duration_ms": 5000,
+      "sample_rate_hz": 48000,
+      "channels": 1,
+      "device_label": "USB Microphone",
+      "mode": "clean"
+    }
+  ],
   "recordings": [
     {
       "id": "I-12:s1",
@@ -182,6 +197,7 @@ Example manifest:
       "segment_content_hash": "sha256:...",
       "audio_path": "audio/segments/CENTURION/0_12_1.wav",
       "recorded_at": "2026-05-10T14:30:00Z",
+      "floor_noise_id": "floor-20260510T142955Z",
       "duration_ms": 1840,
       "sample_rate_hz": 48000,
       "channels": 1,
@@ -210,8 +226,11 @@ Rules:
 - `recordings[].id` and `recordings[].line_id` should be preserved from the Recording Request so Stager can detect script revisions and targeted re-recordings.
 - `recordings[].line_content_hash` and `recordings[].segment_content_hash` should be preserved with the recording so Stager can reject stale recordings when text changes behind a reused production id.
 - `audio_path` must point to a WAV file inside the zip.
+- `floor_noise_recordings` is optional. When present, each entry points to a LineRecorder-captured room-tone WAV that Stager may use for noise reduction during import.
+- `recordings[].floor_noise_id` is optional. When present, it should reference the most recent floor-noise recording captured before this line recording started.
 - `input_quality` records browser capture meter observations for troubleshooting. It is informational; Stager still validates the WAV itself during import.
 - LineRecorder should export only the current accepted take for each segment by default.
+- Stager import may apply denoising from referenced floor-noise recordings, but must preserve the original package content as the source of truth for import undo/reprocessing.
 
 ## Relationship To Playbooks
 
