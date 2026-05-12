@@ -5,7 +5,7 @@ import type { RecordingTake } from "../domain/take";
 export type RecordingProjectRecord = {
   id: string;
   importedAt: string;
-  currentSegmentId?: string;
+  currentItemId?: string;
   request: RecordingRequest;
 };
 

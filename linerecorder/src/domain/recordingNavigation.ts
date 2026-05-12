@@ -1,13 +1,13 @@
 import type { RecordingItemProgress } from "./recordingItemStatus";
 
-export function selectedProgressIndex(progress: RecordingItemProgress[], segmentId: string | undefined): number {
+export function selectedProgressIndex(progress: RecordingItemProgress[], itemId: string | undefined): number {
   if (progress.length === 0) {
     return -1;
   }
-  if (segmentId === undefined) {
+  if (itemId === undefined) {
     return 0;
   }
-  const index = progress.findIndex((candidate) => candidate.item.segmentId === segmentId);
+  const index = progress.findIndex((candidate) => candidate.item.id === itemId);
   return index === -1 ? 0 : index;
 }
 

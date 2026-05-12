@@ -22,8 +22,8 @@ describe("validateRoleRecordingsManifest", () => {
           line_id: "0_12_CENTURION",
           block_id: "0.12",
           segment_id: "0_12_1",
-          line_content_hash: "sha256:line-12",
-          segment_content_hash: "sha256:segment-12",
+          line_content_hash: line12Hash,
+          segment_content_hash: segment12Hash,
           audio_path: "audio/segments/CENTURION/0_12_1.wav",
           recorded_at: "2026-05-11T12:00:00Z",
           duration_ms: 1840,
@@ -41,14 +41,14 @@ describe("validateRoleRecordingsManifest", () => {
           status: "accepted"
         }
       ],
-      missing_segment_ids: ["0_14_1"]
+      missing_segment_ids: ["I-14:s1"]
     });
 
     expect(manifest.package_type).toBe("role_recordings");
     expect(manifest.recordings[0].id).toBe("I-12:s1");
     expect(manifest.recordings[0].segment_id).toBe("0_12_1");
     expect(manifest.recordings[0].input_quality?.level_counts.good).toBe(24);
-    expect(manifest.missing_segment_ids).toEqual(["0_14_1"]);
+    expect(manifest.missing_segment_ids).toEqual(["I-14:s1"]);
   });
 
   it("rejects unsupported package types", () => {
@@ -65,3 +65,6 @@ describe("validateRoleRecordingsManifest", () => {
     ).toThrow();
   });
 });
+
+const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
+const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";

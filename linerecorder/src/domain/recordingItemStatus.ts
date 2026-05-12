@@ -9,10 +9,10 @@ export type RecordingItemProgress = {
 
 export function recordingItemProgress(
   items: RecordingItem[],
-  acceptedSegmentIds: Set<string>
+  acceptedItemIds: Set<string>
 ): RecordingItemProgress[] {
   return items.map((item) => ({
     item,
-    status: acceptedSegmentIds.has(item.segmentId) ? "accepted" : "missing"
+    status: acceptedItemIds.has(item.id) ? "accepted" : "missing"
   }));
 }

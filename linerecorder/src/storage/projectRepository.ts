@@ -6,7 +6,7 @@ export class ProjectRepository {
     const project: RecordingProjectRecord = {
       id: request.request.id,
       importedAt: new Date().toISOString(),
-      currentSegmentId: request.items[0]?.segmentId,
+      currentItemId: request.items[0]?.id,
       request
     };
     await db.projects.put(project);
@@ -21,8 +21,8 @@ export class ProjectRepository {
     return db.projects.get(id);
   }
 
-  async setCurrentSegment(projectId: string, segmentId: string): Promise<void> {
-    await db.projects.update(projectId, { currentSegmentId: segmentId });
+  async setCurrentItem(projectId: string, itemId: string): Promise<void> {
+    await db.projects.update(projectId, { currentItemId: itemId });
   }
 
   async delete(projectId: string): Promise<void> {

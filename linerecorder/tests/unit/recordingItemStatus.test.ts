@@ -4,25 +4,27 @@ import { recordingItemProgress } from "../../src/domain/recordingItemStatus";
 
 describe("recordingItemProgress", () => {
   it("marks items accepted when their segment has an accepted take", () => {
-    expect(recordingItemProgress([itemFixture("0_1_1"), itemFixture("0_2_1")], new Set(["0_2_1"]))).toEqual([
+    expect(recordingItemProgress([itemFixture("I-1:s1", "0_1_1"), itemFixture("I-2:s1", "0_2_1")], new Set(["I-2:s1"]))).toEqual([
       {
-        item: itemFixture("0_1_1"),
+        item: itemFixture("I-1:s1", "0_1_1"),
         status: "missing"
       },
       {
-        item: itemFixture("0_2_1"),
+        item: itemFixture("I-2:s1", "0_2_1"),
         status: "accepted"
       }
     ]);
   });
 });
 
-function itemFixture(segmentId: string): RecordingItem {
+function itemFixture(id: string, segmentId: string): RecordingItem {
   return {
-    id: segmentId,
+    id,
     lineId: `${segmentId}_CENTURION`,
     blockId: "0.1",
     segmentId,
+    lineContentHash: lineHash,
+    segmentContentHash: segmentHash,
     sequence: 1,
     displayText: "Halt!",
     segmentText: "Halt!",
@@ -30,3 +32,6 @@ function itemFixture(segmentId: string): RecordingItem {
     stageDirections: []
   };
 }
+
+const lineHash = "sha256:0000000000000000000000000000000000000000000000000000000000000001";
+const segmentHash = "sha256:0000000000000000000000000000000000000000000000000000000000000002";

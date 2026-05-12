@@ -14,18 +14,18 @@ describe("ProjectRepository", () => {
     const project = await projectRepository.saveImportedRequest(packFixture());
 
     expect(project.id).toBe("androcles-CENTURION-full-2026-05-10");
-    expect(project.currentSegmentId).toBe("0_12_1");
+    expect(project.currentItemId).toBe("I-12:s1");
     expect(project.request.packageType).toBe("recording_request");
     await expect(projectRepository.list()).resolves.toHaveLength(1);
   });
 
-  it("updates the current segment", async () => {
+  it("updates the current item", async () => {
     const project = await projectRepository.saveImportedRequest(packFixture());
 
-    await projectRepository.setCurrentSegment(project.id, "0_14_1");
+    await projectRepository.setCurrentItem(project.id, "I-14:s1");
 
     await expect(projectRepository.get(project.id)).resolves.toMatchObject({
-      currentSegmentId: "0_14_1"
+      currentItemId: "I-14:s1"
     });
   });
 
@@ -34,7 +34,7 @@ describe("ProjectRepository", () => {
     await takeRepository.saveAccepted({
       id: "take-1",
       projectId: project.id,
-      segmentId: "0_12_1",
+      segmentId: "I-12:s1",
       status: "accepted",
       recordedAt: "2026-05-11T12:00:00Z",
       durationMs: 1000,
@@ -75,10 +75,12 @@ function packFixture(): RecordingRequest {
     },
     items: [
       {
-        id: "0_12_1",
+        id: "I-12:s1",
         lineId: "0_12_CENTURION",
         blockId: "0.12",
         segmentId: "0_12_1",
+        lineContentHash: line12Hash,
+        segmentContentHash: segment12Hash,
         sequence: 1,
         displayText: "Halt!",
         segmentText: "Halt!",
@@ -88,3 +90,6 @@ function packFixture(): RecordingRequest {
     ]
   };
 }
+
+const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
+const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";

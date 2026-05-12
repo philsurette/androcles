@@ -14,8 +14,8 @@ describe("recording navigation", () => {
   it("finds previous and next items from the selected index", () => {
     const progress = progressFixture();
 
-    expect(previousProgress(progress, 1)?.item.segmentId).toBe("0_1_1");
-    expect(nextProgress(progress, 1)?.item.segmentId).toBe("0_3_1");
+    expect(previousProgress(progress, 1)?.item.id).toBe("I-1:s1");
+    expect(nextProgress(progress, 1)?.item.id).toBe("I-3:s1");
   });
 
   it("does not navigate beyond list edges", () => {
@@ -29,10 +29,12 @@ describe("recording navigation", () => {
 function progressFixture(): RecordingItemProgress[] {
   return ["0_1_1", "0_2_1", "0_3_1"].map((segmentId, index) => ({
     item: {
-      id: segmentId,
+      id: `I-${index + 1}:s1`,
       lineId: `${segmentId}_CENTURION`,
       blockId: `0.${index + 1}`,
       segmentId,
+      lineContentHash: lineHash,
+      segmentContentHash: segmentHash,
       sequence: index + 1,
       displayText: `Line ${index + 1}`,
       segmentText: `Line ${index + 1}`,
@@ -42,3 +44,6 @@ function progressFixture(): RecordingItemProgress[] {
     status: "missing"
   }));
 }
+
+const lineHash = "sha256:0000000000000000000000000000000000000000000000000000000000000001";
+const segmentHash = "sha256:0000000000000000000000000000000000000000000000000000000000000002";

@@ -3,8 +3,8 @@ export type RecordingItem = {
   lineId: string;
   blockId: string;
   segmentId: string;
-  lineContentHash?: string;
-  segmentContentHash?: string;
+  lineContentHash: string;
+  segmentContentHash: string;
   sequence: number;
   displayText: string;
   segmentText: string;

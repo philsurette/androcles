@@ -33,8 +33,8 @@ describe("validateRecordingRequestManifest", () => {
           line_id: "0_12_CENTURION",
           block_id: "0.12",
           segment_id: "0_12_1",
-          line_content_hash: "sha256:line-12",
-          segment_content_hash: "sha256:segment-12",
+          line_content_hash: line12Hash,
+          segment_content_hash: segment12Hash,
           sequence: 1,
           display_text: "Halt!",
           segment_text: "Halt!",
@@ -60,8 +60,8 @@ describe("validateRecordingRequestManifest", () => {
       id: "I-12:s1",
       lineId: "0_12_CENTURION",
       segmentId: "0_12_1",
-      lineContentHash: "sha256:line-12",
-      segmentContentHash: "sha256:segment-12",
+      lineContentHash: line12Hash,
+      segmentContentHash: segment12Hash,
       cueSpeaker: "_NARRATOR",
       previousSpeaker: "FERROVIUS",
       nextSpeaker: "ANDROCLES",
@@ -90,3 +90,6 @@ describe("validateRecordingRequestManifest", () => {
     ).toThrow();
   });
 });
+
+const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
+const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";

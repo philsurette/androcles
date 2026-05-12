@@ -56,8 +56,8 @@ function manifestFixture() {
         line_id: "0_12_CENTURION",
         block_id: "0.12",
         segment_id: "0_12_1",
-        line_content_hash: "sha256:line-12",
-        segment_content_hash: "sha256:segment-12",
+        line_content_hash: line12Hash,
+        segment_content_hash: segment12Hash,
         sequence: 1,
         display_text: "Halt!",
         segment_text: "Halt!",
@@ -66,3 +66,6 @@ function manifestFixture() {
     ]
   };
 }
+
+const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
+const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";

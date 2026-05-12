@@ -6,7 +6,7 @@ import type { RecordingProjectRecord } from "../../src/storage/db";
 
 describe("exportRoleRecordings", () => {
   it("exports accepted recordings at their declared output paths", async () => {
-    const result = await exportRoleRecordings(projectFixture(), [takeFixture("0_12_1")]);
+    const result = await exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")]);
     const zip = await JSZip.loadAsync(result.blob);
     const manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
 
@@ -20,8 +20,8 @@ describe("exportRoleRecordings", () => {
           line_id: "0_12_CENTURION",
           block_id: "0.12",
           segment_id: "0_12_1",
-          line_content_hash: "sha256:line-12",
-          segment_content_hash: "sha256:segment-12",
+          line_content_hash: line12Hash,
+          segment_content_hash: segment12Hash,
           audio_path: "audio/segments/CENTURION/0_12_1.wav",
           input_quality: {
             peak_energy: 0.14,
@@ -41,7 +41,7 @@ describe("exportRoleRecordings", () => {
   });
 
   it("marks the export complete when every requested segment has an accepted take", async () => {
-    const result = await exportRoleRecordings(projectFixture(), [takeFixture("0_12_1"), takeFixture("0_14_1")]);
+    const result = await exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1"), takeFixture("I-14:s1")]);
 
     expect(result.manifest.complete).toBe(true);
     expect(result.manifest.missing_segment_ids).toEqual([]);
@@ -93,8 +93,8 @@ function projectFixture(): RecordingProjectRecord {
           lineId: "0_12_CENTURION",
           blockId: "0.12",
           segmentId: "0_12_1",
-          lineContentHash: "sha256:line-12",
-          segmentContentHash: "sha256:segment-12",
+          lineContentHash: line12Hash,
+          segmentContentHash: segment12Hash,
           sequence: 1,
           displayText: "Halt!",
           segmentText: "Halt!",
@@ -106,8 +106,8 @@ function projectFixture(): RecordingProjectRecord {
           lineId: "0_14_CENTURION",
           blockId: "0.14",
           segmentId: "0_14_1",
-          lineContentHash: "sha256:line-14",
-          segmentContentHash: "sha256:segment-14",
+          lineContentHash: line14Hash,
+          segmentContentHash: segment14Hash,
           sequence: 2,
           displayText: "Stand aside.",
           segmentText: "Stand aside.",
@@ -141,3 +141,8 @@ function takeFixture(segmentId: string): RecordingTake {
     blob: new Blob(["fake wav"], { type: "audio/wav" })
   };
 }
+
+const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
+const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";
+const line14Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000014";
+const segment14Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001014";

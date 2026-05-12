@@ -26,23 +26,25 @@ export async function exportRoleRecordings(
   acceptedTakes: RecordingTake[],
   zipGenerator: RoleRecordingsZipGenerator = new JsZipRoleRecordingsZipGenerator()
 ): Promise<RoleRecordingsExport> {
-  const acceptedBySegmentId = new Map(acceptedTakes.map((take) => [take.segmentId, take]));
+  const acceptedByItemId = new Map(acceptedTakes.map((take) => [take.segmentId, take]));
   const recordings = [];
   const missingSegmentIds = [];
 
   for (const item of project.request.items) {
-    const take = acceptedBySegmentId.get(item.segmentId);
+    const take = acceptedByItemId.get(item.id);
     if (!take) {
       missingSegmentIds.push(item.id);
       continue;
     }
 
     zipGenerator.file(item.outputPath, take.blob);
-    const recording = {
+    recordings.push({
       id: item.id,
       line_id: item.lineId,
       block_id: item.blockId,
       segment_id: item.segmentId,
+      line_content_hash: item.lineContentHash,
+      segment_content_hash: item.segmentContentHash,
       audio_path: item.outputPath,
       recorded_at: take.recordedAt,
       duration_ms: Math.round(take.durationMs),
@@ -60,14 +62,7 @@ export async function exportRoleRecordings(
           }
         : undefined,
       status: "accepted" as const
-    };
-    if (item.lineContentHash !== undefined) {
-      Object.assign(recording, { line_content_hash: item.lineContentHash });
-    }
-    if (item.segmentContentHash !== undefined) {
-      Object.assign(recording, { segment_content_hash: item.segmentContentHash });
-    }
-    recordings.push(recording);
+    });
   }
 
   const manifest: RoleRecordingsManifest = {

@@ -16,7 +16,7 @@ import type { RecordingProjectRecord } from "../storage/db";
 export function App() {
   const [projects, setProjects] = useState<RecordingProjectRecord[]>([]);
   const [selectedProject, setSelectedProject] = useState<RecordingProjectRecord | null>(null);
-  const [acceptedSegmentIds, setAcceptedSegmentIds] = useState<Set<string>>(new Set());
+  const [acceptedItemIds, setAcceptedItemIds] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState("Import a Stager Recording Request to begin.");
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -37,20 +37,20 @@ export function App() {
 
   async function loadAcceptedSegments(projectId: string): Promise<void> {
     const acceptedTakes = await takeRepository.acceptedForProject(projectId);
-    setAcceptedSegmentIds(new Set(acceptedTakes.map((take) => take.segmentId)));
+    setAcceptedItemIds(new Set(acceptedTakes.map((take) => take.segmentId)));
   }
 
   async function selectItem(project: RecordingProjectRecord, item: RecordingItem): Promise<void> {
-    await projectRepository.setCurrentSegment(project.id, item.segmentId);
+    await projectRepository.setCurrentItem(project.id, item.id);
     const updatedProject = {
       ...project,
-      currentSegmentId: item.segmentId
+      currentItemId: item.id
     };
     setSelectedProject(updatedProject);
     setProjects((currentProjects) =>
       currentProjects.map((candidate) => (candidate.id === updatedProject.id ? updatedProject : candidate))
     );
-    setStatus(`Selected line ${item.sequence}.`);
+    setStatus(`Selected ${item.id}.`);
   }
 
   async function importRequest(file: File): Promise<void> {
@@ -113,7 +113,7 @@ export function App() {
       {selectedProject ? (
         <ProjectDetail
           project={selectedProject}
-          acceptedSegmentIds={acceptedSegmentIds}
+          acceptedItemIds={acceptedItemIds}
           onSelectItem={(item) => void selectItem(selectedProject, item)}
           onAccepted={() => loadAcceptedSegments(selectedProject.id)}
           onExport={() => void exportProject(selectedProject)}
@@ -221,7 +221,7 @@ function ProjectLibrary({ projects, onOpenProject, onDeleteProject }: ProjectLib
 
 type ProjectDetailProps = {
   project: RecordingProjectRecord;
-  acceptedSegmentIds: Set<string>;
+  acceptedItemIds: Set<string>;
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
   onExport: () => void;
@@ -232,7 +232,7 @@ type ProjectDetailProps = {
 
 function ProjectDetail({
   project,
-  acceptedSegmentIds,
+  acceptedItemIds,
   onSelectItem,
   onAccepted,
   onExport,
@@ -241,8 +241,8 @@ function ProjectDetail({
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
-  const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
-  const selectedIndex = selectedProgressIndex(progress, project.currentSegmentId);
+  const progress = recordingItemProgress(project.request.items, acceptedItemIds);
+  const selectedIndex = selectedProgressIndex(progress, project.currentItemId);
   const selectedItem = selectedIndex === -1 ? undefined : progress[selectedIndex];
   const previousItem = previousProgress(progress, selectedIndex);
   const nextItem = nextProgress(progress, selectedIndex);
@@ -259,7 +259,7 @@ function ProjectDetail({
       />
       <MicrophoneSetup onReady={setMicrophoneConfig} />
       <div className="recording-workspace">
-        <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
+        <ItemList progress={progress} selectedItemId={selectedItem?.item.id} onSelectItem={onSelectItem} />
         {selectedItem ? (
           <ItemDetail
             project={project}
@@ -463,23 +463,23 @@ function ProjectSummary({ project, progress, onExport, onDelete, onBack, isExpor
 
 type ItemListProps = {
   progress: RecordingItemProgress[];
-  selectedSegmentId: string | undefined;
+  selectedItemId: string | undefined;
   onSelectItem: (item: RecordingItem) => void;
 };
 
-function ItemList({ progress, selectedSegmentId, onSelectItem }: ItemListProps) {
+function ItemList({ progress, selectedItemId, onSelectItem }: ItemListProps) {
   return (
     <section className="item-list" aria-label="Recording items">
       {progress.map(({ item, status }) => (
         <button
-          key={item.segmentId}
+          key={item.id}
           type="button"
-          className={item.segmentId === selectedSegmentId ? "item-row selected" : "item-row"}
+          className={item.id === selectedItemId ? "item-row selected" : "item-row"}
           onClick={() => onSelectItem(item)}
         >
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
           <span className="item-row-text">
-            <strong>Line {item.sequence}</strong>
+            <strong>{item.id}</strong>
             <span>{item.segmentText}</span>
           </span>
         </button>
@@ -506,7 +506,7 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
       <header className="item-detail-header">
         <div className="item-heading">
           <span className="item-section">{item.sectionTitle ?? "Recording Item"}</span>
-          <h2>Line {item.sequence}</h2>
+          <h2>{item.id}</h2>
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
           <span className="line-navigation-spacer" />
           <button
@@ -608,7 +608,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     setStatusTone("normal");
     stopPlayback();
     void loadAcceptedTake();
-  }, [item.segmentId]);
+  }, [item.id]);
 
   useEffect(() => {
     if (microphoneConfig && statusTone === "warning" && status === "Start microphone setup before recording.") {
@@ -618,7 +618,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
   }, [microphoneConfig, status, statusTone, currentTake, acceptedTake]);
 
   async function loadAcceptedTake(): Promise<void> {
-    const take = await takeRepository.acceptedForSegment(project.id, item.segmentId);
+    const take = await takeRepository.acceptedForSegment(project.id, item.id);
     setAcceptedTake(take ?? null);
     setStatus(take ? `Accepted take saved: ${Math.round(take.durationMs)} ms.` : "No take recorded.");
     setStatusTone("normal");
@@ -679,9 +679,9 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
       return;
     }
     const take: RecordingTake = {
-      id: `${project.id}:${item.segmentId}:${new Date().toISOString()}`,
+      id: `${project.id}:${item.id}:${new Date().toISOString()}`,
       projectId: project.id,
-      segmentId: item.segmentId,
+      segmentId: item.id,
       status: "accepted",
       recordedAt: new Date().toISOString(),
       durationMs: currentTake.durationMs,
