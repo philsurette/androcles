@@ -10,7 +10,7 @@ export function CueCard({ cue }: { cue: Cue }) {
 }
 
 function leftTruncatedCueText(text: string): string {
-  const maxCueCharacters = 110;
+  const maxCueCharacters = 76;
   if (text.length <= maxCueCharacters) {
     return text;
   }
