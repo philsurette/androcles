@@ -13,8 +13,8 @@ Goal: actors can export accepted recordings as a zip that lands in their normal 
 - [x] Add an export completion state that shows the downloaded filename and tells the actor to email or upload that zip to the showrunner.
 - [x] Preserve local accepted takes after export so an actor can retry export without re-recording.
 - [x] Add unit tests for filename generation and download-service invocation.
-- [ ] Add a Playwright export smoke test using a browser download expectation.
-- [ ] Document that browsers cannot silently write to Downloads and that the download location is controlled by the user's browser settings.
+- [x] Add a Playwright export smoke test using a browser download expectation.
+- [x] Document that browsers cannot silently write to Downloads and that the download location is controlled by the user's browser settings.
 
 Deferred enhancements:
 
@@ -45,20 +45,20 @@ Current app status:
 
 Implementation tasks:
 
-- [ ] Add a repo script that builds Cuemaster with `npm run build:static` from `cuemaster/`.
-- [ ] Add a repo script that builds LineRecorder with `npm run build:static` from `linerecorder/`.
-- [ ] Add a publish script that removes and recreates only these target directories:
+- [x] Add a repo script that builds Cuemaster with `npm run build:static` from `cuemaster/`.
+- [x] Add a repo script that builds LineRecorder with `npm run build:static` from `linerecorder/`.
+- [x] Add a publish script that removes and recreates only these target directories:
 
   ```text
   ../philsurette.github.io/cuemaster/
   ../philsurette.github.io/linerecorder/
   ```
 
-- [ ] Copy each app's `dist/` contents into its matching target directory.
-- [ ] Add or update `../philsurette.github.io/index.md` links for the hosted apps.
-- [ ] Keep the publish script from touching unrelated files such as `dayafter.html` and `otherlondon.html`.
-- [ ] Add a dry-run mode that prints source and destination paths before copying.
-- [ ] Add instructions for manually reviewing the sibling repo diff before committing the GitHub Pages update.
+- [x] Copy each app's `dist/` contents into its matching target directory.
+- [x] Add or update `../philsurette.github.io/index.md` links for the hosted apps.
+- [x] Keep the publish script from touching unrelated files such as `dayafter.html` and `otherlondon.html`.
+- [x] Add a dry-run mode that prints source and destination paths before copying.
+- [x] Add instructions for manually reviewing the sibling repo diff before committing the GitHub Pages update.
 - [ ] Verify the deployed paths locally with a static file server pointed at `../philsurette.github.io`.
 - [ ] Verify that app asset paths are relative and do not assume site root.
 

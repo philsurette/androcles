@@ -118,6 +118,7 @@ export function App() {
         <ProjectDetail
           project={selectedProject}
           acceptedItemIds={acceptedItemIds}
+          status={status}
           onSelectItem={(item) => void selectItem(selectedProject, item)}
           onAccepted={() => loadAcceptedSegments(selectedProject.id)}
           onExport={() => void exportProject(selectedProject)}
@@ -226,6 +227,7 @@ function ProjectLibrary({ projects, onOpenProject, onDeleteProject }: ProjectLib
 type ProjectDetailProps = {
   project: RecordingProjectRecord;
   acceptedItemIds: Set<string>;
+  status: string;
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
   onExport: () => void;
@@ -237,6 +239,7 @@ type ProjectDetailProps = {
 function ProjectDetail({
   project,
   acceptedItemIds,
+  status,
   onSelectItem,
   onAccepted,
   onExport,
@@ -257,6 +260,7 @@ function ProjectDetail({
       <ProjectSummary
         project={project}
         progress={progress}
+        status={status}
         onExport={onExport}
         onDelete={onDelete}
         onBack={onBack}
@@ -495,13 +499,14 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
 type ProjectSummaryProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress[];
+  status: string;
   onExport: () => void;
   onDelete: () => void;
   onBack: () => void;
   isExporting: boolean;
 };
 
-function ProjectSummary({ project, progress, onExport, onDelete, onBack, isExporting }: ProjectSummaryProps) {
+function ProjectSummary({ project, progress, status, onExport, onDelete, onBack, isExporting }: ProjectSummaryProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   return (
     <article className="summary-panel">
@@ -538,6 +543,9 @@ function ProjectSummary({ project, progress, onExport, onDelete, onBack, isExpor
           {isExporting ? "Exporting..." : "Export Recordings"}
         </button>
       </div>
+      <p className="status" role="status">
+        {status}
+      </p>
       {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
     </article>
   );
