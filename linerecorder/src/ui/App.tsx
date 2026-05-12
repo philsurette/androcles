@@ -448,17 +448,19 @@ type TakeRecorderProps = {
 function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecorderProps) {
   const recorderRef = useRef<WavRecorder | null>(null);
   const playbackUrlRef = useRef<string | null>(null);
+  const playbackAudioRef = useRef<HTMLAudioElement | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTake, setCurrentTake] = useState<RecordedWav | null>(null);
   const [acceptedTake, setAcceptedTake] = useState<RecordingTake | null>(null);
   const [recordingReading, setRecordingReading] = useState<WavRecorderReading>({ energy: 0, level: "no-signal" });
+  const [playingSource, setPlayingSource] = useState<"take" | "saved" | null>(null);
   const [status, setStatus] = useState("Checking saved take...");
   const [statusTone, setStatusTone] = useState<"normal" | "warning">("normal");
 
   useEffect(() => {
     return () => {
       recorderRef.current?.stopWithoutResult();
-      revokePlaybackUrl();
+      stopPlayback();
     };
   }, []);
 
@@ -470,7 +472,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     setRecordingReading({ energy: 0, level: "no-signal" });
     setStatus("Checking saved take...");
     setStatusTone("normal");
-    revokePlaybackUrl();
+    stopPlayback();
     void loadAcceptedTake();
   }, [item.segmentId]);
 
@@ -495,7 +497,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
       return;
     }
     try {
-      revokePlaybackUrl();
+      stopPlayback();
       const recorder = new WavRecorder(setRecordingReading);
       recorderRef.current = recorder;
       setCurrentTake(null);
@@ -528,14 +530,14 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     if (!currentTake) {
       return;
     }
-    playBlob(currentTake.blob);
+    playBlob(currentTake.blob, "take");
   }
 
   function playAcceptedTake(): void {
     if (!acceptedTake) {
       return;
     }
-    playBlob(acceptedTake.blob);
+    playBlob(acceptedTake.blob, "saved");
   }
 
   async function acceptTake(): Promise<void> {
@@ -566,22 +568,31 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     setRecordingReading({ energy: 0, level: "no-signal" });
     setStatus("No take recorded.");
     setStatusTone("normal");
-    revokePlaybackUrl();
+    stopPlayback();
   }
 
-  function revokePlaybackUrl(): void {
+  function stopPlayback(): void {
+    if (playbackAudioRef.current) {
+      playbackAudioRef.current.pause();
+      playbackAudioRef.current.currentTime = 0;
+      playbackAudioRef.current = null;
+    }
     if (playbackUrlRef.current) {
       URL.revokeObjectURL(playbackUrlRef.current);
       playbackUrlRef.current = null;
     }
+    setPlayingSource(null);
   }
 
-  function playBlob(blob: Blob): void {
-    revokePlaybackUrl();
+  function playBlob(blob: Blob, source: "take" | "saved"): void {
+    stopPlayback();
     const url = URL.createObjectURL(blob);
     playbackUrlRef.current = url;
     const audio = new Audio(url);
-    audio.onended = revokePlaybackUrl;
+    playbackAudioRef.current = audio;
+    setPlayingSource(source);
+    audio.onended = stopPlayback;
+    audio.onerror = stopPlayback;
     void audio.play();
   }
 
@@ -601,15 +612,27 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
             Record
           </button>
         )}
-        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={playTake}>
-          Play Take
-        </button>
+        {playingSource === "take" ? (
+          <button type="button" className="secondary" onClick={stopPlayback}>
+            Stop
+          </button>
+        ) : (
+          <button type="button" className="secondary" disabled={!currentTake || isRecording || Boolean(playingSource)} onClick={playTake}>
+            Play Take
+          </button>
+        )}
         <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={() => void acceptTake()}>
           Accept
         </button>
-        <button type="button" className="secondary" disabled={!acceptedTake || isRecording} onClick={playAcceptedTake}>
-          Play Saved
-        </button>
+        {playingSource === "saved" ? (
+          <button type="button" className="secondary" onClick={stopPlayback}>
+            Stop
+          </button>
+        ) : (
+          <button type="button" className="secondary" disabled={!acceptedTake || isRecording || Boolean(playingSource)} onClick={playAcceptedTake}>
+            Play Saved
+          </button>
+        )}
         <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={retryTake}>
           Retry
         </button>
