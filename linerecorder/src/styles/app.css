@@ -530,6 +530,14 @@ select {
   flex: 0 0 auto;
 }
 
+.line-position {
+  align-self: center;
+  color: var(--muted);
+  font-size: 0.92rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .line-navigation-spacer {
   margin-left: auto;
 }

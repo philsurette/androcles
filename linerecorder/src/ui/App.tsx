@@ -271,6 +271,8 @@ function ProjectDetail({
           <ItemDetail
             project={project}
             progress={selectedItem}
+            itemNumber={selectedIndex + 1}
+            itemCount={progress.length}
             microphoneConfig={microphoneConfig}
             previousItem={previousItem}
             nextItem={nextItem}
@@ -541,6 +543,8 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
 type ItemDetailProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress;
+  itemNumber: number;
+  itemCount: number;
   microphoneConfig: MicrophoneConfig | null;
   previousItem: RecordingItemProgress | undefined;
   nextItem: RecordingItemProgress | undefined;
@@ -548,7 +552,17 @@ type ItemDetailProps = {
   onAccepted: () => Promise<void>;
 };
 
-function ItemDetail({ project, progress, microphoneConfig, previousItem, nextItem, onNavigate, onAccepted }: ItemDetailProps) {
+function ItemDetail({
+  project,
+  progress,
+  itemNumber,
+  itemCount,
+  microphoneConfig,
+  previousItem,
+  nextItem,
+  onNavigate,
+  onAccepted
+}: ItemDetailProps) {
   const { item, status } = progress;
   const [showDetails, setShowDetails] = useState(false);
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
@@ -557,6 +571,7 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
       <header className="item-detail-header">
         <div className="item-heading">
           <h2>{item.id}</h2>
+          <span className="line-position">line {itemNumber} of {itemCount}</span>
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
           <span className="reason-pill">{reasonLabel(item.reason)}</span>
           <span className="line-navigation-spacer" />
