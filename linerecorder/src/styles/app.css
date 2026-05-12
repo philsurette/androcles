@@ -357,8 +357,18 @@ select {
   background: #fffdf6;
 }
 
-.take-panel p:last-child {
+.take-status {
   color: var(--muted);
+}
+
+.take-status.warning {
+  display: inline-block;
+  padding: 10px 12px;
+  border: 1px solid #d8a095;
+  border-radius: 8px;
+  color: #9f3523;
+  background: #f8ded8;
+  font-weight: 900;
 }
 
 .take-controls {

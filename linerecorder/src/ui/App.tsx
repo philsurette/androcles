@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
 import { meterFillPercent } from "../audio/inputMeter";
-import { WavRecorder, type RecordedWav } from "../audio/wavRecorder";
+import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio/wavRecorder";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
 import type { RecordingTake } from "../domain/take";
@@ -176,6 +176,7 @@ type ProjectDetailProps = {
 };
 
 function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }: ProjectDetailProps) {
+  const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
   const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
   const selectedItem =
     project.currentSegmentId === undefined
@@ -185,16 +186,32 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }
   return (
     <section className="project-detail" aria-label="Recording Request detail">
       <ProjectSummary project={project} progress={progress} />
-      <MicrophoneSetup />
+      <MicrophoneSetup onReady={setMicrophoneConfig} />
       <div className="recording-workspace">
         <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
-        {selectedItem ? <ItemDetail project={project} progress={selectedItem} onAccepted={onAccepted} /> : null}
+        {selectedItem ? (
+          <ItemDetail
+            project={project}
+            progress={selectedItem}
+            microphoneConfig={microphoneConfig}
+            onAccepted={onAccepted}
+          />
+        ) : null}
       </div>
     </section>
   );
 }
 
-function MicrophoneSetup() {
+type MicrophoneConfig = {
+  deviceId: string;
+  mode: MicrophoneMode;
+};
+
+type MicrophoneSetupProps = {
+  onReady: (config: MicrophoneConfig) => void;
+};
+
+function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   const sessionRef = useRef<MicrophoneSession | null>(null);
   const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
@@ -227,6 +244,7 @@ function MicrophoneSetup() {
       });
       sessionRef.current = session;
       await session.start(selectedDeviceId, mode);
+      onReady({ deviceId: selectedDeviceId, mode });
       setIsActive(true);
     } catch (error) {
       const message =
@@ -363,10 +381,11 @@ function ItemList({ progress, selectedSegmentId, onSelectItem }: ItemListProps) 
 type ItemDetailProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress;
+  microphoneConfig: MicrophoneConfig | null;
   onAccepted: () => Promise<void>;
 };
 
-function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
+function ItemDetail({ project, progress, microphoneConfig, onAccepted }: ItemDetailProps) {
   const { item, status } = progress;
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
@@ -414,7 +433,7 @@ function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
           <dd>{item.reason ?? "recording"}</dd>
         </div>
       </dl>
-      <TakeRecorder project={project} item={item} onAccepted={onAccepted} />
+      <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
     </article>
   );
 }
@@ -422,16 +441,19 @@ function ItemDetail({ project, progress, onAccepted }: ItemDetailProps) {
 type TakeRecorderProps = {
   project: RecordingProjectRecord;
   item: RecordingItem;
+  microphoneConfig: MicrophoneConfig | null;
   onAccepted: () => Promise<void>;
 };
 
-function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
+function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecorderProps) {
   const recorderRef = useRef<WavRecorder | null>(null);
   const playbackUrlRef = useRef<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTake, setCurrentTake] = useState<RecordedWav | null>(null);
   const [acceptedTake, setAcceptedTake] = useState<RecordingTake | null>(null);
+  const [recordingReading, setRecordingReading] = useState<WavRecorderReading>({ energy: 0, level: "no-signal" });
   const [status, setStatus] = useState("Checking saved take...");
+  const [statusTone, setStatusTone] = useState<"normal" | "warning">("normal");
 
   useEffect(() => {
     return () => {
@@ -445,7 +467,9 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     setIsRecording(false);
     setCurrentTake(null);
     setAcceptedTake(null);
+    setRecordingReading({ energy: 0, level: "no-signal" });
     setStatus("Checking saved take...");
+    setStatusTone("normal");
     revokePlaybackUrl();
     void loadAcceptedTake();
   }, [item.segmentId]);
@@ -454,19 +478,28 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     const take = await takeRepository.acceptedForSegment(project.id, item.segmentId);
     setAcceptedTake(take ?? null);
     setStatus(take ? `Accepted take saved: ${Math.round(take.durationMs)} ms.` : "No take recorded.");
+    setStatusTone("normal");
   }
 
   async function startRecording(): Promise<void> {
+    if (!microphoneConfig) {
+      setStatus("Start microphone setup before recording.");
+      setStatusTone("warning");
+      return;
+    }
     try {
       revokePlaybackUrl();
-      const recorder = new WavRecorder();
+      const recorder = new WavRecorder(setRecordingReading);
       recorderRef.current = recorder;
       setCurrentTake(null);
+      setRecordingReading({ energy: 0, level: "no-signal" });
       setStatus("Recording...");
-      await recorder.start(undefined, "clean");
+      setStatusTone("normal");
+      await recorder.start(microphoneConfig.deviceId, microphoneConfig.mode);
       setIsRecording(true);
     } catch {
       setStatus("Unable to start recording.");
+      setStatusTone("warning");
       setIsRecording(false);
     }
   }
@@ -479,7 +512,9 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     recorderRef.current = null;
     setCurrentTake(take);
     setIsRecording(false);
+    setRecordingReading({ energy: 0, level: "no-signal" });
     setStatus(`Recorded ${Math.round(take.durationMs)} ms.`);
+    setStatusTone("normal");
   }
 
   function playTake(): void {
@@ -515,12 +550,15 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     setAcceptedTake(take);
     setCurrentTake(null);
     setStatus("Take accepted.");
+    setStatusTone("normal");
     await onAccepted();
   }
 
   function retryTake(): void {
     setCurrentTake(null);
+    setRecordingReading({ energy: 0, level: "no-signal" });
     setStatus("No take recorded.");
+    setStatusTone("normal");
     revokePlaybackUrl();
   }
 
@@ -544,7 +582,7 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
     <section className="take-panel" aria-label="Take recorder">
       <div>
         <p className="eyebrow">Take</p>
-        <p>{status}</p>
+        <p className={statusTone === "warning" ? "take-status warning" : "take-status"}>{status}</p>
       </div>
       <div className="take-controls">
         {isRecording ? (
@@ -569,6 +607,14 @@ function TakeRecorder({ project, item, onAccepted }: TakeRecorderProps) {
           Retry
         </button>
       </div>
+      {isRecording ? (
+        <div className="meter-row take-meter">
+          <div className="meter" aria-label={`Recording input level: ${levelLabel(recordingReading.level)}`}>
+            <span style={{ width: `${meterFillPercent(recordingReading.energy)}%` }} />
+          </div>
+          <span className={`meter-label ${recordingReading.level}`}>{levelLabel(recordingReading.level)}</span>
+        </div>
+      ) : null}
     </section>
   );
 }

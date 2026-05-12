@@ -1,4 +1,5 @@
 import { requestMicrophoneStream, stopMicrophoneStream, type MicrophoneMode } from "../platform/microphone";
+import { classifyInputLevel, rootMeanSquareFloatEnergy } from "./inputMeter";
 import { encodeWav } from "./wavEncoder";
 
 export type RecordedWav = {
@@ -6,6 +7,11 @@ export type RecordedWav = {
   durationMs: number;
   sampleRateHz: number;
   channels: number;
+};
+
+export type WavRecorderReading = {
+  energy: number;
+  level: ReturnType<typeof classifyInputLevel>;
 };
 
 type WavRecorderDependencies = {
@@ -30,16 +36,30 @@ export class WavRecorder {
   private chunks: Float32Array[] = [];
   private startedAtMs = 0;
 
-  constructor(private readonly dependencies: WavRecorderDependencies = defaultDependencies) {}
+  constructor(
+    private readonly onReading: ((reading: WavRecorderReading) => void) | null = null,
+    private readonly dependencies: WavRecorderDependencies = defaultDependencies
+  ) {}
 
   async start(deviceId: string | undefined, mode: MicrophoneMode): Promise<void> {
     this.stopWithoutResult();
     this.stream = await this.dependencies.requestStream(deviceId || undefined, mode);
     this.audioContext = this.dependencies.createAudioContext();
+    if (this.audioContext.state === "suspended") {
+      await this.audioContext.resume();
+    }
     this.source = this.audioContext.createMediaStreamSource(this.stream);
     this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
     this.processor.onaudioprocess = (event) => {
-      this.chunks.push(new Float32Array(event.inputBuffer.getChannelData(0)));
+      const samples = new Float32Array(event.inputBuffer.getChannelData(0));
+      this.chunks.push(samples);
+      if (this.onReading) {
+        const energy = rootMeanSquareFloatEnergy(samples);
+        this.onReading({
+          energy,
+          level: classifyInputLevel(energy)
+        });
+      }
     };
     this.source.connect(this.processor);
     this.processor.connect(this.audioContext.destination);

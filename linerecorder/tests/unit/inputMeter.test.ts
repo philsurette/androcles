@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { classifyInputLevel, meterFillPercent, rootMeanSquareEnergy } from "../../src/audio/inputMeter";
+import { classifyInputLevel, meterFillPercent, rootMeanSquareEnergy, rootMeanSquareFloatEnergy } from "../../src/audio/inputMeter";
 
 describe("inputMeter", () => {
   it("calculates root mean square energy from byte samples", () => {
     expect(rootMeanSquareEnergy(new Uint8Array([128, 128, 128]))).toBe(0);
     expect(rootMeanSquareEnergy(new Uint8Array([255]))).toBeCloseTo(0.992, 3);
+  });
+
+  it("calculates root mean square energy from float samples", () => {
+    expect(rootMeanSquareFloatEnergy(new Float32Array([0, 0, 0]))).toBe(0);
+    expect(rootMeanSquareFloatEnergy(new Float32Array([1, -1]))).toBe(1);
   });
 
   it("classifies signal levels", () => {

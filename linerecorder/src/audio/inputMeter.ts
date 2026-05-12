@@ -9,6 +9,14 @@ export function rootMeanSquareEnergy(samples: Uint8Array<ArrayBufferLike>): numb
   return Math.sqrt(sum / samples.length);
 }
 
+export function rootMeanSquareFloatEnergy(samples: Float32Array): number {
+  let sum = 0;
+  for (const sample of samples) {
+    sum += sample * sample;
+  }
+  return Math.sqrt(sum / samples.length);
+}
+
 export function classifyInputLevel(energy: number): InputLevel {
   if (energy < 0.005) {
     return "no-signal";
