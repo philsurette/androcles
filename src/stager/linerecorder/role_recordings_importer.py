@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+import filecmp
 import json
 import logging
 from pathlib import Path, PurePosixPath
@@ -19,8 +20,15 @@ class RoleRecordingsImportResult:
     imported_count: int
     missing_segment_ids: list[str]
     complete: bool
-    backup_manifest_path: Path | None = None
+    transaction_manifest_path: Path
     written_paths: list[Path] = field(default_factory=list)
+
+
+@dataclass
+class RoleRecordingsUndoResult:
+    role: str
+    restored_count: int
+    removed_count: int
 
 
 @dataclass
@@ -55,7 +63,8 @@ class RoleRecordingsImporter:
                     )
                 )
 
-            backup_manifest_path = self._backup_existing_segments(
+            transaction_manifest_path = self._write_import_transaction(
+                archive=archive,
                 package_path=package_path,
                 manifest=manifest,
                 import_jobs=import_jobs,
@@ -63,9 +72,9 @@ class RoleRecordingsImporter:
 
             for import_job in import_jobs:
                 target_path = import_job.target_path
+                incoming_path = transaction_manifest_path.parent / "incoming" / import_job.audio_path
                 target_path.parent.mkdir(parents=True, exist_ok=True)
-                with archive.open(import_job.member) as source, target_path.open("wb") as target:
-                    target.write(source.read())
+                shutil.copy2(incoming_path, target_path)
                 written_paths.append(target_path)
                 logger.info("Imported LineRecorder segment %s", paths.display_path(target_path))
 
@@ -74,8 +83,43 @@ class RoleRecordingsImporter:
             imported_count=len(written_paths),
             missing_segment_ids=list(manifest.get("missing_segment_ids", [])),
             complete=bool(manifest["complete"]),
-            backup_manifest_path=backup_manifest_path,
+            transaction_manifest_path=transaction_manifest_path,
             written_paths=written_paths,
+        )
+
+    def undo_import(self, transaction_manifest_path: Path) -> RoleRecordingsUndoResult:
+        transaction = json.loads(transaction_manifest_path.read_text(encoding="utf-8"))
+        if transaction.get("play_id") != self.paths.play_name:
+            raise RuntimeError(
+                f"Import transaction play id {transaction.get('play_id')!r} does not match selected play {self.paths.play_name!r}"
+            )
+        if not isinstance(transaction.get("imported"), list):
+            raise RuntimeError(f"Invalid import transaction: {paths.display_path(transaction_manifest_path)}")
+
+        restored_count = 0
+        removed_count = 0
+        for imported in transaction["imported"]:
+            target_path = self._transaction_target_path(imported["target_path"])
+            incoming_path = self._transaction_artifact_path(imported["incoming_path"], transaction_manifest_path)
+            if target_path.exists() and not filecmp.cmp(target_path, incoming_path, shallow=False):
+                raise RuntimeError(f"Refusing to undo changed segment: {paths.display_path(target_path)}")
+
+            if imported["existed_before"]:
+                backup_path = self._transaction_artifact_path(imported["backup_path"], transaction_manifest_path)
+                target_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(backup_path, target_path)
+                restored_count += 1
+                logger.info("Restored LineRecorder import backup %s", paths.display_path(target_path))
+            else:
+                if target_path.exists():
+                    target_path.unlink()
+                    removed_count += 1
+                    logger.info("Removed LineRecorder imported segment %s", paths.display_path(target_path))
+
+        return RoleRecordingsUndoResult(
+            role=transaction["role_id"],
+            restored_count=restored_count,
+            removed_count=removed_count,
         )
 
     def _read_manifest(self, archive: zipfile.ZipFile, package_path: Path) -> dict:
@@ -124,50 +168,80 @@ class RoleRecordingsImporter:
                 f"Missing audio file {audio_path} in {paths.display_path(package_path)}"
             ) from exc
 
-    def _backup_existing_segments(
+    def _write_import_transaction(
         self,
         *,
+        archive: zipfile.ZipFile,
         package_path: Path,
         manifest: dict,
         import_jobs: list[RoleRecordingImportJob],
-    ) -> Path | None:
-        replacements = [import_job for import_job in import_jobs if import_job.target_path.exists()]
-        if not replacements:
-            return None
+    ) -> Path:
+        transaction_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+        transaction_dir = self.paths.build_dir / "linerecorder" / "imports" / transaction_id
+        imported = []
 
-        backup_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-        backup_dir = self.paths.build_dir / "linerecorder" / "import_backups" / backup_id
-        replaced = []
+        for import_job in import_jobs:
+            incoming_path = transaction_dir / "incoming" / import_job.audio_path
+            backup_path = transaction_dir / "backups" / import_job.audio_path
+            existed_before = import_job.target_path.exists()
 
-        for import_job in replacements:
-            backup_path = backup_dir / import_job.audio_path
-            backup_path.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(import_job.target_path, backup_path)
-            replaced.append(
-                {
-                    "segment_id": import_job.segment_id,
-                    "original_path": import_job.audio_path,
-                    "backup_path": paths.display_path(backup_path),
-                }
-            )
+            incoming_path.parent.mkdir(parents=True, exist_ok=True)
+            with archive.open(import_job.member) as source, incoming_path.open("wb") as target:
+                target.write(source.read())
 
-        backup_manifest_path = backup_dir / "manifest.json"
-        backup_manifest_path.write_text(
+            if existed_before:
+                backup_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(import_job.target_path, backup_path)
+
+            item = {
+                "segment_id": import_job.segment_id,
+                "target_path": import_job.audio_path,
+                "incoming_path": paths.display_path(incoming_path),
+                "existed_before": existed_before,
+            }
+            if existed_before:
+                item["backup_path"] = paths.display_path(backup_path)
+            imported.append(item)
+
+        transaction_manifest_path = transaction_dir / "import.json"
+        transaction_manifest_path.write_text(
             json.dumps(
                 {
+                    "id": transaction_id,
                     "created_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
                     "source_package": paths.display_path(package_path),
                     "play_id": manifest["play"]["id"],
                     "role_id": manifest["role"]["id"],
-                    "replaced": replaced,
+                    "complete": manifest["complete"],
+                    "missing_segment_ids": list(manifest.get("missing_segment_ids", [])),
+                    "imported": imported,
                 },
                 indent=2,
             )
             + "\n",
             encoding="utf-8",
         )
-        logger.info("Backed up LineRecorder import replacements to %s", paths.display_path(backup_manifest_path))
-        return backup_manifest_path
+        logger.info("Wrote LineRecorder import transaction %s", paths.display_path(transaction_manifest_path))
+        return transaction_manifest_path
+
+    def _transaction_target_path(self, target_path: str) -> Path:
+        relative_path = PurePosixPath(target_path)
+        if relative_path.is_absolute() or ".." in relative_path.parts:
+            raise RuntimeError(f"Unsafe target path in import transaction: {target_path}")
+        return self.paths.build_dir / Path(relative_path)
+
+    def _transaction_artifact_path(self, artifact_path: str, transaction_manifest_path: Path) -> Path:
+        path = Path(artifact_path)
+        if path.is_absolute():
+            candidate = path
+        else:
+            candidate = paths.project_root() / path
+        transaction_dir = transaction_manifest_path.parent.resolve()
+        try:
+            candidate.resolve().relative_to(transaction_dir)
+        except ValueError as exc:
+            raise RuntimeError(f"Import transaction artifact outside transaction: {artifact_path}") from exc
+        return candidate
 
     def _target_path(self, role: str, segment_id: str, audio_path: str) -> Path:
         relative_path = PurePosixPath(audio_path)

@@ -779,6 +779,21 @@ def recording_import(
         f"Imported {result.imported_count} {status} recordings for {result.role}"
         f" ({len(result.missing_segment_ids)} missing)"
     )
+    typer.echo(paths.display_path(result.transaction_manifest_path))
+
+
+@app.command("recording-import-undo", rich_help_panel="build")
+def recording_import_undo(
+    transaction: Path = typer.Argument(..., help="LineRecorder import transaction JSON to undo"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Undo a LineRecorder import transaction."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    result = run_recording_import_undo(transaction_path=transaction, paths_config=cfg)
+    typer.echo(
+        f"Undid import for {result.role}: restored {result.restored_count}, removed {result.removed_count}"
+    )
 
 
 # Helper functions (non-Typer) -----------------------------------------------
@@ -993,6 +1008,15 @@ def run_recording_import(
 ):
     cfg = paths_config or paths.current()
     return RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+
+def run_recording_import_undo(
+    *,
+    transaction_path: Path,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return RoleRecordingsImporter(paths=cfg).undo_import(transaction_path)
 
 
 def _is_segment_id(value: str) -> bool:

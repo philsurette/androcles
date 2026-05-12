@@ -57,7 +57,7 @@ def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path)
     assert (cfg.segments_dir / "CENTURION" / "0_12_1.wav").read_bytes() == b"fake wav"
 
 
-def test_role_recordings_importer_backs_up_existing_segment_before_overwrite(tmp_path: Path) -> None:
+def test_role_recordings_importer_records_existing_segment_before_overwrite(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     existing_path = cfg.segments_dir / "CENTURION" / "0_12_1.wav"
     existing_path.parent.mkdir(parents=True, exist_ok=True)
@@ -92,15 +92,17 @@ def test_role_recordings_importer_backs_up_existing_segment_before_overwrite(tmp
     result = RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
     assert existing_path.read_bytes() == b"replacement wav"
-    assert result.backup_manifest_path is not None
-    backup_manifest = json.loads(result.backup_manifest_path.read_text(encoding="utf-8"))
-    assert backup_manifest["source_package"] == package_path.as_posix()
-    assert backup_manifest["replaced"][0]["segment_id"] == "0_12_1"
-    backup_path = result.backup_manifest_path.parent / "audio" / "segments" / "CENTURION" / "0_12_1.wav"
+    transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
+    assert transaction["source_package"] == package_path.as_posix()
+    assert transaction["imported"][0]["segment_id"] == "0_12_1"
+    assert transaction["imported"][0]["existed_before"] is True
+    backup_path = result.transaction_manifest_path.parent / "backups" / "audio" / "segments" / "CENTURION" / "0_12_1.wav"
+    incoming_path = result.transaction_manifest_path.parent / "incoming" / "audio" / "segments" / "CENTURION" / "0_12_1.wav"
     assert backup_path.read_bytes() == b"existing wav"
+    assert incoming_path.read_bytes() == b"replacement wav"
 
 
-def test_role_recordings_importer_skips_backup_when_target_is_new(tmp_path: Path) -> None:
+def test_role_recordings_importer_records_new_segment_without_backup(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     package_path = tmp_path / "CENTURION.role-recordings.zip"
     _write_package(
@@ -131,8 +133,127 @@ def test_role_recordings_importer_skips_backup_when_target_is_new(tmp_path: Path
 
     result = RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
-    assert result.backup_manifest_path is None
-    assert not (cfg.build_dir / "linerecorder" / "import_backups").exists()
+    transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
+    assert transaction["imported"][0]["existed_before"] is False
+    assert "backup_path" not in transaction["imported"][0]
+    assert not (result.transaction_manifest_path.parent / "backups").exists()
+
+
+def test_role_recordings_importer_undo_restores_existing_segment(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    existing_path = cfg.segments_dir / "CENTURION" / "0_12_1.wav"
+    existing_path.parent.mkdir(parents=True, exist_ok=True)
+    existing_path.write_bytes(b"existing wav")
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_12_CENTURION",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_12_1.wav": b"replacement wav"},
+    )
+    importer = RoleRecordingsImporter(paths=cfg)
+    result = importer.import_package(package_path)
+
+    undo_result = importer.undo_import(result.transaction_manifest_path)
+
+    assert undo_result.restored_count == 1
+    assert undo_result.removed_count == 0
+    assert existing_path.read_bytes() == b"existing wav"
+
+
+def test_role_recordings_importer_undo_removes_new_segment(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    target_path = cfg.segments_dir / "CENTURION" / "0_12_1.wav"
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_12_CENTURION",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_12_1.wav": b"new wav"},
+    )
+    importer = RoleRecordingsImporter(paths=cfg)
+    result = importer.import_package(package_path)
+
+    undo_result = importer.undo_import(result.transaction_manifest_path)
+
+    assert undo_result.restored_count == 0
+    assert undo_result.removed_count == 1
+    assert not target_path.exists()
+
+
+def test_role_recordings_importer_undo_rejects_changed_segment(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    target_path = cfg.segments_dir / "CENTURION" / "0_12_1.wav"
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest={
+            "schema_version": 1,
+            "package_type": "role_recordings",
+            "complete": True,
+            "play": {"id": "androcles", "title": "Androcles and the Lion"},
+            "role": {"id": "CENTURION", "display_name": "Centurion"},
+            "recordings": [
+                {
+                    "line_id": "0_12_CENTURION",
+                    "block_id": "0.12",
+                    "segment_id": "0_12_1",
+                    "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                    "recorded_at": "2026-05-11T12:00:00Z",
+                    "duration_ms": 1000,
+                    "sample_rate_hz": 48000,
+                    "channels": 1,
+                    "status": "accepted",
+                }
+            ],
+            "missing_segment_ids": [],
+        },
+        files={"audio/segments/CENTURION/0_12_1.wav": b"new wav"},
+    )
+    importer = RoleRecordingsImporter(paths=cfg)
+    result = importer.import_package(package_path)
+    target_path.write_bytes(b"later edit")
+
+    with pytest.raises(RuntimeError, match="Refusing to undo changed segment"):
+        importer.undo_import(result.transaction_manifest_path)
 
 
 def test_role_recordings_importer_rejects_path_traversal(tmp_path: Path) -> None:
