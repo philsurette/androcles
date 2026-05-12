@@ -44,7 +44,7 @@ Specs define file contracts shared by two or more Quince tools.
 - [specs/cue_window_presets.json](specs/cue_window_presets.json): Machine-readable source of truth for shared Cuemaster cue-length presets and Stager cue-start-offset windows.
 - [specs/recording_package_manifest.md](specs/recording_package_manifest.md): Authoritative Recording Request and recording package contracts shared by Stager, LineRecorder, and future Cuemaster workflows.
 - [specs/production_script_ids.md](specs/production_script_ids.md): Shared permanent production-script identifier strategy for Stager, LineRecorder, and Cuemaster.
-- `specs/script_text_format.md`: Planned source of truth for `play.txt`, `production.txt`, comments, and script metadata.
+- [specs/script_text_format.md](specs/script_text_format.md): Source of truth for source script formats, `production.txt`, comments, and script metadata.
 
 ## Decisions
 
@@ -67,6 +67,7 @@ Current decisions:
 - The manifest/Playbook schema source of truth is `planning/specs/playbook_manifest.md`.
 - Cue-length preset windows shared by Stager and Cuemaster belong in `planning/specs/cue_window_presets.json`; do not duplicate the list in app code without a test that checks it against this file.
 - The LineRecorder Recording Request and recording-package schema source of truth is `planning/specs/recording_package_manifest.md`.
+- The source and production script text format source of truth is `planning/specs/script_text_format.md`.
 - Production-script identifier rules belong in `planning/specs/production_script_ids.md`.
 - Product behavior belongs in `planning/cuemaster/product_design.md`.
 - Stager implementation plans belong under `planning/stager/`.

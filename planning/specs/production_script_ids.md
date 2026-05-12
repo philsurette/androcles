@@ -6,7 +6,7 @@ Production scripts change during rehearsal. Directors may add, delete, move, or 
 
 These identifiers are additive to the current play text format. They should become visible wherever an id helps actors, directors, or maintainers discuss a specific script unit.
 
-The planned shared script-format source of truth is `planning/specs/script_text_format.md`. That spec should define the exact `play.txt` and `production.txt` syntax, including line-leading `//` comments and the `production_ids: draft` or `production_ids: locked` metadata header. The Stager implementation plan is `planning/stager/production_ids.md`.
+The shared script-format source of truth is `planning/specs/script_text_format.md`. That spec defines the exact `production.txt` syntax, including line-leading `//` comments, one physical line per script unit, and the `production_ids: draft` or `production_ids: locked` metadata header. The Stager implementation plan is `planning/stager/production_ids.md`.
 
 ## Source Artifacts
 
@@ -18,14 +18,14 @@ Stager should add an initial script-hardening step that reads `play.txt` and cre
 plays/<play_id>/production.txt
 ```
 
-`production.txt` should keep the same text-editor-friendly style as `play.txt`, but every addressable script unit must have an explicit production id. While `production.txt` is marked `production_ids: draft`, Stager may regenerate it from `play.txt`. Once it is marked `production_ids: locked`, it becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
+`production.txt` should keep a text-editor-friendly line-oriented format, but every addressable script unit must have an explicit production id. While `production.txt` is marked `production_ids: draft`, Stager may regenerate it from `play.txt`. Once it is marked `production_ids: locked`, it becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
 
 The artifact name is **Production script**. The filename is `production.txt`. The name matches theatre vocabulary and signals that this is the director-maintained script used after initial import.
 
 The draft/locked state belongs in a leading metadata comment block:
 
 ```text
-// script_format: quince-script-v1
+// script_format: quince-production-v1
 // source_kind: production
 // production_ids: draft
 ```
@@ -34,26 +34,20 @@ The lock-state line is metadata expressed as a comment, not a new script paragra
 
 ## Production Script Format
 
-`production.txt` should remain easy to edit with ordinary text editors. The id should be visible at the start of each addressable paragraph, before the existing `play.txt` syntax.
+`production.txt` should remain easy to edit with ordinary text editors. Each addressable script unit occupies one physical line, and the id is visible at the start of that line.
 
 Examples:
 
 ```text
-1-0 ## 1: ACT I ##
-
-1.2-0 ## 1.2: SCENE II ##
-
-1.2-15 CAPTAIN.
-I will go (_draws sword_) if I must.
-
-1.2-16 __The soldiers move aside.__
-
-1.2-17 [[A dusty Roman road at noon.]]
-
-1.2-18 :: Scene transition ::
+I-0 [@HEADING]: ACT I
+I.2-0 [@HEADING]: SCENE II
+I.2-15 [CAPTAIN]: I will go (_draws sword_) if I must.
+I.2-16 [@DIRECTION]: The soldiers move aside.
+I.2-17 [@DESCRIPTION]: A dusty Roman road at noon.
+I.2-18 [@HEADING]: Scene transition
 ```
 
-Stager should parse the leading production id, then parse the remainder of the paragraph using the existing `play.txt` rules. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
+Stager should parse the leading production id, then parse the remainder of the line using the canonical production entry grammar in `planning/specs/script_text_format.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
 
 Headings are addressable lines too. Use `-0` for the heading that establishes a structure when that is natural, then number performed script units from `-1`.
 

@@ -2,25 +2,27 @@
 
 ## Goal
 
-Implement production-script identifiers in Stager so Quince can move cleanly from draft authoring in `play.txt` to stable rehearsal/recording artifacts built from `production.txt`.
+Implement production-script identifiers in Stager so Quince can move cleanly from flexible draft authoring formats to stable rehearsal/recording artifacts built from canonical `production.txt`.
 
 The implementation must support two workflows:
 
-- Draft authoring: show runners repeatedly edit `play.txt` and regenerate provisional `production.txt`.
+- Draft authoring: show runners repeatedly edit `play.txt` in any supported source format and regenerate provisional `production.txt`.
 - Production use: show runners lock `production.txt`, after which ids become stable handles used by Stager, LineRecorder, Cuemaster, Playbooks, Recording Requests, and recording packages.
 
 ## Source Docs
 
-- [../specs/script_text_format.md](../specs/script_text_format.md): Planned shared spec for `play.txt`, `production.txt`, comments, and metadata headers.
+- [../specs/script_text_format.md](../specs/script_text_format.md): Shared spec for source script formats, canonical `production.txt`, comments, and metadata headers.
 - [../specs/production_script_ids.md](../specs/production_script_ids.md): Production id syntax, lifecycle, manifest identity, and content fingerprint rules.
 - [../specs/playbook_manifest.md](../specs/playbook_manifest.md): Playbook manifest fields that consume production ids.
 - [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md): Recording Request and recording package fields that consume production ids.
 
 ## Decisions To Encode
 
-- `play.txt` is the draft/source script format.
-- `production.txt` is the id-bearing production script format.
-- `production.txt` uses the same paragraph syntax as `play.txt`, with a production id prefix on every addressable script paragraph.
+- `play.txt` is a draft/source script input. Stager may support multiple source formats.
+- The current paragraph-oriented `play.txt` format is an import/source format, not the canonical Quince production format.
+- `production.txt` is the id-bearing canonical production script format.
+- `production.txt` is line-oriented: one addressable script unit per physical line.
+- `production.txt` uses explicit bracketed entry tags such as `[CAPTAIN]:`, `[@HEADING]:`, `[@DIRECTION]:`, and `[@DESCRIPTION]:`.
 - Line-leading `//` comments are ignored by the script parser.
 - A leading `// key: value` metadata comment block records script metadata.
 - `production_ids: draft` means Stager may regenerate `production.txt` from `play.txt`.
@@ -31,26 +33,27 @@ The implementation must support two workflows:
 
 ## Milestone 1: Shared Script Format Spec
 
-- [ ] Create `planning/specs/script_text_format.md`.
-- [ ] Move or restate the current `src/format.md` behavior as the formal `play.txt` contract.
-- [ ] Define `production.txt` as the same base format plus required production id prefixes.
-- [ ] Define line-leading `//` comments.
-- [ ] Define a leading metadata comment block.
-- [ ] Define required `production.txt` metadata:
+- [x] Create `planning/specs/script_text_format.md`.
+- [x] Define the current `src/format.md` behavior as an import/source format rather than the canonical production format.
+- [x] Define `production.txt` as a canonical line-oriented format with required production id prefixes.
+- [x] Define explicit production entry tags for headings, descriptions, directions, role lines, and simultaneous role lines.
+- [x] Define line-leading `//` comments.
+- [x] Define a leading metadata comment block.
+- [x] Define required `production.txt` metadata:
 
 ```text
-// script_format: quince-script-v1
+// script_format: quince-production-v1
 // source_kind: production
 // production_ids: draft
 ```
 
-- [ ] Define allowed `production_ids` values: `draft`, `locked`.
-- [ ] Define that comments are only comments when they start a line after optional whitespace; inline `//` inside dialogue is normal text.
-- [ ] Define strict parse behavior for malformed metadata, unknown `production_ids` states, duplicate metadata keys, and ids in the wrong source kind.
-- [ ] Define valid production id syntax, including uppercase alphabetic structural components such as `P`, `E`, `II`, and `INT`.
-- [ ] Define that script order comes from file order, not production id string sorting.
-- [ ] Cross-link `script_text_format.md` from `planning/README.md`.
-- [ ] Cross-link `script_text_format.md` from `planning/specs/production_script_ids.md`.
+- [x] Define allowed `production_ids` values: `draft`, `locked`.
+- [x] Define that comments are only comments when they start a line after optional whitespace; inline `//` inside dialogue is normal text.
+- [x] Define strict parse behavior for malformed metadata, unknown `production_ids` states, duplicate metadata keys, and ids in the wrong source kind.
+- [x] Define valid production id syntax, including uppercase alphabetic structural components such as `P`, `E`, `II`, and `INT`.
+- [x] Define that script order comes from file order, not production id string sorting.
+- [x] Cross-link `script_text_format.md` from `planning/README.md`.
+- [x] Cross-link `script_text_format.md` from `planning/specs/production_script_ids.md`.
 
 ## Milestone 2: Production Id Lifecycle
 
@@ -76,10 +79,12 @@ The implementation must support two workflows:
 - [ ] Add metadata header parsing before script paragraph parsing.
 - [ ] Add strict metadata validation.
 - [ ] Add production id prefix parsing for `production.txt`.
+- [ ] Add parsing for line-oriented production entries: `[@HEADING]:`, `[@DESCRIPTION]:`, `[@DIRECTION]:`, `[ROLE]:`, and `[ROLE, ROLE]:`.
 - [ ] Accept uppercase alphabetic/alphanumeric structural components in production ids.
 - [ ] Reject lowercase structural components.
 - [ ] Reject missing production ids in `production.txt`.
 - [ ] Reject production ids in `play.txt`, unless the spec explicitly allows them later.
+- [ ] Reject multiline production entries.
 - [ ] Preserve source locations in diagnostics using `paths.display_location()`.
 - [ ] Add parser tests for comments, metadata, draft/locked state, valid production ids, missing ids, duplicate ids, malformed ids, and inline `//` dialogue text.
 
@@ -89,7 +94,8 @@ The implementation must support two workflows:
 - [ ] Generate deterministic ids for headings, descriptions, top-level directions, role blocks, inline direction subunits, and spoken subunits.
 - [ ] Preserve director-chosen structural labels such as `P`, `E`, `I`, `II`, and `INT` when generating from source headings where possible.
 - [ ] Generate a metadata header with `production_ids: draft`.
-- [ ] Keep generated text editor-friendly and close to source formatting.
+- [ ] Generate one physical production line per addressable script unit.
+- [ ] Keep generated text editor-friendly even when source formatting is paragraph-oriented.
 - [ ] Refuse to overwrite `production.txt` when it is locked unless the caller passes an explicit force option.
 - [ ] Add tests for deterministic output from a fixed `play.txt` fixture.
 - [ ] Add tests for repeated draft regeneration.
