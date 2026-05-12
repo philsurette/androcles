@@ -44,29 +44,29 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 - [x] Reject missing `production.md` with a diagnostic directing users to ScriptWright.
 - [x] Reject `production_ids: draft` for normal builds.
 - [x] Avoid silent fallback to `play.txt`.
-- [ ] Decide whether any diagnostic/dev command may still accept `play.txt` explicitly.
-- [ ] Add CLI tests for missing, draft, and locked sources.
+- [x] Decide whether any diagnostic/dev command may still accept `play.txt` explicitly.
+- [x] Add CLI tests for missing, draft, and locked sources.
 
 ## Milestone 4: Existing Artifact Builds
 
 - [x] Verify `./main text` from locked `production.md`.
 - [x] Verify role markdown generation from locked `production.md`.
 - [x] Verify segment planning from locked `production.md`.
-- [ ] Verify audiobook/audioplay generation still works or explicitly document any temporary unsupported command.
+- [x] Verify audiobook/audioplay generation still works or explicitly document any temporary unsupported command.
 - [x] Verify Playbook generation still works with current manifest shape before production-id adoption.
-- [ ] Add regression tests around generated text artifacts.
+- [x] Add regression tests around generated text artifacts.
 
 ## Milestone 5: Cleanup
 
-- [ ] Move current `play.txt` parsing behind ScriptWright-only APIs.
-- [ ] Update `src/format.md` to point to `planning/specs/script_text_format.md`.
-- [ ] Update user-facing docs to explain the ScriptWright then Stager workflow.
-- [ ] Update AGENTS.md if new CLI commands become sticky project workflow.
+- [x] Move current `play.txt` parsing behind ScriptWright-only APIs.
+- [x] Update `src/format.md` to point to `planning/specs/script_text_format.md`.
+- [x] Update user-facing docs to explain the ScriptWright then Stager workflow.
+- [x] Update AGENTS.md if new CLI commands become sticky project workflow.
 
 ## Acceptance Criteria
 
-- [ ] Normal Stager builds consume locked `production.md`.
-- [ ] Normal Stager builds reject missing or draft `production.md`.
-- [ ] Normal Stager builds do not silently read `play.txt`.
-- [ ] Existing core build outputs can be generated from locked `production.md`.
-- [ ] Tests cover loader, model conversion, CLI source selection, and at least one core artifact build.
+- [x] Normal Stager builds consume locked `production.md`.
+- [x] Normal Stager builds reject missing or draft `production.md`.
+- [x] Normal Stager builds do not silently read `play.txt`.
+- [x] Existing core build outputs can be generated from locked `production.md`.
+- [x] Tests cover loader, model conversion, CLI source selection, and at least one core artifact build.

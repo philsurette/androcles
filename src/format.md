@@ -1,4 +1,16 @@
-# Format
+# Legacy play.txt Format
+
+This file documents the legacy paragraph-oriented `play.txt` import format. It is not the canonical Quince production script format.
+
+Use ScriptWright to convert supported source formats into locked `plays/<play_id>/production.md`:
+
+```sh
+./main scriptwright lock --play <play_id>
+```
+
+The canonical script format is specified in `planning/specs/script_text_format.md`. Normal Stager build commands consume locked `production.md`, not `play.txt`.
+
+## Legacy Format
 The format of the source script is a series of 'paragraphs'... each paragraph is a number of lines
 of text followed by a blank line, which is the separator between paragraphs. There are the
 following types of paragraph:

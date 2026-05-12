@@ -2,11 +2,12 @@
 This project contains Stager, a Python command-line application for creating audio plays and, in planned work, Quince tools including LineRecorder and Cuemaster.
 
 The key workflows are:
-- Convert a play written in the custom text format defined in `src/format.md` into markdown artifacts, including one role file per role plus special roles such as Narrator, Caller, and Announcer.
+- Use ScriptWright to convert source scripts such as the legacy custom `play.txt` format into locked `plays/<play_id>/production.md`.
+- Convert locked `production.md` into markdown artifacts, including one role file per role plus special roles such as Narrator, Caller, and Announcer.
 - Split role recordings into individual segment files based on silence, verify those segments against the play text, and reassemble them in play order.
 - Build supporting artifacts such as audio plans, captions, timing sheets, verification workbooks, cue files, and Librivox-style output.
 
-Play inputs live under `plays/<play_id>/`. The main source file is `play.txt`; related metadata may include `source_text_metadata.yaml`, `reading_metadata.yaml`, and `substitutions.yaml`.
+Play inputs live under `plays/<play_id>/`. The canonical Stager build source is locked `production.md`. Legacy `play.txt` is a ScriptWright import source, not a normal build source. Related metadata may include `source_text_metadata.yaml`, `reading_metadata.yaml`, and `substitutions.yaml`.
 
 Generated artifacts live under `build/<play_id>/`.
 
@@ -79,11 +80,14 @@ The main user-facing CLI wrapper is `./main`, which invokes `.venv/bin/python -m
 Use `./main <command>` for normal CLI runs, for example:
 
 ```sh
+./main scriptwright lock
 ./main text
 ./main segments
 ./main audioplay
 ./main playbook
 ```
+
+Normal Stager build commands consume locked `plays/<play_id>/production.md` and should reject missing or draft production scripts. Use `./main scriptwright lock` to create or lock `production.md` from supported source formats.
 
 The Typer app implementation lives in `src/stager/cli/build.py`. Add new CLI commands to `src/stager/cli/build.py` unless there is a strong reason to create a separate script.
 
