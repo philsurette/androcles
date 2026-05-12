@@ -321,6 +321,13 @@ select {
   gap: 16px;
 }
 
+.line-navigation {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
 .context-panel h3 {
   margin: 0 0 8px;
   color: var(--accent);

@@ -4,6 +4,7 @@ import { meterFillPercent } from "../audio/inputMeter";
 import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio/wavRecorder";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
+import { nextProgress, previousProgress, selectedProgressIndex } from "../domain/recordingNavigation";
 import type { RecordingTake } from "../domain/take";
 import { exportRoleRecordings } from "../package/exportRoleRecordings";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
@@ -205,10 +206,10 @@ type ProjectDetailProps = {
 function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted, onExport, isExporting }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
   const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
-  const selectedItem =
-    project.currentSegmentId === undefined
-      ? progress[0]
-      : progress.find((candidate) => candidate.item.segmentId === project.currentSegmentId) ?? progress[0];
+  const selectedIndex = selectedProgressIndex(progress, project.currentSegmentId);
+  const selectedItem = selectedIndex === -1 ? undefined : progress[selectedIndex];
+  const previousItem = previousProgress(progress, selectedIndex);
+  const nextItem = nextProgress(progress, selectedIndex);
 
   return (
     <section className="project-detail" aria-label="Recording Request detail">
@@ -221,6 +222,9 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted, 
             project={project}
             progress={selectedItem}
             microphoneConfig={microphoneConfig}
+            previousItem={previousItem}
+            nextItem={nextItem}
+            onNavigate={onSelectItem}
             onAccepted={onAccepted}
           />
         ) : null}
@@ -417,10 +421,13 @@ type ItemDetailProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress;
   microphoneConfig: MicrophoneConfig | null;
+  previousItem: RecordingItemProgress | undefined;
+  nextItem: RecordingItemProgress | undefined;
+  onNavigate: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
 };
 
-function ItemDetail({ project, progress, microphoneConfig, onAccepted }: ItemDetailProps) {
+function ItemDetail({ project, progress, microphoneConfig, previousItem, nextItem, onNavigate, onAccepted }: ItemDetailProps) {
   const { item, status } = progress;
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
@@ -430,6 +437,24 @@ function ItemDetail({ project, progress, microphoneConfig, onAccepted }: ItemDet
         <div className="item-heading">
           <h2>Line {item.sequence}</h2>
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
+        </div>
+        <div className="line-navigation" aria-label="Line navigation">
+          <button
+            type="button"
+            className="secondary"
+            disabled={!previousItem}
+            onClick={() => previousItem && onNavigate(previousItem.item)}
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            className="secondary"
+            disabled={!nextItem}
+            onClick={() => nextItem && onNavigate(nextItem.item)}
+          >
+            Next
+          </button>
         </div>
       </header>
 

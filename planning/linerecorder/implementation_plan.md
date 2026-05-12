@@ -52,7 +52,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [ ] Prototype AudioWorklet WAV capture in desktop Chrome and Safari.
 - [ ] Capture actual sample rate, channel count, clipping, too-quiet, and no-signal metadata for export and troubleshooting.
 - [ ] Verify mobile Safari and Android Chrome constraints before committing to mobile MVP support.
-- [ ] Record, stop, play, accept, retry, next, previous, and jump-to-item flows.
+- [x] Record, stop, play, accept, retry, next, previous, and jump-to-item flows.
 - [x] Persist accepted takes across reloads.
 
 ## Phase 3: Export Recording Packages
