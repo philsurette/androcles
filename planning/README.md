@@ -6,6 +6,10 @@ This directory contains active design and implementation planning for Quince, th
 
 Use [terminology.md](terminology.md) for project names and shared vocabulary.
 
+## Production Workflow
+
+- [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
+
 ## Stager
 
 Stager is the existing CLI/build tool in this repository.
