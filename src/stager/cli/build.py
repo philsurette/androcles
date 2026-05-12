@@ -22,6 +22,7 @@ from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
+from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.role_audio_verifier import RoleAudioVerifier
@@ -764,6 +765,22 @@ def recording_request(
     typer.echo(paths.display_path(zip_path))
 
 
+@app.command("recording-import", rich_help_panel="build")
+def recording_import(
+    package: Path = typer.Argument(..., help="LineRecorder role recordings zip to import"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Import a LineRecorder role recordings package into Stager segments."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    result = run_recording_import(package_path=package, paths_config=cfg)
+    status = "complete" if result.complete else "partial"
+    typer.echo(
+        f"Imported {result.imported_count} {status} recordings for {result.role}"
+        f" ({len(result.missing_segment_ids)} missing)"
+    )
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -967,6 +984,15 @@ def run_recording_request(
         notes=notes,
     )
     return builder.build()
+
+
+def run_recording_import(
+    *,
+    package_path: Path,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
 
 def _is_segment_id(value: str) -> bool:
