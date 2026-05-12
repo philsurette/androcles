@@ -273,6 +273,8 @@ Cuemaster already has narrow microphone access for tempo timing in `cuemaster/sr
 
 LineRecorder-specific code should own WAV capture, take lifecycle, accepted-take storage, and export metadata. Cuemaster-specific code should own tempo timing and later voice-command recognition. The first LineRecorder implementation may copy small Cuemaster microphone pieces, but it should keep file/module boundaries clear enough that shared microphone code can later move into a common Quince browser module without changing product behavior.
 
+Decision: keep microphone code duplicated behind narrow app-local platform boundaries for the MVP. Defer a shared browser microphone module until the AudioWorklet and mobile browser/Capacitor spike proves the stable shared surface. See [ADR 0003](../decisions/0003-browser-microphone-code-sharing.md).
+
 ### Recording Modes
 
 Expose simple recording modes rather than raw browser audio terms.
@@ -314,6 +316,18 @@ Clean Recording Mode is the default. Noisy Room Mode is available as an explicit
 ## Local Draft Storage
 
 Accepted takes should be stored locally in IndexedDB so the actor can leave and return without losing progress.
+
+### User-Facing Troubleshooting
+
+LineRecorder should keep microphone and storage recovery guidance visible in app copy, README docs, or both:
+
+- microphone access requires a secure browser context,
+- permission denial should point users to browser and OS microphone settings,
+- no signal should suggest checking the selected input and restarting setup,
+- too-quiet input should suggest moving closer, choosing another input, or raising OS input level,
+- clipping should suggest moving farther away or lowering input gain,
+- Noisy Room Mode should be described as a quality tradeoff,
+- export failures should mention browser storage pressure and partial export as recovery options.
 
 Local state should include:
 

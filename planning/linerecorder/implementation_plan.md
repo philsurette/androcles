@@ -78,9 +78,9 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Add a license review checklist for runtime dependencies.
 - [x] Decide whether Clean Recording Mode or Noisy Room Mode is the default.
 - [x] Decide whether LineRecorder preserves device sample rate or resamples before export.
-- [ ] Decide whether shared microphone code should be copied between apps, factored into a shared package, or deferred until the Capacitor spike.
+- [x] Decide whether shared microphone code should be copied between apps, factored into a shared package, or deferred until the Capacitor spike.
 - [ ] Document browser support after AudioWorklet/WAV prototype results.
-- [ ] Add user-facing troubleshooting for microphone permission, no signal, clipping, and storage quota.
+- [x] Add user-facing troubleshooting for microphone permission, no signal, clipping, and storage quota.
 
 ## Later
 
