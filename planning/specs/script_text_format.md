@@ -16,7 +16,7 @@ This spec defines:
 
 ### Source Scripts
 
-`plays/<play_id>/play.txt` is a draft/source script. PlayIngester may support multiple source formats over time.
+`plays/<play_id>/play.txt` is a draft/source script. ScriptWright may support multiple source formats over time.
 
 The current paragraph-oriented Stager format, documented historically in `src/format.md`, should be treated as an import/source format optimized for lightly edited Gutenberg text. It is not the canonical long-term Quince script format.
 
@@ -25,7 +25,7 @@ Supported source formats:
 - Current paragraph-oriented `play.txt`.
 - Draft `production.md`, using the production Markdown-friendly grammar but with ids optional or provisional.
 
-Future source formats may be added if PlayIngester can compile them into canonical locked `production.md`.
+Future source formats may be added if ScriptWright can compile them into canonical locked `production.md`.
 
 ### Production Scripts
 
@@ -35,7 +35,7 @@ The production format is strict Markdown-friendly text:
 
 - each addressable script unit occupies exactly one physical line,
 - every non-comment, non-blank locked script line starts with a production id,
-- draft script lines may omit ids or contain provisional ids that PlayIngester may replace,
+- draft script lines may omit ids or contain provisional ids that ScriptWright may replace,
 - structural headings use Markdown heading markers,
 - script order is file order, not id sort order,
 - long speeches remain one physical line.
@@ -93,10 +93,10 @@ Required `production.md` metadata:
 
 Allowed `production_ids` values:
 
-- `draft`: PlayIngester may add, replace, or remove production ids while generating locked output.
-- `locked`: Stager may consume the file for builds, and PlayIngester must not overwrite ids except through an explicit force or reconciliation command.
+- `draft`: ScriptWright may add, replace, or remove production ids while generating locked output.
+- `locked`: Stager may consume the file for builds, and ScriptWright must not overwrite ids except through an explicit force or reconciliation command.
 
-The lock state is metadata-driven, not inferred from the presence of ids. Draft files may contain provisional ids, and PlayIngester may replace them.
+The lock state is metadata-driven, not inferred from the presence of ids. Draft files may contain provisional ids, and ScriptWright may replace them.
 
 Parser rules:
 
@@ -132,7 +132,7 @@ CAPTAIN: I will never submit.
 CAPTAIN, MEGAERA: We speak together.
 ```
 
-PlayIngester assigns ids when locking the file.
+ScriptWright assigns ids when locking the file.
 
 Heading levels are structural hints for Markdown preview and human scanning. Production id structure remains authoritative for identity; file order remains authoritative for script order.
 

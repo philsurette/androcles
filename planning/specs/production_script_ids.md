@@ -6,19 +6,19 @@ Production scripts change during rehearsal. Directors may add, delete, move, or 
 
 These identifiers are additive to the current play text format. They should become visible wherever an id helps actors, directors, or maintainers discuss a specific script unit.
 
-The shared script-format source of truth is `planning/specs/script_text_format.md`. That spec defines the exact `production.md` syntax, including line-leading `//` comments, one physical line per script unit, and the `production_ids: draft` or `production_ids: locked` metadata header. The Stager implementation plan is `planning/stager/production_ids.md`.
+The shared script-format source of truth is `planning/specs/script_text_format.md`. That spec defines the exact `production.md` syntax, including line-leading `//` comments, one physical line per script unit, and the `production_ids: draft` or `production_ids: locked` metadata header. The implementation tracker is `planning/stager/production_pipeline.md`.
 
 ## Source Artifacts
 
 `play.txt` remains a raw import/source artifact. Draft `production.md` is also a source artifact when it is marked `production_ids: draft`.
 
-PlayIngester should read supported source formats and create or lock the editable production script artifact:
+ScriptWright should read supported source formats and create or lock the editable production script artifact:
 
 ```text
 plays/<play_id>/production.md
 ```
 
-`production.md` should keep a text-editor-friendly line-oriented format. While it is marked `production_ids: draft`, ids are optional and any present ids are provisional; PlayIngester may add or replace them. Once it is marked `production_ids: locked`, every addressable script unit must have an explicit stable production id and the file becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
+`production.md` should keep a text-editor-friendly line-oriented format. While it is marked `production_ids: draft`, ids are optional and any present ids are provisional; ScriptWright may add or replace them. Once it is marked `production_ids: locked`, every addressable script unit must have an explicit stable production id and the file becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
 
 The artifact name is **Production script**. The filename is `production.md`. The name matches theatre vocabulary and signals that this is the director-maintained script used after initial import.
 
@@ -32,7 +32,7 @@ The draft/locked state belongs in a leading metadata comment block:
 
 The lock-state line is metadata expressed as a comment, not a new script paragraph type.
 
-The presence of ids alone does not imply lock state. Draft `production.md` may contain provisional ids that PlayIngester is allowed to replace.
+The presence of ids alone does not imply lock state. Draft `production.md` may contain provisional ids that ScriptWright is allowed to replace.
 
 ## Production Script Format
 
@@ -49,7 +49,7 @@ I.2-17 @description: A dusty Roman road at noon.
 ### I.2-18 Scene transition
 ```
 
-Stager should parse locked `production.md` only after production ids have been assigned. PlayIngester should parse source formats, including current `play.txt` and draft `production.md`, then emit locked `production.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
+Stager should parse locked `production.md` only after production ids have been assigned. ScriptWright should parse source formats, including current `play.txt` and draft `production.md`, then emit locked `production.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
 
 Headings are addressable lines too. Use `-0` for the heading that establishes a structure when that is natural, then number performed script units from `-1`.
 
@@ -295,7 +295,7 @@ The first implementation should be strict:
 
 - Stager build commands should use locked `production.md` by default.
 - Stager build commands should reject missing, idless, or draft `production.md` unless a command explicitly accepts source input for diagnostics.
-- PlayIngester should generate locked `production.md` and fail if it cannot assign deterministic ids.
+- ScriptWright should generate locked `production.md` and fail if it cannot assign deterministic ids.
 - A future reconciliation command should compare raw/new script text against `production.md`, preserve existing ids when possible, and suggest inserted/revised/deleted ids.
 - Stager should not decide that existing audio is reusable from production id alone. It should also compare the relevant content fingerprint.
 
