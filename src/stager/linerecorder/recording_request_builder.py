@@ -19,8 +19,6 @@ from stager.linerecorder.recording_request_manifest import (
     RecordingRequestPlay,
     RecordingRequestRole,
 )
-from stager.linerecorder.recording_request_progress_reporter import RecordingRequestProgressReporter
-from stager.linerecorder.recording_request_work_item import RecordingRequestWorkItem
 from stager.playbook.app_line import AppLine
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.shared import paths
@@ -38,7 +36,6 @@ class RecordingRequestBuilder:
     notes: str | None = None
     selected_segment_ids: set[str] | None = None
     cue_selector: PlaybookCueSelector | None = None
-    progress_reporter: RecordingRequestProgressReporter | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -58,12 +55,7 @@ class RecordingRequestBuilder:
         if self.request_dir.exists():
             shutil.rmtree(self.request_dir)
         self.request_dir.mkdir(parents=True, exist_ok=True)
-        recording_items = self.plan_recording_items()
-        if self.progress_reporter is not None:
-            self.progress_reporter.start_item_building(len(recording_items))
-        manifest = self.build_manifest(recording_items=recording_items)
-        if self.progress_reporter is not None:
-            self.progress_reporter.finish_item_building()
+        manifest = self.build_manifest()
         manifest_path = self.request_dir / "manifest.json"
         manifest_path.write_text(manifest.to_json(), encoding="utf-8")
         self._logger.info("Wrote Recording Request manifest %s", paths.display_path(manifest_path))
@@ -71,10 +63,7 @@ class RecordingRequestBuilder:
         self._logger.info("Wrote Recording Request package %s", paths.display_path(self.zip_path))
         return self.zip_path
 
-    def build_manifest(
-        self,
-        recording_items: list[RecordingRequestWorkItem] | None = None,
-    ) -> RecordingRequestManifest:
+    def build_manifest(self) -> RecordingRequestManifest:
         role = self.play.getRole(self.role)
         if role is None or role.meta or role.name.startswith("_"):
             raise ValueError(f"Unknown rehearsable role: {self.role}")
@@ -96,12 +85,13 @@ class RecordingRequestBuilder:
                 display_name=role.name,
             ),
             recording=RecordingPreferences(),
-            items=self._build_items(recording_items),
+            items=self._build_items(),
         )
 
-    def plan_recording_items(self) -> list[RecordingRequestWorkItem]:
-        work_items: list[RecordingRequestWorkItem] = []
+    def _build_items(self) -> list[RecordingRequestItem]:
+        items: list[RecordingRequestItem] = []
         matched_segment_ids: set[str] = set()
+        sequence = 1
         for block in self.play.blocks:
             if not isinstance(block, RoleBlock):
                 continue
@@ -111,26 +101,14 @@ class RecordingRequestBuilder:
                 if self.selected_segment_ids is not None and segment_id not in self.selected_segment_ids:
                     continue
                 matched_segment_ids.add(segment_id)
-                work_items.append(RecordingRequestWorkItem(block=block, segment=segment))
+                items.append(self._build_item(block, segment, sequence))
+                sequence += 1
         if self.selected_segment_ids is not None:
             missing = self.selected_segment_ids - matched_segment_ids
             if missing:
                 raise ValueError(
                     f"Selected segment ids do not belong to role {self.role}: {', '.join(sorted(missing))}"
                 )
-        return work_items
-
-    def _build_items(
-        self,
-        recording_items: list[RecordingRequestWorkItem] | None = None,
-    ) -> list[RecordingRequestItem]:
-        items: list[RecordingRequestItem] = []
-        work_items = recording_items if recording_items is not None else self.plan_recording_items()
-        for sequence, work_item in enumerate(work_items, start=1):
-            item = self._build_item(work_item.block, work_item.segment, sequence)
-            items.append(item)
-            if self.progress_reporter is not None:
-                self.progress_reporter.item_built(item.id, sequence)
         return items
 
     def _build_item(

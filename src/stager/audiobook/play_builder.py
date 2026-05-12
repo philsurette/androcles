@@ -13,6 +13,7 @@ from stager.cues.callout_director import CalloutDirector, ConversationAwareCallo
 from stager.audiobook.play_audio_builder import PlayAudioBuilder
 from stager.audiobook.caption_builder import CaptionBuilder
 from stager.shared import paths
+from stager.shared.progress_reporter import ProgressReporter
 
 
 @dataclass
@@ -29,6 +30,7 @@ class PlayBuilder:
     play: Play = None
     paths: paths.PathConfig = field(default_factory=paths.current)
     audio_builder:PlayAudioBuilder = field(default_factory = PlayAudioBuilder)
+    progress_reporter: ProgressReporter | None = None
 
     def build_audio(self, part_no: int) -> list[Path]:
         """Build audio plans (and optional outputs) using configured settings."""
@@ -71,6 +73,8 @@ class PlayBuilder:
             logging.info("Wrote %s", paths.display_path(out_path))
         else:
             logging.info("Skipping audio rendering (generate-audio=false)")
+        if self.progress_reporter is not None:
+            self.progress_reporter.advance(f"Rendered {out_path.name}")
         return [out_path]
 
     def compute_output_path(self, part_no: int, audio_format: str = "mp4") -> Path:
@@ -131,6 +135,8 @@ class PlayBuilder:
                 logging.info("Wrote %s", paths.display_path(out_path))
             else:
                 logging.info("Skipping audio rendering (generate-audio=false)")
+            if self.progress_reporter is not None:
+                self.progress_reporter.advance(f"Rendered {out_path.name}")
         return outputs
 
 

@@ -7,6 +7,7 @@ from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.play_splitter import PlaySplitter
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.paths import PathConfig
+from stager.shared.progress_reporter import ProgressReporter
 from stager.scriptwright.production_play_loader import ProductionPlayLoader
 
 
@@ -15,6 +16,7 @@ class SegmentBuildService:
     """Build segment audio files from exported role recordings."""
 
     paths: PathConfig
+    progress_reporter: ProgressReporter | None = None
 
     def build(
         self,
@@ -34,8 +36,17 @@ class SegmentBuildService:
             paths_config=self.paths,
             explicit_build_type=build_type,
         ).resolve()
-        AudacityRecordingExporter(paths=self.paths).export_recordings(force=force, role=role)
         play = ProductionPlayLoader(paths_config=self.paths).load()
+        if self.progress_reporter is not None:
+            split_target_count = PlaySplitter(
+                play=play,
+                paths=self.paths,
+                build_type=effective_build_type,
+            ).split_target_count(role_filter=role)
+            self.progress_reporter.start(split_target_count + 1, "Exporting recordings")
+        AudacityRecordingExporter(paths=self.paths).export_recordings(force=force, role=role)
+        if self.progress_reporter is not None:
+            self.progress_reporter.advance("Splitting segments")
         splitter = PlaySplitter(
             play=play,
             paths=self.paths,
@@ -47,5 +58,9 @@ class SegmentBuildService:
             verbose=verbose,
             chunk_exports=chunk_exports,
             chunk_export_size=chunk_export_size,
+            progress_reporter=self.progress_reporter,
         )
-        return splitter.split_all(part_filter=part, role_filter=role)
+        result = splitter.split_all(part_filter=part, role_filter=role)
+        if self.progress_reporter is not None:
+            self.progress_reporter.finish("Split segments")
+        return result

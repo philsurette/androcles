@@ -135,6 +135,61 @@ def test_run_audioplay_passes_librivox_build_type_to_preparation(
     ]
 
 
+def test_run_audioplay_reports_prepare_render_and_finish_progress(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cfg = _config(tmp_path, build_type="custom")
+    events: list[tuple[str, int | str | None]] = []
+
+    class FakeProgressReporter:
+        def start(self, total: int, description: str) -> None:
+            events.append(("start", total))
+            events.append(("description", description))
+
+        def advance(self, description: str | None = None) -> None:
+            events.append(("advance", description))
+
+        def finish(self, description: str | None = None) -> None:
+            events.append(("finish", description))
+
+    def fake_build_text(self, *, line_no_prefix: bool, build_type: str) -> None:
+        return None
+
+    def fake_build_segments(self, *, build_type: str, **kwargs) -> None:
+        return None
+
+    @dataclass
+    class FakePlayBuilder:
+        progress_reporter: object | None = None
+
+        def __init__(self, **kwargs):
+            self.progress_reporter = kwargs["progress_reporter"]
+
+        def build_audio(self, part_no: int | None):
+            self.progress_reporter.advance("Rendered play.mp4")
+            return []
+
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.TextArtifactBuilder.build_all", fake_build_text)
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.SegmentBuildService.build", fake_build_segments)
+    monkeypatch.setattr("stager.audiobook.audio_play_build_service.PlayBuilder", FakePlayBuilder)
+
+    run_audioplay(
+        paths_config=cfg,
+        generate_audio=False,
+        normalize_output=False,
+        progress_reporter=FakeProgressReporter(),
+    )
+
+    assert events == [
+        ("start", 2),
+        ("description", "Preparing audioplay"),
+        ("advance", "Rendering audioplay"),
+        ("advance", "Rendered play.mp4"),
+        ("finish", "Built audioplay"),
+    ]
+
+
 def test_run_playbook_passes_build_type_to_builder(
     tmp_path: Path,
     monkeypatch,

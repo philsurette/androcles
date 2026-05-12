@@ -135,22 +135,6 @@ def _play(blocks) -> Play:
     )
 
 
-class _FakeProgressReporter:
-    def __init__(self) -> None:
-        self.started_total: int | None = None
-        self.items: list[tuple[str, int]] = []
-        self.finished = False
-
-    def start_item_building(self, total: int) -> None:
-        self.started_total = total
-
-    def item_built(self, item_id: str, sequence: int) -> None:
-        self.items.append((item_id, sequence))
-
-    def finish_item_building(self) -> None:
-        self.finished = True
-
-
 def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -206,60 +190,6 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
     ]
     with zipfile.ZipFile(zip_path) as archive:
         assert archive.namelist() == ["manifest.json"]
-
-
-def test_recording_request_builder_plans_recording_items(tmp_path: Path) -> None:
-    cfg = _cfg(tmp_path)
-    first = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
-    second = _inline_direction_block(0, 2, "MEGAERA")
-    other_role = _speech_block(0, 3, "ANDROCLES", "Then stay here.")
-    play = _play([_title_block(), first, second, other_role])
-
-    work_items = RecordingRequestBuilder(play=play, paths=cfg, role="MEGAERA").plan_recording_items()
-
-    assert [str(item.segment.segment_id) for item in work_items] == ["0_1_1", "0_2_1", "0_2_3"]
-
-
-def test_recording_request_builder_reports_item_progress(tmp_path: Path) -> None:
-    cfg = _cfg(tmp_path)
-    first = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
-    second = _inline_direction_block(0, 2, "MEGAERA")
-    play = _play([_title_block(), first, second])
-    reporter = _FakeProgressReporter()
-
-    RecordingRequestBuilder(
-        play=play,
-        paths=cfg,
-        role="MEGAERA",
-        created_at="2026-05-10T14:00:00Z",
-        progress_reporter=reporter,
-    ).build()
-
-    assert reporter.started_total == 3
-    assert reporter.items == [("0_1_1", 1), ("0_2_1", 2), ("0_2_3", 3)]
-    assert reporter.finished is True
-
-
-def test_recording_request_builder_reports_selected_item_progress(tmp_path: Path) -> None:
-    cfg = _cfg(tmp_path)
-    first = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
-    second = _speech_block(0, 2, "MEGAERA", "I will go back.")
-    play = _play([_title_block(), first, second])
-    reporter = _FakeProgressReporter()
-
-    RecordingRequestBuilder(
-        play=play,
-        paths=cfg,
-        role="MEGAERA",
-        request_kind="selected_segments",
-        selected_segment_ids={"0_2_1"},
-        created_at="2026-05-10T14:00:00Z",
-        progress_reporter=reporter,
-    ).build()
-
-    assert reporter.started_total == 1
-    assert reporter.items == [("0_2_1", 1)]
-    assert reporter.finished is True
 
 
 def test_recording_request_builder_includes_inline_directions_and_multiple_segments(tmp_path: Path) -> None:

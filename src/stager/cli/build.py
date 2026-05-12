@@ -32,7 +32,6 @@ from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
-from stager.linerecorder.recording_request_progress_reporter import RecordingRequestProgressReporter
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
@@ -50,6 +49,7 @@ from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.shared.build_type_resolver import BuildTypeResolver
+from stager.shared.progress_reporter import ProgressReporter
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from stager.audio.spacing import (
@@ -116,32 +116,39 @@ class RichPlaybookProgressReporter:
         self.progress.stop_task(self.task_id)
 
 
-class RichRecordingRequestProgressReporter:
-    def __init__(self, progress: Progress, role: str) -> None:
+class RichProgressReporter:
+    def __init__(self, progress: Progress) -> None:
         self.progress = progress
-        self.role = role
         self.task_id: TaskID | None = None
 
-    def start_item_building(self, total: int) -> None:
-        self.task_id = self.progress.add_task(
-            f"Building {self.role} recording request",
-            total=total,
-        )
+    def start(self, total: int, description: str) -> None:
+        self.task_id = self.progress.add_task(description, total=total)
 
-    def item_built(self, item_id: str, sequence: int) -> None:
+    def advance(self, description: str | None = None) -> None:
         if self.task_id is None:
             return
-        self.progress.update(
-            self.task_id,
-            description=f"Adding {self.role} item {item_id}",
-            advance=1,
-        )
+        kwargs = {"advance": 1}
+        if description is not None:
+            kwargs["description"] = description
+        self.progress.update(self.task_id, **kwargs)
 
-    def finish_item_building(self) -> None:
+    def finish(self, description: str | None = None) -> None:
         if self.task_id is None:
             return
-        self.progress.update(self.task_id, description=f"Built {self.role} recording request")
+        if description is not None:
+            self.progress.update(self.task_id, description=description)
         self.progress.stop_task(self.task_id)
+
+
+def rich_progress() -> Progress:
+    return Progress(
+        TextColumn("[progress.description]{task.description}"),
+        BarColumn(),
+        MofNCompleteColumn(),
+        TextColumn("{task.percentage:>3.0f}%"),
+        TimeElapsedColumn(),
+        TimeRemainingColumn(),
+    )
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -262,19 +269,21 @@ def segments(
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
         if role not in valid_roles:
             raise typer.BadParameter(f"Unknown role: {role}")
-    run_segments(
-        role=role,
-        part=part,
-        silence_thresh=silence_thresh,
-        separator_len_ms=separator_len_ms,
-        chunk_size=chunk_size,
-        verbose=verbose,
-        chunk_exports=chunk_exports,
-        chunk_export_size=chunk_export_size,
-        force=force,
-        paths_config=cfg,
-        build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
-    )
+    with rich_progress() as progress:
+        run_segments(
+            role=role,
+            part=part,
+            silence_thresh=silence_thresh,
+            separator_len_ms=separator_len_ms,
+            chunk_size=chunk_size,
+            verbose=verbose,
+            chunk_exports=chunk_exports,
+            chunk_export_size=chunk_export_size,
+            force=force,
+            paths_config=cfg,
+            build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
+            progress_reporter=RichProgressReporter(progress),
+        )
 
 @app.command("verify", rich_help_panel="verify")
 def verify(
@@ -447,70 +456,74 @@ def verify_audio(
     vetted_ids_by_role: dict[str, set[str]] = {}
     ignored_ids_by_role: dict[str, set[str]] = {}
     problems_ids_by_role: dict[str, set[str]] = {}
-    for idx, role_name in enumerate(roles_to_verify, start=1):
-        logging.info("Verifying role %s (%d/%d)", role_name, idx, total_roles)
-        verifier = RoleAudioVerifier(
-            role=role_name,
-            paths=cfg,
-            play=play_obj,
-            model_name=model_name,
-            build_type=effective_build_type,
-            whisper_store=store,
-            vad_filter=vad_filter,
-            vad_config=vad_config,
-            no_speech_threshold=no_speech_threshold,
-            log_prob_threshold=log_prob_threshold,
-            condition_on_previous_text=condition_on_previous_text,
-            initial_prompt=initial_prompt,
-            homophone_max_words=homophone_max_words,
-            remove_fillers=remove_fillers,
-        )
-        vetted_ids_by_role[role_name] = verifier.vetted_ids()
-        ignored_ids_by_role[role_name] = verifier.ignored_ids()
-        problems_ids_by_role[role_name] = verifier.problems_ids()
-        try:
-            results = verifier.verify(recording_path=recording)
-        except LocalEntryNotFoundError as exc:
-            raise typer.BadParameter(
-                f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
-            ) from exc
-        unresolved = UnresolvedDiffs()
-        for expected, actual, segment_id in verifier.unresolved_replacements(results):
-            unresolved.add(expected, actual, segment_id=segment_id)
-        diffs = verifier.build_diffs(results)
-        if role is None:
-            combined_diffs[role_name] = diffs
-        write_start = time.perf_counter()
-        out_path = verifier.write_xlsx(results, out_path=output)
-        write_elapsed = time.perf_counter() - write_start
-        logging.info("Wrote %s in %.2fs", paths.display_path(out_path), write_elapsed)
-        missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
-        extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
-        partial_count = sum(
-            1
-            for diff in diffs
-            if isinstance(diff, MatchAudioDiff) and diff.match_quality > 0
-        )
-        if missing_count:
-            symbol = "❌"
-        elif extra_count:
-            symbol = "⚠️"
-        else:
-            symbol = "✅"
-        logging.info(
-            "%s%s: %d/%d/%d missing/extra/partials ... see %s",
-            symbol,
-            role_name,
-            missing_count,
-            extra_count,
-            partial_count,
-            paths.display_path(out_path),
-        )
-        if summary:
-            renderer = AudioVerifierSummaryRenderer(format=summary_key)
-            logging.info("\n%s", renderer.render(results))
-        unresolved_path = cfg.build_dir / f"{role_name}_unresolved_diffs.yaml"
-        unresolved.write(unresolved_path)
+    with rich_progress() as progress:
+        progress_reporter = RichProgressReporter(progress)
+        progress_reporter.start(total_roles, "Verifying role audio")
+        for role_name in roles_to_verify:
+            verifier = RoleAudioVerifier(
+                role=role_name,
+                paths=cfg,
+                play=play_obj,
+                model_name=model_name,
+                build_type=effective_build_type,
+                whisper_store=store,
+                vad_filter=vad_filter,
+                vad_config=vad_config,
+                no_speech_threshold=no_speech_threshold,
+                log_prob_threshold=log_prob_threshold,
+                condition_on_previous_text=condition_on_previous_text,
+                initial_prompt=initial_prompt,
+                homophone_max_words=homophone_max_words,
+                remove_fillers=remove_fillers,
+            )
+            vetted_ids_by_role[role_name] = verifier.vetted_ids()
+            ignored_ids_by_role[role_name] = verifier.ignored_ids()
+            problems_ids_by_role[role_name] = verifier.problems_ids()
+            try:
+                results = verifier.verify(recording_path=recording)
+            except LocalEntryNotFoundError as exc:
+                raise typer.BadParameter(
+                    f"Whisper model '{model_name}' not cached. Run: python src/build.py whisper-init --model {model_name}"
+                ) from exc
+            unresolved = UnresolvedDiffs()
+            for expected, actual, segment_id in verifier.unresolved_replacements(results):
+                unresolved.add(expected, actual, segment_id=segment_id)
+            diffs = verifier.build_diffs(results)
+            if role is None:
+                combined_diffs[role_name] = diffs
+            write_start = time.perf_counter()
+            out_path = verifier.write_xlsx(results, out_path=output)
+            write_elapsed = time.perf_counter() - write_start
+            logging.info("Wrote %s in %.2fs", paths.display_path(out_path), write_elapsed)
+            missing_count = sum(1 for diff in diffs if isinstance(diff, MissingAudioDiff))
+            extra_count = sum(1 for diff in diffs if isinstance(diff, ExtraAudioDiff))
+            partial_count = sum(
+                1
+                for diff in diffs
+                if isinstance(diff, MatchAudioDiff) and diff.match_quality > 0
+            )
+            if missing_count:
+                symbol = "❌"
+            elif extra_count:
+                symbol = "⚠️"
+            else:
+                symbol = "✅"
+            logging.info(
+                "%s%s: %d/%d/%d missing/extra/partials ... see %s",
+                symbol,
+                role_name,
+                missing_count,
+                extra_count,
+                partial_count,
+                paths.display_path(out_path),
+            )
+            if summary:
+                renderer = AudioVerifierSummaryRenderer(format=summary_key)
+                logging.info("\n%s", renderer.render(results))
+            unresolved_path = cfg.build_dir / f"{role_name}_unresolved_diffs.yaml"
+            unresolved.write(unresolved_path)
+            progress_reporter.advance(f"Verified {role_name}")
+        progress_reporter.finish("Verified role audio")
     if role is None:
         combined_path = cfg.audio_out_dir / "audio-verifier.xlsx"
         writer = AudioVerifierWorkbookWriter()
@@ -751,20 +764,22 @@ def audioplay(
                     target,
                 )
                 raise typer.Exit(code=1)
-    run_audioplay(
-        part=part,
-        segment_spacing_ms=segment_spacing_ms,
-        callouts=callouts,
-        callout_spacing_ms=callout_spacing_ms,
-        minimal_callouts=minimal_callouts,
-        captions=captions,
-        generate_audio=generate_audio,
-        librivox=librivox,
-        audio_format=audio_format,
-        normalize_output=normalize_output,
-        paths_config=cfg,
-        prepare=prepare,
-    )
+    with rich_progress() as progress:
+        run_audioplay(
+            part=part,
+            segment_spacing_ms=segment_spacing_ms,
+            callouts=callouts,
+            callout_spacing_ms=callout_spacing_ms,
+            minimal_callouts=minimal_callouts,
+            captions=captions,
+            generate_audio=generate_audio,
+            librivox=librivox,
+            audio_format=audio_format,
+            normalize_output=normalize_output,
+            paths_config=cfg,
+            prepare=prepare,
+            progress_reporter=RichProgressReporter(progress),
+        )
 
 
 @app.command("normalize", rich_help_panel="utility")
@@ -801,14 +816,16 @@ def cues(
     """Generate cue audio snippets for roles."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    run_cues(
-        role=role,
-        response_delay_ms=response_delay_ms,
-        max_cue_size_ms=max_cue_size_ms,
-        include_prompts=include_prompts,
-        callout_spacing_ms=callout_spacing_ms,
-        paths_config=cfg,
-    )
+    with rich_progress() as progress:
+        run_cues(
+            role=role,
+            response_delay_ms=response_delay_ms,
+            max_cue_size_ms=max_cue_size_ms,
+            include_prompts=include_prompts,
+            callout_spacing_ms=callout_spacing_ms,
+            paths_config=cfg,
+            progress_reporter=RichProgressReporter(progress),
+        )
 
 
 @app.command("playbook", rich_help_panel="build")
@@ -820,14 +837,7 @@ def playbook(
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    with Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        MofNCompleteColumn(),
-        TextColumn("{task.percentage:>3.0f}%"),
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-    ) as progress:
+    with rich_progress() as progress:
         run_playbook(
             paths_config=cfg,
             build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
@@ -850,21 +860,12 @@ def recording_request(
     """Build a LineRecorder Recording Request package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    with Progress(
-        TextColumn("[progress.description]{task.description}"),
-        BarColumn(),
-        MofNCompleteColumn(),
-        TextColumn("{task.percentage:>3.0f}%"),
-        TimeElapsedColumn(),
-        TimeRemainingColumn(),
-    ) as progress:
-        zip_path = run_recording_request(
-            role=role,
-            segment_ids=set(segment) if segment else None,
-            notes=notes,
-            paths_config=cfg,
-            progress_reporter=RichRecordingRequestProgressReporter(progress, role),
-        )
+    zip_path = run_recording_request(
+        role=role,
+        segment_ids=set(segment) if segment else None,
+        notes=notes,
+        paths_config=cfg,
+    )
     typer.echo(paths.display_path(zip_path))
 
 
@@ -957,9 +958,10 @@ def run_segments(
     force: bool = False,
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ):
     cfg = paths_config or paths.current()
-    return SegmentBuildService(paths=cfg).build(
+    return SegmentBuildService(paths=cfg, progress_reporter=progress_reporter).build(
         role=role,
         part=part,
         silence_thresh=silence_thresh,
@@ -1013,11 +1015,12 @@ def run_audioplay(
     normalize_output: bool = True,
     prepare: bool = True,
     paths_config: paths.PathConfig | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
     cfg = paths_config or paths.current()
-    return AudioPlayBuildService(paths=cfg).build(
+    return AudioPlayBuildService(paths=cfg, progress_reporter=progress_reporter).build(
         part=part,
         segment_spacing_ms=segment_spacing_ms,
         callouts=callouts,
@@ -1049,9 +1052,10 @@ def run_cues(
     include_prompts: bool = True,
     callout_spacing_ms: int = 300,
     paths_config: paths.PathConfig | None = None,
+    progress_reporter: ProgressReporter | None = None,
 ):
     cfg = paths_config or paths.current()
-    CueBuildService(paths=cfg).build(
+    CueBuildService(paths=cfg, progress_reporter=progress_reporter).build(
         role=role,
         response_delay_ms=response_delay_ms,
         max_cue_size_ms=max_cue_size_ms,
@@ -1091,7 +1095,6 @@ def run_recording_request(
     segment_ids: set[str] | None = None,
     notes: str | None = None,
     paths_config: paths.PathConfig | None = None,
-    progress_reporter: RecordingRequestProgressReporter | None = None,
 ) -> Path:
     cfg = paths_config or paths.current()
     play = load_production_play(cfg)
@@ -1105,7 +1108,6 @@ def run_recording_request(
         request_kind="selected_segments" if segment_ids else "full_role",
         selected_segment_ids=segment_ids,
         notes=notes,
-        progress_reporter=progress_reporter,
     )
     return builder.build()
 

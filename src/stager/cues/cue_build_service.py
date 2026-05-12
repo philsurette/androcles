@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from stager.cues.cue_builder import CueBuilder
 from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared.paths import PathConfig
+from stager.shared.progress_reporter import ProgressReporter
 
 
 @dataclass
@@ -13,6 +14,7 @@ class CueBuildService:
     """Build cue files for one role or all rehearsal roles."""
 
     paths: PathConfig
+    progress_reporter: ProgressReporter | None = None
 
     def build(
         self,
@@ -33,5 +35,11 @@ class CueBuildService:
             callout_spacing_ms=callout_spacing_ms,
         )
         roles = [role] if role else [r.name for r in play.roles] + ["_NARRATOR"]
+        if self.progress_reporter is not None:
+            self.progress_reporter.start(len(roles), "Building cue files")
         for role_name in roles:
             builder.build_cues(role_name)
+            if self.progress_reporter is not None:
+                self.progress_reporter.advance(f"Built cues for {role_name}")
+        if self.progress_reporter is not None:
+            self.progress_reporter.finish("Built cue files")

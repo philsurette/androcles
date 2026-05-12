@@ -13,6 +13,7 @@ from stager.shared import paths
 from stager.audio.role_splitter import RoleSplitter, CalloutSplitter
 from stager.audio.narrator_splitter import NarratorSplitter
 from stager.audio.announcer_splitter import AnnouncerSplitter
+from stager.shared.progress_reporter import ProgressReporter
 
 
 @dataclass
@@ -28,6 +29,7 @@ class PlaySplitter:
     verbose: bool = False
     chunk_exports: bool = True
     chunk_export_size: int = 25
+    progress_reporter: ProgressReporter | None = None
 
     def __post_init__(self) -> None:
         if self.play is None:
@@ -57,6 +59,8 @@ class PlaySplitter:
             elapsed = splitter.split(part_filter=part_filter)
             if elapsed:
                 total += elapsed
+            if self.progress_reporter is not None:
+                self.progress_reporter.advance(f"Split {role_name}")
         return total
 
     def split_callouts(self) -> float:
@@ -74,6 +78,8 @@ class PlaySplitter:
             chunk_export_size=self.chunk_export_size,
         )
         elapsed = splitter.split(part_filter=None)
+        if self.progress_reporter is not None:
+            self.progress_reporter.advance("Split _CALLER")
         return elapsed or 0.0
 
     def split_announcer(self) -> float:
@@ -91,6 +97,8 @@ class PlaySplitter:
             chunk_export_size=self.chunk_export_size,
         )
         elapsed = splitter.split(part_filter=None)
+        if self.progress_reporter is not None:
+            self.progress_reporter.advance("Split _ANNOUNCER")
         return elapsed or 0.0
         
     def split_narrator(self, part_filter: Optional[str] = None) -> float:
@@ -107,6 +115,8 @@ class PlaySplitter:
             chunk_export_size=self.chunk_export_size,
         )
         elapsed = splitter.split(part_filter=part_filter)
+        if self.progress_reporter is not None:
+            self.progress_reporter.advance("Split _NARRATOR")
         return elapsed or 0.0
 
     def split_all(self, part_filter: Optional[str] = None, role_filter: Optional[str] = None) -> tuple[float, float]:
@@ -138,3 +148,8 @@ class PlaySplitter:
             announcer_time,
         )
         return roles_time, narr_time
+
+    def split_target_count(self, role_filter: Optional[str] = None) -> int:
+        if role_filter is None:
+            return len([r.name for r in self.play.getRoles()]) + 3
+        return 1
