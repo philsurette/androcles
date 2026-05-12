@@ -58,7 +58,7 @@ Adopt production ids and content hashes across Stager manifests, Cuemaster, and 
 - [x] Update script drawer rows.
 - [x] Update bookmark rows.
 - [x] Update timing issue rows.
-- [ ] Update diagnostics/import errors.
+- [x] Update diagnostics/import errors.
 - [x] Add tests for import and display behavior.
 
 ## Milestone 5: LineRecorder

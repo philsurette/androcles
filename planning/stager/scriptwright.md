@@ -27,6 +27,7 @@ Output:
 - The presence of ids does not imply lock state.
 - ScriptWright must refuse to overwrite locked `production.md` unless an explicit force or reconcile operation is requested.
 - ScriptWright should emit deterministic output for deterministic input.
+- Reconcile is intentionally out of MVP. Before locking, users may freely regenerate draft output. After locking, users should edit `production.md` directly while preserving existing ids, or explicitly regenerate with `--force` when replacing ids is acceptable.
 
 ## Milestone 1: Package And CLI Boundary
 
@@ -46,7 +47,7 @@ Output:
 - [x] Parse role entries such as `CAPTAIN: text`.
 - [x] Parse simultaneous role entries such as `CAPTAIN, MEGAERA: text`.
 - [x] Parse inline directions using `(_` and `_)`.
-- [ ] Reject multiline script entries.
+- [x] Reject multiline script entries.
 - [x] Reject malformed metadata.
 - [x] Reject unclosed or nested inline directions.
 - [x] Add focused parser tests.
@@ -55,7 +56,7 @@ Output:
 
 - [x] Wrap the existing paragraph-oriented `play.txt` parser as a ScriptWright source format.
 - [x] Convert current `Part`, block, role, description, direction, and simultaneous-line semantics into the production model.
-- [ ] Preserve existing role ids and metadata where possible.
+- [x] Preserve existing role ids and metadata where possible.
 - [x] Add tests using small current-format fixtures.
 - [x] Add one integration fixture based on Androcles source text.
 
@@ -63,26 +64,26 @@ Output:
 
 - [x] Generate deterministic structural ids for headings.
 - [x] Generate deterministic line ids for headings, descriptions, directions, and role lines.
-- [ ] Generate sub-line ids for spoken segments and inline directions.
-- [ ] Support uppercase structural labels such as `P`, `E`, `I`, `II`, and `INT`.
-- [ ] Reject lowercase structural components in locked output.
+- [x] Generate sub-line ids for spoken segments and inline directions.
+- [x] Support uppercase structural labels such as `P`, `E`, `I`, `II`, and `INT`.
+- [x] Reject lowercase structural components in locked output.
 - [x] Preserve director-chosen structural labels when source headings make them clear.
-- [ ] Add tests for id generation, duplicate detection, inserted-line shapes, and roman/prologue/epilogue labels.
+- [x] Add tests for id generation, duplicate detection, inserted-line shapes, and roman/prologue/epilogue labels.
 
 ## Milestone 5: Locked Output
 
 - [x] Emit `production.md` using the canonical Markdown-friendly grammar.
 - [x] Emit required metadata with `production_ids: locked`.
 - [x] Emit one physical line per addressable script unit.
-- [ ] Preserve comments from draft `production.md` where practical.
+- [x] Preserve comments from draft `production.md` where practical.
 - [x] Refuse to overwrite locked `production.md` without explicit force.
 - [x] Add tests for deterministic output and overwrite behavior.
 
 ## Milestone 6: Reconcile Placeholder
 
-- [ ] Define minimal reconcile behavior for MVP.
-- [ ] If full reconciliation is out of scope, make the command fail with a clear "not implemented" diagnostic.
-- [ ] Document that users can regenerate draft output freely before locking.
+- [x] Define minimal reconcile behavior for MVP.
+- [x] If full reconciliation is out of scope, make the command fail with a clear "not implemented" diagnostic.
+- [x] Document that users can regenerate draft output freely before locking.
 
 ## Acceptance Criteria
 
@@ -91,4 +92,4 @@ Output:
 - [x] Locked output contains stable production ids on every addressable line.
 - [x] Locked output uses `production_ids: locked`.
 - [x] Existing locked output is not overwritten accidentally.
-- [ ] Tests cover parsing, id assignment, output formatting, and overwrite protection.
+- [x] Tests cover parsing, id assignment, output formatting, and overwrite protection.

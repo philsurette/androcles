@@ -20,6 +20,7 @@ class ProductionEntry:
     production_id: str | None = None
     heading_level: int | None = None
     roles: tuple[str, ...] = ()
+    leading_comments: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

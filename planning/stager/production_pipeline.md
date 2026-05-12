@@ -19,9 +19,9 @@ This plan tracks the three implementation milestones. Each milestone has its own
 
 ## Milestones
 
-- [ ] [scriptwright.md](scriptwright.md): Create ScriptWright to convert current `play.txt` and draft `production.md` into locked `production.md`.
+- [x] [scriptwright.md](scriptwright.md): Create ScriptWright to convert current `play.txt` and draft `production.md` into locked `production.md`.
 - [x] [production_source_refactor.md](production_source_refactor.md): Refactor Stager build commands to consume locked `production.md` instead of `play.txt`.
-- [ ] [production_id_adoption.md](production_id_adoption.md): Push production ids and content hashes through manifests, Cuemaster, and LineRecorder.
+- [x] [production_id_adoption.md](production_id_adoption.md): Push production ids and content hashes through manifests, Cuemaster, and LineRecorder.
 
 ## Dependencies
 

@@ -51,12 +51,21 @@ function validateManifestJson(manifestJson: string) {
     return validatePlaybookManifest(parsedManifest);
   } catch (error) {
     if (error instanceof ZodError) {
-      throw new PlaybookImportError(`Playbook manifest is invalid: ${error.issues[0]?.message ?? "unknown error"}`, {
+      throw new PlaybookImportError(`Playbook manifest is invalid: ${formatZodIssue(error)}`, {
         cause: error
       });
     }
     throw error;
   }
+}
+
+function formatZodIssue(error: ZodError): string {
+  const issue = error.issues[0];
+  if (!issue) {
+    return "unknown error";
+  }
+  const path = issue.path.length > 0 ? `${issue.path.join(".")}: ` : "";
+  return `${path}${issue.message}`;
 }
 
 async function extractRequiredAudioAssets(zip: JSZip, assetPaths: string[]): Promise<ExtractedAudioAsset[]> {

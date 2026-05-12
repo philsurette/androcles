@@ -17,7 +17,7 @@ describe("exportRoleRecordings", () => {
       recordings: [
         {
           id: "I-12:s1",
-          line_id: "0_12_CENTURION",
+          line_id: "I-12",
           block_id: "0.12",
           segment_id: "0_12_1",
           line_content_hash: line12Hash,
@@ -48,7 +48,7 @@ describe("exportRoleRecordings", () => {
   });
 
   it("reports package generation failures with an export-specific error", async () => {
-    await expect(exportRoleRecordings(projectFixture(), [takeFixture("0_12_1")], failingZipGenerator())).rejects.toThrow(
+    await expect(exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")], failingZipGenerator())).rejects.toThrow(
       RoleRecordingsExportError
     );
   });
@@ -90,7 +90,7 @@ function projectFixture(): RecordingProjectRecord {
       items: [
         {
           id: "I-12:s1",
-          lineId: "0_12_CENTURION",
+          lineId: "I-12",
           blockId: "0.12",
           segmentId: "0_12_1",
           lineContentHash: line12Hash,
@@ -103,7 +103,7 @@ function projectFixture(): RecordingProjectRecord {
         },
         {
           id: "I-14:s1",
-          lineId: "0_14_CENTURION",
+          lineId: "I-14",
           blockId: "0.14",
           segmentId: "0_14_1",
           lineContentHash: line14Hash,

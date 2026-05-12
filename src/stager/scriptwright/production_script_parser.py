@@ -20,6 +20,7 @@ class ProductionScriptParser:
     source_path: Path | None = None
 
     METADATA_RE = re.compile(r"^//\s*(?P<key>[a-z_]+):\s*(?P<value>.+?)\s*$")
+    PRODUCTION_ID_CANDIDATE_RE = re.compile(r"^[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?$")
     PRODUCTION_ID_RE = re.compile(r"^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?$")
     HEADING_RE = re.compile(r"^(?P<marks>#{1,6})\s+(?P<body>.+?)\s*$")
     ROLE_RE = re.compile(r"^(?P<roles>[A-Z][A-Z0-9_ -]*(?:\s*,\s*[A-Z][A-Z0-9_ -]*)*)\s*:\s*(?P<text>.+)$")
@@ -43,21 +44,27 @@ class ProductionScriptParser:
         entries: list[ProductionEntry] = []
         seen_ids: set[str] = set()
         in_metadata = True
+        pending_comments: list[str] = []
 
         for index, raw_line in enumerate(text.splitlines(), start=1):
             line = raw_line.strip()
             if not line:
                 continue
+            if raw_line[:1].isspace() and not line.startswith("//"):
+                self._fail("Multiline script entries are not supported", index, path)
             if line.startswith("//"):
                 if in_metadata:
                     self._parse_metadata_line(line, metadata, index, path)
+                else:
+                    pending_comments.append(line)
                 continue
 
             in_metadata = False
             if not metadata:
                 self._fail("Missing metadata header", index, path)
             locked = self._metadata_lock_state(metadata, index, path) == "locked"
-            entry = self._parse_entry(line, locked, index, path)
+            entry = self._parse_entry(line, locked, index, path, tuple(pending_comments))
+            pending_comments = []
             if entry.production_id is not None:
                 if entry.production_id in seen_ids:
                     self._fail(f"Duplicate production id: {entry.production_id}", index, path)
@@ -105,6 +112,7 @@ class ProductionScriptParser:
         locked: bool,
         line_no: int,
         path: Path | None,
+        leading_comments: tuple[str, ...] = (),
     ) -> ProductionEntry:
         heading_match = self.HEADING_RE.match(line)
         if heading_match:
@@ -116,6 +124,7 @@ class ProductionScriptParser:
                 heading_level=level,
                 text=text,
                 line_no=line_no,
+                leading_comments=leading_comments,
             )
 
         production_id, body = self._extract_optional_id(line, locked, line_no, path)
@@ -124,9 +133,21 @@ class ProductionScriptParser:
             label = label_match.group("label")
             text = label_match.group("text").strip()
             if label == "@description":
-                return ProductionEntry(ProductionEntryKind.DESCRIPTION, text, line_no, production_id)
+                return ProductionEntry(
+                    ProductionEntryKind.DESCRIPTION,
+                    text,
+                    line_no,
+                    production_id,
+                    leading_comments=leading_comments,
+                )
             if label == "@direction":
-                return ProductionEntry(ProductionEntryKind.DIRECTION, text, line_no, production_id)
+                return ProductionEntry(
+                    ProductionEntryKind.DIRECTION,
+                    text,
+                    line_no,
+                    production_id,
+                    leading_comments=leading_comments,
+                )
             self._fail(f"Unknown reserved entry label: {label}", line_no, path)
 
         role_match = self.ROLE_RE.match(body)
@@ -142,6 +163,7 @@ class ProductionScriptParser:
                 line_no=line_no,
                 production_id=production_id,
                 roles=roles,
+                leading_comments=leading_comments,
             )
 
         self._fail("Malformed production script entry", line_no, path)
@@ -158,6 +180,8 @@ class ProductionScriptParser:
             if not rest.strip():
                 self._fail("Missing text after production id", line_no, path)
             return first, rest.strip()
+        if self.PRODUCTION_ID_CANDIDATE_RE.match(first):
+            self._fail(f"Malformed production id: {first}", line_no, path)
         if locked:
             self._fail("Locked production entry is missing a production id", line_no, path)
         return None, body.strip()

@@ -25,6 +25,13 @@ describe("validatePlaybookManifest", () => {
     expect(() => validatePlaybookManifest(invalid)).toThrow();
   });
 
+  it("rejects parser-shaped ids for production script units", () => {
+    const invalid = structuredClone(manifestFixture);
+    invalid.context[0].id = "0_0_1";
+
+    expect(() => validatePlaybookManifest(invalid)).toThrow("Expected a production id");
+  });
+
   it("rejects a malformed cue audio reference", () => {
     const invalid = structuredClone(manifestFixture);
     invalid.roles[0].lines[0].cue.audio.path = "";

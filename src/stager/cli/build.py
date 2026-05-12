@@ -196,6 +196,16 @@ def scriptwright_lock(
     typer.echo(f"Wrote {paths.display_path(output_path)}")
 
 
+@scriptwright_app.command("reconcile")
+def scriptwright_reconcile(
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Reconcile source changes into an existing locked production.md."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    ScriptWright(paths_config=cfg).reconcile()
+
+
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context, play: str | None = PLAY_OPTION) -> None:
     play_name = play or paths.default_play_name()

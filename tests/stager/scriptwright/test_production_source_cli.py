@@ -78,3 +78,14 @@ def test_text_cli_uses_locked_production_markdown(tmp_path: Path, monkeypatch) -
 
     assert result.exit_code == 0
     assert (cfg.markdown_dir / "Untitled.md").exists()
+
+
+def test_scriptwright_reconcile_reports_not_implemented(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["scriptwright", "reconcile", "--play", "test"])
+
+    assert result.exit_code != 0
+    assert isinstance(result.exception, NotImplementedError)
+    assert "ScriptWright reconcile is not implemented yet" in str(result.exception)

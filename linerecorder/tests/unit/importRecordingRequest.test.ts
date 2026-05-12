@@ -53,7 +53,7 @@ function manifestFixture() {
     items: [
       {
         id: "I-12:s1",
-        line_id: "0_12_CENTURION",
+        line_id: "I-12",
         block_id: "0.12",
         segment_id: "0_12_1",
         line_content_hash: line12Hash,

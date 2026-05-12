@@ -30,7 +30,7 @@ describe("validateRecordingRequestManifest", () => {
       items: [
         {
           id: "I-12:s1",
-          line_id: "0_12_CENTURION",
+          line_id: "I-12",
           block_id: "0.12",
           segment_id: "0_12_1",
           line_content_hash: line12Hash,
@@ -58,7 +58,7 @@ describe("validateRecordingRequestManifest", () => {
     expect(request.role.displayName).toBe("Centurion");
     expect(request.items[0]).toMatchObject({
       id: "I-12:s1",
-      lineId: "0_12_CENTURION",
+      lineId: "I-12",
       segmentId: "0_12_1",
       lineContentHash: line12Hash,
       segmentContentHash: segment12Hash,
@@ -88,6 +88,38 @@ describe("validateRecordingRequestManifest", () => {
         items: []
       })
     ).toThrow();
+  });
+
+  it("rejects parser-shaped ids", () => {
+    expect(() =>
+      validateRecordingRequestManifest({
+        schema_version: 1,
+        package_type: "recording_request",
+        request: {
+          id: "androcles-CENTURION-full-2026-05-10",
+          kind: "full_role",
+          created_at: "2026-05-10T14:00:00Z",
+          created_by: "stager"
+        },
+        play: { id: "androcles", title: "Androcles and the Lion" },
+        role: { id: "CENTURION", display_name: "Centurion" },
+        recording: { preferred_sample_rate_hz: 48000, preferred_channels: 1, source_format: "wav" },
+        items: [
+          {
+            id: "0_12_1",
+            line_id: "0_12_CENTURION",
+            block_id: "0.12",
+            segment_id: "0_12_1",
+            line_content_hash: line12Hash,
+            segment_content_hash: segment12Hash,
+            sequence: 1,
+            display_text: "Halt!",
+            segment_text: "Halt!",
+            output_path: "audio/segments/CENTURION/0_12_1.wav"
+          }
+        ]
+      })
+    ).toThrow("Expected a production id");
   });
 });
 

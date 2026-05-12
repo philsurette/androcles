@@ -17,9 +17,15 @@ const audioAssetSchema = z.object({
 });
 
 const contentHashSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/);
+const productionIdSchema = z
+  .string()
+  .regex(
+    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdm][0-9]+)?$/,
+    "Expected a production id such as I-3 or I-3:s1"
+  );
 
 const directionSchema = z.object({
-  id: z.string().min(1),
+  id: productionIdSchema,
   segment_id: z.string().min(1),
   content_hash: contentHashSchema,
   text: z.string(),
@@ -35,7 +41,7 @@ const sectionSchema = z.object({
 });
 
 const responseSegmentSchema = z.object({
-  id: z.string().min(1),
+  id: productionIdSchema,
   segment_id: z.string().min(1),
   content_hash: contentHashSchema,
   owners: z.array(z.string().min(1)).min(1),
@@ -45,7 +51,7 @@ const responseSegmentSchema = z.object({
 });
 
 const lineSchema = z.object({
-  id: z.string().min(1),
+  id: productionIdSchema,
   part_id: z.number().int().nullable(),
   block_id: z.string().min(1),
   role: z.string().min(1),
@@ -94,7 +100,7 @@ const manifestSchema = z.object({
   sections: z.array(sectionSchema),
   context: z.array(
     z.object({
-      id: z.string().min(1),
+      id: productionIdSchema,
       part_id: z.number().int().nullable(),
       block_id: z.string().min(1),
       kind: z.enum(["heading", "description", "direction"]),

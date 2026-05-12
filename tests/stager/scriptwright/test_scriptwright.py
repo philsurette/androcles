@@ -102,6 +102,58 @@ I.1-3 CAPTAIN, MEGAERA: Together.
 """
 
 
+def test_write_locked_preserves_draft_comments_and_provisional_ids(tmp_path):
+    cfg = _path_config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: draft
+
+# ACT I
+// Director note: keep this beat.
+I-7 CAPTAIN: Stand fast.
+MEGAERA: I will.
+""",
+        encoding="utf-8",
+    )
+
+    ScriptWright(paths_config=cfg).write_locked()
+
+    assert cfg.production_markdown.read_text(encoding="utf-8") == """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+// Director note: keep this beat.
+I-7 CAPTAIN: Stand fast.
+I-8 MEGAERA: I will.
+"""
+
+
+def test_reconcile_reports_clear_not_implemented_message(tmp_path):
+    cfg = _path_config(tmp_path)
+
+    with pytest.raises(NotImplementedError, match="ScriptWright reconcile is not implemented yet"):
+        ScriptWright(paths_config=cfg).reconcile()
+
+
+def test_write_locked_rejects_generated_duplicate_production_ids(tmp_path):
+    cfg = _path_config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: draft
+
+# ACT I
+I-0 CAPTAIN: Duplicate the generated heading id.
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Duplicate production id after assignment"):
+        ScriptWright(paths_config=cfg).write_locked()
+
+
 def test_androcles_play_text_is_ingestable():
     cfg = PathConfig("androcles")
 

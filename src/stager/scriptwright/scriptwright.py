@@ -22,6 +22,12 @@ class ScriptWright:
 
     paths_config: paths.PathConfig
 
+    def reconcile(self) -> None:
+        raise NotImplementedError(
+            "ScriptWright reconcile is not implemented yet. Regenerate draft production.md freely before locking, "
+            "or edit locked production.md directly while preserving existing ids."
+        )
+
     def write_locked(self, force: bool = False) -> Path:
         output_path = self.paths_config.production_markdown
         if output_path.exists():
@@ -63,6 +69,7 @@ class ScriptWright:
             "",
         ]
         for production_id, entry in self._assign_ids(production.entries):
+            lines.extend(entry.leading_comments)
             lines.append(self._render_production_entry(production_id, entry))
         return "\n".join(lines) + "\n"
 
@@ -118,17 +125,45 @@ class ScriptWright:
         current_structure: str | None = None
         line_counters: dict[str, int] = {}
         assigned: list[tuple[str, ProductionEntry]] = []
+        assigned_ids: set[str] = set()
         for entry in entries:
+            if entry.production_id is not None:
+                production_id = entry.production_id
+                explicit_structure = production_id.rsplit("-", 1)[0]
+                current_structure = explicit_structure
+                line_counters[explicit_structure] = max(
+                    line_counters.get(explicit_structure, 0),
+                    self._line_number_component(production_id),
+                )
+                self._append_assigned_id(assigned, assigned_ids, production_id, entry)
+                continue
             if entry.kind == ProductionEntryKind.HEADING:
                 current_structure = self._structure_id_for_heading(entry.text, current_structure)
                 line_counters.setdefault(current_structure, 0)
-                assigned.append((f"{current_structure}-0", entry))
+                self._append_assigned_id(assigned, assigned_ids, f"{current_structure}-0", entry)
                 continue
             if current_structure is None:
                 current_structure = "0"
             line_counters[current_structure] = line_counters.get(current_structure, 0) + 1
-            assigned.append((f"{current_structure}-{line_counters[current_structure]}", entry))
+            self._append_assigned_id(
+                assigned,
+                assigned_ids,
+                f"{current_structure}-{line_counters[current_structure]}",
+                entry,
+            )
         return assigned
+
+    def _append_assigned_id(
+        self,
+        assigned: list[tuple[str, ProductionEntry]],
+        assigned_ids: set[str],
+        production_id: str,
+        entry: ProductionEntry,
+    ) -> None:
+        if production_id in assigned_ids:
+            raise RuntimeError(f"Duplicate production id after assignment: {production_id}")
+        assigned_ids.add(production_id)
+        assigned.append((production_id, entry))
 
     def _structure_id_for_heading(self, heading: str, current_structure: str | None) -> str:
         normalized = heading.strip().upper()
@@ -161,6 +196,13 @@ class ScriptWright:
                 total += value
                 previous = value
         return str(total)
+
+    def _line_number_component(self, production_id: str) -> int:
+        line_component = production_id.rsplit("-", 1)[1]
+        match = re.match(r"(?P<line_no>[0-9]+)", line_component)
+        if not match:
+            raise RuntimeError(f"Production id is missing a line number: {production_id}")
+        return int(match.group("line_no"))
 
     def _render_production_entry(self, production_id: str, entry: ProductionEntry) -> str:
         if entry.kind == ProductionEntryKind.HEADING:

@@ -2,9 +2,16 @@ import { z } from "zod";
 import type { RecordingRequest } from "../domain/recordingRequest";
 import type { RecordingRequestManifest } from "./recordingPackageManifest";
 
+const productionIdSchema = z
+  .string()
+  .regex(
+    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdm][0-9]+)?$/,
+    "Expected a production id such as I-3 or I-3:s1"
+  );
+
 const itemSchema = z.object({
-  id: z.string().min(1),
-  line_id: z.string().min(1),
+  id: productionIdSchema,
+  line_id: productionIdSchema,
   block_id: z.string().min(1),
   segment_id: z.string().min(1),
   line_content_hash: z.string().regex(/^sha256:[0-9a-f]{64}$/),

@@ -19,7 +19,7 @@ describe("validateRoleRecordingsManifest", () => {
       recordings: [
         {
           id: "I-12:s1",
-          line_id: "0_12_CENTURION",
+          line_id: "I-12",
           block_id: "0.12",
           segment_id: "0_12_1",
           line_content_hash: line12Hash,
@@ -63,6 +63,35 @@ describe("validateRoleRecordingsManifest", () => {
         missing_segment_ids: []
       })
     ).toThrow();
+  });
+
+  it("rejects parser-shaped ids", () => {
+    expect(() =>
+      validateRoleRecordingsManifest({
+        schema_version: 1,
+        package_type: "role_recordings",
+        complete: true,
+        play: { id: "androcles", title: "Androcles and the Lion" },
+        role: { id: "CENTURION", display_name: "Centurion" },
+        recordings: [
+          {
+            id: "0_12_1",
+            line_id: "0_12_CENTURION",
+            block_id: "0.12",
+            segment_id: "0_12_1",
+            line_content_hash: line12Hash,
+            segment_content_hash: segment12Hash,
+            audio_path: "audio/segments/CENTURION/0_12_1.wav",
+            recorded_at: "2026-05-11T12:00:00Z",
+            duration_ms: 1840,
+            sample_rate_hz: 48000,
+            channels: 1,
+            status: "accepted"
+          }
+        ],
+        missing_segment_ids: []
+      })
+    ).toThrow("Expected a production id");
   });
 });
 

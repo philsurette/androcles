@@ -94,11 +94,45 @@ I-1 CAPTAIN: I will go (_now.
 """,
             "Unknown production_ids value",
         ),
+        (
+            """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+p-0 PROLOGUE
+""",
+            "Malformed production id",
+        ),
+        (
+            """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: draft
+
+CAPTAIN: One line.
+  continued line.
+""",
+            "Multiline script entries are not supported",
+        ),
     ],
 )
 def test_reject_malformed_production_markdown(text, message):
     with pytest.raises(RuntimeError, match=message):
         ProductionScriptParser().parse_text(text)
+
+
+def test_parse_named_structural_production_ids():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# INT-0 INTERLUDE
+INT-1 CHORUS: Between the acts.
+E-1 CHORUS: The end.
+"""
+    )
+
+    assert [entry.production_id for entry in script.entries] == ["INT-0", "INT-1", "E-1"]
 
 
 def test_parse_generated_androcles_production_markdown():

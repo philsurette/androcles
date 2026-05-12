@@ -62,6 +62,18 @@ describe("extractPlaybookZip", () => {
     );
   });
 
+  it("reports manifest validation paths for production id errors", async () => {
+    const invalidManifest = structuredClone(manifestFixture);
+    invalidManifest.context[0].id = "0_0_1";
+
+    const zip = new JSZip();
+    zip.file("manifest.json", JSON.stringify(invalidManifest));
+
+    await expect(extractPlaybookZip(await zip.generateAsync({ type: "blob" }))).rejects.toThrow(
+      "context.0.id: Expected a production id"
+    );
+  });
+
   it("reports missing required audio assets before import succeeds", async () => {
     const file = await buildPlaybookZip({ excludePath: "audio/segments/ANDROCLES/0_1_1.wav" });
 

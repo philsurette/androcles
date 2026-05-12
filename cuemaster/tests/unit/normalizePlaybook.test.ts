@@ -11,7 +11,7 @@ describe("normalizePlaybook", () => {
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
       context: [
         {
-          id: "0_0_1",
+          id: "I-0",
           part_id: 0,
           block_id: "0.0",
           kind: "heading",
@@ -48,7 +48,7 @@ describe("normalizePlaybook", () => {
           parts: [0],
           lines: [
             {
-              id: "0_1_MEGAERA",
+              id: "I-1",
               part_id: 0,
               block_id: "0.1",
               role: "MEGAERA",
