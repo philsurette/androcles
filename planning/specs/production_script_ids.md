@@ -6,7 +6,7 @@ Production scripts change during rehearsal. Directors may add, delete, move, or 
 
 These identifiers are additive to the current play text format. They should become visible wherever an id helps actors, directors, or maintainers discuss a specific script unit.
 
-The shared script-format source of truth is `planning/specs/script_text_format.md`. That spec defines the exact `production.txt` syntax, including line-leading `//` comments, one physical line per script unit, and the `production_ids: draft` or `production_ids: locked` metadata header. The Stager implementation plan is `planning/stager/production_ids.md`.
+The shared script-format source of truth is `planning/specs/script_text_format.md`. That spec defines the exact `production.md` syntax, including line-leading `//` comments, one physical line per script unit, and the `production_ids: draft` or `production_ids: locked` metadata header. The Stager implementation plan is `planning/stager/production_ids.md`.
 
 ## Source Artifacts
 
@@ -15,12 +15,12 @@ The shared script-format source of truth is `planning/specs/script_text_format.m
 Stager should add an initial script-hardening step that reads `play.txt` and creates an editable production script artifact:
 
 ```text
-plays/<play_id>/production.txt
+plays/<play_id>/production.md
 ```
 
-`production.txt` should keep a text-editor-friendly line-oriented format, but every addressable script unit must have an explicit production id. While `production.txt` is marked `production_ids: draft`, Stager may regenerate it from `play.txt`. Once it is marked `production_ids: locked`, it becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
+`production.md` should keep a text-editor-friendly line-oriented format, but every addressable script unit must have an explicit production id. While `production.md` is marked `production_ids: draft`, Stager may regenerate it from `play.txt`. Once it is marked `production_ids: locked`, it becomes the default source for subsequent Stager builds. `play.txt` remains useful for import, comparison, or re-hardening, but it should not silently overwrite locked production ids.
 
-The artifact name is **Production script**. The filename is `production.txt`. The name matches theatre vocabulary and signals that this is the director-maintained script used after initial import.
+The artifact name is **Production script**. The filename is `production.md`. The name matches theatre vocabulary and signals that this is the director-maintained script used after initial import.
 
 The draft/locked state belongs in a leading metadata comment block:
 
@@ -34,17 +34,17 @@ The lock-state line is metadata expressed as a comment, not a new script paragra
 
 ## Production Script Format
 
-`production.txt` should remain easy to edit with ordinary text editors. Each addressable script unit occupies one physical line, and the id is visible at the start of that line.
+`production.md` should remain easy to edit with ordinary text editors. Each addressable script unit occupies one physical line, and the id is visible at the start of that line.
 
 Examples:
 
 ```text
-I-0 [@HEADING]: ACT I
-I.2-0 [@HEADING]: SCENE II
-I.2-15 [CAPTAIN]: I will go (_draws sword_) if I must.
-I.2-16 [@DIRECTION]: The soldiers move aside.
-I.2-17 [@DESCRIPTION]: A dusty Roman road at noon.
-I.2-18 [@HEADING]: Scene transition
+# I-0 ACT I
+## I.2-0 SCENE II
+I.2-15 CAPTAIN: I will go (_draws sword_) if I must.
+I.2-16 @direction: The soldiers move aside.
+I.2-17 @description: A dusty Roman road at noon.
+### I.2-18 Scene transition
 ```
 
 Stager should parse the leading production id, then parse the remainder of the line using the canonical production entry grammar in `planning/specs/script_text_format.md`. This keeps the format human-readable while avoiding a separate sidecar id map that can drift from the text.
@@ -90,7 +90,7 @@ Rules:
 - `dN` identifies stage direction `N` inside the line.
 - Use uppercase alphabetic structural components. Do not use lowercase structural components, because lowercase is reserved for revision and sub-line suffixes.
 - Roman numerals are allowed as structural labels, but they are labels, not numbers.
-- Script order comes from `production.txt` file order and manifest sequence/order fields, not from sorting production ids as strings.
+- Script order comes from `production.md` file order and manifest sequence/order fields, not from sorting production ids as strings.
 
 ## Structural IDs
 
@@ -190,7 +190,7 @@ If an inserted line is revised:
 
 ### Deleted Lines
 
-`production.txt` should contain the active production script, not required tombstones. Deleted lines may be removed from `production.txt`.
+`production.md` should contain the active production script, not required tombstones. Deleted lines may be removed from `production.md`.
 
 If a new line is later inserted at the same location, authors should prefer an inserted or revised id such as `3.2-15.1` or `3.2-15a`, but Quince correctness must not depend on authors remembering that convention. Stager should treat production id plus normalized text fingerprint as the practical identity for recording freshness. If `3.2-15` disappears and later reappears with different text, Stager should detect the changed fingerprint and require fresh recording even though the production id was reused.
 
@@ -291,10 +291,10 @@ Do not rely on filename transformation as identity. Manifests should carry the c
 
 The first implementation should be strict:
 
-- If `production.txt` exists, Stager should use it by default.
-- If `production.txt` is missing, Stager may parse `play.txt` only for commands that explicitly allow raw input.
-- A hardening command should generate `production.txt` and fail if it cannot assign deterministic ids.
-- A future reconciliation command should compare raw/new script text against `production.txt`, preserve existing ids when possible, and suggest inserted/revised/deleted ids.
+- If `production.md` exists, Stager should use it by default.
+- If `production.md` is missing, Stager may parse `play.txt` only for commands that explicitly allow raw input.
+- A hardening command should generate `production.md` and fail if it cannot assign deterministic ids.
+- A future reconciliation command should compare raw/new script text against `production.md`, preserve existing ids when possible, and suggest inserted/revised/deleted ids.
 - Stager should not decide that existing audio is reusable from production id alone. It should also compare the relevant content fingerprint.
 
 ## Closed Decisions

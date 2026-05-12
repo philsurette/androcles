@@ -2,16 +2,16 @@
 
 ## Goal
 
-Implement production-script identifiers in Stager so Quince can move cleanly from flexible draft authoring formats to stable rehearsal/recording artifacts built from canonical `production.txt`.
+Implement production-script identifiers in Stager so Quince can move cleanly from flexible draft authoring formats to stable rehearsal/recording artifacts built from canonical `production.md`.
 
 The implementation must support two workflows:
 
-- Draft authoring: show runners repeatedly edit `play.txt` in any supported source format and regenerate provisional `production.txt`.
-- Production use: show runners lock `production.txt`, after which ids become stable handles used by Stager, LineRecorder, Cuemaster, Playbooks, Recording Requests, and recording packages.
+- Draft authoring: show runners repeatedly edit `play.txt` in any supported source format and regenerate provisional `production.md`.
+- Production use: show runners lock `production.md`, after which ids become stable handles used by Stager, LineRecorder, Cuemaster, Playbooks, Recording Requests, and recording packages.
 
 ## Source Docs
 
-- [../specs/script_text_format.md](../specs/script_text_format.md): Shared spec for source script formats, canonical `production.txt`, comments, and metadata headers.
+- [../specs/script_text_format.md](../specs/script_text_format.md): Shared spec for source script formats, canonical `production.md`, comments, and metadata headers.
 - [../specs/production_script_ids.md](../specs/production_script_ids.md): Production id syntax, lifecycle, manifest identity, and content fingerprint rules.
 - [../specs/playbook_manifest.md](../specs/playbook_manifest.md): Playbook manifest fields that consume production ids.
 - [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md): Recording Request and recording package fields that consume production ids.
@@ -20,13 +20,13 @@ The implementation must support two workflows:
 
 - `play.txt` is a draft/source script input. Stager may support multiple source formats.
 - The current paragraph-oriented `play.txt` format is an import/source format, not the canonical Quince production format.
-- `production.txt` is the id-bearing canonical production script format.
-- `production.txt` is line-oriented: one addressable script unit per physical line.
-- `production.txt` uses explicit bracketed entry tags such as `[CAPTAIN]:`, `[@HEADING]:`, `[@DIRECTION]:`, and `[@DESCRIPTION]:`.
+- `production.md` is the id-bearing canonical production script format.
+- `production.md` is line-oriented: one addressable script unit per physical line.
+- `production.md` uses Markdown-friendly entries such as `# I-0 ACT I`, `I.1-2 CAPTAIN: ...`, `I.1-3 @direction: ...`, and `I.1-4 @description: ...`.
 - Line-leading `//` comments are ignored by the script parser.
 - A leading `// key: value` metadata comment block records script metadata.
-- `production_ids: draft` means Stager may regenerate `production.txt` from `play.txt`.
-- `production_ids: locked` means Stager must not overwrite `production.txt` except through an explicit force or reconciliation command.
+- `production_ids: draft` means Stager may regenerate `production.md` from `play.txt`.
+- `production_ids: locked` means Stager must not overwrite `production.md` except through an explicit force or reconciliation command.
 - Shared manifests use one script-unit id field: `id` is the production id. There is no parallel `production_id`.
 - Parser/build ids may still exist, but only under explicit implementation names such as `block_id`, `segment_id`, or `audio_segment_id`.
 - Recording freshness is decided by production id plus normalized content hash, not production id alone.
@@ -35,11 +35,11 @@ The implementation must support two workflows:
 
 - [x] Create `planning/specs/script_text_format.md`.
 - [x] Define the current `src/format.md` behavior as an import/source format rather than the canonical production format.
-- [x] Define `production.txt` as a canonical line-oriented format with required production id prefixes.
-- [x] Define explicit production entry tags for headings, descriptions, directions, role lines, and simultaneous role lines.
+- [x] Define `production.md` as a canonical line-oriented format with required production id prefixes.
+- [x] Define Markdown-friendly production entries for headings, descriptions, directions, role lines, and simultaneous role lines.
 - [x] Define line-leading `//` comments.
 - [x] Define a leading metadata comment block.
-- [x] Define required `production.txt` metadata:
+- [x] Define required `production.md` metadata:
 
 ```text
 // script_format: quince-production-v1
@@ -58,10 +58,10 @@ The implementation must support two workflows:
 ## Milestone 2: Production Id Lifecycle
 
 - [ ] Update `planning/specs/production_script_ids.md` to explicitly describe draft and locked phases.
-- [ ] Specify that draft `production.txt` may be regenerated from `play.txt`.
-- [ ] Specify that locked `production.txt` is the canonical source for downstream build commands.
+- [ ] Specify that draft `production.md` may be regenerated from `play.txt`.
+- [ ] Specify that locked `production.md` is the canonical source for downstream build commands.
 - [ ] Specify that Playbook and Recording Request generation should require locked ids unless a deliberate diagnostic flag is provided.
-- [ ] Specify CLI behavior for attempts to overwrite locked `production.txt`.
+- [ ] Specify CLI behavior for attempts to overwrite locked `production.md`.
 - [ ] Decide command names and options:
 
 ```text
@@ -71,18 +71,18 @@ The implementation must support two workflows:
 ./main production-script reconcile
 ```
 
-- [ ] Decide whether `./main text` should read `production.txt` automatically when locked, or require an explicit source selection.
+- [ ] Decide whether `./main text` should read `production.md` automatically when locked, or require an explicit source selection.
 
 ## Milestone 3: Parser Support
 
 - [ ] Add comment stripping for line-leading `//` comments.
 - [ ] Add metadata header parsing before script paragraph parsing.
 - [ ] Add strict metadata validation.
-- [ ] Add production id prefix parsing for `production.txt`.
-- [ ] Add parsing for line-oriented production entries: `[@HEADING]:`, `[@DESCRIPTION]:`, `[@DIRECTION]:`, `[ROLE]:`, and `[ROLE, ROLE]:`.
+- [ ] Add production id prefix parsing for `production.md`.
+- [ ] Add parsing for line-oriented production entries: Markdown headings, `@description:`, `@direction:`, `ROLE:`, and `ROLE, ROLE:`.
 - [ ] Accept uppercase alphabetic/alphanumeric structural components in production ids.
 - [ ] Reject lowercase structural components.
-- [ ] Reject missing production ids in `production.txt`.
+- [ ] Reject missing production ids in `production.md`.
 - [ ] Reject production ids in `play.txt`, unless the spec explicitly allows them later.
 - [ ] Reject multiline production entries.
 - [ ] Preserve source locations in diagnostics using `paths.display_location()`.
@@ -90,13 +90,13 @@ The implementation must support two workflows:
 
 ## Milestone 4: Production Script Generation
 
-- [ ] Add a service class that converts parsed `play.txt` into `production.txt`.
+- [ ] Add a service class that converts parsed `play.txt` into `production.md`.
 - [ ] Generate deterministic ids for headings, descriptions, top-level directions, role blocks, inline direction subunits, and spoken subunits.
 - [ ] Preserve director-chosen structural labels such as `P`, `E`, `I`, `II`, and `INT` when generating from source headings where possible.
 - [ ] Generate a metadata header with `production_ids: draft`.
 - [ ] Generate one physical production line per addressable script unit.
 - [ ] Keep generated text editor-friendly even when source formatting is paragraph-oriented.
-- [ ] Refuse to overwrite `production.txt` when it is locked unless the caller passes an explicit force option.
+- [ ] Refuse to overwrite `production.md` when it is locked unless the caller passes an explicit force option.
 - [ ] Add tests for deterministic output from a fixed `play.txt` fixture.
 - [ ] Add tests for repeated draft regeneration.
 - [ ] Add tests for locked overwrite failure.
@@ -141,10 +141,10 @@ The implementation must support two workflows:
 
 ## Acceptance Criteria
 
-- [ ] A show runner can edit `play.txt`, run a command, and get a draft `production.txt`.
-- [ ] A show runner can regenerate draft `production.txt` repeatedly while `production_ids: draft`.
-- [ ] Stager refuses to overwrite locked `production.txt` without an explicit force/reconcile command.
-- [ ] Every addressable production-script paragraph has a production id.
+- [ ] A show runner can edit `play.txt`, run a command, and get a draft `production.md`.
+- [ ] A show runner can regenerate draft `production.md` repeatedly while `production_ids: draft`.
+- [ ] Stager refuses to overwrite locked `production.md` without an explicit force/reconcile command.
+- [ ] Every addressable production-script line has a production id.
 - [ ] Every recordable or direction subunit has a derived production sub-id.
 - [ ] Playbook manifests use production ids as canonical script-unit `id` values.
 - [ ] Recording Requests and recording packages use production ids as canonical recording item `id` values.

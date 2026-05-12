@@ -16,7 +16,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - [stager/playbook_usage.md](stager/playbook_usage.md): Current Stager CLI usage, output layout, tests, and dependencies for Playbook export.
 - [stager/cue_start_offsets.md](stager/cue_start_offsets.md): Plan for Stager-generated cue-start offsets so Cuemaster can trim long cues near word boundaries.
-- [stager/production_ids.md](stager/production_ids.md): Resumable implementation plan for `production.txt`, production ids, lock state, and manifest integration.
+- [stager/production_ids.md](stager/production_ids.md): Resumable implementation plan for `production.md`, production ids, lock state, and manifest integration.
 - Future Stager docs belong in `planning/stager/`.
 
 ## LineRecorder
@@ -44,7 +44,7 @@ Specs define file contracts shared by two or more Quince tools.
 - [specs/cue_window_presets.json](specs/cue_window_presets.json): Machine-readable source of truth for shared Cuemaster cue-length presets and Stager cue-start-offset windows.
 - [specs/recording_package_manifest.md](specs/recording_package_manifest.md): Authoritative Recording Request and recording package contracts shared by Stager, LineRecorder, and future Cuemaster workflows.
 - [specs/production_script_ids.md](specs/production_script_ids.md): Shared permanent production-script identifier strategy for Stager, LineRecorder, and Cuemaster.
-- [specs/script_text_format.md](specs/script_text_format.md): Source of truth for source script formats, `production.txt`, comments, and script metadata.
+- [specs/script_text_format.md](specs/script_text_format.md): Source of truth for source script formats, `production.md`, comments, and script metadata.
 
 ## Decisions
 
