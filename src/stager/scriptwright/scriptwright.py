@@ -8,6 +8,8 @@ import re
 
 from stager.domain.block import Block, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
+from stager.scriptwright.production_script import ProductionEntry, ProductionEntryKind, ProductionScript
+from stager.scriptwright.production_script_parser import ProductionScriptParser
 from stager.shared import paths
 from stager.text.play_text_parser import PlayTextParser
 
@@ -19,6 +21,23 @@ class ScriptWright:
     """Create locked `production.md` from supported source script formats."""
 
     paths_config: paths.PathConfig
+
+    def write_locked(self, force: bool = False) -> Path:
+        output_path = self.paths_config.production_markdown
+        if output_path.exists():
+            production = ProductionScriptParser(output_path).parse_path()
+            if production.locked and not force:
+                raise RuntimeError(
+                    f"Refusing to overwrite locked production script: {paths.display_path(output_path)}"
+                )
+            text = self.render_from_play_text() if production.locked else self.render_locked_production(production)
+        else:
+            text = self.render_from_play_text()
+
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(text, encoding="utf-8")
+        logger.info("Wrote locked production script %s", paths.display_path(output_path))
+        return output_path
 
     def render_from_play_text(self) -> str:
         play = PlayTextParser(paths_config=self.paths_config).parse()
@@ -35,6 +54,17 @@ class ScriptWright:
         output_path.write_text(self.render_from_play_text(), encoding="utf-8")
         logger.info("Wrote locked production script %s", paths.display_path(output_path))
         return output_path
+
+    def render_locked_production(self, production: ProductionScript) -> str:
+        lines = [
+            "// script_format: quince-production-v1",
+            "// source_kind: production",
+            "// production_ids: locked",
+            "",
+        ]
+        for production_id, entry in self._assign_ids(production.entries):
+            lines.append(self._render_production_entry(production_id, entry))
+        return "\n".join(lines) + "\n"
 
     def render_play(self, play: Play) -> str:
         structure_ids = self._structure_ids(play)
@@ -83,6 +113,66 @@ class ScriptWright:
             return f"{production_id} {speakers}: {self._clean_text(block.text)}"
 
         raise RuntimeError(f"Unsupported block type for production output: {type(block).__name__}")
+
+    def _assign_ids(self, entries: tuple[ProductionEntry, ...]) -> list[tuple[str, ProductionEntry]]:
+        current_structure: str | None = None
+        line_counters: dict[str, int] = {}
+        assigned: list[tuple[str, ProductionEntry]] = []
+        for entry in entries:
+            if entry.kind == ProductionEntryKind.HEADING:
+                current_structure = self._structure_id_for_heading(entry.text, current_structure)
+                line_counters.setdefault(current_structure, 0)
+                assigned.append((f"{current_structure}-0", entry))
+                continue
+            if current_structure is None:
+                current_structure = "0"
+            line_counters[current_structure] = line_counters.get(current_structure, 0) + 1
+            assigned.append((f"{current_structure}-{line_counters[current_structure]}", entry))
+        return assigned
+
+    def _structure_id_for_heading(self, heading: str, current_structure: str | None) -> str:
+        normalized = heading.strip().upper()
+        if "PROLOGUE" in normalized:
+            return "P"
+        if "EPILOGUE" in normalized:
+            return "E"
+
+        act_match = re.search(r"\bACT\s+([IVXLCDM]+|[0-9]+)\b", normalized)
+        if act_match:
+            return act_match.group(1)
+
+        scene_match = re.search(r"\bSCENE\s+([IVXLCDM]+|[0-9]+)\b", normalized)
+        if scene_match and current_structure is not None:
+            return f"{current_structure}.{self._scene_component(scene_match.group(1))}"
+
+        return current_structure or "1"
+
+    def _scene_component(self, raw_component: str) -> str:
+        if raw_component.isdigit():
+            return raw_component
+        roman_values = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+        total = 0
+        previous = 0
+        for char in reversed(raw_component):
+            value = roman_values[char]
+            if value < previous:
+                total -= value
+            else:
+                total += value
+                previous = value
+        return str(total)
+
+    def _render_production_entry(self, production_id: str, entry: ProductionEntry) -> str:
+        if entry.kind == ProductionEntryKind.HEADING:
+            level = entry.heading_level or 1
+            return f"{'#' * level} {production_id} {entry.text}"
+        if entry.kind == ProductionEntryKind.DESCRIPTION:
+            return f"{production_id} @description: {self._clean_text(entry.text)}"
+        if entry.kind == ProductionEntryKind.DIRECTION:
+            return f"{production_id} @direction: {self._clean_text(entry.text)}"
+        if entry.kind == ProductionEntryKind.ROLE:
+            return f"{production_id} {', '.join(entry.roles)}: {self._clean_text(entry.text)}"
+        raise RuntimeError(f"Unsupported production entry kind: {entry.kind}")
 
     def _production_id(self, block: Block, structure_ids: dict[int | None, str]) -> str:
         structure_id = structure_ids.get(block.block_id.part_id)

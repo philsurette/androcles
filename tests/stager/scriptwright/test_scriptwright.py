@@ -71,6 +71,37 @@ Stand fast.
         ScriptWright(paths_config=cfg).write_from_play_text()
 
 
+def test_write_locked_locks_draft_production_markdown(tmp_path):
+    cfg = _path_config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: draft
+
+# ACT I
+## SCENE I
+@description: A dusty Roman road.
+CAPTAIN: I will go (_draws sword_) if I must.
+CAPTAIN, MEGAERA: Together.
+""",
+        encoding="utf-8",
+    )
+
+    output_path = ScriptWright(paths_config=cfg).write_locked()
+
+    assert output_path == cfg.production_markdown
+    assert cfg.production_markdown.read_text(encoding="utf-8") == """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+## I.1-0 SCENE I
+I.1-1 @description: A dusty Roman road.
+I.1-2 CAPTAIN: I will go (_draws sword_) if I must.
+I.1-3 CAPTAIN, MEGAERA: Together.
+"""
+
+
 def test_androcles_play_text_is_ingestable():
     cfg = PathConfig("androcles")
 

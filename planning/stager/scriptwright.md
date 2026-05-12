@@ -35,21 +35,21 @@ Output:
 - [x] Add CLI entrypoints under `./main scriptwright ...`.
 - [x] Add `generate`, `lock`, `status`, and `reconcile` command stubs or decide narrower MVP command names before implementation.
 - [x] Use `paths.PathConfig` dependency injection.
-- [ ] Use `paths.display_path()` and `paths.display_location()` in diagnostics.
+- [x] Use `paths.display_path()` and `paths.display_location()` in diagnostics.
 
 ## Milestone 2: Production Markdown Parser
 
-- [ ] Parse metadata comments from draft and locked `production.md`.
-- [ ] Parse line-leading `//` comments.
-- [ ] Parse Markdown headings with optional/provisional ids.
-- [ ] Parse `@description:` and `@direction:` entries.
-- [ ] Parse role entries such as `CAPTAIN: text`.
-- [ ] Parse simultaneous role entries such as `CAPTAIN, MEGAERA: text`.
-- [ ] Parse inline directions using `(_` and `_)`.
+- [x] Parse metadata comments from draft and locked `production.md`.
+- [x] Parse line-leading `//` comments.
+- [x] Parse Markdown headings with optional/provisional ids.
+- [x] Parse `@description:` and `@direction:` entries.
+- [x] Parse role entries such as `CAPTAIN: text`.
+- [x] Parse simultaneous role entries such as `CAPTAIN, MEGAERA: text`.
+- [x] Parse inline directions using `(_` and `_)`.
 - [ ] Reject multiline script entries.
-- [ ] Reject malformed metadata.
-- [ ] Reject unclosed or nested inline directions.
-- [ ] Add focused parser tests.
+- [x] Reject malformed metadata.
+- [x] Reject unclosed or nested inline directions.
+- [x] Add focused parser tests.
 
 ## Milestone 3: Current play.txt Import
 
@@ -87,7 +87,7 @@ Output:
 ## Acceptance Criteria
 
 - [x] `./main scriptwright ...` can convert current-format `play.txt` to locked `production.md`.
-- [ ] `./main scriptwright ...` can convert idless draft `production.md` to locked `production.md`.
+- [x] `./main scriptwright ...` can convert idless draft `production.md` to locked `production.md`.
 - [x] Locked output contains stable production ids on every addressable line.
 - [x] Locked output uses `production_ids: locked`.
 - [x] Existing locked output is not overwritten accidentally.

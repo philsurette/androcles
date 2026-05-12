@@ -119,7 +119,7 @@ def scriptwright_lock(
     """Create locked production.md from the current play.txt source."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    output_path = ScriptWright(paths_config=cfg).write_from_play_text(force=force)
+    output_path = ScriptWright(paths_config=cfg).write_locked(force=force)
     typer.echo(f"Wrote {paths.display_path(output_path)}")
 
 
