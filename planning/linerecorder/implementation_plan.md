@@ -62,7 +62,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Allow partial export, but mark it incomplete.
 - [x] Export only the current accepted take for each segment by default.
 - [x] Add browser tests for complete and partial exports.
-- [ ] Add storage-quota and export-failure recovery tests where practical.
+- [x] Add storage-quota and export-failure recovery tests where practical.
 
 ## Phase 4: Stager Recording Package Import
 

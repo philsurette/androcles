@@ -6,7 +6,7 @@ import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
 import { nextProgress, previousProgress, selectedProgressIndex } from "../domain/recordingNavigation";
 import type { RecordingTake } from "../domain/take";
-import { exportRoleRecordings } from "../package/exportRoleRecordings";
+import { exportRoleRecordings, RoleRecordingsExportError } from "../package/exportRoleRecordings";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
 import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
@@ -85,8 +85,8 @@ export function App() {
           ? `Exported complete role recordings package with ${exportedCount} recordings.`
           : `Exported partial role recordings package with ${exportedCount} recordings; ${missingCount} still missing.`
       );
-    } catch {
-      setStatus("Unable to export role recordings.");
+    } catch (error) {
+      setStatus(error instanceof RoleRecordingsExportError ? error.message : "Unable to export role recordings.");
     } finally {
       setIsExporting(false);
     }

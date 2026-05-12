@@ -9,11 +9,23 @@ export type RoleRecordingsExport = {
   fileName: string;
 };
 
+export class RoleRecordingsExportError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "RoleRecordingsExportError";
+  }
+}
+
+export type RoleRecordingsZipGenerator = {
+  file(path: string, data: Blob | string): void;
+  generate(): Promise<Blob>;
+};
+
 export async function exportRoleRecordings(
   project: RecordingProjectRecord,
-  acceptedTakes: RecordingTake[]
+  acceptedTakes: RecordingTake[],
+  zipGenerator: RoleRecordingsZipGenerator = new JsZipRoleRecordingsZipGenerator()
 ): Promise<RoleRecordingsExport> {
-  const zip = new JSZip();
   const acceptedBySegmentId = new Map(acceptedTakes.map((take) => [take.segmentId, take]));
   const recordings = [];
   const missingSegmentIds = [];
@@ -25,7 +37,7 @@ export async function exportRoleRecordings(
       continue;
     }
 
-    zip.file(item.outputPath, take.blob);
+    zipGenerator.file(item.outputPath, take.blob);
     recordings.push({
       line_id: item.lineId,
       block_id: item.blockId,
@@ -56,12 +68,32 @@ export async function exportRoleRecordings(
     missing_segment_ids: missingSegmentIds
   };
 
-  zip.file("manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
-  const blob = await zip.generateAsync({ type: "blob", mimeType: "application/zip" });
+  zipGenerator.file("manifest.json", `${JSON.stringify(manifest, null, 2)}\n`);
+  let blob: Blob;
+  try {
+    blob = await zipGenerator.generate();
+  } catch (error) {
+    throw new RoleRecordingsExportError(
+      "Unable to create the recordings package. Browser storage may be full; remove old takes or export fewer recordings.",
+      { cause: error }
+    );
+  }
 
   return {
     blob,
     manifest,
     fileName: `${project.request.role.id}.role-recordings.zip`
   };
+}
+
+class JsZipRoleRecordingsZipGenerator implements RoleRecordingsZipGenerator {
+  private readonly zip = new JSZip();
+
+  file(path: string, data: Blob | string): void {
+    this.zip.file(path, data);
+  }
+
+  generate(): Promise<Blob> {
+    return this.zip.generateAsync({ type: "blob", mimeType: "application/zip" });
+  }
 }

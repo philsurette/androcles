@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import type { RecordingTake } from "../../src/domain/take";
-import { exportRoleRecordings } from "../../src/package/exportRoleRecordings";
+import { exportRoleRecordings, RoleRecordingsExportError, type RoleRecordingsZipGenerator } from "../../src/package/exportRoleRecordings";
 import type { RecordingProjectRecord } from "../../src/storage/db";
 
 describe("exportRoleRecordings", () => {
@@ -34,7 +34,20 @@ describe("exportRoleRecordings", () => {
     expect(result.manifest.complete).toBe(true);
     expect(result.manifest.missing_segment_ids).toEqual([]);
   });
+
+  it("reports package generation failures with an export-specific error", async () => {
+    await expect(exportRoleRecordings(projectFixture(), [takeFixture("0_12_1")], failingZipGenerator())).rejects.toThrow(
+      RoleRecordingsExportError
+    );
+  });
 });
+
+function failingZipGenerator(): RoleRecordingsZipGenerator {
+  return {
+    file: () => undefined,
+    generate: () => Promise.reject(new DOMException("Quota exceeded", "QuotaExceededError"))
+  };
+}
 
 function projectFixture(): RecordingProjectRecord {
   return {
