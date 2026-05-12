@@ -155,9 +155,10 @@ button:focus-visible,
 
 .summary-panel {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(320px, 2fr);
-  gap: 24px;
-  align-items: start;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(360px, 2fr) auto;
+  gap: 16px 24px;
+  align-items: center;
+  padding: 16px 20px;
 }
 
 .summary-panel dl {
@@ -168,8 +169,12 @@ button:focus-visible,
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  grid-column: 1 / -1;
+  grid-column: auto;
   justify-content: flex-end;
+}
+
+.summary-actions button {
+  min-height: 42px;
 }
 
 .notes {
@@ -182,6 +187,43 @@ button:focus-visible,
   grid-template-columns: minmax(160px, 0.75fr) minmax(360px, 2fr);
   gap: 16px 24px;
   align-items: end;
+  padding: 18px 20px;
+}
+
+.microphone-panel.compact {
+  grid-template-columns: auto minmax(220px, 1fr) auto;
+  gap: 12px 16px;
+  align-items: center;
+  padding: 12px 16px;
+}
+
+.microphone-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.microphone-panel.compact .microphone-heading {
+  min-width: 210px;
+}
+
+.microphone-panel.compact .microphone-heading .eyebrow {
+  margin-bottom: 2px;
+}
+
+.microphone-panel.compact .microphone-heading h2 {
+  font-size: 1.15rem;
+}
+
+.microphone-compact-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.microphone-panel.compact button {
+  min-height: 40px;
+  padding: 0 16px;
 }
 
 .microphone-controls {
@@ -215,6 +257,10 @@ select {
   grid-template-columns: minmax(160px, 1fr) auto;
   gap: 12px;
   align-items: center;
+}
+
+.microphone-panel.compact .meter-row {
+  grid-column: auto;
 }
 
 .meter {
@@ -420,6 +466,7 @@ button:disabled {
 
   .summary-panel,
   .microphone-panel,
+  .microphone-panel.compact,
   .recording-workspace {
     grid-template-columns: 1fr;
   }
@@ -436,5 +483,9 @@ button:disabled {
   .summary-panel dl,
   .item-metadata {
     grid-template-columns: 1fr;
+  }
+
+  .summary-actions {
+    justify-content: flex-start;
   }
 }

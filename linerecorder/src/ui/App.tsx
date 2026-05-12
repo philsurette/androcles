@@ -292,6 +292,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   const [reading, setReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
   const [status, setStatus] = useState("Microphone not started.");
   const [isActive, setIsActive] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     return () => {
@@ -319,6 +320,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
       await session.start(selectedDeviceId, mode);
       onReady({ deviceId: selectedDeviceId, mode });
       setIsActive(true);
+      setIsExpanded(false);
     } catch (error) {
       const message =
         error instanceof MicrophonePermissionError ? error.message : "Unable to start microphone setup.";
@@ -332,61 +334,77 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
     sessionRef.current = null;
     onReady(null);
     setIsActive(false);
+    setIsExpanded(true);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
   }
 
   return (
-    <section className="microphone-panel" aria-label="Microphone setup">
-      <div>
-        <p className="eyebrow">Microphone</p>
-        <h2>Setup</h2>
+    <section className={isExpanded ? "microphone-panel" : "microphone-panel compact"} aria-label="Microphone setup">
+      <div className="microphone-heading">
+        <div>
+          <p className="eyebrow">Microphone</p>
+          <h2>{isActive ? "Ready" : "Setup"}</h2>
+        </div>
+        {!isExpanded ? (
+          <button type="button" className="secondary" onClick={() => setIsExpanded(true)}>
+            Mic Settings
+          </button>
+        ) : null}
       </div>
-      <div className="microphone-controls">
-        <label>
-          Input
-          <select
-            value={selectedDeviceId}
-            disabled={isActive}
-            onFocus={() => void refreshDevices()}
-            onChange={(event) => setSelectedDeviceId(event.target.value)}
-          >
-            {devices.length === 0 ? <option value="">Default microphone</option> : null}
-            {devices.map((device) => (
-              <option key={device.deviceId} value={device.deviceId}>
-                {device.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          Mode
-          <select
-            value={mode}
-            disabled={isActive}
-            onChange={(event) => setMode(event.target.value as MicrophoneMode)}
-          >
-            <option value="clean">Clean room</option>
-            <option value="noisy">Noisy room</option>
-          </select>
-        </label>
-        {isActive ? (
+      {isExpanded ? (
+        <div className="microphone-controls">
+          <label>
+            Input
+            <select
+              value={selectedDeviceId}
+              disabled={isActive}
+              onFocus={() => void refreshDevices()}
+              onChange={(event) => setSelectedDeviceId(event.target.value)}
+            >
+              {devices.length === 0 ? <option value="">Default microphone</option> : null}
+              {devices.map((device) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Mode
+            <select
+              value={mode}
+              disabled={isActive}
+              onChange={(event) => setMode(event.target.value as MicrophoneMode)}
+            >
+              <option value="clean">Clean room</option>
+              <option value="noisy">Noisy room</option>
+            </select>
+          </label>
+          {isActive ? (
+            <button type="button" className="secondary" onClick={stopMicrophone}>
+              Stop Mic
+            </button>
+          ) : (
+            <button type="button" onClick={() => void startMicrophone()}>
+              Start Setup
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="microphone-compact-actions">
           <button type="button" className="secondary" onClick={stopMicrophone}>
             Stop Mic
           </button>
-        ) : (
-          <button type="button" onClick={() => void startMicrophone()}>
-            Start Setup
-          </button>
-        )}
-      </div>
+        </div>
+      )}
       <div className="meter-row">
         <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
           <span style={{ width: `${meterFillPercentForLevel(reading.energy, reading.level)}%` }} />
         </div>
         <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
       </div>
-      <p className="microphone-status">{status}</p>
+      {isExpanded ? <p className="microphone-status">{status}</p> : null}
     </section>
   );
 }
