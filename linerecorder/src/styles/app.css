@@ -553,6 +553,9 @@ select {
   flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
+  color: var(--muted);
+  font-style: italic;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -612,12 +615,17 @@ select {
 .line-panel {
   display: grid;
   gap: 18px;
+  min-height: 0;
   background: #fffdf6;
 }
 
-.line-panel p:last-child {
-  font-size: 1.6rem;
+.line-text {
+  max-height: min(24vh, 14rem);
+  overflow: auto;
+  padding-right: 6px;
+  font-size: 1.75rem;
   font-weight: 800;
+  line-height: 1.35;
 }
 
 .stage-directions-panel ul {

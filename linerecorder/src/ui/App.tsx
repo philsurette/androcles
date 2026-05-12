@@ -574,7 +574,7 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
 
       <section className="line-panel" aria-label="Line to record">
         <p className="eyebrow">Your Line</p>
-        <p>{item.displayText}</p>
+        <p className="line-text">{item.displayText}</p>
         <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
       </section>
 
