@@ -1,0 +1,103 @@
+import JSZip from "jszip";
+import { describe, expect, it } from "vitest";
+import type { RecordingTake } from "../../src/domain/take";
+import { exportRoleRecordings } from "../../src/package/exportRoleRecordings";
+import type { RecordingProjectRecord } from "../../src/storage/db";
+
+describe("exportRoleRecordings", () => {
+  it("exports accepted recordings at their declared output paths", async () => {
+    const result = await exportRoleRecordings(projectFixture(), [takeFixture("0_12_1")]);
+    const zip = await JSZip.loadAsync(result.blob);
+    const manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
+
+    expect(result.fileName).toBe("CENTURION.role-recordings.zip");
+    expect(manifest).toMatchObject({
+      package_type: "role_recordings",
+      complete: false,
+      recordings: [
+        {
+          line_id: "0_12_CENTURION",
+          block_id: "0.12",
+          segment_id: "0_12_1",
+          audio_path: "audio/segments/CENTURION/0_12_1.wav",
+          status: "accepted"
+        }
+      ],
+      missing_segment_ids: ["0_14_1"]
+    });
+    await expect(zip.file("audio/segments/CENTURION/0_12_1.wav")!.async("string")).resolves.toBe("fake wav");
+  });
+
+  it("marks the export complete when every requested segment has an accepted take", async () => {
+    const result = await exportRoleRecordings(projectFixture(), [takeFixture("0_12_1"), takeFixture("0_14_1")]);
+
+    expect(result.manifest.complete).toBe(true);
+    expect(result.manifest.missing_segment_ids).toEqual([]);
+  });
+});
+
+function projectFixture(): RecordingProjectRecord {
+  return {
+    id: "androcles:CENTURION",
+    importedAt: "2026-05-11T12:00:00Z",
+    request: {
+      schemaVersion: 1,
+      packageType: "recording_request",
+      request: {
+        id: "androcles-CENTURION-full-2026-05-10",
+        kind: "full_role",
+        createdAt: "2026-05-10T14:00:00Z",
+        createdBy: "stager"
+      },
+      play: {
+        id: "androcles",
+        title: "Androcles and the Lion"
+      },
+      role: {
+        id: "CENTURION",
+        displayName: "Centurion"
+      },
+      recording: {
+        preferredSampleRateHz: 48000,
+        preferredChannels: 1,
+        sourceFormat: "wav"
+      },
+      items: [
+        {
+          lineId: "0_12_CENTURION",
+          blockId: "0.12",
+          segmentId: "0_12_1",
+          sequence: 1,
+          displayText: "Halt!",
+          segmentText: "Halt!",
+          outputPath: "audio/segments/CENTURION/0_12_1.wav",
+          stageDirections: []
+        },
+        {
+          lineId: "0_14_CENTURION",
+          blockId: "0.14",
+          segmentId: "0_14_1",
+          sequence: 2,
+          displayText: "Stand aside.",
+          segmentText: "Stand aside.",
+          outputPath: "audio/segments/CENTURION/0_14_1.wav",
+          stageDirections: []
+        }
+      ]
+    }
+  };
+}
+
+function takeFixture(segmentId: string): RecordingTake {
+  return {
+    id: `take-${segmentId}`,
+    projectId: "androcles:CENTURION",
+    segmentId,
+    status: "accepted",
+    recordedAt: "2026-05-11T12:00:00Z",
+    durationMs: 1000.4,
+    sampleRateHz: 48000,
+    channels: 1,
+    blob: new Blob(["fake wav"], { type: "audio/wav" })
+  };
+}

@@ -52,3 +52,32 @@ export type RecordingRequestItemManifest = {
   target_hesitation_ms?: number;
   simultaneous?: boolean;
 };
+
+export type RoleRecordingsManifest = {
+  schema_version: 1;
+  package_type: "role_recordings";
+  complete: boolean;
+  play: {
+    id: string;
+    title: string;
+    version?: string;
+  };
+  role: {
+    id: string;
+    display_name: string;
+  };
+  recordings: RoleRecordingManifestItem[];
+  missing_segment_ids: string[];
+};
+
+export type RoleRecordingManifestItem = {
+  line_id: string;
+  block_id: string;
+  segment_id: string;
+  audio_path: string;
+  recorded_at: string;
+  duration_ms: number;
+  sample_rate_hz: number;
+  channels: number;
+  status: "accepted";
+};

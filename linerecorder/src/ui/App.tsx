@@ -5,6 +5,7 @@ import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
 import type { RecordingTake } from "../domain/take";
+import { exportRoleRecordings } from "../package/exportRoleRecordings";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
 import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
@@ -17,6 +18,7 @@ export function App() {
   const [acceptedSegmentIds, setAcceptedSegmentIds] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState("Import a Stager Recording Request to begin.");
   const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     void loadProjects();
@@ -68,6 +70,27 @@ export function App() {
     }
   }
 
+  async function exportProject(project: RecordingProjectRecord): Promise<void> {
+    setIsExporting(true);
+    setStatus("Exporting role recordings...");
+    try {
+      const acceptedTakes = await takeRepository.acceptedForProject(project.id);
+      const exported = await exportRoleRecordings(project, acceptedTakes);
+      downloadBlob(exported.blob, exported.fileName);
+      const exportedCount = exported.manifest.recordings.length;
+      const missingCount = exported.manifest.missing_segment_ids.length;
+      setStatus(
+        exported.manifest.complete
+          ? `Exported complete role recordings package with ${exportedCount} recordings.`
+          : `Exported partial role recordings package with ${exportedCount} recordings; ${missingCount} still missing.`
+      );
+    } catch {
+      setStatus("Unable to export role recordings.");
+    } finally {
+      setIsExporting(false);
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="toolbar">
@@ -95,6 +118,8 @@ export function App() {
           acceptedSegmentIds={acceptedSegmentIds}
           onSelectItem={(item) => void selectItem(selectedProject, item)}
           onAccepted={() => loadAcceptedSegments(selectedProject.id)}
+          onExport={() => void exportProject(selectedProject)}
+          isExporting={isExporting}
         />
       ) : (
         <ProjectLibrary projects={projects} onOpenProject={(project) => void openProject(project)} />
@@ -173,9 +198,11 @@ type ProjectDetailProps = {
   acceptedSegmentIds: Set<string>;
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
+  onExport: () => void;
+  isExporting: boolean;
 };
 
-function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }: ProjectDetailProps) {
+function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted, onExport, isExporting }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
   const progress = recordingItemProgress(project.request.items, acceptedSegmentIds);
   const selectedItem =
@@ -185,7 +212,7 @@ function ProjectDetail({ project, acceptedSegmentIds, onSelectItem, onAccepted }
 
   return (
     <section className="project-detail" aria-label="Recording Request detail">
-      <ProjectSummary project={project} progress={progress} />
+      <ProjectSummary project={project} progress={progress} onExport={onExport} isExporting={isExporting} />
       <MicrophoneSetup onReady={setMicrophoneConfig} />
       <div className="recording-workspace">
         <ItemList progress={progress} selectedSegmentId={selectedItem?.item.segmentId} onSelectItem={onSelectItem} />
@@ -321,9 +348,11 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
 type ProjectSummaryProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress[];
+  onExport: () => void;
+  isExporting: boolean;
 };
 
-function ProjectSummary({ project, progress }: ProjectSummaryProps) {
+function ProjectSummary({ project, progress, onExport, isExporting }: ProjectSummaryProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   return (
     <article className="summary-panel">
@@ -347,6 +376,11 @@ function ProjectSummary({ project, progress }: ProjectSummaryProps) {
           <dd>{project.request.recording.sourceFormat.toUpperCase()}</dd>
         </div>
       </dl>
+      <div className="summary-actions">
+        <button type="button" disabled={acceptedCount === 0 || isExporting} onClick={onExport}>
+          {isExporting ? "Exporting..." : "Export Recordings"}
+        </button>
+      </div>
       {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
     </article>
   );
@@ -712,4 +746,15 @@ function sameContext(
     return false;
   }
   return firstSpeaker === secondSpeaker && firstText.trim() === secondText.trim();
+}
+
+function downloadBlob(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
