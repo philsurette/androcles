@@ -15,6 +15,7 @@ from stager.shared import paths
 from stager.audio.announcer_splitter import AnnouncerSplitter
 from stager.cli.build import run_audioplay, run_playbook, run_text, run_write_announcer
 from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
+from stager.scriptwright import ScriptWright
 
 
 def _config(tmp_path: Path, build_type: str = "custom") -> paths.PathConfig:
@@ -41,6 +42,7 @@ def _config(tmp_path: Path, build_type: str = "custom") -> paths.PathConfig:
         + "\n",
         encoding="utf-8",
     )
+    ScriptWright(paths_config=cfg).write_locked()
     return cfg
 
 

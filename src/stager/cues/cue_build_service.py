@@ -4,8 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from stager.cues.cue_builder import CueBuilder
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared.paths import PathConfig
-from stager.text.play_text_parser import PlayTextParser
 
 
 @dataclass
@@ -23,7 +23,7 @@ class CueBuildService:
         include_prompts: bool = True,
         callout_spacing_ms: int = 300,
     ) -> None:
-        play = PlayTextParser(paths_config=self.paths).parse()
+        play = ProductionPlayLoader(paths_config=self.paths).load()
         builder = CueBuilder(
             play,
             paths=self.paths,

@@ -27,7 +27,7 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 - [x] Validate required metadata.
 - [x] Validate every addressable script line has a production id.
 - [x] Parse headings, descriptions, directions, role lines, simultaneous lines, and inline directions.
-- [ ] Preserve source locations for diagnostics.
+- [x] Preserve source locations for diagnostics.
 - [x] Add parser/loader tests with valid and invalid locked `production.md`.
 
 ## Milestone 2: Model Adapter
@@ -40,10 +40,10 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 
 ## Milestone 3: CLI Source Selection
 
-- [ ] Update normal build commands to load locked `production.md`.
-- [ ] Reject missing `production.md` with a diagnostic directing users to ScriptWright.
-- [ ] Reject `production_ids: draft` for normal builds.
-- [ ] Avoid silent fallback to `play.txt`.
+- [x] Update normal build commands to load locked `production.md`.
+- [x] Reject missing `production.md` with a diagnostic directing users to ScriptWright.
+- [x] Reject `production_ids: draft` for normal builds.
+- [x] Avoid silent fallback to `play.txt`.
 - [ ] Decide whether any diagnostic/dev command may still accept `play.txt` explicitly.
 - [ ] Add CLI tests for missing, draft, and locked sources.
 
@@ -51,9 +51,9 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 
 - [x] Verify `./main text` from locked `production.md`.
 - [x] Verify role markdown generation from locked `production.md`.
-- [ ] Verify segment planning from locked `production.md`.
+- [x] Verify segment planning from locked `production.md`.
 - [ ] Verify audiobook/audioplay generation still works or explicitly document any temporary unsupported command.
-- [ ] Verify Playbook generation still works with current manifest shape before production-id adoption.
+- [x] Verify Playbook generation still works with current manifest shape before production-id adoption.
 - [ ] Add regression tests around generated text artifacts.
 
 ## Milestone 5: Cleanup

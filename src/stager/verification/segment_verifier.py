@@ -13,7 +13,7 @@ from pydub import AudioSegment
 from stager.shared import paths
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.domain.play import Play
-from stager.text.play_text_parser import PlayTextParser
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.domain.segment import MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
 from stager.domain.block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
 from stager.audiobook.clip import Clip, CalloutClip, ParallelClips, Silence
@@ -61,7 +61,7 @@ class SegmentVerifier:
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser(paths_config=self.paths).parse()
+            self.play = ProductionPlayLoader(paths_config=self.paths).load()
         self._build_plan_start_map()
         self._load_offsets()
 
@@ -331,7 +331,7 @@ class SegmentVerifier:
 
 
 if __name__ == "__main__":
-    play = PlayTextParser().parse()
+    play = ProductionPlayLoader(paths_config=paths.current()).load()
     builder = PlayPlanBuilder(play=play)
     plan = builder.build_audio_plan(parts=builder.list_parts())
     SegmentVerifier(plan=plan).verify_segments()
@@ -351,7 +351,7 @@ def compute_rows(
         paths_config: paths.PathConfig | None = None,
     ) -> List[Dict]:
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = ProductionPlayLoader(paths_config=cfg).load()
     from callout_director import (
         ConversationAwareCalloutDirector,
         RoleCalloutDirector,

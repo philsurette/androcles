@@ -7,7 +7,7 @@ from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.play_splitter import PlaySplitter
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.paths import PathConfig
-from stager.text.play_text_parser import PlayTextParser
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 
 
 @dataclass
@@ -35,7 +35,7 @@ class SegmentBuildService:
             explicit_build_type=build_type,
         ).resolve()
         AudacityRecordingExporter(paths=self.paths).export_recordings(force=force, role=role)
-        play = PlayTextParser(paths_config=self.paths).parse()
+        play = ProductionPlayLoader(paths_config=self.paths).load()
         splitter = PlaySplitter(
             play=play,
             paths=self.paths,

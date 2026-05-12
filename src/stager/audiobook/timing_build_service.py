@@ -4,9 +4,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from stager.audiobook.timings_xlsx import generate_xlsx
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.paths import PathConfig
-from stager.text.play_text_parser import PlayTextParser
 
 
 @dataclass
@@ -30,7 +30,7 @@ class TimingBuildService:
             librivox_override=librivox,
         ).resolve()
         effective_librivox = effective_build_type == "librivox"
-        play = PlayTextParser(paths_config=self.paths).parse()
+        play = ProductionPlayLoader(paths_config=self.paths).load()
         part_ids = [p.part_no for p in play.parts if p.part_no is not None]
         if effective_librivox and len(part_ids) > 1:
             for part_no in part_ids:

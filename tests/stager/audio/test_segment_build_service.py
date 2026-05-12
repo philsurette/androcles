@@ -33,11 +33,11 @@ def test_build_passes_force_and_role_to_audacity_exporter(tmp_path: Path, monkey
         def resolve(self):
             return "custom"
 
-    class FakeParser:
+    class FakeProductionPlayLoader:
         def __init__(self, **kwargs):
             pass
 
-        def parse(self):
+        def load(self):
             return object()
 
     class FakePlaySplitter:
@@ -49,7 +49,7 @@ def test_build_passes_force_and_role_to_audacity_exporter(tmp_path: Path, monkey
 
     monkeypatch.setattr(segment_build_service, "AudacityRecordingExporter", FakeExporter)
     monkeypatch.setattr(segment_build_service, "BuildTypeResolver", FakeBuildTypeResolver)
-    monkeypatch.setattr(segment_build_service, "PlayTextParser", FakeParser)
+    monkeypatch.setattr(segment_build_service, "ProductionPlayLoader", FakeProductionPlayLoader)
     monkeypatch.setattr(segment_build_service, "PlaySplitter", FakePlaySplitter)
 
     SegmentBuildService(paths=_config(tmp_path)).build(role="DOYLE", force=True)

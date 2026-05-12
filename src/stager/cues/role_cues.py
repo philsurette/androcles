@@ -10,7 +10,7 @@ import logging
 from stager.shared import paths
 from stager.domain.play import Play
 from stager.domain.block import RoleBlock
-from stager.text.play_text_parser import PlayTextParser
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.domain.segment import DirectionSegment, SpeechSegment
 
 
@@ -21,7 +21,7 @@ class RoleCues:
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser(paths_config=self.paths or paths.current()).parse()
+            self.play = ProductionPlayLoader(paths_config=self.paths or paths.current()).load()
         if self.paths is None:
             self.paths = paths.current()
 

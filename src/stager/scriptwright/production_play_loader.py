@@ -26,6 +26,12 @@ class ProductionPlayLoader:
     paths_config: paths.PathConfig
 
     def load(self) -> Play:
+        if not self.paths_config.production_markdown.exists():
+            raise RuntimeError(
+                "Missing locked production script "
+                f"{paths.display_path(self.paths_config.production_markdown)}; "
+                "run './main scriptwright lock' first."
+            )
         production = ProductionScriptParser(self.paths_config.production_markdown).parse_path()
         if not production.locked:
             raise RuntimeError(
@@ -42,8 +48,8 @@ class ProductionPlayLoader:
 
         for entry in production.entries:
             if entry.kind == ProductionEntryKind.HEADING:
-                current_part = next_part_no
-                next_part_no += 1
+                current_part = self._part_no_for_heading(entry, next_part_no)
+                next_part_no = max(next_part_no, current_part + 1)
                 block = self._title_block(entry, current_part)
                 block_counters[current_part] = 0
             else:
@@ -55,6 +61,33 @@ class ProductionPlayLoader:
 
         play.rebuild_parts_index()
         return play
+
+    def _part_no_for_heading(self, entry: ProductionEntry, fallback: int) -> int:
+        if entry.production_id is None:
+            return fallback
+        structural_id = entry.production_id.split("-", 1)[0]
+        top_level = structural_id.split(".", 1)[0]
+        if top_level == "P":
+            return 0
+        if top_level.isdigit():
+            return int(top_level)
+        roman_value = self._roman_to_int(top_level)
+        return roman_value if roman_value is not None else fallback
+
+    def _roman_to_int(self, raw_value: str) -> int | None:
+        roman_values = {"I": 1, "V": 5, "X": 10, "L": 50, "C": 100, "D": 500, "M": 1000}
+        if any(char not in roman_values for char in raw_value):
+            return None
+        total = 0
+        previous = 0
+        for char in reversed(raw_value):
+            value = roman_values[char]
+            if value < previous:
+                total -= value
+            else:
+                total += value
+                previous = value
+        return total
 
     def _title_block(self, entry: ProductionEntry, part_no: int) -> TitleBlock:
         block_id = BlockId(part_no, 0)

@@ -43,7 +43,7 @@ I-4 CAPTAIN, MEGAERA: Together.
     assert isinstance(play.blocks[2], DirectionBlock)
     assert isinstance(play.blocks[3], RoleBlock)
     assert isinstance(play.blocks[4], RoleBlock)
-    assert play.blocks[3].block_id == BlockId(0, 3)
+    assert play.blocks[3].block_id == BlockId(1, 3)
     assert [segment.__class__ for segment in play.blocks[3].segments] == [
         SpeechSegment,
         DirectionSegment,
@@ -53,13 +53,13 @@ I-4 CAPTAIN, MEGAERA: Together.
     assert play.getRole("CAPTAIN") is not None
     assert play.getRole("MEGAERA") is not None
     assert play.to_index_entries() == [
-        (0, 0, "_NARRATOR"),
-        (0, 1, "_NARRATOR"),
-        (0, 2, "_NARRATOR"),
-        (0, 3, "_NARRATOR"),
-        (0, 3, "CAPTAIN"),
-        (0, 4, "CAPTAIN"),
-        (0, 4, "MEGAERA"),
+        (1, 0, "_NARRATOR"),
+        (1, 1, "_NARRATOR"),
+        (1, 2, "_NARRATOR"),
+        (1, 3, "_NARRATOR"),
+        (1, 3, "CAPTAIN"),
+        (1, 4, "CAPTAIN"),
+        (1, 4, "MEGAERA"),
     ]
 
 
@@ -77,6 +77,13 @@ CAPTAIN: I will go.
     )
 
     with pytest.raises(RuntimeError, match="Stager requires locked production script"):
+        ProductionPlayLoader(paths_config=cfg).load()
+
+
+def test_load_rejects_missing_production_markdown(tmp_path):
+    cfg = _path_config(tmp_path)
+
+    with pytest.raises(RuntimeError, match="run './main scriptwright lock' first"):
         ProductionPlayLoader(paths_config=cfg).load()
 
 

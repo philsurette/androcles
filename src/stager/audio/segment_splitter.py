@@ -11,7 +11,7 @@ from abc import ABC, abstractmethod
 
 from stager.audio.audio_splitter import AudioSplitter
 from stager.domain.play import Play
-from stager.text.play_text_parser import PlayTextParser
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths
 
 
@@ -32,7 +32,7 @@ class SegmentSplitter(ABC):
 
     def __post_init__(self) -> None:
         if self.play is None:
-            self.play = PlayTextParser(paths_config=self.paths).parse()
+            self.play = ProductionPlayLoader(paths_config=self.paths).load()
         # Sync splitter thresholds
         self.splitter.min_silence_ms = self.min_silence_ms
         self.splitter.silence_thresh = self.silence_thresh

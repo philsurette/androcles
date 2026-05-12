@@ -15,13 +15,12 @@ from stager.verification.recording_checker import RecordingChecker
 from stager.audiobook.audio_play_build_service import AudioPlayBuildService
 from stager.audiobook.timing_build_service import TimingBuildService
 from stager.domain.play import Play, Part
-from stager.text.play_text_parser import PlayTextParser
 from stager.text.text_artifact_builder import TextArtifactBuilder
 from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
-from stager.scriptwright import ScriptWright
+from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
@@ -111,6 +110,10 @@ def setup_logging(paths_config: paths.PathConfig) -> None:
         logger.propagate = False
 
 
+def load_production_play(paths_config: paths.PathConfig) -> Play:
+    return ProductionPlayLoader(paths_config=paths_config).load()
+
+
 @scriptwright_app.command("lock")
 def scriptwright_lock(
     force: bool = typer.Option(False, "--force/--no-force", help="Overwrite an existing locked production.md"),
@@ -192,7 +195,7 @@ def segments(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if role:
-        play_obj = PlayTextParser(paths_config=cfg).parse()
+        play_obj = load_production_play(cfg)
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
         if role not in valid_roles:
             raise typer.BadParameter(f"Unknown role: {role}")
@@ -224,7 +227,7 @@ def verify(
 
 def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: paths.PathConfig | None = None) -> None:
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = load_production_play(cfg)
     builder = PlayPlanBuilder(play=play, paths=cfg)
     plan = builder.build_audio_plan()
     verifier = SegmentVerifier(plan=plan, too_short=too_short, too_long=too_long, play=play, paths=cfg)
@@ -346,7 +349,7 @@ def verify_audio(
         raise typer.BadParameter(
             f"Unknown summary format: {summary_format}. Choose from {', '.join(sorted(SUMMARY_FORMATS))}."
         )
-    play_obj = PlayTextParser(paths_config=cfg).parse()
+    play_obj = load_production_play(cfg)
     valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
     roles_to_verify = [role] if role else sorted(valid_roles)
     if recording and len(roles_to_verify) > 1:
@@ -673,7 +676,7 @@ def audioplay(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     if target:
-        play_obj = PlayTextParser(paths_config=cfg).parse()
+        play_obj = load_production_play(cfg)
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
         if target not in valid_roles:
             if _is_segment_id(target):
@@ -855,7 +858,7 @@ def run_write_cues(paths_config: paths.PathConfig | None = None):
     from stager.cues.narration_cues import NarrationCues
 
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = load_production_play(cfg)
     RoleCues(play, paths=cfg).write()
     NarrationCues(play, paths=cfg).write()
 
@@ -989,7 +992,7 @@ def run_playbook(
         paths_config=cfg,
         explicit_build_type=build_type,
     ).resolve()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = load_production_play(cfg)
     builder = PlaybookBuilder(
         play=play,
         paths=cfg,
@@ -1007,7 +1010,7 @@ def run_recording_request(
     paths_config: paths.PathConfig | None = None,
 ) -> Path:
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = load_production_play(cfg)
     valid_roles = {candidate.name for candidate in play.roles if not candidate.meta and not candidate.name.startswith("_")}
     if role not in valid_roles:
         raise typer.BadParameter(f"Unknown rehearsable role: {role}")
@@ -1028,7 +1031,7 @@ def run_recording_import(
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
-    play = PlayTextParser(paths_config=cfg).parse()
+    play = load_production_play(cfg)
     return RoleRecordingsImporter(paths=cfg, play=play).import_package(package_path)
 
 

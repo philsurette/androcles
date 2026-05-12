@@ -10,8 +10,8 @@ from pathlib import Path
 from typing import Dict, List
 
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths
-from stager.text.play_text_parser import PlayTextParser
 from stager.verification.segment_verifier import SegmentVerifier
 
 logger = logging.getLogger(__name__)
@@ -61,7 +61,7 @@ class RecordingChecker:
     too_long: float = 2.0
 
     def summarize(self) -> List[str]:
-        play = PlayTextParser(paths_config=self.paths).parse()
+        play = ProductionPlayLoader(paths_config=self.paths).load()
         builder = PlayPlanBuilder(play=play, paths=self.paths)
         plan = builder.build_audio_plan()
         rows = SegmentVerifier(

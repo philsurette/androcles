@@ -8,10 +8,10 @@ from stager.audio.segment_build_service import SegmentBuildService
 from stager.audiobook.play_builder import PlayBuilder
 from stager.domain.play import Play
 from stager.loudnorm.normalizer import Normalizer
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths as path_display
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.paths import PathConfig
-from stager.text.play_text_parser import PlayTextParser
 from stager.text.text_artifact_builder import TextArtifactBuilder
 
 
@@ -48,7 +48,7 @@ class AudioPlayBuildService:
             logger.info("Preparing text artifacts and split segments before audioplay")
             TextArtifactBuilder(paths=self.paths).build_all(line_no_prefix=True, build_type=effective_build_type)
             SegmentBuildService(paths=self.paths).build(build_type=effective_build_type)
-        play: Play = PlayTextParser(paths_config=self.paths).parse()
+        play: Play = ProductionPlayLoader(paths_config=self.paths).load()
         if part is None:
             part_no = None
         else:

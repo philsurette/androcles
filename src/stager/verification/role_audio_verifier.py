@@ -12,9 +12,9 @@ from faster_whisper import WhisperModel
 from rapidfuzz import fuzz
 
 from stager.shared import paths
+from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.domain.block import RoleBlock, TitleBlock, DescriptionBlock, DirectionBlock
 from stager.domain.play import Play
-from stager.text.play_text_parser import PlayTextParser
 from stager.domain.segment import SpeechSegment, SimultaneousSegment, DirectionSegment
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.inline_text_differ import InlineTextDiffer
@@ -86,7 +86,7 @@ class RoleAudioVerifier:
         self._punct_re = re.compile(r"[^\w\s]+")
         self._space_re = re.compile(r"\s+")
         if self.play is None:
-            self.play = PlayTextParser(paths_config=self.paths).parse()
+            self.play = ProductionPlayLoader(paths_config=self.paths).load()
         if self.whisper_store is None:
             self.whisper_store = WhisperModelStore(
                 paths=self.paths,
