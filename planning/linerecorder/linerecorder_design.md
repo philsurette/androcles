@@ -4,7 +4,7 @@
 
 LineRecorder is the actor-facing recording tool in the Quince production system.
 
-It helps actors record clean, line-by-line audio for their assigned role without using Audacity, manual silence gaps, or file-renaming workflows. Stager prepares a role-specific Recording Request; LineRecorder guides the actor through each user-facing line while preserving Stager `segment_id` identity; the actor records, reviews, accepts, retries, and later exports a package of recordings that can be imported back into Stager.
+It helps actors record clean, line-by-line audio for their assigned role without using Audacity, manual silence gaps, or file-renaming workflows. Stager prepares a role-specific Recording Request; LineRecorder guides the actor through each user-facing line using the production segment id as the stable item identity, while preserving Stager `segment_id` values for audio file placement; the actor records, reviews, accepts, retries, and later exports a package of recordings that can be imported back into Stager.
 
 LineRecorder is not intended to be a full audio editor or a studio production tool. Its purpose is to make role recording simple, reliable, and segment-aware while keeping the UI actor-friendly.
 
@@ -37,7 +37,8 @@ Stager is the source of truth for the script and for the mapping between:
 
 - role IDs,
 - block IDs,
-- segment IDs,
+- production segment IDs,
+- parser/audio segment IDs,
 - expected audio filenames,
 - Playbook manifest data.
 
@@ -60,7 +61,7 @@ Cuemaster consumes finished Playbooks and helps actors rehearse. Cuemaster may l
 - **No required server.** The Quince production system must work without server infrastructure, accounts, cloud sync, or hosted production services.
 - **File-based handoff.** Stager, LineRecorder, and Cuemaster exchange local files such as zips, manifests, and audio assets.
 - **Browser first, Capacitor later.** LineRecorder is built as a browser web app first. A Capacitor wrapper may be added later, but the core workflow must not depend on it.
-- **Segment-aware recording.** The actor sees lines, but LineRecorder knows exactly which Stager segment ID each recording belongs to.
+- **Segment-aware recording.** The actor sees lines identified by production segment ids, and LineRecorder also preserves the Stager parser/audio segment id needed for file placement.
 - **Easy re-recording.** Actors can replace individual segment recordings as their interpretation changes.
 - **Simple audio expectations.** The goal is useful rehearsal audio, not studio mastering.
 - **No GPL-family dependencies.** The shipped app must avoid GPL, LGPL, AGPL, SSPL, BUSL, unclear-license, and unlicensed dependencies.
@@ -166,7 +167,7 @@ Optional hosted/server workflows may be considered in the future, but they must 
 
 Stager exports a role-specific Recording Request for each actor or role. The authoritative contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
-A Recording Request is a zip archive with a root `manifest.json`. The manifest contains enough information for LineRecorder to present actor-facing lines and produce correctly named segment recordings. Each recording item maps to a Stager `segment_id`; if a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context.
+A Recording Request is a zip archive with a root `manifest.json`. The manifest contains enough information for LineRecorder to present actor-facing lines and produce correctly named segment recordings. Each recording item has a production segment `id` for user-facing identity and a Stager `segment_id` for audio file placement; if a displayed source line contains multiple speakable segments, Stager should export multiple recording items with shared context.
 
 Stager now emits first-class Playbook `sections` for Cuemaster. Recording Requests should use the same parsed play structure for section and scene context so LineRecorder navigation matches Cuemaster rehearsal navigation. Recording Requests do not need Playbook cue-start offsets or MP3 asset metadata; LineRecorder's source recording output remains WAV for Stager import.
 
@@ -178,7 +179,7 @@ Recording Requests are work orders. A request may ask for every segment for a ro
 
 LineRecorder exports a recording package that Stager can import. The authoritative contract is [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 
-The output manifest lets Stager validate completeness, match recordings to Stager segment IDs, and avoid relying on file order. LineRecorder may export partial packages, but the package must explicitly report missing segment IDs so Stager does not treat partial input as complete Playbook-ready audio.
+The output manifest lets Stager validate completeness, match recordings by production segment id and content hash, place audio by Stager `segment_id`, and avoid relying on file order. LineRecorder may export partial packages, but the package must explicitly report missing production segment ids so Stager does not treat partial input as complete Playbook-ready audio.
 
 ---
 
@@ -436,7 +437,7 @@ Displays:
 
 - play title,
 - role name,
-- current line number,
+- current production id,
 - scene/act context if available,
 - cue text if available,
 - stage directions if available,
@@ -481,7 +482,7 @@ Displays:
 - warnings,
 - export role recordings zip.
 
-MVP should allow export even if some recording items are missing, but the package should clearly report missing segment IDs in the manifest.
+MVP should allow export even if some recording items are missing, but the package should clearly report missing production segment ids in the manifest.
 
 ---
 
@@ -565,7 +566,7 @@ When Stager imports a LineRecorder package, it should validate:
 - play ID matches,
 - play version if required,
 - role ID matches,
-- segment IDs exist,
+- production segment ids and parser/audio segment ids exist,
 - required audio files are present,
 - audio files are readable,
 - durations are plausible,
@@ -677,8 +678,8 @@ LineRecorder MVP is complete when:
 - [x] The user can jump back and re-record an accepted line.
 - [x] Accepted recordings persist locally after reload.
 - [x] The user can export a recording package as a zip.
-- [x] Exported audio files are named according to Stager segment IDs.
-- [x] Exported manifest maps recordings to segment IDs and preserves actor-facing line IDs where useful.
+- [x] Exported audio files are named according to Stager parser/audio segment IDs.
+- [x] Exported manifest maps recordings to production segment ids, preserves parent line ids and content hashes, and carries parser/audio segment ids for file placement.
 - [x] Stager can import and validate the package.
 - [x] No server is required.
 - [x] No GPL-family runtime dependency is included.

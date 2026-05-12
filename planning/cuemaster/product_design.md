@@ -871,7 +871,7 @@ The main rehearsal screen. It must be glanceable: large text, high contrast, min
 
 Display:
 
-- Current position: scene / line number within role.
+- Current position: scene / production id within role.
 - Cue text: shown in muted style.
 - Actor's line text: hidden by default; revealed on demand.
 

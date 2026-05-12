@@ -71,10 +71,10 @@ Adopt production ids and content hashes across Stager manifests, Cuemaster, and 
 
 ## Milestone 6: Documentation And Fixtures
 
-- [ ] Update manifest examples to production ids.
-- [ ] Update user-facing docs to explain production ids.
-- [ ] Update Androcles fixtures to include locked `production.md`.
-- [ ] Remove planning language that suggests dual ids or legacy id migration.
+- [x] Update manifest examples to production ids.
+- [x] Update user-facing docs to explain production ids.
+- [x] Update Androcles fixtures to include locked `production.md`.
+- [x] Remove planning language that suggests dual ids or legacy id migration.
 
 ## Acceptance Criteria
 

@@ -1,6 +1,6 @@
 # LineRecorder
 
-LineRecorder is the actor-facing Quince recording app. It imports Stager Recording Requests, records accepted WAV takes by `segment_id`, and exports role recording packages for Stager import.
+LineRecorder is the actor-facing Quince recording app. It imports Stager Recording Requests, records accepted WAV takes by production segment id, and exports role recording packages for Stager import. Parser/audio `segment_id` values are preserved in manifests for Stager file placement, but they are not the actor-facing item identity.
 
 The app is browser-first and local-only. It is scaffolded as a sibling of `cuemaster/` so both apps can share proven architecture before any shared package is introduced.
 

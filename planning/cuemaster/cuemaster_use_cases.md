@@ -659,7 +659,7 @@ Delivery
 **Example history:**
 
 ```text
-Line 0_5_MEGAERA
+I-5
 
 Attempt 1
   Pickup: 1.8s

@@ -28,7 +28,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Add Stager dataclasses for Recording Request manifest records under `src/stager/linerecorder/`.
 - [x] Export role-specific Recording Requests from parsed `Play` data.
 - [x] Support `full_role` requests first, with manifest fields that also support later `selected_segments` and `rerecord` requests.
-- [x] Use actor-facing `line_id` for UI display and Stager `segment_id` for audio identity.
+- [x] Use production segment `id` for UI display and local recording item identity; preserve Stager `segment_id` for audio file placement.
 - [x] Emit one recording item per speakable role segment.
 - [x] If one displayed source line contains multiple speakable segments, emit multiple recording items with shared display context.
 - [x] Include cue text, previous/next local context, stage directions, part/scene context, item reason, and expected `output_path` when available.
@@ -46,7 +46,7 @@ The plan is still directionally correct. Recent Stager and Cuemaster work makes 
 - [x] Implement local import of `recording_request` zip files.
 - [x] Validate manifest shape and reject unsupported `schema_version`.
 - [x] Store imported projects and accepted takes in IndexedDB, likely through Dexie for consistency with Cuemaster.
-- [x] Show actor-facing line list backed by `segment_id`.
+- [x] Show actor-facing line list backed by production segment `id`.
 - [x] Implement microphone setup with explicit device selection, browser permission handling, and input meter.
 - [x] Keep microphone access and metering behind a small platform/domain boundary that can later be shared with Cuemaster timing and voice-command work.
 - [x] Prototype AudioWorklet WAV capture in desktop Chrome and Safari.
