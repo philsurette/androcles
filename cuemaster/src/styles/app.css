@@ -286,9 +286,8 @@ button:disabled {
   margin: 0;
 }
 
-.cue-strip .cue-card p:last-child {
+.cue-strip .cue-card .cue-text-clip {
   overflow: hidden;
-  text-overflow: clip;
   white-space: nowrap;
 }
 
