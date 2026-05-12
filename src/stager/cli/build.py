@@ -21,6 +21,7 @@ from stager.loudnorm.normalizer import Normalizer
 from stager.cues.cue_build_service import CueBuildService
 from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.scriptwright import ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RoleRecordingsImporter
 from stager.verification.segment_verifier import SegmentVerifier
@@ -57,8 +58,14 @@ whisper_app = typer.Typer(
     help="Whisper transcription tools",
     pretty_exceptions_enable=False,
 )
+scriptwright_app = typer.Typer(
+    add_completion=False,
+    help="Convert source scripts into locked production.md",
+    pretty_exceptions_enable=False,
+)
 app.add_typer(text_app, name="text", rich_help_panel="build")
 app.add_typer(whisper_app, name="whisper", rich_help_panel="utility")
+app.add_typer(scriptwright_app, name="scriptwright", rich_help_panel="build")
 PLAY_OPTION = typer.Option(
     None,
     "--play",
@@ -102,6 +109,18 @@ def setup_logging(paths_config: paths.PathConfig) -> None:
         logger = logging.getLogger(logger_name)
         logger.setLevel(logging.ERROR)
         logger.propagate = False
+
+
+@scriptwright_app.command("lock")
+def scriptwright_lock(
+    force: bool = typer.Option(False, "--force/--no-force", help="Overwrite an existing locked production.md"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Create locked production.md from the current play.txt source."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    output_path = ScriptWright(paths_config=cfg).write_from_play_text(force=force)
+    typer.echo(f"Wrote {paths.display_path(output_path)}")
 
 
 @app.callback(invoke_without_command=True)

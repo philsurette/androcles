@@ -30,11 +30,11 @@ Output:
 
 ## Milestone 1: Package And CLI Boundary
 
-- [ ] Create `src/stager/scriptwright/`.
-- [ ] Add a ScriptWright service class.
-- [ ] Add CLI entrypoints under `./main scriptwright ...`.
-- [ ] Add `generate`, `lock`, `status`, and `reconcile` command stubs or decide narrower MVP command names before implementation.
-- [ ] Use `paths.PathConfig` dependency injection.
+- [x] Create `src/stager/scriptwright/`.
+- [x] Add a ScriptWright service class.
+- [x] Add CLI entrypoints under `./main scriptwright ...`.
+- [x] Add `generate`, `lock`, `status`, and `reconcile` command stubs or decide narrower MVP command names before implementation.
+- [x] Use `paths.PathConfig` dependency injection.
 - [ ] Use `paths.display_path()` and `paths.display_location()` in diagnostics.
 
 ## Milestone 2: Production Markdown Parser
@@ -53,30 +53,30 @@ Output:
 
 ## Milestone 3: Current play.txt Import
 
-- [ ] Wrap the existing paragraph-oriented `play.txt` parser as a ScriptWright source format.
-- [ ] Convert current `Part`, block, role, description, direction, and simultaneous-line semantics into the production model.
+- [x] Wrap the existing paragraph-oriented `play.txt` parser as a ScriptWright source format.
+- [x] Convert current `Part`, block, role, description, direction, and simultaneous-line semantics into the production model.
 - [ ] Preserve existing role ids and metadata where possible.
-- [ ] Add tests using small current-format fixtures.
-- [ ] Add one integration fixture based on Androcles source text.
+- [x] Add tests using small current-format fixtures.
+- [x] Add one integration fixture based on Androcles source text.
 
 ## Milestone 4: Id Assignment
 
-- [ ] Generate deterministic structural ids for headings.
-- [ ] Generate deterministic line ids for headings, descriptions, directions, and role lines.
+- [x] Generate deterministic structural ids for headings.
+- [x] Generate deterministic line ids for headings, descriptions, directions, and role lines.
 - [ ] Generate sub-line ids for spoken segments and inline directions.
 - [ ] Support uppercase structural labels such as `P`, `E`, `I`, `II`, and `INT`.
 - [ ] Reject lowercase structural components in locked output.
-- [ ] Preserve director-chosen structural labels when source headings make them clear.
+- [x] Preserve director-chosen structural labels when source headings make them clear.
 - [ ] Add tests for id generation, duplicate detection, inserted-line shapes, and roman/prologue/epilogue labels.
 
 ## Milestone 5: Locked Output
 
-- [ ] Emit `production.md` using the canonical Markdown-friendly grammar.
-- [ ] Emit required metadata with `production_ids: locked`.
-- [ ] Emit one physical line per addressable script unit.
+- [x] Emit `production.md` using the canonical Markdown-friendly grammar.
+- [x] Emit required metadata with `production_ids: locked`.
+- [x] Emit one physical line per addressable script unit.
 - [ ] Preserve comments from draft `production.md` where practical.
-- [ ] Refuse to overwrite locked `production.md` without explicit force.
-- [ ] Add tests for deterministic output and overwrite behavior.
+- [x] Refuse to overwrite locked `production.md` without explicit force.
+- [x] Add tests for deterministic output and overwrite behavior.
 
 ## Milestone 6: Reconcile Placeholder
 
@@ -86,10 +86,9 @@ Output:
 
 ## Acceptance Criteria
 
-- [ ] `./main scriptwright ...` can convert current-format `play.txt` to locked `production.md`.
+- [x] `./main scriptwright ...` can convert current-format `play.txt` to locked `production.md`.
 - [ ] `./main scriptwright ...` can convert idless draft `production.md` to locked `production.md`.
-- [ ] Locked output contains stable production ids on every addressable line.
-- [ ] Locked output uses `production_ids: locked`.
-- [ ] Existing locked output is not overwritten accidentally.
+- [x] Locked output contains stable production ids on every addressable line.
+- [x] Locked output uses `production_ids: locked`.
+- [x] Existing locked output is not overwritten accidentally.
 - [ ] Tests cover parsing, id assignment, output formatting, and overwrite protection.
-

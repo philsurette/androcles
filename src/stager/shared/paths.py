@@ -51,6 +51,7 @@ class PathConfig:
     def __post_init__(self) -> None:
         self.play_dir = self.plays_dir / self.play_name
         self.play_text = self.play_dir / "play.txt"
+        self.production_markdown = self.play_dir / "production.md"
         self.build_dir = self.build_root / self.play_name
         self.logs_dir = self.build_root / "logs"
         self.paragraphs_path = self.build_dir / "paragraphs.txt"
