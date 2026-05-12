@@ -503,28 +503,31 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
     <article className="item-detail">
-      <header>
-        <p className="eyebrow">{item.sectionTitle ?? "Recording Item"}</p>
+      <header className="item-detail-header">
         <div className="item-heading">
+          <span className="item-section">{item.sectionTitle ?? "Recording Item"}</span>
           <h2>Line {item.sequence}</h2>
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
-        </div>
-        <div className="line-navigation" aria-label="Line navigation">
+          <span className="line-navigation-spacer" />
           <button
             type="button"
-            className="secondary"
+            className="secondary icon-button"
             disabled={!previousItem}
+            aria-label="Previous line"
+            title="Previous line"
             onClick={() => previousItem && onNavigate(previousItem.item)}
           >
-            Previous
+            &larr;
           </button>
           <button
             type="button"
-            className="secondary"
+            className="secondary icon-button"
             disabled={!nextItem}
+            aria-label="Next line"
+            title="Next line"
             onClick={() => nextItem && onNavigate(nextItem.item)}
           >
-            Next
+            &rarr;
           </button>
         </div>
       </header>

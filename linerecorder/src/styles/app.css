@@ -393,18 +393,43 @@ select {
   gap: 14px;
 }
 
+.item-detail-header {
+  min-width: 0;
+}
+
 .item-heading {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
+  min-width: 0;
 }
 
-.line-navigation {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 12px;
+.item-section {
+  overflow: hidden;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.item-heading h2 {
+  flex: 0 0 auto;
+}
+
+.line-navigation-spacer {
+  margin-left: auto;
+}
+
+.icon-button {
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
 }
 
 .context-panel h3 {
