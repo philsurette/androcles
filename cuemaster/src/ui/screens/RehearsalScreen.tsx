@@ -793,8 +793,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         )}
 
         <div className="session-settings">
-          <label>
-            Section
+          <label className="section-jumper">
+            Jump to
             <select
               value={currentSectionId}
               disabled={sectionOptions.length === 0}

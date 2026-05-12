@@ -434,10 +434,10 @@ button:disabled {
 }
 
 .session-settings {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 1rem;
   align-items: center;
-  grid-template-columns: repeat(3, minmax(10rem, 1fr));
   margin-top: 1.25rem;
 }
 
@@ -450,6 +450,13 @@ button:disabled {
 
 .session-settings .check-setting {
   display: flex;
+  align-items: center;
+}
+
+.session-settings .section-jumper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   align-items: center;
 }
 
@@ -652,7 +659,7 @@ button:disabled {
 
 @media (max-width: 760px) {
   .session-settings {
-    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 
   .utility-tabs {
