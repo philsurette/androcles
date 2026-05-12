@@ -59,8 +59,8 @@ Implementation tasks:
 - [x] Keep the publish script from touching unrelated files such as `dayafter.html` and `otherlondon.html`.
 - [x] Add a dry-run mode that prints source and destination paths before copying.
 - [x] Add instructions for manually reviewing the sibling repo diff before committing the GitHub Pages update.
-- [ ] Verify the deployed paths locally with a static file server pointed at `../philsurette.github.io`.
-- [ ] Verify that app asset paths are relative and do not assume site root.
+- [x] Verify the deployed paths locally with a static file server pointed at `../philsurette.github.io`.
+- [x] Verify that app asset paths are relative and do not assume site root.
 
 Suggested command shape:
 
@@ -75,18 +75,18 @@ The script should fail if the sibling repo is missing, dirty in the target direc
 
 Goal: showrunners and actors have simple instructions.
 
-- [ ] Add an actor-facing LineRecorder quick start:
+- [x] Add an actor-facing LineRecorder quick start:
   - open app URL,
   - import Recording Request zip,
   - record lines,
   - export recording zip,
   - email/upload the zip.
-- [ ] Add an actor-facing Cuemaster quick start:
+- [x] Add an actor-facing Cuemaster quick start:
   - open app URL,
   - import Playbook zip,
   - choose role,
   - rehearse.
-- [ ] Add a showrunner Google Drive folder template:
+- [x] Add a showrunner Google Drive folder template:
 
   ```text
   01 Recording Requests/
@@ -95,37 +95,37 @@ Goal: showrunners and actors have simple instructions.
   04 Archive/
   ```
 
-- [ ] Add wording that Google Drive is shared storage, not a required backend.
-- [ ] Add troubleshooting notes for microphone permissions, browser downloads, storage quota, and stale Playbooks.
-- [ ] Add a "which file do I send?" table for Recording Requests, recording packages, and Playbooks.
+- [x] Add wording that Google Drive is shared storage, not a required backend.
+- [x] Add troubleshooting notes for microphone permissions, browser downloads, storage quota, and stale Playbooks.
+- [x] Add a "which file do I send?" table for Recording Requests, recording packages, and Playbooks.
 
 ## Milestone 5: Stager ffmpeg Checks
 
 Goal: packaged Stager gives clear feedback when audio prerequisites are missing.
 
-- [ ] Identify commands that require ffmpeg or ffprobe:
+- [x] Identify commands that require ffmpeg or ffprobe:
   - `segments`,
   - `cues`,
   - `audioplay`,
   - `playbook --audio-format mp3`,
   - audio verification commands that probe or transcode audio.
-- [ ] Add a small dependency-check service that uses `shutil.which("ffmpeg")` and `shutil.which("ffprobe")`.
-- [ ] Inject or call the check from command entry points that need those tools.
-- [ ] Keep commands that only parse text or write manifests from requiring ffmpeg.
-- [ ] Show platform-specific install guidance when the tools are missing.
-- [ ] Add tests that missing ffmpeg produces a clear exception or CLI diagnostic for audio commands.
-- [ ] Add tests that text-only commands do not require ffmpeg.
+- [x] Add a small dependency-check service that uses `shutil.which("ffmpeg")` and `shutil.which("ffprobe")`.
+- [x] Inject or call the check from command entry points that need those tools.
+- [x] Keep commands that only parse text or write manifests from requiring ffmpeg.
+- [x] Show platform-specific install guidance when the tools are missing.
+- [x] Add tests that missing ffmpeg produces a clear exception or CLI diagnostic for audio commands.
+- [x] Add tests that text-only commands do not require ffmpeg.
 
 ## Milestone 6: Stager Python Packaging
 
 Goal: make Stager installable without cloning the repository manually.
 
-- [ ] Add or complete `pyproject.toml` packaging metadata for the Stager CLI.
-- [ ] Expose a console script entry point such as `stager = stager.cli.build:main`.
-- [ ] Confirm package data needed at runtime is included.
+- [x] Add or complete `pyproject.toml` packaging metadata for the Stager CLI.
+- [x] Expose a console script entry point such as `stager = stager.cli.build:main`.
+- [x] Confirm package data needed at runtime is included.
 - [ ] Verify install into a fresh virtualenv.
-- [ ] Verify `pipx install` or equivalent local wheel install.
-- [ ] Add a smoke test that runs:
+- [x] Verify `pipx install` or equivalent local wheel install.
+- [x] Add a smoke test that runs:
 
   ```sh
   stager --help
@@ -133,7 +133,7 @@ Goal: make Stager installable without cloning the repository manually.
   stager playbook --help
   ```
 
-- [ ] Document install/update/uninstall steps for technical showrunners.
+- [x] Document install/update/uninstall steps for technical showrunners.
 
 ## Milestone 7: Standalone Stager Bundle
 

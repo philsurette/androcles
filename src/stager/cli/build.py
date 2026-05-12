@@ -49,6 +49,7 @@ from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.shared.build_type_resolver import BuildTypeResolver
+from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.progress_reporter import ProgressReporter
 from huggingface_hub.errors import LocalEntryNotFoundError
 
@@ -89,6 +90,7 @@ MODEL_NAME_MAP = {
     "small": "small.en",
     "med": "medium.en",
 }
+AUDIO_TOOL_CHECKER = ExternalToolChecker()
 SUMMARY_FORMATS = {"text", "yaml"}
 
 
@@ -149,6 +151,10 @@ def rich_progress() -> Progress:
         TimeElapsedColumn(),
         TimeRemainingColumn(),
     )
+
+
+def require_audio_tools() -> None:
+    AUDIO_TOOL_CHECKER.require_audio_tools()
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -274,6 +280,7 @@ def segments(
     """Split role recordings into segments using silence detection."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     if role:
         play_obj = load_production_play(cfg)
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
@@ -304,6 +311,7 @@ def verify(
     """Verify split segments against expected durations."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     _run_verify(too_short, too_long, paths_config=cfg)
 
 
@@ -341,6 +349,7 @@ def generate_timings(
     """Generate timings spreadsheets for the current play."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     run_generate_timings(
         librivox=librivox,
         segment_spacing_ms=segment_spacing_ms,
@@ -426,6 +435,7 @@ def verify_audio(
     """Transcribe and compare role audio to script text, outputting diffs."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     summary_key = summary_format.lower().strip()
     if summary_key not in SUMMARY_FORMATS:
         raise typer.BadParameter(
@@ -627,6 +637,7 @@ def whisper(
         return
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     model_key = model.lower().strip()
     if model_key not in MODEL_CHOICES:
         raise typer.BadParameter(f"Unknown model: {model}. Choose from {', '.join(MODEL_CHOICES)}.")
@@ -774,6 +785,7 @@ def audioplay(
                     target,
                 )
                 raise typer.Exit(code=1)
+    require_audio_tools()
     with rich_progress() as progress:
         run_audioplay(
             part=part,
@@ -810,6 +822,7 @@ def normalize(
     """
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     result = run_normalize(src)
     typer.echo(result.render())
 
@@ -826,6 +839,7 @@ def cues(
     """Generate cue audio snippets for roles."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    require_audio_tools()
     with rich_progress() as progress:
         run_cues(
             role=role,
@@ -847,6 +861,8 @@ def playbook(
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    if audio_format == "mp3":
+        require_audio_tools()
     with rich_progress() as progress:
         run_playbook(
             paths_config=cfg,
@@ -897,6 +913,8 @@ def recording_import(
     """Import a LineRecorder role recordings package into Stager segments."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    if denoise or trim_silence:
+        require_audio_tools()
     result = run_recording_import(
         package_path=package,
         denoise=denoise,

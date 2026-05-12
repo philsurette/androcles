@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+import sys
 
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.shared.paths import PathConfig
@@ -85,3 +86,11 @@ def test_export_recordings_role_limits_forced_export(tmp_path: Path) -> None:
     AudacityRecordingExporter(paths=cfg, audacity=audacity).export_recordings(force=True, role="DOYLE")
 
     assert audacity.exported == ["DOYLE"]
+
+
+def test_no_audacity_projects_do_not_require_audacity_ctl(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    cfg.recordings_dir.mkdir(parents=True)
+    monkeypatch.setitem(sys.modules, "audacity_ctl", None)
+
+    AudacityRecordingExporter(paths=cfg).export_recordings()

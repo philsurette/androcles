@@ -3,9 +3,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 from pathlib import Path
-
-from audacity_ctl.audacity import Audacity
-from audacity_ctl.project import AudacityProject
+from typing import Any
 
 from stager.shared import paths
 
@@ -16,14 +14,12 @@ class AudacityRecordingExporter:
 
     paths: paths.PathConfig = field(default_factory=paths.current)
     export_extension: str = "wav"
-    audacity: Audacity | None = None
+    audacity: Any | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
         self.export_extension = self.export_extension.lstrip(".")
-        if self.audacity is None:
-            self.audacity = Audacity()
 
     def export_recordings(self, *, force: bool = False, role: str | None = None) -> None:
         recordings_dir = self.paths.recordings_dir
@@ -39,7 +35,8 @@ class AudacityRecordingExporter:
             if not aup3_paths:
                 self._logger.info("No Audacity projects found in %s", paths.display_path(recordings_dir))
                 return
-            exportable_projects: list[AudacityProject] = []
+            Audacity, AudacityProject = self._load_audacity_types()
+            exportable_projects: list[Any] = []
             for aup3_path in aup3_paths:
                 project = AudacityProject(
                     path=aup3_path,
@@ -52,6 +49,8 @@ class AudacityRecordingExporter:
             if not exportable_projects:
                 self._logger.info("All exports are up to date")
                 return
+            if self.audacity is None:
+                self.audacity = Audacity()
             with self.audacity.open() as client:
                 for project in exportable_projects:
                     try:
@@ -80,6 +79,17 @@ class AudacityRecordingExporter:
         if role is None:
             return projects
         return [path for path in projects if path.stem == role]
+
+    def _load_audacity_types(self) -> tuple[Any, Any]:
+        try:
+            from audacity_ctl.audacity import Audacity
+            from audacity_ctl.project import AudacityProject
+        except ImportError as exc:
+            raise RuntimeError(
+                "Audacity export support requires audacity-ctl. Install Stager with Audacity support "
+                "or import LineRecorder recording packages instead."
+            ) from exc
+        return Audacity, AudacityProject
 
     def _log_summary(
         self,

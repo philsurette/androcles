@@ -10,6 +10,7 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 
 - [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
 - [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.
+- [deployment_quick_start.md](deployment_quick_start.md): Actor and showrunner quick-start guide for hosted LineRecorder, hosted Cuemaster, shared folders, and app publishing.
 - [deployment_implementation_plan.md](deployment_implementation_plan.md): Resumable implementation plan for browser downloads, GitHub Pages publishing, and Stager packaging.
 
 ## Stager
@@ -26,6 +27,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/scriptwright.md](stager/scriptwright.md): Resumable implementation plan for converting source scripts into locked `production.md`.
 - [stager/production_source_refactor.md](stager/production_source_refactor.md): Resumable implementation plan for making Stager consume locked `production.md`.
 - [stager/production_id_adoption.md](stager/production_id_adoption.md): Resumable implementation plan for adopting production ids across manifests, Cuemaster, and LineRecorder.
+- [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
 - Future Stager docs belong in `planning/stager/`.
 
 ## LineRecorder

@@ -53,6 +53,15 @@ def test_preset_file_contains_initial_timed_windows() -> None:
     assert timed_windows == [2000, 5000, 10000, 15000, 20000]
 
 
+def test_packaged_preset_file_matches_planning_source() -> None:
+    planning_path = Path("planning/specs/cue_window_presets.json")
+    package_path = Path("src/stager/playbook/cue_window_presets.json")
+
+    assert json.loads(package_path.read_text(encoding="utf-8")) == json.loads(
+        planning_path.read_text(encoding="utf-8")
+    )
+
+
 def test_short_audio_offsets_start_at_zero(tmp_path: Path) -> None:
     audio_path = tmp_path / "short.wav"
     _write_tone_with_silence(audio_path, duration_ms=2000)

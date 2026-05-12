@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=65.5", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quince-stager"
+version = "0.1.0"
+description = "Local-first CLI for preparing audio plays, Recording Requests, and Cuemaster Playbooks."
+requires-python = ">=3.11"
+dependencies = [
+  "audioop-lts; python_version >= '3.13'",
+  "breame",
+  "cmudict",
+  "diff-match-patch",
+  "faster-whisper",
+  "openpyxl",
+  "pydub",
+  "python-Levenshtein",
+  "rapidfuzz",
+  "regex",
+  "rich",
+  "ruamel.yaml",
+  "soundfile",
+  "typer",
+]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+stager = "stager.cli.build:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"stager.playbook" = ["cue_window_presets.json"]
