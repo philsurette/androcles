@@ -16,8 +16,12 @@ const audioAssetSchema = z.object({
     .optional()
 });
 
+const contentHashSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/);
+
 const directionSchema = z.object({
+  id: z.string().min(1),
   segment_id: z.string().min(1),
+  content_hash: contentHashSchema,
   text: z.string(),
   placement: z.enum(["top_level", "inline", "description"])
 });
@@ -32,6 +36,8 @@ const sectionSchema = z.object({
 
 const responseSegmentSchema = z.object({
   id: z.string().min(1),
+  segment_id: z.string().min(1),
+  content_hash: contentHashSchema,
   owners: z.array(z.string().min(1)).min(1),
   text: z.string(),
   audio: audioAssetSchema,
@@ -44,6 +50,7 @@ const lineSchema = z.object({
   block_id: z.string().min(1),
   role: z.string().min(1),
   speaker: z.string().min(1),
+  content_hash: contentHashSchema,
   cue: z.object({
     speaker: z.string().min(1),
     text: z.string(),
@@ -93,7 +100,8 @@ const manifestSchema = z.object({
       kind: z.enum(["heading", "description", "direction"]),
       speaker: z.literal("_NARRATOR"),
       text: z.string(),
-      audio: audioAssetSchema
+      audio: audioAssetSchema,
+      content_hash: contentHashSchema
     })
   ),
   roles: z.array(roleSchema),

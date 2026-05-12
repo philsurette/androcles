@@ -646,9 +646,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbook.title} / {role.displayName}
             </p>
           </div>
-          <p className="line-position">
-            Line {position.total === 0 ? 0 : position.index + 1} of {position.total}
-          </p>
+          <p className="line-position">{line ? line.id : "No lines"}</p>
         </header>
         {storageStatus ? (
           <p className="error" role="alert">
@@ -1031,6 +1029,7 @@ function ScriptBrowserPanel({
                 ref={line.id === currentLineId ? currentLineRef : undefined}
               >
                 <button type="button" className="secondary" onClick={() => onSelectLine(line.id)}>
+                  <strong>{line.id}</strong>
                   <span>{line.speaker}</span>
                   {includeDirections && line.directions.length > 0 ? (
                     <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
@@ -1160,7 +1159,7 @@ function TimingReviewSection({
           {attempts.map((attempt) => (
             <li key={attempt.id}>
               <button type="button" className="secondary" onClick={() => onSelectLine(attempt.lineId)}>
-                {linesById.get(attempt.lineId)?.responseText.slice(0, 80) ?? attempt.lineId}
+                {attempt.lineId} {linesById.get(attempt.lineId)?.responseText.slice(0, 80) ?? ""}
               </button>
             </li>
           ))}
@@ -1188,7 +1187,7 @@ function BookmarkReviewSection({
           {bookmarks.map((bookmark) => (
             <li key={bookmark.id}>
               <button type="button" className="secondary" onClick={() => onSelectLine(bookmark.lineId)}>
-                {linesById.get(bookmark.lineId)?.responseText.slice(0, 80) ?? bookmark.lineId}
+                {bookmark.lineId} {linesById.get(bookmark.lineId)?.responseText.slice(0, 80) ?? ""}
               </button>
             </li>
           ))}

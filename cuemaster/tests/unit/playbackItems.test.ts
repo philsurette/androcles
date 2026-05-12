@@ -21,11 +21,14 @@ const line: Line = {
   blockId: "0.1",
   role: "MEGAERA",
   speaker: "MEGAERA",
+  contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
   cue,
   responseText: "I won't go another step.",
   responseSegments: [
     {
       id: "segment",
+      segmentId: "0_1_1",
+      contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000002",
       owners: ["MEGAERA"],
       text: "I won't go another step.",
       audioPath: "audio/response.wav",

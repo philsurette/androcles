@@ -148,6 +148,7 @@ Context entries preserve script material that is not a rehearsable actor respons
   "kind": "description",
   "speaker": "_NARRATOR",
   "text": "Androcles and Megæra come along the path.",
+  "content_hash": "sha256:...",
   "audio": {
     "path": "audio/segments/_NARRATOR/0_4_1.wav",
     "duration_ms": 3600,
@@ -164,6 +165,7 @@ Context fields:
 - `kind`: `heading`, `description`, or `direction`.
 - `speaker`: `_NARRATOR` for schema version 1 context entries.
 - `text`: Display text. Headings should use the cleaned heading text, not raw source markers.
+- `content_hash`: Normalized content fingerprint for detecting changed context text behind a reused production id.
 - `audio`: Required narrator audio for the context segment.
 
 ## Role Payload

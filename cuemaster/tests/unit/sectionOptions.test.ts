@@ -52,6 +52,7 @@ function roleWithLines(lines: Array<{ id: string; partId: number | null }>): Rol
       blockId: "0.1",
       role: "MEGAERA",
       speaker: "MEGAERA",
+      contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
       cue: {
         speaker: "_NARRATOR",
         text: "Cue.",

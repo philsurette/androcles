@@ -2,6 +2,8 @@ import type { Cue } from "./cue";
 
 export type ResponseSegment = {
   id: string;
+  segmentId: string;
+  contentHash: string;
   owners: string[];
   text: string;
   audioPath: string;
@@ -14,7 +16,9 @@ export type LineTiming = {
 };
 
 export type StageDirection = {
+  id: string;
   segmentId: string;
+  contentHash: string;
   text: string;
   placement: "top_level" | "inline" | "description";
 };
@@ -25,6 +29,7 @@ export type Line = {
   blockId: string;
   role: string;
   speaker: string;
+  contentHash: string;
   cue: Cue;
   responseText: string;
   responseSegments: ResponseSegment[];

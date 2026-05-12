@@ -27,6 +27,7 @@
       "kind": "heading",
       "speaker": "_NARRATOR",
       "text": "PROLOGUE",
+      "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000001",
       "audio": {
         "path": "audio/segments/_NARRATOR/0_0_1.wav",
         "duration_ms": 1000,
@@ -43,11 +44,12 @@
       "parts": [0],
       "lines": [
         {
-          "id": "0_1_ANDROCLES",
+          "id": "I-1",
           "part_id": 0,
           "block_id": "0.1",
           "role": "ANDROCLES",
           "speaker": "ANDROCLES",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000011",
           "cue": {
             "speaker": "_NARRATOR",
             "text": "PROLOGUE",
@@ -61,7 +63,9 @@
             "text": "Not bloody likely.",
             "segments": [
               {
-                "id": "0_1_1",
+                "id": "I-1:s1",
+                "segment_id": "0_1_1",
+                "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000012",
                 "owners": ["ANDROCLES"],
                 "text": "Not bloody likely.",
                 "audio": {
@@ -79,11 +83,12 @@
           }
         },
         {
-          "id": "0_3_ANDROCLES",
+          "id": "I-3",
           "part_id": 0,
           "block_id": "0.3",
           "role": "ANDROCLES",
           "speaker": "ANDROCLES",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000031",
           "cue": {
             "speaker": "MEGAERA",
             "text": "You are always talking nonsense.",
@@ -97,7 +102,9 @@
             "text": "It is the best sense I can make of it.",
             "segments": [
               {
-                "id": "0_3_1",
+                "id": "I-3:s1",
+                "segment_id": "0_3_1",
+                "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000032",
                 "owners": ["ANDROCLES"],
                 "text": "It is the best sense I can make of it.",
                 "audio": {
@@ -121,11 +128,12 @@
       "parts": [0],
       "lines": [
         {
-          "id": "0_2_MEGAERA",
+          "id": "I-2",
           "part_id": 0,
           "block_id": "0.2",
           "role": "MEGAERA",
           "speaker": "MEGAERA",
+          "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000021",
           "cue": {
             "speaker": "ANDROCLES",
             "text": "Not bloody likely.",
@@ -139,7 +147,9 @@
             "text": "You are always talking nonsense.",
             "segments": [
               {
-                "id": "0_2_1",
+                "id": "I-2:s1",
+                "segment_id": "0_2_1",
+                "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000022",
                 "owners": ["MEGAERA"],
                 "text": "You are always talking nonsense.",
                 "audio": {

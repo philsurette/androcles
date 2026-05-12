@@ -36,6 +36,7 @@ function line(id: string, partId: number | null): Line {
     blockId: "0.1",
     role: "MEGAERA",
     speaker: "MEGAERA",
+    contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
     cue: {
       speaker: "_NARRATOR",
       text: "Cue.",

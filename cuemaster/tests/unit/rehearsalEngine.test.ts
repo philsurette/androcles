@@ -11,24 +11,24 @@ describe("RehearsalEngine", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
 
     expect(engine.selectedRole().id).toBe("ANDROCLES");
-    expect(engine.currentLine()?.id).toBe("0_1_ANDROCLES");
+    expect(engine.currentLine()?.id).toBe("I-1");
     expect(engine.position()).toEqual({ index: 0, total: 2, atBeginning: true, atEnd: false });
   });
 
   it("can start from a chosen line", () => {
-    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-3" });
 
-    expect(engine.currentLine()?.id).toBe("0_3_ANDROCLES");
+    expect(engine.currentLine()?.id).toBe("I-3");
     expect(engine.position().atEnd).toBe(true);
   });
 
   it("walks forward and backward through a selected role", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
 
-    expect(engine.next()?.id).toBe("0_3_ANDROCLES");
-    expect(engine.next()?.id).toBe("0_3_ANDROCLES");
-    expect(engine.previous()?.id).toBe("0_1_ANDROCLES");
-    expect(engine.previous()?.id).toBe("0_1_ANDROCLES");
+    expect(engine.next()?.id).toBe("I-3");
+    expect(engine.next()?.id).toBe("I-3");
+    expect(engine.previous()?.id).toBe("I-1");
+    expect(engine.previous()?.id).toBe("I-1");
   });
 
   it("updates cue payloads immediately after navigation", () => {
@@ -42,19 +42,19 @@ describe("RehearsalEngine", () => {
   });
 
   it("plays only the immediate cue for the full cue preset", () => {
-    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-3" });
 
     expect(engine.cuePayloads("full").map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
   });
 
   it("plays no cue for the no-cue preset", () => {
-    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-3" });
 
     expect(engine.cuePayloads("none")).toEqual([]);
   });
 
   it("uses enough preceding cues to satisfy a timed cue-length preset", () => {
-    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "0_3_ANDROCLES" });
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-3" });
 
     expect(engine.cuePayloads("last_5s").map((cue) => cue.text)).toEqual([
       "PROLOGUE",

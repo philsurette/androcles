@@ -37,6 +37,7 @@ export type ManifestContextBlock = {
   speaker: "_NARRATOR";
   text: string;
   audio: ManifestAudioAsset;
+  content_hash: string;
 };
 
 export type ManifestSection = {
@@ -62,6 +63,7 @@ export type ManifestLine = {
   block_id: string;
   role: string;
   speaker: string;
+  content_hash: string;
   cue: {
     speaker: string;
     text: string;
@@ -71,6 +73,8 @@ export type ManifestLine = {
     text: string;
     segments: Array<{
       id: string;
+      segment_id: string;
+      content_hash: string;
       owners: string[];
       text: string;
       audio: ManifestAudioAsset;
@@ -78,7 +82,9 @@ export type ManifestLine = {
     }>;
   };
   directions: Array<{
+    id: string;
     segment_id: string;
+    content_hash: string;
     text: string;
     placement: "top_level" | "inline" | "description";
   }>;

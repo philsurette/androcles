@@ -7,6 +7,7 @@ export type ContextBlock = {
   kind: ContextKind;
   speaker: "_NARRATOR";
   text: string;
+  contentHash: string;
   audioPath: string;
   durationMs: number;
 };

@@ -17,6 +17,7 @@ describe("normalizePlaybook", () => {
           kind: "heading",
           speaker: "_NARRATOR",
           text: "Prologue",
+          content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
           audio: { path: "audio/segments/_NARRATOR/0_0_1.wav", duration_ms: 1000, required: true }
         }
       ],
@@ -52,6 +53,7 @@ describe("normalizePlaybook", () => {
               block_id: "0.1",
               role: "MEGAERA",
               speaker: "MEGAERA",
+              content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000011",
               cue: {
                 speaker: "_NARRATOR",
                 text: "A forest.",
@@ -61,14 +63,24 @@ describe("normalizePlaybook", () => {
                 text: "I won't go another step.",
                 segments: [
                   {
-                    id: "0_1_1",
+                    id: "I-1:s1",
+                    segment_id: "0_1_1",
+                    content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000012",
                     owners: ["MEGAERA"],
                     text: "I won't go another step.",
                     audio: { path: "audio/segments/MEGAERA/0_1_1.wav", duration_ms: 1200, required: true }
                   }
                 ]
               },
-              directions: [{ segment_id: "0_1_1", text: "Sits down.", placement: "inline" }],
+              directions: [
+                {
+                  id: "I-1:d1",
+                  segment_id: "0_1_1",
+                  content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000013",
+                  text: "Sits down.",
+                  placement: "inline"
+                }
+              ],
               previous_roles: ["_NARRATOR"]
             }
           ]
@@ -78,7 +90,13 @@ describe("normalizePlaybook", () => {
     };
 
     expect(normalizePlaybook(manifest).roles[0].lines[0].directions).toEqual([
-      { segmentId: "0_1_1", text: "Sits down.", placement: "inline" }
+      {
+        id: "I-1:d1",
+        segmentId: "0_1_1",
+        contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000013",
+        text: "Sits down.",
+        placement: "inline"
+      }
     ]);
   });
 });

@@ -22,6 +22,7 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
       kind: block.kind,
       speaker: block.speaker,
       text: block.text,
+      contentHash: block.content_hash,
       audioPath: block.audio.path,
       durationMs: block.audio.duration_ms
     })),
@@ -36,6 +37,7 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
         blockId: line.block_id,
         role: line.role,
         speaker: line.speaker,
+        contentHash: line.content_hash,
         cue: {
           speaker: line.cue.speaker,
           text: line.cue.text,
@@ -50,6 +52,8 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
         responseText: line.response.text,
         responseSegments: line.response.segments.map((segment) => ({
           id: segment.id,
+          segmentId: segment.segment_id,
+          contentHash: segment.content_hash,
           owners: segment.owners,
           text: segment.text,
           audioPath: segment.audio.path,
@@ -57,7 +61,9 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           simultaneous: segment.simultaneous ?? false
         })),
         directions: line.directions.map((direction) => ({
+          id: direction.id,
           segmentId: direction.segment_id,
+          contentHash: direction.content_hash,
           text: direction.text,
           placement: direction.placement
         })),

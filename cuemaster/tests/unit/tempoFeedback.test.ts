@@ -8,6 +8,7 @@ const line: Line = {
   blockId: "0.1",
   role: "MEGAERA",
   speaker: "MEGAERA",
+  contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000001",
   cue: {
     speaker: "_NARRATOR",
     text: "A forest.",
@@ -18,6 +19,8 @@ const line: Line = {
   responseSegments: [
     {
       id: "one",
+      segmentId: "0_1_1",
+      contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000002",
       owners: ["MEGAERA"],
       text: "I won't go",
       audioPath: "audio/one.wav",
@@ -26,6 +29,8 @@ const line: Line = {
     },
     {
       id: "two",
+      segmentId: "0_1_2",
+      contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000003",
       owners: ["MEGAERA"],
       text: "another step.",
       audioPath: "audio/two.wav",
