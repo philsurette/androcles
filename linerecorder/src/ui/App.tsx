@@ -536,14 +536,15 @@ type ItemDetailProps = {
 
 function ItemDetail({ project, progress, microphoneConfig, previousItem, nextItem, onNavigate, onAccepted }: ItemDetailProps) {
   const { item, status } = progress;
+  const [showDetails, setShowDetails] = useState(false);
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
     <article className="item-detail">
       <header className="item-detail-header">
         <div className="item-heading">
-          <span className="item-section">{item.sectionTitle ?? "Recording Item"}</span>
           <h2>{item.id}</h2>
           <span className={status === "accepted" ? "status-pill accepted" : "status-pill"}>{status}</span>
+          <span className="reason-pill">{reasonLabel(item.reason)}</span>
           <span className="line-navigation-spacer" />
           <button
             type="button"
@@ -590,20 +591,33 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
 
       <ContextBlock label="Next" speaker={item.nextSpeaker} text={item.nextText} />
 
-      <dl className="item-metadata">
-        <div>
-          <dt>Segment</dt>
-          <dd>{item.segmentId}</dd>
-        </div>
-        <div>
-          <dt>Output</dt>
-          <dd>{item.outputPath}</dd>
-        </div>
-        <div>
-          <dt>Reason</dt>
-          <dd>{item.reason ?? "recording"}</dd>
-        </div>
-      </dl>
+      <section className={showDetails ? "item-details expanded" : "item-details"}>
+        <button
+          type="button"
+          className={showDetails ? "details-toggle expanded" : "details-toggle"}
+          aria-expanded={showDetails}
+          onClick={() => setShowDetails((current) => !current)}
+        >
+          <span>Details</span>
+          <span className="context-disclosure" aria-hidden="true" />
+        </button>
+        {showDetails ? (
+          <dl className="item-metadata">
+            <div>
+              <dt>Segment</dt>
+              <dd>{item.segmentId}</dd>
+            </div>
+            <div>
+              <dt>Output</dt>
+              <dd>{item.outputPath}</dd>
+            </div>
+            <div>
+              <dt>Reason</dt>
+              <dd>{item.reason ?? "recording"}</dd>
+            </div>
+          </dl>
+        ) : null}
+      </section>
     </article>
   );
 }
@@ -933,6 +947,10 @@ function requestKindLabel(kind: string): string {
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+function reasonLabel(reason: string | undefined): string {
+  return (reason ?? "recording").replace(/_/g, " ");
 }
 
 function levelLabel(level: MicrophoneReading["level"]): string {
