@@ -241,7 +241,7 @@ function ProjectDetail({
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
-  const [isExplorerOpen, setIsExplorerOpen] = useState(true);
+  const [isExplorerOpen, setIsExplorerOpen] = useState(false);
   const progress = recordingItemProgress(project.request.items, acceptedItemIds);
   const selectedIndex = selectedProgressIndex(progress, project.currentItemId);
   const selectedItem = selectedIndex === -1 ? undefined : progress[selectedIndex];
@@ -488,8 +488,13 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
         <button type="button" className="explorer-disclosure-button" aria-label="Show line list" title="Show line list" onClick={onToggleOpen}>
           <span className="context-disclosure" aria-hidden="true" />
         </button>
-        <span className="explorer-progress" aria-label={`${acceptedCount} of ${progress.length} accepted`}>
+        <span
+          className="explorer-progress"
+          aria-label={`${acceptedCount} of ${progress.length} requested recordings completed`}
+          title={`${acceptedCount}/${progress.length} requested recordings completed`}
+        >
           {acceptedCount}/{progress.length}
+          <span>completed</span>
         </span>
       </aside>
     );
@@ -500,7 +505,7 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
       <div className="item-explorer-header">
         <div>
           <p className="eyebrow">Lines</p>
-          <strong>{acceptedCount}/{progress.length}</strong>
+          <strong>{acceptedCount}/{progress.length} requested recordings completed</strong>
         </div>
         <button type="button" className="explorer-disclosure-button expanded" aria-label="Hide line list" title="Hide line list" onClick={onToggleOpen}>
           <span className="context-disclosure" aria-hidden="true" />

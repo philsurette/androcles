@@ -409,7 +409,13 @@ select {
   color: var(--muted);
   font-size: 0.85rem;
   font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
   writing-mode: vertical-rl;
+}
+
+.explorer-progress span {
+  margin-top: 6px;
 }
 
 .item-list {
