@@ -1,7 +1,12 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import type { RecordingTake } from "../../src/domain/take";
-import { exportRoleRecordings, RoleRecordingsExportError, type RoleRecordingsZipGenerator } from "../../src/package/exportRoleRecordings";
+import {
+  exportRoleRecordings,
+  roleRecordingsFileName,
+  RoleRecordingsExportError,
+  type RoleRecordingsZipGenerator
+} from "../../src/package/exportRoleRecordings";
 import type { RecordingProjectRecord } from "../../src/storage/db";
 
 describe("exportRoleRecordings", () => {
@@ -10,7 +15,7 @@ describe("exportRoleRecordings", () => {
     const zip = await JSZip.loadAsync(result.blob);
     const manifest = JSON.parse(await zip.file("manifest.json")!.async("string"));
 
-    expect(result.fileName).toBe("CENTURION.role-recordings.zip");
+    expect(result.fileName).toBe("androcles-CENTURION-role-recordings-20260510T140000Z.zip");
     expect(manifest).toMatchObject({
       package_type: "role_recordings",
       complete: false,
@@ -71,6 +76,16 @@ describe("exportRoleRecordings", () => {
   it("reports package generation failures with an export-specific error", async () => {
     await expect(exportRoleRecordings(projectFixture(), [takeFixture("I-12:s1")], [], failingZipGenerator())).rejects.toThrow(
       RoleRecordingsExportError
+    );
+  });
+
+  it("uses a filesystem-friendly play, role, and request timestamp filename", () => {
+    const project = projectFixture();
+    project.request.play.id = "Androcles & Lion";
+    project.request.role.id = "CENTURION/Guard";
+
+    expect(roleRecordingsFileName(project)).toBe(
+      "Androcles-Lion-CENTURION-Guard-role-recordings-20260510T140000Z.zip"
     );
   });
 });

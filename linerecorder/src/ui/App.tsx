@@ -9,6 +9,7 @@ import { nextProgress, previousProgress, selectedProgressIndex } from "../domain
 import type { RecordingTake } from "../domain/take";
 import { exportRoleRecordings, RoleRecordingsExportError } from "../package/exportRoleRecordings";
 import { importRecordingRequest, RecordingRequestImportError } from "../package/importRecordingRequest";
+import { browserDownloadService } from "../platform/download";
 import { listMicrophoneDevices, MicrophonePermissionError, type MicrophoneDevice, type MicrophoneMode } from "../platform/microphone";
 import { projectRepository } from "../storage/projectRepository";
 import { floorNoiseRepository } from "../storage/floorNoiseRepository";
@@ -80,13 +81,13 @@ export function App() {
       const acceptedTakes = await takeRepository.acceptedForProject(project.id);
       const floorNoiseRecordings = await floorNoiseRepository.forProject(project.id);
       const exported = await exportRoleRecordings(project, acceptedTakes, floorNoiseRecordings);
-      downloadBlob(exported.blob, exported.fileName);
+      browserDownloadService.download({ blob: exported.blob, fileName: exported.fileName });
       const exportedCount = exported.manifest.recordings.length;
       const missingCount = exported.manifest.missing_segment_ids.length;
       setStatus(
         exported.manifest.complete
-          ? `Exported complete role recordings package with ${exportedCount} recordings.`
-          : `Exported partial role recordings package with ${exportedCount} recordings; ${missingCount} still missing.`
+          ? `Exported ${exported.fileName} with ${exportedCount} recordings. Send this zip to the showrunner.`
+          : `Exported partial package ${exported.fileName} with ${exportedCount} recordings; ${missingCount} still missing. Send this zip to the showrunner.`
       );
     } catch (error) {
       setStatus(error instanceof RoleRecordingsExportError ? error.message : "Unable to export role recordings.");
@@ -1111,15 +1112,4 @@ function sameContext(
     return false;
   }
   return firstSpeaker === secondSpeaker && firstText.trim() === secondText.trim();
-}
-
-function downloadBlob(blob: Blob, fileName: string): void {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
 }

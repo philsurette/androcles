@@ -117,8 +117,16 @@ export async function exportRoleRecordings(
   return {
     blob,
     manifest,
-    fileName: `${project.request.role.id}.role-recordings.zip`
+    fileName: roleRecordingsFileName(project)
   };
+}
+
+export function roleRecordingsFileName(project: RecordingProjectRecord): string {
+  return safeFileName(
+    `${project.request.play.id}-${project.request.role.id}-role-recordings-${compactTimestamp(
+      project.request.request.createdAt
+    )}.zip`
+  );
 }
 
 function floorNoisePath(floorNoise: FloorNoiseRecording): string {
@@ -132,6 +140,15 @@ function floorNoiseForTake(
   return floorNoiseRecordings
     .filter((floorNoise) => floorNoise.recordedAt <= take.recordedAt)
     .at(-1);
+}
+
+function compactTimestamp(value: string): string {
+  const compacted = value.replace(/\.\d+Z$/, "Z").replace(/[^A-Za-z0-9]/g, "");
+  return compacted || "unknown-time";
+}
+
+function safeFileName(value: string): string {
+  return value.replace(/[^A-Za-z0-9._-]+/g, "-");
 }
 
 class JsZipRoleRecordingsZipGenerator implements RoleRecordingsZipGenerator {

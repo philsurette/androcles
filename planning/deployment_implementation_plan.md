@@ -7,12 +7,12 @@ This plan tracks the work needed to make Quince usable by a community theatre gr
 Goal: actors can export accepted recordings as a zip that lands in their normal browser download flow.
 
 - [x] Confirm current LineRecorder export creates a `role_recordings` zip Blob and triggers a browser download from the existing **Export Recordings** button.
-- [ ] Extract the inline `downloadBlob` helper into a browser download service, for example `DownloadService`, that accepts `{ blob, filename }` and triggers an `<a download>` click from a user action.
-- [ ] Keep the same download behavior for hosted HTTPS, localhost development, and local static file use; the browser controls the final download destination in all cases.
-- [ ] Improve filenames so they include play id, role id, package type, and a timestamp or request id instead of only `<ROLE>.role-recordings.zip`.
-- [ ] Add an export completion state that shows the downloaded filename and tells the actor to email or upload that zip to the showrunner.
-- [ ] Preserve local accepted takes after export so an actor can retry export without re-recording.
-- [ ] Add unit tests for filename generation and download-service invocation.
+- [x] Extract the inline `downloadBlob` helper into a browser download service, for example `DownloadService`, that accepts `{ blob, filename }` and triggers an `<a download>` click from a user action.
+- [x] Keep the same download behavior for hosted HTTPS, localhost development, and local static file use; the browser controls the final download destination in all cases.
+- [x] Improve filenames so they include play id, role id, package type, and a timestamp or request id instead of only `<ROLE>.role-recordings.zip`.
+- [x] Add an export completion state that shows the downloaded filename and tells the actor to email or upload that zip to the showrunner.
+- [x] Preserve local accepted takes after export so an actor can retry export without re-recording.
+- [x] Add unit tests for filename generation and download-service invocation.
 - [ ] Add a Playwright export smoke test using a browser download expectation.
 - [ ] Document that browsers cannot silently write to Downloads and that the download location is controlled by the user's browser settings.
 
