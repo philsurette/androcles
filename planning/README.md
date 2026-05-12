@@ -9,6 +9,8 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 ## Production Workflow
 
 - [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
+- [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.
+- [deployment_implementation_plan.md](deployment_implementation_plan.md): Resumable implementation plan for browser downloads, GitHub Pages publishing, and Stager packaging.
 
 ## Stager
 
