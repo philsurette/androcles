@@ -208,7 +208,7 @@ type MicrophoneConfig = {
 };
 
 type MicrophoneSetupProps = {
-  onReady: (config: MicrophoneConfig) => void;
+  onReady: (config: MicrophoneConfig | null) => void;
 };
 
 function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
@@ -257,6 +257,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   function stopMicrophone(): void {
     sessionRef.current?.stop();
     sessionRef.current = null;
+    onReady(null);
     setIsActive(false);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
