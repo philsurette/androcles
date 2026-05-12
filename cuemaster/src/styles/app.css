@@ -287,7 +287,6 @@ button:disabled {
 }
 
 .cue-strip .cue-card p:last-child {
-  direction: rtl;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
