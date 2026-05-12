@@ -482,6 +482,14 @@ type ItemListProps = {
 
 function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem }: ItemListProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
+  const selectedRowRef = useRef<HTMLButtonElement | null>(null);
+
+  useLayoutEffect(() => {
+    if (isOpen) {
+      selectedRowRef.current?.scrollIntoView({ block: "nearest" });
+    }
+  }, [isOpen, selectedItemId]);
+
   if (!isOpen) {
     return (
       <aside className="item-explorer collapsed" aria-label="Recording items">
@@ -515,6 +523,7 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
         {progress.map(({ item, status }) => (
           <button
             key={item.id}
+            ref={item.id === selectedItemId ? selectedRowRef : undefined}
             type="button"
             className={item.id === selectedItemId ? "item-row selected" : "item-row"}
             onClick={() => onSelectItem(item)}
