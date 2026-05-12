@@ -125,9 +125,10 @@ The implementation must support two workflows:
 
 - [ ] Update Cuemaster import validation to treat manifest `id` values as production ids.
 - [ ] Update Cuemaster local database schema if it assumes old id shapes.
-- [ ] Update Cuemaster UI display points where production ids are useful: script drawer, bookmarks, timing issues, diagnostics.
+- [ ] Update Cuemaster UI display points so ordinal line numbers are replaced by production ids without a `line` or `id` prefix.
 - [ ] Update LineRecorder import validation to treat recording item `id` as production segment id.
 - [ ] Update LineRecorder export to preserve ids and content hashes.
+- [ ] Update LineRecorder UI so ordinal line numbers are replaced by production ids without a `line` or `id` prefix.
 - [ ] Update any tests or fixtures that assume parser-shaped ids are the public ids.
 
 ## Milestone 8: Documentation And Migration Cleanup

@@ -194,7 +194,7 @@ If an inserted line is revised:
 
 If a new line is later inserted at the same location, authors should prefer an inserted or revised id such as `3.2-15.1` or `3.2-15a`, but Quince correctness must not depend on authors remembering that convention. Stager should treat production id plus normalized text fingerprint as the practical identity for recording freshness. If `3.2-15` disappears and later reappears with different text, Stager should detect the changed fingerprint and require fresh recording even though the production id was reused.
 
-Historical deletion records may be added later as a separate change ledger or reconciliation report. They should not be required in the editable Production script.
+There is no plan to implement a separate change ledger unless a clear need emerges. Historical deletion records should not be required in the editable Production script.
 
 ### Moved Lines
 
@@ -258,7 +258,7 @@ Recording items should use the production segment id as `id` and may include the
 }
 ```
 
-LineRecorder should display production ids in actor-facing recording prompts when helpful, especially for targeted re-recording requests.
+LineRecorder should display production ids anywhere it would otherwise display ordinal line numbers.
 
 ### Recording Package Manifest
 
@@ -268,13 +268,13 @@ LineRecorder exports should carry the same production ids back to Stager so Stag
 
 Stager should display production ids in generated scripts and diagnostics.
 
-LineRecorder should show production ids for recording items, especially changed/new/re-recorded items.
+LineRecorder should show production ids for recording items anywhere it would otherwise display ordinal line numbers, such as `Line 1` or `Line 2`.
 
-Cuemaster should make ids available but avoid cluttering the main rehearsal screen. Reasonable display points:
+Cuemaster should show production ids anywhere it would otherwise display ordinal line numbers. Do not prefix the value with `line`, `id`, or similar label; the id format is recognizable on its own. Reasonable display points:
 
 - script drawer rows,
 - bookmark and timing issue rows,
-- optional detail text near the line counter,
+- the current line/position indicator,
 - diagnostics and import errors.
 
 ## Filename Safety
@@ -297,8 +297,8 @@ The first implementation should be strict:
 - A future reconciliation command should compare raw/new script text against `production.txt`, preserve existing ids when possible, and suggest inserted/revised/deleted ids.
 - Stager should not decide that existing audio is reusable from production id alone. It should also compare the relevant content fingerprint.
 
-## Open Questions
+## Closed Decisions
 
-- Whether prologue/epilogue should use numeric structure ids or named ids such as `P-1` and `E-1`.
-- Whether a separate change ledger is useful after the active-script-only `production.txt` workflow exists.
-- Whether actor-facing UIs should show `3.2-15` always, on demand, or only in script/review drawers.
+- Prologues, epilogues, interludes, and roman-numeral acts may use uppercase structural labels such as `P`, `E`, `INT`, `I`, and `II`.
+- There is no plan to implement a separate change ledger unless the need becomes clear.
+- Actor-facing UIs should replace ordinal line numbers with production ids wherever line numbers are currently displayed.
