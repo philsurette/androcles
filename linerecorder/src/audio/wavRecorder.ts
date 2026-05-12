@@ -1,5 +1,5 @@
 import { requestMicrophoneStream, stopMicrophoneStream, type MicrophoneMode } from "../platform/microphone";
-import { classifyInputLevel, rootMeanSquareFloatEnergy } from "./inputMeter";
+import { classifyInputLevel, rootMeanSquareFloatEnergy, smoothMeterEnergy } from "./inputMeter";
 import { encodeWav } from "./wavEncoder";
 
 export type RecordedWav = {
@@ -38,6 +38,7 @@ export class WavRecorder {
   private silentOutput: GainNode | null = null;
   private stream: MediaStream | null = null;
   private chunks: Float32Array[] = [];
+  private displayedEnergy = 0;
   private startedAtMs = 0;
 
   constructor(
@@ -107,9 +108,10 @@ export class WavRecorder {
     this.chunks.push(samples);
     if (this.onReading) {
       const energy = rootMeanSquareFloatEnergy(samples);
+      this.displayedEnergy = smoothMeterEnergy(this.displayedEnergy, energy);
       this.onReading({
-        energy,
-        level: classifyInputLevel(energy)
+        energy: this.displayedEnergy,
+        level: classifyInputLevel(this.displayedEnergy)
       });
     }
   }
@@ -156,6 +158,7 @@ export class WavRecorder {
     void this.audioContext?.close();
     this.audioContext = null;
     this.chunks = [];
+    this.displayedEnergy = 0;
     this.startedAtMs = 0;
   }
 }

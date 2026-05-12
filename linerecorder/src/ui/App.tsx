@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { MicrophoneSession, type MicrophoneReading } from "../audio/microphoneSession";
-import { meterFillPercent } from "../audio/inputMeter";
+import { meterFillPercentForLevel } from "../audio/inputMeter";
 import { WavRecorder, type RecordedWav, type WavRecorderReading } from "../audio/wavRecorder";
 import type { RecordingItem } from "../domain/recordingItem";
 import { recordingItemProgress, type RecordingItemProgress } from "../domain/recordingItemStatus";
@@ -340,7 +340,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
       </div>
       <div className="meter-row">
         <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
-          <span style={{ width: `${meterFillPercent(reading.energy)}%` }} />
+          <span style={{ width: `${meterFillPercentForLevel(reading.energy, reading.level)}%` }} />
         </div>
         <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
       </div>
@@ -700,7 +700,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
       {isRecording ? (
         <div className="meter-row take-meter">
           <div className="meter" aria-label={`Recording input level: ${levelLabel(recordingReading.level)}`}>
-            <span style={{ width: `${meterFillPercent(recordingReading.energy)}%` }} />
+            <span style={{ width: `${meterFillPercentForLevel(recordingReading.energy, recordingReading.level)}%` }} />
           </div>
           <span className={`meter-label ${recordingReading.level}`}>{levelLabel(recordingReading.level)}</span>
         </div>

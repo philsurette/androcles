@@ -31,6 +31,29 @@ export function classifyInputLevel(energy: number): InputLevel {
 }
 
 export function meterFillPercent(energy: number): number {
+  const noiseFloorEnergy = 0.005;
   const speechReferenceEnergy = 0.16;
-  return Math.max(0, Math.min(100, (energy / speechReferenceEnergy) * 100));
+  const normalized = Math.max(0, (energy - noiseFloorEnergy) / (speechReferenceEnergy - noiseFloorEnergy));
+  return Math.max(0, Math.min(100, Math.sqrt(normalized) * 100));
+}
+
+export function meterFillPercentForLevel(energy: number, level: InputLevel): number {
+  const fill = meterFillPercent(energy);
+  switch (level) {
+    case "no-signal":
+      return fill;
+    case "too-quiet":
+      return Math.max(18, fill);
+    case "good":
+      return Math.max(46, fill);
+    case "clipping":
+      return 100;
+  }
+}
+
+export function smoothMeterEnergy(previousEnergy: number, nextEnergy: number): number {
+  const attack = 0.65;
+  const release = 0.18;
+  const factor = nextEnergy > previousEnergy ? attack : release;
+  return previousEnergy + (nextEnergy - previousEnergy) * factor;
 }

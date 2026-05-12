@@ -1,4 +1,4 @@
-import { classifyInputLevel, rootMeanSquareEnergy, type InputLevel } from "./inputMeter";
+import { classifyInputLevel, rootMeanSquareEnergy, smoothMeterEnergy, type InputLevel } from "./inputMeter";
 import { requestMicrophoneStream, stopMicrophoneStream, type MicrophoneMode } from "../platform/microphone";
 
 export type MicrophoneReading = {
@@ -28,6 +28,7 @@ export class MicrophoneSession {
   private stream: MediaStream | null = null;
   private frameId: number | null = null;
   private samples: Uint8Array<ArrayBuffer> | null = null;
+  private displayedEnergy = 0;
 
   constructor(
     private readonly onReading: (reading: MicrophoneReading) => void,
@@ -59,6 +60,7 @@ export class MicrophoneSession {
     this.audioContext = null;
     this.analyser = null;
     this.samples = null;
+    this.displayedEnergy = 0;
   }
 
   private read(): void {
@@ -67,9 +69,10 @@ export class MicrophoneSession {
     }
     this.analyser.getByteTimeDomainData(this.samples);
     const energy = rootMeanSquareEnergy(this.samples);
+    this.displayedEnergy = smoothMeterEnergy(this.displayedEnergy, energy);
     this.onReading({
-      energy,
-      level: classifyInputLevel(energy)
+      energy: this.displayedEnergy,
+      level: classifyInputLevel(this.displayedEnergy)
     });
     this.frameId = this.dependencies.requestFrame(() => this.read());
   }
