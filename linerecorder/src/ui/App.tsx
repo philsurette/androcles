@@ -355,10 +355,9 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
   return (
     <section className="microphone-panel compact" aria-label="Microphone setup">
       <div className="microphone-heading">
-        <div>
-          <p className="eyebrow">Microphone</p>
-          <h2>{isActive ? "Ready" : "Setup"}</h2>
-        </div>
+        <span className={isActive ? "microphone-glyph active" : "microphone-glyph"} aria-label={isActive ? "Microphone ready" : "Microphone setup"}>
+          🎙
+        </span>
         {isActive && !showSettings ? (
           <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
             Mic Settings
@@ -368,7 +367,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
       {showSettings ? (
         <div className="microphone-controls">
           <label>
-            Input
+            <span className="visually-hidden">Input</span>
             <select
               value={selectedDeviceId}
               disabled={isActive}
@@ -384,7 +383,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
             </select>
           </label>
           <label>
-            Mode
+            <span className="visually-hidden">Mode</span>
             <select
               value={mode}
               disabled={isActive}
@@ -400,7 +399,7 @@ function MicrophoneSetup({ onReady }: MicrophoneSetupProps) {
             </button>
           ) : (
             <button type="button" onClick={() => void startMicrophone()}>
-              Start Setup
+              Start Mic
             </button>
           )}
         </div>
