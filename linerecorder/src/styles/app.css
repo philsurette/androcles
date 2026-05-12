@@ -100,8 +100,7 @@ button:focus-visible,
 .item-detail,
 .context-panel,
 .stage-directions-panel,
-.line-panel,
-.take-panel {
+.line-panel {
   padding: 24px;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -535,6 +534,8 @@ select {
 }
 
 .line-panel {
+  display: grid;
+  gap: 18px;
   background: #fffdf6;
 }
 
@@ -559,12 +560,16 @@ select {
 
 .take-panel {
   display: grid;
-  gap: 16px;
-  background: #fffdf6;
+  gap: 12px;
+  padding-top: 6px;
 }
 
 .take-status {
   color: var(--muted);
+}
+
+.take-status-row {
+  min-height: 1.4rem;
 }
 
 .take-status.warning {
@@ -581,6 +586,39 @@ select {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.record-control,
+.recorder-icon-button {
+  position: relative;
+  width: 56px;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.record-control {
+  color: #fff;
+  background: #9f3523;
+}
+
+.record-control span {
+  transform: translateY(-1px);
+}
+
+.stop-control {
+  background: var(--ink);
+}
+
+.accept-control {
+  color: #1f5c3b;
+}
+
+.discard-control {
+  color: #9f3523;
 }
 
 button:disabled {

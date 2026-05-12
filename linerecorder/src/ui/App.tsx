@@ -538,6 +538,7 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
       <section className="line-panel" aria-label="Line to record">
         <p className="eyebrow">Your Line</p>
         <p>{item.displayText}</p>
+        <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
       </section>
 
       {item.stageDirections.length > 0 ? (
@@ -567,7 +568,6 @@ function ItemDetail({ project, progress, microphoneConfig, previousItem, nextIte
           <dd>{item.reason ?? "recording"}</dd>
         </div>
       </dl>
-      <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
     </article>
   );
 }
@@ -612,7 +612,7 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
 
   useEffect(() => {
     if (microphoneConfig && statusTone === "warning" && status === "Start microphone setup before recording.") {
-      setStatus(currentTake ? "Ready to accept or retry take." : acceptedTake ? `Accepted take saved: ${Math.round(acceptedTake.durationMs)} ms.` : "Ready to record.");
+      setStatus(currentTake ? "Ready to accept or discard take." : acceptedTake ? `Accepted take saved: ${Math.round(acceptedTake.durationMs)} ms.` : "Ready to record.");
       setStatusTone("normal");
     }
   }, [microphoneConfig, status, statusTone, currentTake, acceptedTake]);
@@ -706,10 +706,10 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
     await onAccepted();
   }
 
-  function retryTake(): void {
+  function discardTake(): void {
     setCurrentTake(null);
     setRecordingReading({ energy: 0, level: "no-signal" });
-    setStatus("No take recorded.");
+    setStatus(acceptedTake ? `Accepted take saved: ${Math.round(acceptedTake.durationMs)} ms.` : "No take recorded.");
     setStatusTone("normal");
     stopPlayback();
   }
@@ -741,44 +741,79 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
 
   return (
     <section className="take-panel" aria-label="Take recorder">
-      <div>
-        <p className="eyebrow">Take</p>
+      <div className="take-status-row">
         <p className={statusTone === "warning" ? "take-status warning" : "take-status"}>{status}</p>
       </div>
       <div className="take-controls">
         {isRecording ? (
-          <button type="button" onClick={stopRecording}>
-            Stop
+          <button type="button" className="record-control stop-control" aria-label="Stop recording" title="Stop recording" onClick={stopRecording}>
+            <span aria-hidden="true">■</span>
           </button>
         ) : (
-          <button type="button" onClick={() => void startRecording()}>
-            Record
+          <button
+            type="button"
+            className="record-control"
+            aria-label={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
+            title={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
+            onClick={() => void startRecording()}
+          >
+            <span aria-hidden="true">●</span>
           </button>
         )}
         {playingSource === "take" ? (
-          <button type="button" className="secondary" onClick={stopPlayback}>
-            Stop
+          <button type="button" className="secondary recorder-icon-button" aria-label="Stop playback" title="Stop playback" onClick={stopPlayback}>
+            <span aria-hidden="true">■</span>
           </button>
         ) : (
-          <button type="button" className="secondary" disabled={!currentTake || isRecording || Boolean(playingSource)} onClick={playTake}>
-            Play Take
+          <button
+            type="button"
+            className="secondary recorder-icon-button"
+            disabled={!currentTake || isRecording || Boolean(playingSource)}
+            aria-label="Play current take"
+            title="Play current take"
+            onClick={playTake}
+          >
+            <span aria-hidden="true">▶</span>
           </button>
         )}
-        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={() => void acceptTake()}>
-          Accept
+        <button
+          type="button"
+          className="secondary recorder-icon-button accept-control"
+          disabled={!currentTake || isRecording}
+          aria-label="Accept take"
+          title="Accept take"
+          onClick={() => void acceptTake()}
+        >
+          <span aria-hidden="true">✓</span>
         </button>
         {playingSource === "saved" ? (
-          <button type="button" className="secondary" onClick={stopPlayback}>
-            Stop
+          <button type="button" className="secondary recorder-icon-button" aria-label="Stop saved playback" title="Stop saved playback" onClick={stopPlayback}>
+            <span aria-hidden="true">■</span>
           </button>
         ) : (
-          <button type="button" className="secondary" disabled={!acceptedTake || isRecording || Boolean(playingSource)} onClick={playAcceptedTake}>
-            Play Saved
+          <button
+            type="button"
+            className="secondary recorder-icon-button"
+            disabled={!acceptedTake || isRecording || Boolean(playingSource)}
+            aria-label="Play saved take"
+            title="Play saved take"
+            onClick={playAcceptedTake}
+          >
+            <span aria-hidden="true">▶︎</span>
           </button>
         )}
-        <button type="button" className="secondary" disabled={!currentTake || isRecording} onClick={retryTake}>
-          Retry
-        </button>
+        {currentTake ? (
+          <button
+            type="button"
+            className="secondary recorder-icon-button discard-control"
+            disabled={isRecording}
+            aria-label="Discard current take"
+            title="Discard current take"
+            onClick={discardTake}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        ) : null}
       </div>
       {isRecording ? (
         <div className="meter-row take-meter">
