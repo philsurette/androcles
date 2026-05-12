@@ -26,6 +26,7 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+bundle = ["pyinstaller"]
 
 [project.scripts]
 stager = "stager.cli.build:main"

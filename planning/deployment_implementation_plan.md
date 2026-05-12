@@ -141,17 +141,17 @@ Goal: produce a macOS and/or Windows Stager bundle that includes Python and depe
 
 Recommended starting tool: PyInstaller.
 
-- [ ] Add a PyInstaller spec or build script for the Stager CLI.
-- [ ] Exclude ffmpeg and ffprobe from the bundle.
-- [ ] Confirm pydub and audio helpers use system `ffmpeg` from `PATH`.
-- [ ] Add a first-run or command-run ffmpeg check with clear install instructions.
+- [x] Add a PyInstaller spec or build script for the Stager CLI.
+- [x] Exclude ffmpeg and ffprobe from the bundle.
+- [x] Confirm pydub and audio helpers use system `ffmpeg` from `PATH`.
+- [x] Add a first-run or command-run ffmpeg check with clear install instructions.
 - [ ] Build a macOS command-line bundle first.
 - [ ] Test the bundle outside the repository checkout.
 - [ ] Test with a minimal sample play folder.
 - [ ] Add a Windows build after macOS packaging is stable.
-- [ ] Document Gatekeeper, code-signing, and notarization needs for macOS distribution.
-- [ ] Document Windows SmartScreen/signing implications.
-- [ ] Decide whether to ship a CLI-only bundle or add a small launcher app for common workflows.
+- [x] Document Gatekeeper, code-signing, and notarization needs for macOS distribution.
+- [x] Document Windows SmartScreen/signing implications.
+- [x] Decide whether to ship a CLI-only bundle or add a small launcher app for common workflows.
 
 Acceptance criteria:
 

@@ -28,6 +28,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/production_source_refactor.md](stager/production_source_refactor.md): Resumable implementation plan for making Stager consume locked `production.md`.
 - [stager/production_id_adoption.md](stager/production_id_adoption.md): Resumable implementation plan for adopting production ids across manifests, Cuemaster, and LineRecorder.
 - [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
+- [stager/standalone_bundle.md](stager/standalone_bundle.md): PyInstaller-based CLI bundle plan, ffmpeg policy, and signing/distribution notes.
 - Future Stager docs belong in `planning/stager/`.
 
 ## LineRecorder
