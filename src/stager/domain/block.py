@@ -43,11 +43,12 @@ class Block(ABC):
     def _to_markdown(self, prefix: str | None) -> str:
         raise NotImplementedError
     
-    def to_markdown(self, render_id=False) -> str:
+    def to_markdown(self, render_id=False, prefix: str | None = None) -> str:
         """Render the block back to text."""
-        part = self.block_id.part_id if self.block_id.part_id is not None else ""
-        id = f"{part}.{self.block_id.block_no}"
-        prefix = f"{id} " if render_id else ""
+        if prefix is None:
+            part = self.block_id.part_id if self.block_id.part_id is not None else ""
+            id = f"{part}.{self.block_id.block_no}"
+            prefix = f"{id} " if render_id else ""
         return self._to_markdown(prefix=prefix)
     
 

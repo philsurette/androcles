@@ -46,6 +46,7 @@ def test_text_artifacts_include_role_relevant_blocking_when_requested(tmp_path: 
     assert "1.2 /MEGAERA: Moves behind ANDROCLES." in megaera_markdown
     assert "1.3 /*: Everyone freezes." in megaera_markdown
     assert "1.3 /*: Everyone freezes." in androcles_markdown
+    assert "1.4 **MEGAERA**: I won't go another step." in play_markdown
     assert "(_/MEGAERA: crosses downstage_)" in androcles_markdown
 
 
@@ -63,5 +64,7 @@ def test_text_artifacts_exclude_blocking_by_default(tmp_path: Path) -> None:
     assert "/MEGAERA: Moves behind ANDROCLES." not in megaera_markdown
     assert "/*: Everyone freezes." not in megaera_markdown
     assert "/*: Everyone freezes." not in androcles_markdown
+    assert "1.2 **MEGAERA**: I won't go another step." in play_markdown
+    assert "1.4 **MEGAERA**: I won't go another step." not in play_markdown
     assert "(_/MEGAERA: crosses downstage_)" not in androcles_markdown
     assert "Hello there." in androcles_markdown
