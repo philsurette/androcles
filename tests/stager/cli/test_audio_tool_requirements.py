@@ -13,19 +13,18 @@ def test_audio_command_checks_required_audio_tools(tmp_path: Path, monkeypatch) 
     audio_path = tmp_path / "input.wav"
     audio_path.write_bytes(b"")
     _patch_path_config(monkeypatch, cfg)
-    monkeypatch.setattr(build, "require_audio_tools", _missing_audio_tools)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", MissingAudioToolChecker())
 
     result = CliRunner().invoke(build.app, ["normalize", str(audio_path), "--play", "test"])
 
     assert result.exit_code != 0
-    assert isinstance(result.exception, RuntimeError)
-    assert "Missing required audio tool" in str(result.exception)
+    assert "Missing required audio tool" in result.output
 
 
 def test_text_command_does_not_check_required_audio_tools(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)
-    monkeypatch.setattr(build, "require_audio_tools", _missing_audio_tools)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", MissingAudioToolChecker())
     monkeypatch.setattr(build, "run_text", lambda **kwargs: None)
 
     result = CliRunner().invoke(build.app, ["text", "--play", "test"])
@@ -36,7 +35,7 @@ def test_text_command_does_not_check_required_audio_tools(tmp_path: Path, monkey
 def test_wav_playbook_does_not_check_required_audio_tools(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)
-    monkeypatch.setattr(build, "require_audio_tools", _missing_audio_tools)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", MissingAudioToolChecker())
     monkeypatch.setattr(build, "run_playbook", lambda **kwargs: cfg.build_dir / "test.playbook.zip")
 
     result = CliRunner().invoke(build.app, ["playbook", "--play", "test"])
@@ -47,13 +46,12 @@ def test_wav_playbook_does_not_check_required_audio_tools(tmp_path: Path, monkey
 def test_mp3_playbook_checks_required_audio_tools(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)
-    monkeypatch.setattr(build, "require_audio_tools", _missing_audio_tools)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", MissingAudioToolChecker())
 
     result = CliRunner().invoke(build.app, ["playbook", "--play", "test", "--audio-format", "mp3"])
 
     assert result.exit_code != 0
-    assert isinstance(result.exception, RuntimeError)
-    assert "Missing required audio tool" in str(result.exception)
+    assert "Missing required audio tool" in result.output
 
 
 def _config(tmp_path: Path) -> paths.PathConfig:
@@ -72,5 +70,6 @@ def _patch_path_config(monkeypatch, cfg: paths.PathConfig) -> None:
     monkeypatch.setattr(build.paths, "PathConfig", lambda play_name: cfg)
 
 
-def _missing_audio_tools() -> None:
-    raise RuntimeError("Missing required audio tool")
+class MissingAudioToolChecker:
+    def require_audio_tools(self) -> None:
+        raise RuntimeError("Missing required audio tool")

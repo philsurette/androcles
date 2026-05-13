@@ -1,14 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+from pathlib import Path
+
 block_cipher = None
+repo_root = Path(SPECPATH).parent
 
 datas = [
-    ("src/stager/playbook/cue_window_presets.json", "stager/playbook"),
+    (str(repo_root / "src/stager/playbook/cue_window_presets.json"), "stager/playbook"),
 ]
 
 a = Analysis(
-    ["src/stager/cli/build.py"],
-    pathex=[],
+    [str(repo_root / "src/stager/cli/build.py")],
+    pathex=[str(repo_root / "src")],
     binaries=[],
     datas=datas,
     hiddenimports=[],

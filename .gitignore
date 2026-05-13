@@ -11,6 +11,8 @@
 .venv/
 .whisper/
 build/
+bundle-build/
+bundle-dist/
 plays/androcles-no-appendix
 plays/fairies
 play-config.yaml

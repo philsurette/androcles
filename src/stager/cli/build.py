@@ -4,8 +4,17 @@ from pathlib import Path
 import logging
 import sys
 import shlex
+import warnings
 from datetime import datetime
 import time
+
+import click
+
+warnings.filterwarnings(
+    "ignore",
+    message="Couldn't find ffmpeg or avconv - defaulting to ffmpeg, but may not work",
+    category=RuntimeWarning,
+)
 
 from stager.shared import paths
 import typer
@@ -154,7 +163,10 @@ def rich_progress() -> Progress:
 
 
 def require_audio_tools() -> None:
-    AUDIO_TOOL_CHECKER.require_audio_tools()
+    try:
+        AUDIO_TOOL_CHECKER.require_audio_tools()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:

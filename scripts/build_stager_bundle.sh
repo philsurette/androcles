@@ -39,6 +39,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 spec_path="$repo_root/packaging/stager.spec"
 work_path="$repo_root/bundle-build"
 dist_path="$repo_root/bundle-dist"
+config_path="$work_path/pyinstaller-config"
 
 if ! "$repo_root/.venv/bin/python" -c "import PyInstaller" >/dev/null 2>&1; then
   cat >&2 <<'EOF'
@@ -56,7 +57,8 @@ if [[ "$clean" == true ]]; then
   rm -rf "$work_path" "$dist_path"
 fi
 
-"$repo_root/.venv/bin/python" -m PyInstaller \
+PYINSTALLER_CONFIG_DIR="$config_path" "$repo_root/.venv/bin/python" -m PyInstaller \
+  --log-level INFO \
   --noconfirm \
   --clean \
   --workpath "$work_path" \

@@ -4,7 +4,6 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Dict
 
-from pydub import AudioSegment
 from stager.shared.play_config import DEFAULT_PLAY_ID, PlayConfig
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -72,6 +71,8 @@ class PathConfig:
 
     def get_audio_length_ms(self, path: Path) -> int:
         """Return audio length in ms, caching results (0 if missing)."""
+        from pydub import AudioSegment
+
         if path in self.cache:
             return self.cache[path]
         if not path.exists():

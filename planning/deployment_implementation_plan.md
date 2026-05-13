@@ -145,8 +145,8 @@ Recommended starting tool: PyInstaller.
 - [x] Exclude ffmpeg and ffprobe from the bundle.
 - [x] Confirm pydub and audio helpers use system `ffmpeg` from `PATH`.
 - [x] Add a first-run or command-run ffmpeg check with clear install instructions.
-- [ ] Build a macOS command-line bundle first.
-- [ ] Test the bundle outside the repository checkout.
+- [x] Build a macOS command-line bundle first.
+- [x] Test the bundle outside the repository checkout.
 - [ ] Test with a minimal sample play folder.
 - [ ] Add a Windows build after macOS packaging is stable.
 - [x] Document Gatekeeper, code-signing, and notarization needs for macOS distribution.
@@ -155,9 +155,9 @@ Recommended starting tool: PyInstaller.
 
 Acceptance criteria:
 
-- [ ] A showrunner can download the bundle, install ffmpeg separately, and run `stager --help`.
+- [x] A showrunner can download the bundle, install ffmpeg separately, and run `stager --help`.
 - [ ] Stager can build text artifacts from a sample `production.md`.
-- [ ] Stager gives a clear ffmpeg message before an audio command fails obscurely.
+- [x] Stager gives a clear ffmpeg message before an audio command fails obscurely.
 - [ ] Stager can build or reject a Playbook with clear required-audio diagnostics.
 
 ## Milestone 8: Optional Google Drive Integration

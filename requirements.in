@@ -16,3 +16,4 @@ diff-match-patch
 breame
 # test deps
 pytest
+pyinstaller
