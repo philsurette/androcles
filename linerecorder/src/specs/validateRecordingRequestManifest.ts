@@ -5,7 +5,7 @@ import type { RecordingRequestManifest } from "./recordingPackageManifest";
 const productionIdSchema = z
   .string()
   .regex(
-    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdm][0-9]+)?$/,
+    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdbm][0-9]+)?$/,
     "Expected a production id such as I-3 or I-3:s1"
   );
 
@@ -30,6 +30,12 @@ const itemSchema = z.object({
   section_title: z.string().optional(),
   scene_heading: z.string().optional(),
   stage_directions: z.array(z.string()).optional(),
+  blocking: z.array(z.object({
+    id: productionIdSchema,
+    targets: z.array(z.string().min(1)),
+    text: z.string().min(1),
+    placement: z.enum(["inline", "standalone"])
+  })).optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),
   previous_recording: z.string().optional(),
@@ -114,6 +120,12 @@ export function validateRecordingRequestManifest(value: unknown): RecordingReque
       sectionTitle: item.section_title,
       sceneHeading: item.scene_heading,
       stageDirections: item.stage_directions ?? [],
+      blocking: item.blocking?.map((blocking) => ({
+        id: blocking.id,
+        targets: blocking.targets,
+        text: blocking.text,
+        placement: blocking.placement
+      })) ?? [],
       reason: item.reason,
       notes: item.notes,
       cueAudio: item.cue_audio,

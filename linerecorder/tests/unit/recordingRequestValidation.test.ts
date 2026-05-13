@@ -47,6 +47,14 @@ describe("validateRecordingRequestManifest", () => {
           section_id: "part-0",
           section_title: "Act I",
           stage_directions: ["stopping"],
+          blocking: [
+            {
+              id: "I-12:b1",
+              targets: ["CENTURION"],
+              text: "crosses to the gate",
+              placement: "inline"
+            }
+          ],
           reason: "initial_recording",
           output_path: "audio/segments/CENTURION/0_12_1.wav"
         }
@@ -67,7 +75,15 @@ describe("validateRecordingRequestManifest", () => {
       nextSpeaker: "ANDROCLES",
       sectionTitle: "Act I",
       reason: "initial_recording",
-      stageDirections: ["stopping"]
+      stageDirections: ["stopping"],
+      blocking: [
+        {
+          id: "I-12:b1",
+          targets: ["CENTURION"],
+          text: "crosses to the gate",
+          placement: "inline"
+        }
+      ]
     });
   });
 

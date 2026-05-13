@@ -99,7 +99,8 @@ function packFixture(): RecordingRequest {
         displayText: "Halt!",
         segmentText: "Halt!",
         outputPath: "audio/segments/CENTURION/0_12_1.wav",
-        stageDirections: []
+        stageDirections: [],
+        blocking: []
       }
     ]
   };

@@ -1,3 +1,10 @@
+export type RecordingItemBlocking = {
+  id: string;
+  targets: string[];
+  text: string;
+  placement: "inline" | "standalone";
+};
+
 export type RecordingItem = {
   id: string;
   lineId: string;
@@ -19,6 +26,7 @@ export type RecordingItem = {
   sectionTitle?: string;
   sceneHeading?: string;
   stageDirections: string[];
+  blocking: RecordingItemBlocking[];
   reason?: string;
   notes?: string;
   changed?: boolean;

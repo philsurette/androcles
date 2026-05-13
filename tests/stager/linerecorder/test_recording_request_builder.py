@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
-from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
+from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.block_id import BlockId
 from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
-from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment, SpeechSegment
+from stager.domain.segment import BlockingSegment, DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.scriptwright import ProductionPlayLoader
@@ -137,6 +137,24 @@ def _direction_block(part_id: int, block_no: int, text: str) -> DirectionBlock:
     )
 
 
+def _blocking_block(part_id: int, block_no: int, targets: list[str], text: str) -> BlockingBlock:
+    block_id = BlockId(part_id, block_no)
+    return BlockingBlock(
+        block_id=block_id,
+        text=text,
+        targets=targets,
+        segments=[
+            BlockingSegment(
+                segment_id=SegmentId(block_id, 1),
+                text=text,
+                targets=targets,
+                production_id=f"I-{block_no}:b1",
+            )
+        ],
+        production_id=f"I-{block_no}",
+    )
+
+
 def _play(blocks) -> Play:
     return Play(
         source_text_metadata=SourceTextMetadata(
@@ -228,6 +246,46 @@ def test_recording_request_builder_includes_inline_directions_and_multiple_segme
     assert data["items"][0]["cue_text"] == "A clearing in the forest."
     assert data["items"][0]["cue_speaker"] == "_NARRATOR"
     assert "previous_text" not in data["items"][0]
+
+
+def test_recording_request_builder_includes_blocking_context(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    blocking = _blocking_block(0, 2, ["MEGAERA"], "Cross to the milestone.")
+    response_block = _inline_direction_block(0, 3, "MEGAERA")
+    response_block.segments.insert(
+        1,
+        BlockingSegment(
+            segment_id=SegmentId(response_block.block_id, 4),
+            text="Take ANDROCLES' hand.",
+            targets=["ANDROCLES"],
+            production_id="I-3:b1",
+        ),
+    )
+    next_block = _speech_block(0, 4, "MEGAERA", "I will go back.")
+    play = _play([_title_block(), cue_block, blocking, response_block, next_block])
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    assert data["items"][0]["blocking"] == [
+        {
+            "id": "I-3:b1",
+            "targets": ["ANDROCLES"],
+            "text": "Take ANDROCLES' hand.",
+            "placement": "inline",
+        },
+        {
+            "id": "I-2:b1",
+            "targets": ["MEGAERA"],
+            "text": "Cross to the milestone.",
+            "placement": "standalone",
+        },
+    ]
 
 
 def test_recording_request_builder_marks_simultaneous_segments(tmp_path: Path) -> None:

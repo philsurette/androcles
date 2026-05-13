@@ -82,6 +82,14 @@ Example manifest:
       "section_id": "part-0",
       "section_title": "Act I",
       "stage_directions": ["stopping"],
+      "blocking": [
+        {
+          "id": "I-12:b1",
+          "targets": ["CENTURION"],
+          "text": "crosses to the gate",
+          "placement": "inline"
+        }
+      ],
       "reason": "initial_recording",
       "output_path": "audio/segments/CENTURION/0_12_1.wav"
     }
@@ -121,6 +129,7 @@ Optional recording item fields:
 - `section_title`: Actor-facing section title for navigation and context.
 - `scene_heading`
 - `stage_directions`
+- `blocking`: Structured blocking context with `id`, `targets`, `text`, and `placement` (`inline` or `standalone`).
 - `reason`: Item-level reason such as `initial_recording`, `script_changed`, `director_request`, `bad_take`, or `actor_request`.
 - `notes`
 - `previous_recording`: Optional path to a previous take included in the zip.
@@ -136,6 +145,7 @@ Rules:
 - Every item must include enough text context for the actor to make a performance choice without opening Cuemaster or a full script.
 - `cue_text` should be the most useful immediate cue when one can be identified.
 - `previous_text` and `next_text` should provide local dramatic context when available, even if they are not the exact cue.
+- `blocking` is actor context only. It must not create recording items or imply required audio.
 - `output_path` declares where LineRecorder should place the accepted WAV inside the exported `role_recordings` package.
 - Cue audio and previous-take audio are optional context assets. They must not replace the required actor response recording.
 

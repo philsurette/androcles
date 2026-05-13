@@ -7,15 +7,16 @@ from pathlib import Path
 import shutil
 import zipfile
 
-from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
+from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
-from stager.domain.segment import DescriptionSegment, DirectionSegment, Segment, SimultaneousSegment, SpeechSegment
+from stager.domain.segment import BlockingSegment, DescriptionSegment, DirectionSegment, Segment, SimultaneousSegment, SpeechSegment
 from stager.linerecorder.recording_context import RecordingContext
 from stager.linerecorder.recording_request_manifest import (
     RecordingPreferences,
     RecordingRequestItem,
     RecordingRequestManifest,
     RecordingRequestMetadata,
+    RecordingRequestBlocking,
     RecordingRequestPlay,
     RecordingRequestRole,
 )
@@ -152,6 +153,7 @@ class RecordingRequestBuilder:
                 for direction in block.segments
                 if isinstance(direction, DirectionSegment)
             ],
+            blocking=self._blocking_context(block),
             reason=self._item_reason(self._segment_request_id(segment)),
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
@@ -212,6 +214,57 @@ class RecordingRequestBuilder:
                     return context
             return None
         return self._context_for_narrator_block(block)
+
+    def _blocking_context(self, block: RoleBlock) -> list[RecordingRequestBlocking]:
+        blocking: list[RecordingRequestBlocking] = []
+        seen_ids: set[str] = set()
+        for segment in block.segments:
+            if isinstance(segment, BlockingSegment):
+                self._append_blocking(blocking, seen_ids, segment, "inline")
+        block_index = self.play.blocks.index(block)
+        previous_index = self._adjacent_role_block_index(block_index, -1)
+        next_index = self._adjacent_role_block_index(block_index, 1)
+        start = 0 if previous_index is None else previous_index + 1
+        stop = len(self.play.blocks) if next_index is None else next_index
+        for candidate in self.play.blocks[start:stop]:
+            if isinstance(candidate, BlockingBlock) and self._blocking_targets_role(candidate.targets):
+                for segment in candidate.segments:
+                    if isinstance(segment, BlockingSegment):
+                        self._append_blocking(blocking, seen_ids, segment, "standalone")
+        return blocking
+
+    def _adjacent_role_block_index(self, start_index: int, step: int) -> int | None:
+        index = start_index + step
+        while 0 <= index < len(self.play.blocks):
+            candidate = self.play.blocks[index]
+            if isinstance(candidate, RoleBlock) and self._response_segments_for_role(candidate):
+                return index
+            index += step
+        return None
+
+    def _blocking_targets_role(self, targets: list[str]) -> bool:
+        return "*" in targets or self.role in targets
+
+    def _append_blocking(
+        self,
+        blocking: list[RecordingRequestBlocking],
+        seen_ids: set[str],
+        segment: BlockingSegment,
+        placement: str,
+    ) -> None:
+        if segment.production_id is None:
+            raise RuntimeError(f"Missing production id for blocking segment {segment.segment_id}")
+        if segment.production_id in seen_ids:
+            return
+        seen_ids.add(segment.production_id)
+        blocking.append(
+            RecordingRequestBlocking(
+                id=segment.production_id,
+                targets=list(segment.targets),
+                text=segment.text,
+                placement=placement,
+            )
+        )
 
     def _first_context_for_block(self, block) -> RecordingContext | None:
         if isinstance(block, RoleBlock):

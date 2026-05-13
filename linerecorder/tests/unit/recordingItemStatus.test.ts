@@ -29,7 +29,8 @@ function itemFixture(id: string, segmentId: string): RecordingItem {
     displayText: "Halt!",
     segmentText: "Halt!",
     outputPath: `audio/segments/CENTURION/${segmentId}.wav`,
-    stageDirections: []
+    stageDirections: [],
+    blocking: []
   };
 }
 

@@ -695,6 +695,19 @@ function ItemDetail({
         </section>
       ) : null}
 
+      {item.blocking.length > 0 ? (
+        <section className="stage-directions-panel">
+          <p className="eyebrow">Blocking</p>
+          <ul>
+            {item.blocking.map((blocking) => (
+              <li key={blocking.id}>
+                <strong>{blocking.targets.join(", ")}</strong>: {blocking.text}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <ContextBlock label="Next" speaker={item.nextSpeaker} text={item.nextText} />
 
       <section className={showDetails ? "item-details expanded" : "item-details"}>

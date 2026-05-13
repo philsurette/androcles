@@ -45,7 +45,8 @@ function progressFixture(): RecordingItemProgress[] {
       displayText: `Line ${index + 1}`,
       segmentText: `Line ${index + 1}`,
       outputPath: `audio/segments/CENTURION/${segmentId}.wav`,
-      stageDirections: []
+      stageDirections: [],
+      blocking: []
     },
     status: "missing"
   }));

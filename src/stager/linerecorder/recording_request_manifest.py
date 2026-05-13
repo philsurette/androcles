@@ -68,6 +68,22 @@ class RecordingPreferences:
 
 
 @dataclass
+class RecordingRequestBlocking:
+    id: str
+    targets: list[str]
+    text: str
+    placement: str
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "targets": list(self.targets),
+            "text": self.text,
+            "placement": self.placement,
+        }
+
+
+@dataclass
 class RecordingRequestItem:
     id: str
     line_id: str
@@ -89,6 +105,7 @@ class RecordingRequestItem:
     section_title: str | None = None
     scene_heading: str | None = None
     stage_directions: list[str] = field(default_factory=list)
+    blocking: list[RecordingRequestBlocking] = field(default_factory=list)
     reason: str | None = None
     notes: str | None = None
     previous_recording: str | None = None
@@ -122,6 +139,8 @@ class RecordingRequestItem:
         self._put_optional(data, "scene_heading", self.scene_heading)
         if self.stage_directions:
             data["stage_directions"] = list(self.stage_directions)
+        if self.blocking:
+            data["blocking"] = [blocking.to_dict() for blocking in self.blocking]
         self._put_optional(data, "reason", self.reason)
         self._put_optional(data, "notes", self.notes)
         self._put_optional(data, "previous_recording", self.previous_recording)

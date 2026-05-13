@@ -135,7 +135,8 @@ function projectFixture(): RecordingProjectRecord {
           displayText: "Halt!",
           segmentText: "Halt!",
           outputPath: "audio/segments/CENTURION/0_12_1.wav",
-          stageDirections: []
+          stageDirections: [],
+          blocking: []
         },
         {
           id: "I-14:s1",
@@ -148,7 +149,8 @@ function projectFixture(): RecordingProjectRecord {
           displayText: "Stand aside.",
           segmentText: "Stand aside.",
           outputPath: "audio/segments/CENTURION/0_14_1.wav",
-          stageDirections: []
+          stageDirections: [],
+          blocking: []
         }
       ]
     }

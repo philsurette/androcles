@@ -46,6 +46,12 @@ export type RecordingRequestItemManifest = {
   section_title?: string;
   scene_heading?: string;
   stage_directions?: string[];
+  blocking?: {
+    id: string;
+    targets: string[];
+    text: string;
+    placement: "inline" | "standalone";
+  }[];
   reason?: string;
   notes?: string;
   previous_recording?: string;
