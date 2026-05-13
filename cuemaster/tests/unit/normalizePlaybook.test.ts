@@ -38,7 +38,18 @@ describe("normalizePlaybook", () => {
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
-      context: [],
+      context: [
+        {
+          id: "I-0",
+          part_id: 0,
+          block_id: "0.0",
+          kind: "direction",
+          speaker: "_NARRATOR",
+          text: "A forest.",
+          content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000010",
+          audio: { path: "audio/segments/_NARRATOR/0_0_1.wav", duration_ms: 1000, required: true }
+        }
+      ],
       roles: [
         {
           id: "MEGAERA",
@@ -98,6 +109,7 @@ describe("normalizePlaybook", () => {
         placement: "inline"
       }
     ]);
+    expect(normalizePlaybook(manifest).roles[0].lines[0].cue.kind).toBe("direction");
   });
 
   it("preserves blocking context and line blocking", () => {

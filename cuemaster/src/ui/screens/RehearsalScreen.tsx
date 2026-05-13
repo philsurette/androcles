@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Bookmark } from "../../domain/bookmark";
+import type { ContextBlock } from "../../domain/context";
+import type { Cue } from "../../domain/cue";
 import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
@@ -695,7 +697,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <div className="rehearsal-line-layout">
             <section className="cue-strip" aria-label="Cue">
               <div className="cue-strip-cards">
-                {cues.map((cue, index) => (
+                {visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line).map((cue, index) => (
                   <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
                 ))}
                 {includeBlocking
@@ -1321,4 +1323,59 @@ function formatTimingOption(optionMs: number): string {
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
+}
+
+export function visibleCuesForDisplay(
+  cues: Cue[],
+  includeDirections: boolean,
+  context: ContextBlock[] = [],
+  playbook?: Playbook,
+  currentLine?: Line
+): Cue[] {
+  if (includeDirections) {
+    return cues;
+  }
+  const contextKindByCueKey = new Map(
+    context
+      .filter((block) => block.audioPath)
+      .map((block) => [cueKey(block.speaker, block.text, block.audioPath ?? ""), block.kind])
+  );
+  return cues.map((cue) => {
+    const kind = cue.kind ?? contextKindByCueKey.get(cueKey(cue.speaker, cue.text, cue.audioPath));
+    if (kind === "description" || kind === "direction") {
+      return precedingSpeechCue(playbook, currentLine) ?? cue;
+    }
+    return cue;
+  });
+}
+
+function cueKey(speaker: string, text: string, audioPath: string) {
+  return `${speaker}\u0000${text}\u0000${audioPath}`;
+}
+
+function precedingSpeechCue(playbook: Playbook | undefined, currentLine: Line | undefined): Cue | null {
+  if (!playbook || !currentLine) {
+    return null;
+  }
+  const priorLine = playbook.roles
+    .flatMap((role) => role.lines)
+    .filter((line) => line.responseSegments.length > 0)
+    .filter((line) => blockOrder(line.blockId) < blockOrder(currentLine.blockId))
+    .sort((left, right) => blockOrder(right.blockId) - blockOrder(left.blockId))[0];
+  if (!priorLine) {
+    return null;
+  }
+  return {
+    speaker: priorLine.speaker,
+    text: priorLine.responseText,
+    audioPath: priorLine.responseSegments[0].audioPath,
+    durationMs: priorLine.responseSegments.reduce((totalMs, segment) => totalMs + segment.durationMs, 0),
+    kind: "speech"
+  };
+}
+
+function blockOrder(blockId: string): number {
+  return blockId
+    .split(".")
+    .reduce((total, part, index) => total + Number(part) * 1000 ** (3 - index), 0);
 }

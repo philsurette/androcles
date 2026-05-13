@@ -3,6 +3,11 @@ import type { PlaybookManifest } from "../specs/playbookManifest";
 
 export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
   const standaloneBlocking = standaloneBlockingByLine(manifest);
+  const contextKindByCueKey = new Map(
+    manifest.context
+      .filter((block) => block.audio)
+      .map((block) => [cueKey(block.speaker, block.text, block.audio?.path ?? ""), block.kind])
+  );
 
   return {
     id: manifest.play.id,
@@ -47,6 +52,7 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           text: line.cue.text,
           audioPath: line.cue.audio.path,
           durationMs: line.cue.audio.duration_ms,
+          kind: contextKindByCueKey.get(cueKey(line.cue.speaker, line.cue.text, line.cue.audio.path)) ?? "speech",
           cueStartOffsets: line.cue.audio.cue_start_offsets?.map((offset) => ({
             requestedWindowMs: offset.requested_window_ms,
             startMs: offset.start_ms,
@@ -124,4 +130,8 @@ function standaloneBlockingByLine(manifest: PlaybookManifest) {
     ]);
   }
   return byLine;
+}
+
+function cueKey(speaker: string, text: string, audioPath: string) {
+  return `${speaker}\u0000${text}\u0000${audioPath}`;
 }
