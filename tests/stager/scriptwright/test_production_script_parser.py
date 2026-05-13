@@ -19,6 +19,7 @@ I.1-1 @description: A dusty Roman road.
 I.1-2 CAPTAIN: I will go (_draws sword_) if I must.
 I.1-3 CAPTAIN, MEGAERA: Together.
 I.1-4 @direction: The soldiers move aside.
+I.1-5 /CAPTAIN: crosses downstage.
 """
     )
 
@@ -30,10 +31,25 @@ I.1-4 @direction: The soldiers move aside.
         ProductionEntryKind.ROLE,
         ProductionEntryKind.ROLE,
         ProductionEntryKind.DIRECTION,
+        ProductionEntryKind.BLOCKING,
     ]
     assert script.entries[1].production_id == "I.1-0"
     assert script.entries[3].roles == ("CAPTAIN",)
     assert script.entries[4].roles == ("CAPTAIN", "MEGAERA")
+    assert script.entries[6].targets == ("CAPTAIN",)
+
+
+def test_parse_inline_blocking_targets():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+I-1 CAPTAIN: I will go (_/MEGAERA, CAPTAIN: clasp hands_) if I must.
+"""
+    )
+
+    assert script.entries[0].roles == ("CAPTAIN",)
 
 
 def test_parse_draft_production_markdown_without_ids():
@@ -112,6 +128,15 @@ CAPTAIN: One line.
   continued line.
 """,
             "Multiline script entries are not supported",
+        ),
+        (
+            """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+I-1 /CAPTAIN, *: bad target list.
+""",
+            "Blocking wildcard cannot be combined",
         ),
     ],
 )

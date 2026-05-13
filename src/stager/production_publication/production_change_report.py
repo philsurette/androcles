@@ -23,6 +23,10 @@ class ProductionChangeReport:
         return tuple(change for change in self.changes if change.kind == "removed")
 
     @property
+    def context_changed(self) -> tuple[ProductionChange, ...]:
+        return tuple(change for change in self.changes if change.kind == "context_changed")
+
+    @property
     def changed_or_added_role_line_ids(self) -> set[str]:
         ids: set[str] = set()
         for change in self.added:

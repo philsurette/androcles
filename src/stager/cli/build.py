@@ -203,6 +203,8 @@ def render_production_change_report(report) -> str:
             lines.append(f"  added: {change.line_id} {change.current.text}")
         elif change.kind == "removed" and change.previous is not None:
             lines.append(f"  removed: {change.line_id} {change.previous.text}")
+        elif change.kind == "context_changed" and change.current is not None:
+            lines.append(f"  context changed: {change.line_id} {change.current.text}")
     return "\n".join(lines)
 
 

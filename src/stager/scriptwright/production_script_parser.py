@@ -25,6 +25,8 @@ class ProductionScriptParser:
     HEADING_RE = re.compile(r"^(?P<marks>#{1,6})\s+(?P<body>.+?)\s*$")
     ROLE_RE = re.compile(r"^(?P<roles>[A-Z][A-Z0-9_ -]*(?:\s*,\s*[A-Z][A-Z0-9_ -]*)*)\s*:\s*(?P<text>.+)$")
     LABEL_RE = re.compile(r"^(?P<label>@[a-z]+)\s*:\s*(?P<text>.+)$")
+    BLOCKING_RE = re.compile(r"^/(?P<targets>[^:]+):\s*(?P<text>.*)$")
+    INLINE_BLOCKING_RE = re.compile(r"\(_/(?P<targets>[^:]+):(?P<text>.*?)_\)")
     REQUIRED_METADATA = {
         "script_format": "quince-production-v1",
         "source_kind": "production",
@@ -128,6 +130,21 @@ class ProductionScriptParser:
             )
 
         production_id, body = self._extract_optional_id(line, locked, line_no, path)
+        blocking_match = self.BLOCKING_RE.match(body)
+        if blocking_match:
+            targets = self._parse_blocking_targets(blocking_match.group("targets"), line_no, path)
+            text = blocking_match.group("text").strip()
+            if not text:
+                self._fail("Empty blocking text", line_no, path)
+            return ProductionEntry(
+                kind=ProductionEntryKind.BLOCKING,
+                text=text,
+                line_no=line_no,
+                production_id=production_id,
+                targets=targets,
+                leading_comments=leading_comments,
+            )
+
         label_match = self.LABEL_RE.match(body)
         if label_match:
             label = label_match.group("label")
@@ -157,6 +174,7 @@ class ProductionScriptParser:
                 self._fail("Empty role tag", line_no, path)
             text = role_match.group("text").strip()
             self._validate_inline_directions(text, line_no, path)
+            self._validate_inline_blocking(text, line_no, path)
             return ProductionEntry(
                 kind=ProductionEntryKind.ROLE,
                 text=text,
@@ -205,6 +223,25 @@ class ProductionScriptParser:
             index += 1
         if in_direction:
             self._fail("Unclosed inline direction", line_no, path)
+
+    def _validate_inline_blocking(self, text: str, line_no: int, path: Path | None) -> None:
+        for match in self.INLINE_BLOCKING_RE.finditer(text):
+            self._parse_blocking_targets(match.group("targets").strip(), line_no, path)
+            if not match.group("text").strip():
+                self._fail("Empty blocking text", line_no, path)
+
+    def _parse_blocking_targets(self, raw_targets: str, line_no: int, path: Path | None) -> tuple[str, ...]:
+        targets = tuple(target.strip() for target in raw_targets.split(",") if target.strip())
+        if not targets:
+            self._fail("Empty blocking target list", line_no, path)
+        if "*" in targets and len(targets) > 1:
+            self._fail("Blocking wildcard cannot be combined with role targets", line_no, path)
+        for target in targets:
+            if target == "*":
+                continue
+            if not re.match(r"^[A-Z][A-Z0-9_ -]*$", target):
+                self._fail(f"Malformed blocking target: {target}", line_no, path)
+        return targets
 
     def _fail(self, message: str, line_no: int, path: Path | None) -> None:
         if path is None:

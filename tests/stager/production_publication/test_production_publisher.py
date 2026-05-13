@@ -123,6 +123,46 @@ P-1 LILLIAN: Please do it now.""",
     assert [item["reason"] for item in manifest["items"]] == ["script_changed"]
 
 
+def test_publish_treats_inline_direction_changes_as_context_not_recording_work(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please (_crossing_) do.""",
+    )
+    ProductionPublisher(cfg).publish()
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please (_sitting_) do.""",
+    )
+
+    result = ProductionPublisher(cfg).publish(recording_requests=True)
+
+    assert [change.kind for change in result.change_report.changes] == ["context_changed"]
+    assert result.recording_request_paths == ()
+
+
+def test_publish_treats_inline_blocking_changes_as_context_not_recording_work(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please (_/CHRISTINE: crosses_) do.""",
+    )
+    ProductionPublisher(cfg).publish()
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please (_/CHRISTINE: sits_) do.""",
+    )
+
+    result = ProductionPublisher(cfg).publish(recording_requests=True)
+
+    assert [change.kind for change in result.change_report.changes] == ["context_changed"]
+    assert result.recording_request_paths == ()
+
+
 def test_restore_copies_published_version_to_producer_source(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     _write_production(

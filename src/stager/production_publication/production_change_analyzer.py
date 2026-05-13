@@ -42,7 +42,7 @@ class ProductionChangeAnalyzer:
                 continue
             if old_line is None or new_line is None:
                 continue
-            if old_line.content_hash != new_line.content_hash:
+            if self._recording_hash(old_line) != self._recording_hash(new_line):
                 changes.append(
                     ProductionChange(
                         kind="changed_id_reuse",
@@ -53,7 +53,19 @@ class ProductionChangeAnalyzer:
                     )
                 )
                 used_ids.add(changes[-1].recommended_id or line_id)
+            elif old_line.content_hash != new_line.content_hash:
+                changes.append(
+                    ProductionChange(
+                        kind="context_changed",
+                        line_id=line_id,
+                        previous=old_line,
+                        current=new_line,
+                    )
+                )
         return ProductionChangeReport(base_version=previous.version, changes=tuple(changes))
+
+    def _recording_hash(self, line: PublishedLine) -> str:
+        return line.speech_hash or line.content_hash
 
     def _next_revision_id(self, production_id: str, used_ids: set[str]) -> str:
         base_id, current_suffix = self._revision_base(production_id)

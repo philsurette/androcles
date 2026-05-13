@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from stager.scriptwright.content_hasher import ContentHasher
-from stager.scriptwright.production_script import ProductionEntry, ProductionScript
+from stager.scriptwright.production_script import ProductionEntry, ProductionEntryKind, ProductionScript
 from stager.production_publication.published_line import PublishedLine
 
 
@@ -25,6 +25,21 @@ class ProductionSnapshotBuilder:
             kind=entry.kind.value,
             text=entry.text,
             line_no=entry.line_no,
-            content_hash=self.content_hasher.hash_line(entry.kind.value, entry.text, entry.roles),
+            content_hash=self.content_hasher.hash_line(entry.kind.value, entry.text, entry.roles or entry.targets),
             roles=tuple(entry.roles),
+            targets=tuple(entry.targets),
+            speech_hash=self._speech_hash(entry),
+            context_hash=self._context_hash(entry),
         )
+
+    def _speech_hash(self, entry: ProductionEntry) -> str | None:
+        if entry.kind != ProductionEntryKind.ROLE:
+            return None
+        return self.content_hasher.hash_speech_line(entry.text, entry.roles)
+
+    def _context_hash(self, entry: ProductionEntry) -> str | None:
+        if entry.kind in (ProductionEntryKind.DIRECTION, ProductionEntryKind.BLOCKING):
+            return self.content_hasher.hash_line(entry.kind.value, entry.text, entry.targets)
+        if entry.kind == ProductionEntryKind.ROLE:
+            return self.content_hasher.hash_context_line(entry.text)
+        return None

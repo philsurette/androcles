@@ -6,7 +6,7 @@ import logging
 from pathlib import Path
 import re
 
-from stager.domain.block import Block, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
+from stager.domain.block import Block, BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
 from stager.scriptwright.production_script import ProductionEntry, ProductionEntryKind, ProductionScript
 from stager.scriptwright.production_script_parser import ProductionScriptParser
@@ -115,6 +115,9 @@ class ScriptWright:
             return f"{production_id} @description: {self._clean_text(block.text)}"
         if isinstance(block, DirectionBlock):
             return f"{production_id} @direction: {self._clean_text(block.text)}"
+        if isinstance(block, BlockingBlock):
+            targets = ", ".join(block.targets)
+            return f"{production_id} /{targets}: {self._clean_text(block.text)}"
         if isinstance(block, RoleBlock):
             speakers = ", ".join(block.role_names)
             return f"{production_id} {speakers}: {self._clean_text(block.text)}"
@@ -212,6 +215,8 @@ class ScriptWright:
             return f"{production_id} @description: {self._clean_text(entry.text)}"
         if entry.kind == ProductionEntryKind.DIRECTION:
             return f"{production_id} @direction: {self._clean_text(entry.text)}"
+        if entry.kind == ProductionEntryKind.BLOCKING:
+            return f"{production_id} /{', '.join(entry.targets)}: {self._clean_text(entry.text)}"
         if entry.kind == ProductionEntryKind.ROLE:
             return f"{production_id} {', '.join(entry.roles)}: {self._clean_text(entry.text)}"
         raise RuntimeError(f"Unsupported production entry kind: {entry.kind}")

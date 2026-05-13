@@ -9,7 +9,7 @@ import re
 
 from stager.domain.block_id import BlockId
 from stager.domain.segment_id import SegmentId
-from stager.domain.segment import Segment, MetaSegment, DescriptionSegment, DirectionSegment, SpeechSegment, SimultaneousSegment
+from stager.domain.segment import Segment, MetaSegment, DescriptionSegment, DirectionSegment, BlockingSegment, SpeechSegment, SimultaneousSegment
 
 @dataclass
 class Block(ABC):
@@ -145,6 +145,27 @@ class DirectionBlock(Block):
         return f"{prefix}*{self.text}*"
 
 @dataclass
+class BlockingBlock(Block):
+    targets: List[str] = field(default_factory=list)
+
+    @property
+    def roles(self) -> List[str]:
+        return [] if "*" in self.targets else list(self.targets)
+
+    @classmethod
+    def parse(
+        cls,
+        paragraph: str,
+        current_part: int | None,
+        block_counter: int,
+        meta_counters: dict[int | None, int],
+    ) -> Block | None:
+        return None
+
+    def _to_markdown(self, prefix: str | None) -> str:
+        return f"{prefix}/{', '.join(self.targets)}: {self.text}"
+
+@dataclass
 class RoleBlock(Block):
     PREFIX = ""
     SUFFIX = ""
@@ -152,6 +173,7 @@ class RoleBlock(Block):
     GROUP_ROLE_RE = re.compile(r"^([A-Z][A-Z0-9 '()-]*?)\s*\[(.+?)\]\s*[.:]?\s*(.*)$")
     NARRATION_RE = re.compile(r"(\(_.*?_\)(?:[.,?:;!](?![!?])|!(?![!?]))?)")
     INLINE_DIR_RE = re.compile(r"\(_.*?_\)")
+    INLINE_BLOCKING_RE = re.compile(r"^\(_/(?P<targets>[^:]+):\s*(?P<text>.*?)_\)(?P<trailing>[.,?:;!])?$")
     role_names: List[str] = field(default_factory=list)
     callout: Optional[str] = None
     segments: List[Segment] = field(default_factory=list)
@@ -173,6 +195,10 @@ class RoleBlock(Block):
         has_inline_dirs = any(isinstance(seg, DirectionSegment) for seg in self.segments)
         roles: List[str] = ["_NARRATOR"] if has_inline_dirs else []
         roles.extend(self.role_names)
+        for segment in self.segments:
+            if isinstance(segment, BlockingSegment):
+                roles.extend(target for target in segment.targets if target != "*")
+        roles = list(dict.fromkeys(roles))
         return roles
 
     @classmethod
@@ -193,14 +219,30 @@ class RoleBlock(Block):
                     )
                     index += 1
             else: #narration
-                segments.append(
-                    DirectionSegment(
-                        segment_id=SegmentId(block_id, index),
-                        text=part.strip(),
+                blocking_segment = cls._blocking_segment(part.strip(), block_id, index)
+                if blocking_segment is not None:
+                    segments.append(blocking_segment)
+                else:
+                    segments.append(
+                        DirectionSegment(
+                            segment_id=SegmentId(block_id, index),
+                            text=part.strip(),
+                        )
                     )
-                )
                 index += 1
         return segments
+
+    @classmethod
+    def _blocking_segment(cls, text: str, block_id: BlockId, index: int) -> BlockingSegment | None:
+        match = cls.INLINE_BLOCKING_RE.match(text)
+        if match is None:
+            return None
+        targets = [target.strip() for target in match.group("targets").split(",") if target.strip()]
+        return BlockingSegment(
+            segment_id=SegmentId(block_id, index),
+            text=match.group("text").strip(),
+            targets=targets,
+        )
     
     @classmethod
     def parse(

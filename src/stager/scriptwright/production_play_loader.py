@@ -7,10 +7,10 @@ import logging
 
 from ruamel import yaml
 
-from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
+from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.block_id import BlockId
 from stager.domain.play import Play, Reader, ReadingMetadata, SourceTextMetadata
-from stager.domain.segment import DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment
+from stager.domain.segment import BlockingSegment, DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment
 from stager.domain.segment_id import SegmentId
 from stager.scriptwright.content_hasher import ContentHasher
 from stager.scriptwright.production_script import ProductionEntry, ProductionEntryKind
@@ -118,7 +118,7 @@ class ProductionPlayLoader:
         content_hash = self.content_hasher.hash_line(
             entry.kind.value,
             entry.text,
-            entry.roles,
+            entry.roles or entry.targets,
         )
         if entry.kind == ProductionEntryKind.DESCRIPTION:
             return DescriptionBlock(
@@ -150,6 +150,24 @@ class ProductionPlayLoader:
                     )
                 ],
             )
+        if entry.kind == ProductionEntryKind.BLOCKING:
+            targets = list(entry.targets)
+            return BlockingBlock(
+                block_id=block_id,
+                text=entry.text,
+                targets=targets,
+                production_id=entry.production_id,
+                content_hash=content_hash,
+                segments=[
+                    BlockingSegment(
+                        segment_id=SegmentId(block_id, 1),
+                        text=entry.text,
+                        targets=targets,
+                        production_id=self._segment_production_id(entry, 1, "b"),
+                        content_hash=self.content_hasher.hash_segment("blocking", entry.text, ",".join(targets)),
+                    )
+                ],
+            )
         if entry.kind == ProductionEntryKind.ROLE:
             roles = list(entry.roles)
             if len(roles) > 1:
@@ -174,7 +192,11 @@ class ProductionPlayLoader:
             speech_count = 0
             direction_count = 0
             for segment in segments:
-                if isinstance(segment, DirectionSegment):
+                if isinstance(segment, BlockingSegment):
+                    direction_count += 1
+                    segment.production_id = self._segment_production_id(entry, direction_count, "b")
+                    segment.content_hash = self.content_hasher.hash_segment("blocking", segment.text, ",".join(segment.targets))
+                elif isinstance(segment, DirectionSegment):
                     direction_count += 1
                     segment.production_id = self._segment_production_id(entry, direction_count, "d")
                     segment.content_hash = self.content_hasher.hash_segment("direction", segment.text)

@@ -9,7 +9,7 @@ from pathlib import Path
 from stager.shared import paths
 from stager.domain.block_id import BlockId
 from stager.domain.segment import DirectionSegment, SpeechSegment, SimultaneousSegment
-from stager.domain.block import Block, TitleBlock, DescriptionBlock, DirectionBlock, RoleBlock
+from stager.domain.block import Block, TitleBlock, DescriptionBlock, DirectionBlock, BlockingBlock, RoleBlock
 from stager.domain.reader_block import ReaderBlock
 import logging
 from enum import Enum
@@ -353,6 +353,8 @@ class PlayTextEncoder:
                 lines.append(f"[[{block.text}]]")
             elif isinstance(block, DirectionBlock):
                 lines.append(f"_{block.text}_")
+            elif isinstance(block, BlockingBlock):
+                lines.append(f"/{', '.join(block.targets)}: {block.text}")
             elif isinstance(block, RoleBlock):
                 speakers = block.role_names if getattr(block, "role_names", None) else [block.primary_role]
                 if block.callout is None:

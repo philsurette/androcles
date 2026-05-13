@@ -9,6 +9,7 @@ class ProductionEntryKind(str, Enum):
     HEADING = "heading"
     DESCRIPTION = "description"
     DIRECTION = "direction"
+    BLOCKING = "blocking"
     ROLE = "role"
 
 
@@ -20,6 +21,7 @@ class ProductionEntry:
     production_id: str | None = None
     heading_level: int | None = None
     roles: tuple[str, ...] = ()
+    targets: tuple[str, ...] = ()
     leading_comments: tuple[str, ...] = ()
 
 
