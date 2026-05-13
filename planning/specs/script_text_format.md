@@ -10,7 +10,8 @@ This spec defines:
 - the canonical Markdown-friendly `production.md` format used after script hardening,
 - line-leading comments,
 - metadata comment headers,
-- the `production_ids` draft/locked lifecycle.
+- the `production_ids` draft/locked lifecycle,
+- production blocking-note syntax.
 
 ## Format Roles
 
@@ -116,6 +117,9 @@ Locked production entries have these shapes:
 ### <production-id> <heading text>
 <production-id> @description: <description text>
 <production-id> @direction: <stage direction text>
+<production-id> /<ROLE>: <blocking note>
+<production-id> /<ROLE>, <ROLE>: <blocking note>
+<production-id> /*: <blocking note>
 <production-id> <ROLE>: <spoken text>
 <production-id> <ROLE>, <ROLE>: <simultaneous spoken text>
 ```
@@ -141,6 +145,16 @@ Reserved lowercase entry labels:
 - `@description`
 - `@direction`
 
+Standalone blocking uses a terse shorthand rather than an `@` entry label:
+
+```text
+I.1-6 /MEGAERA: crosses to the milestone
+I.1-7 /MEGAERA, ANDROCLES: sit on the fallen tree
+I.1-8 /*: everyone freezes
+```
+
+The shorthand is syntactic sugar for the conceptual entry kind `@blocking[targets]`. Producers should normally write the shorthand.
+
 Role tags:
 
 - Role tags do not start with `@`.
@@ -158,6 +172,7 @@ I.1-2 MEGAERA: I won't go another step.
 I.1-3 ANDROCLES: Oh, not again, dear.
 I.1-4 @direction: The lion roars offstage.
 I.1-5 GLADIATOR_1, GLADIATOR_2: Hail, Caesar!
+I.1-6 /MEGAERA: crosses to the milestone
 ```
 
 ## Inline Stage Directions
@@ -183,6 +198,49 @@ Rules:
 - Spoken text around inline directions is addressable as `:sN` sub-line units.
 - Unclosed inline direction delimiters should fail parsing.
 - Nested inline directions are not allowed.
+
+## Blocking Notes
+
+Blocking notes describe production-specific movement. They are not spoken text, do not require audio, and may apply to actors who are not speaking nearby.
+
+Standalone blocking notes use:
+
+```text
+<production-id> /<target-list>: <blocking text>
+```
+
+The target list may be:
+
+- one role id,
+- multiple comma-separated role ids,
+- `*` for all actors.
+
+Examples:
+
+```text
+I.1-6 /MEGAERA: crosses to the milestone
+I.1-7 /MEGAERA, ANDROCLES: sit on the fallen tree
+I.1-8 /*: everyone freezes
+```
+
+Inline blocking inside spoken lines uses the existing `(_` and `_)` inline direction delimiters. The content inside those delimiters is classified as blocking when it begins with the same `/target-list:` blocking shorthand:
+
+```text
+I.1-9 MEGAERA: I won't go another step (_/ANDROCLES: reaches for her hand_) unless you stop.
+I.1-10 ANDROCLES: Wait (_/*: all look toward the road_) do you hear that?
+```
+
+Rules:
+
+- Inline blocking may appear inside spoken text.
+- Inline blocking is addressable as a sub-line unit derived from the containing production id, such as `I.1-9:b1`.
+- Inline text that uses `(_..._)` but does not start with `/target-list:` remains an ordinary inline stage direction.
+- Standalone blocking is addressable by its own production id.
+- Blocking does not create recordable speech segments.
+- Blocking changes should not by themselves trigger LineRecorder re-recording requests.
+- Nested inline direction or blocking delimiters are not allowed.
+
+Inline stage directions and inline blocking should be excluded from speech-only content hashes used to decide whether spoken audio is stale. They should remain represented in full line hashes and in non-speech/context hashes.
 
 ## One Physical Line Per Script Unit
 
@@ -218,6 +276,7 @@ Production parsing should fail for:
 - empty required text after `:`,
 - multiline script entries,
 - unclosed or nested inline direction delimiters,
+- malformed blocking target lists,
 - missing or malformed metadata.
 
 Draft parsing should still be strict about entry grammar, comments, metadata, multiline entries, and inline direction delimiters, but it should permit missing or provisional production ids.
@@ -229,6 +288,14 @@ Production ids become canonical manifest `id` values for script units.
 Parser/build ids may still exist in manifests under explicit implementation names such as `block_id`, `segment_id`, or `audio_segment_id`, but there should be no parallel `production_id` field.
 
 Content hashes are defined in [production_script_ids.md](production_script_ids.md) and should be computed from the normalized production line or sub-line content.
+
+For role lines, implementations should distinguish:
+
+- a full line hash that includes spoken text, inline directions, and inline blocking,
+- a speech hash that includes spoken words only,
+- a non-speech/context hash that includes extracted inline directions, inline blocking, standalone directions, and standalone blocking.
+
+Speech hashes drive recording freshness. Non-speech/context hashes drive direction and blocking update reporting.
 
 ## Open Questions
 
