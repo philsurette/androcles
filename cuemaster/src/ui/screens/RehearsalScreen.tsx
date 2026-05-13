@@ -770,6 +770,16 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     >
                       <span aria-hidden="true">♿</span>
                     </button>
+                    <button
+                      type="button"
+                      className={includeDirections ? "quick-toggle active" : "quick-toggle"}
+                      aria-pressed={includeDirections}
+                      aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
+                      data-tooltip={includeDirections ? "Directions on" : "Directions off"}
+                      onClick={() => changeIncludeDirections(!includeDirections)}
+                    >
+                      <span aria-hidden="true">⌞⌝</span>
+                    </button>
                   </div>
                 </div>
                 <div className="transport inline-transport">
@@ -984,14 +994,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                           </option>
                         ))}
                       </select>
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
-                        checked={includeDirections}
-                        onChange={(event) => changeIncludeDirections(event.target.checked)}
-                      />
-                      Show stage directions
                     </label>
                     <label className="timing-setting">
                       Blocking scope
