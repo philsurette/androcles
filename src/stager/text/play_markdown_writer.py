@@ -16,7 +16,7 @@ class PlayMarkdownWriter:
     play: Play
     paths: paths.PathConfig = field(default_factory=paths.current)
     prefix_line_nos: bool = field(default=True)
-    include_blocking: bool = field(default=True)
+    include_blocking: bool = field(default=False)
 
     def to_markdown(self, out_path: Path | None = None) -> Path:
         """Write blocks.md with one block per paragraph, separated by a blank line."""

@@ -33,7 +33,7 @@ class TextArtifactBuilder:
         *,
         line_no_prefix: bool = True,
         build_type: str | None = None,
-        include_blocking: bool = True,
+        include_blocking: bool = False,
     ) -> None:
         effective_build_type = BuildTypeResolver(
             paths_config=self.paths,
@@ -44,7 +44,7 @@ class TextArtifactBuilder:
         self.write_callout_script()
         self.write_announcer(build_type=effective_build_type)
 
-    def write_play(self, *, line_no_prefix: bool = True, include_blocking: bool = True) -> Path:
+    def write_play(self, *, line_no_prefix: bool = True, include_blocking: bool = False) -> Path:
         play = self._load_play()
         writer = PlayMarkdownWriter(
             play,
@@ -56,7 +56,7 @@ class TextArtifactBuilder:
         logger.info("wrote %s", paths.display_path(path))
         return path
 
-    def write_roles(self, *, line_no_prefix: bool = True, include_blocking: bool = True) -> list[Path]:
+    def write_roles(self, *, line_no_prefix: bool = True, include_blocking: bool = False) -> list[Path]:
         play = self._load_play()
         written_paths: list[Path] = []
         for role in play.roles:

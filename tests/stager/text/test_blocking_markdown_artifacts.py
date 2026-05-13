@@ -32,11 +32,11 @@ I-4 MEGAERA: I won't go another step.
     )
 
 
-def test_text_artifacts_include_role_relevant_blocking_by_default(tmp_path: Path) -> None:
+def test_text_artifacts_include_role_relevant_blocking_when_requested(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     _write_production(cfg)
 
-    TextArtifactBuilder(paths=cfg).build_all()
+    TextArtifactBuilder(paths=cfg).build_all(include_blocking=True)
 
     play_markdown = (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
     megaera_markdown = (cfg.markdown_roles_dir / "MEGAERA.md").read_text(encoding="utf-8")
@@ -49,11 +49,11 @@ def test_text_artifacts_include_role_relevant_blocking_by_default(tmp_path: Path
     assert "(_/MEGAERA: crosses downstage_)" in androcles_markdown
 
 
-def test_text_artifacts_can_exclude_blocking(tmp_path: Path) -> None:
+def test_text_artifacts_exclude_blocking_by_default(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     _write_production(cfg)
 
-    TextArtifactBuilder(paths=cfg).build_all(include_blocking=False)
+    TextArtifactBuilder(paths=cfg).build_all()
 
     play_markdown = (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
     megaera_markdown = (cfg.markdown_roles_dir / "MEGAERA.md").read_text(encoding="utf-8")

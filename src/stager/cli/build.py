@@ -293,7 +293,7 @@ def text(
     play: str | None = PLAY_OPTION,
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
     production_source: str = PRODUCTION_SOURCE_OPTION,
-    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
+    blocking: bool = typer.Option(False, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
 ) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -307,7 +307,7 @@ def text(
 @text_app.command("write-play", hidden=True)
 def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
-    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
+    blocking: bool = typer.Option(False, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -320,7 +320,7 @@ def write_play(
 @text_app.command("write-roles", hidden=True)
 def write_roles(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
-    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
+    blocking: bool = typer.Option(False, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -1131,7 +1131,7 @@ def run_text(
     line_no_prefix: bool = True,
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
-    include_blocking: bool = True,
+    include_blocking: bool = False,
 ) -> None:
     cfg = paths_config or paths.current()
     TextArtifactBuilder(paths=cfg).build_all(
@@ -1144,7 +1144,7 @@ def run_text(
 def run_write_play(
     line_no_prefix: bool = True,
     paths_config: paths.PathConfig | None = None,
-    include_blocking: bool = True,
+    include_blocking: bool = False,
 ):
     cfg = paths_config or paths.current()
     return TextArtifactBuilder(paths=cfg).write_play(
@@ -1156,7 +1156,7 @@ def run_write_play(
 def run_write_roles(
     line_no_prefix: bool = True,
     paths_config: paths.PathConfig | None = None,
-    include_blocking: bool = True,
+    include_blocking: bool = False,
 ):
     cfg = paths_config or paths.current()
     return TextArtifactBuilder(paths=cfg).write_roles(
