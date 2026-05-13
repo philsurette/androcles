@@ -28,32 +28,45 @@ class TextArtifactBuilder:
     def _load_play(self):
         return ProductionPlayLoader(paths_config=self.paths).load()
 
-    def build_all(self, *, line_no_prefix: bool = True, build_type: str | None = None) -> None:
+    def build_all(
+        self,
+        *,
+        line_no_prefix: bool = True,
+        build_type: str | None = None,
+        include_blocking: bool = True,
+    ) -> None:
         effective_build_type = BuildTypeResolver(
             paths_config=self.paths,
             explicit_build_type=build_type,
         ).resolve()
-        self.write_play(line_no_prefix=line_no_prefix)
-        self.write_roles(line_no_prefix=line_no_prefix)
+        self.write_play(line_no_prefix=line_no_prefix, include_blocking=include_blocking)
+        self.write_roles(line_no_prefix=line_no_prefix, include_blocking=include_blocking)
         self.write_callout_script()
         self.write_announcer(build_type=effective_build_type)
 
-    def write_play(self, *, line_no_prefix: bool = True) -> Path:
+    def write_play(self, *, line_no_prefix: bool = True, include_blocking: bool = True) -> Path:
         play = self._load_play()
-        writer = PlayMarkdownWriter(play, paths=self.paths, prefix_line_nos=line_no_prefix)
+        writer = PlayMarkdownWriter(
+            play,
+            paths=self.paths,
+            prefix_line_nos=line_no_prefix,
+            include_blocking=include_blocking,
+        )
         path = writer.to_markdown()
         logger.info("wrote %s", paths.display_path(path))
         return path
 
-    def write_roles(self, *, line_no_prefix: bool = True) -> list[Path]:
+    def write_roles(self, *, line_no_prefix: bool = True, include_blocking: bool = True) -> list[Path]:
         play = self._load_play()
         written_paths: list[Path] = []
         for role in play.roles:
             writer = RoleMarkdownWriter(
                 role,
                 reading_metadata=getattr(play, "reading_metadata", None),
+                play=play,
                 paths=self.paths,
                 prefix_line_nos=line_no_prefix,
+                include_blocking=include_blocking,
             )
             path = writer.to_markdown()
             written_paths.append(path)

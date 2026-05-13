@@ -19,7 +19,7 @@ import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { CueCard } from "../components/CueCard";
-import { LineCard } from "../components/LineCard";
+import { LineCard, type BlockingScope } from "../components/LineCard";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 type RehearsalScreenProps = {
@@ -56,6 +56,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   );
   const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
   const [includeBlocking, setIncludeBlocking] = useState(initialSession?.includeBlocking ?? true);
+  const [blockingScope, setBlockingScope] = useState<BlockingScope>(initialSession?.blockingScope ?? "role");
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const [speakAlongPauseMs, setSpeakAlongPauseMs] = useState(
@@ -237,7 +238,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextSpeakAlongPauseMs = speakAlongPauseMs,
     nextTempoTargetHesitationMs = tempoTargetHesitationMs,
     nextSyncPracticeTiming = syncPracticeTiming,
-    nextIncludeBlocking = includeBlocking
+    nextIncludeBlocking = includeBlocking,
+    nextBlockingScope = blockingScope
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -247,6 +249,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         cueDepth: 1,
         includeDirections: nextIncludeDirections,
         includeBlocking: nextIncludeBlocking,
+        blockingScope: nextBlockingScope,
         revealLine: nextRevealLine,
         showLinesByDefault: nextShowLinesByDefault,
         cueWindowPresetId: nextCueWindowPresetId,
@@ -459,6 +462,25 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       tempoTargetHesitationMs,
       syncPracticeTiming,
       nextIncludeBlocking
+    );
+  }
+
+  function changeBlockingScope(nextBlockingScope: BlockingScope) {
+    setBlockingScope(nextBlockingScope);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      nextBlockingScope
     );
   }
 
@@ -801,7 +823,12 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 </label>
               </div>
               {isLineRevealed ? (
-                <LineCard line={line} includeDirections={includeDirections} includeBlocking={includeBlocking} />
+                <LineCard
+                  line={line}
+                  includeDirections={includeDirections}
+                  includeBlocking={includeBlocking}
+                  blockingScope={blockingScope}
+                />
               ) : (
                 <article className="card hidden-line">Line hidden</article>
               )}
@@ -930,6 +957,17 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       />
                       Show blocking
                     </label>
+                    <label className="timing-setting">
+                      Blocking scope
+                      <select
+                        value={blockingScope}
+                        disabled={!includeBlocking}
+                        onChange={(event) => changeBlockingScope(event.target.value as BlockingScope)}
+                      >
+                        <option value="role">My role</option>
+                        <option value="all">All roles</option>
+                      </select>
+                    </label>
                     <label className="check-setting">
                       <input
                         type="checkbox"
@@ -1001,6 +1039,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                   <ScriptBrowserPanel
                     currentLineId={line?.id ?? null}
                     includeBlocking={includeBlocking}
+                    blockingScope={blockingScope}
                     includeDirections={includeDirections}
                     lines={role.lines}
                     sections={playbook.sections}
@@ -1029,6 +1068,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 function ScriptBrowserPanel({
   currentLineId,
   includeBlocking,
+  blockingScope,
   includeDirections,
   lines,
   sections,
@@ -1036,6 +1076,7 @@ function ScriptBrowserPanel({
 }: {
   currentLineId: string | null;
   includeBlocking: boolean;
+  blockingScope: BlockingScope;
   includeDirections: boolean;
   lines: Line[];
   sections: Playbook["sections"];
@@ -1066,10 +1107,10 @@ function ScriptBrowserPanel({
                   {includeDirections && line.directions.length > 0 ? (
                     <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
                   ) : null}
-                  {includeBlocking && (line.blocking?.length ?? 0) > 0 ? (
+                  {includeBlocking && visibleBlockingForLine(line, blockingScope).length > 0 ? (
                     <small>
-                      {line.blocking
-                        ?.map((blocking) => `${blocking.targets.join(", ")}: ${blocking.text}`)
+                      {visibleBlockingForLine(line, blockingScope)
+                        .map((blocking) => `${blocking.targets.join(", ")}: ${blocking.text}`)
                         .join(" ")}
                     </small>
                   ) : null}
@@ -1081,6 +1122,12 @@ function ScriptBrowserPanel({
         </section>
       ))}
     </div>
+  );
+}
+
+function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
+  return (line.blocking ?? []).filter(
+    (blocking) => blockingScope === "all" || blocking.targets.includes("*") || blocking.targets.includes(line.role)
   );
 }
 

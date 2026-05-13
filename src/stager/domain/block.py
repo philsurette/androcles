@@ -336,7 +336,7 @@ class RoleBlock(Block):
             names = speakers
         return f"{prefix}**{names}**: {self.text}"
 
-    def to_markdown_for_role(self, role: str, prefix: str | None) -> str:
+    def to_markdown_for_role(self, role: str, prefix: str | None, include_blocking: bool = True) -> str:
         """
         Render markdown labeling with the provided role (for role-specific views).
         Uses the block's callout if present; otherwise suppresses with '/' prefix.
@@ -347,4 +347,8 @@ class RoleBlock(Block):
             names = f"{self.callout}/{role}"
         else:
             names = role
-        return f"{prefix}**{names}**: {self.text}"
+        text = self.text if include_blocking else self._text_without_inline_blocking()
+        return f"{prefix}**{names}**: {text}"
+
+    def _text_without_inline_blocking(self) -> str:
+        return re.sub(r"\s*\(_/[^:]+:\s*.*?_\)", "", self.text).strip()

@@ -85,6 +85,7 @@ export function App() {
         cueDepth: savedSession?.cueDepth ?? 1,
         includeDirections: savedSession?.includeDirections ?? true,
         includeBlocking: savedSession?.includeBlocking ?? true,
+        blockingScope: savedSession?.blockingScope ?? "role",
         revealLine: savedSession?.showLinesByDefault ?? savedSession?.revealLine ?? false,
         showLinesByDefault: savedSession?.showLinesByDefault ?? savedSession?.revealLine ?? false,
         cueWindowPresetId: savedSession?.cueWindowPresetId ?? "full",

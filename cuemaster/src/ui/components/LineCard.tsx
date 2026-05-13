@@ -1,14 +1,25 @@
 import type { Line } from "../../domain/line";
 
+export type BlockingScope = "role" | "all";
+
 export function LineCard({
   line,
   includeDirections = false,
-  includeBlocking = true
+  includeBlocking = true,
+  blockingScope = "role"
 }: {
   line: Line;
   includeDirections?: boolean;
   includeBlocking?: boolean;
+  blockingScope?: BlockingScope;
 }) {
+  const visibleBlocking =
+    includeBlocking && line.blocking
+      ? line.blocking.filter(
+          (blocking) => blockingScope === "all" || blocking.targets.includes("*") || blocking.targets.includes(line.role)
+        )
+      : [];
+
   return (
     <article className="card line-card">
       <p>
@@ -20,13 +31,11 @@ export function LineCard({
               </span>
             ))
           : null}
-        {includeBlocking
-          ? (line.blocking ?? []).map((blocking) => (
-              <span className="inline-stage-direction" key={`${blocking.segmentId}-${blocking.placement}`}>
-                {blocking.targets.join(", ")}: {blocking.text}
-              </span>
-            ))
-          : null}
+        {visibleBlocking.map((blocking) => (
+          <span className="inline-stage-direction" key={`${blocking.segmentId}-${blocking.placement}`}>
+            {blocking.targets.join(", ")}: {blocking.text}
+          </span>
+        ))}
         {line.responseText}
       </p>
     </article>

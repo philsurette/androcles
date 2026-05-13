@@ -112,7 +112,7 @@ Role markdown should include role-relevant blocking by default:
 Full script markdown should support include/exclude controls:
 
 ```sh
-./main text --include-blocking
+./main text --blocking
 ./main text --no-blocking
 ```
 
@@ -212,6 +212,19 @@ The display settings should be separate from cue-audio behavior. For example, "d
 - allow stage directions and blocking to be toggled independently.
 
 Blocking does not need playback controls.
+
+## Current Status
+
+Implemented:
+
+- parser and domain model support for standalone and inline blocking,
+- role-line speech/context hash separation,
+- publication diff support for context-only changes,
+- Recording Request blocking context,
+- LineRecorder blocking display,
+- Playbook blocking manifest entries,
+- Cuemaster blocking display controls,
+- markdown text artifact include/exclude controls.
 
 ## Implementation Phases
 

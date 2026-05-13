@@ -285,6 +285,7 @@ def text(
     play: str | None = PLAY_OPTION,
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
     production_source: str = PRODUCTION_SOURCE_OPTION,
+    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
 ) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -292,12 +293,13 @@ def text(
     apply_production_source(cfg, production_source)
     if ctx.invoked_subcommand is None:
         build_type = BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve()
-        run_text(paths_config=cfg, build_type=build_type)
+        run_text(paths_config=cfg, build_type=build_type, include_blocking=blocking)
 
 
 @text_app.command("write-play", hidden=True)
 def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -305,11 +307,12 @@ def write_play(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
-    run_write_play(line_no_prefix, paths_config=cfg)
+    run_write_play(line_no_prefix, paths_config=cfg, include_blocking=blocking)
 
 @text_app.command("write-roles", hidden=True)
 def write_roles(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
+    blocking: bool = typer.Option(True, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -317,7 +320,7 @@ def write_roles(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
-    run_write_roles(line_no_prefix, paths_config=cfg)
+    run_write_roles(line_no_prefix, paths_config=cfg, include_blocking=blocking)
 
 
 @text_app.command("write-cues", hidden=True)
@@ -1120,19 +1123,38 @@ def run_text(
     line_no_prefix: bool = True,
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
+    include_blocking: bool = True,
 ) -> None:
     cfg = paths_config or paths.current()
-    TextArtifactBuilder(paths=cfg).build_all(line_no_prefix=line_no_prefix, build_type=build_type)
+    TextArtifactBuilder(paths=cfg).build_all(
+        line_no_prefix=line_no_prefix,
+        build_type=build_type,
+        include_blocking=include_blocking,
+    )
 
 
-def run_write_play(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
+def run_write_play(
+    line_no_prefix: bool = True,
+    paths_config: paths.PathConfig | None = None,
+    include_blocking: bool = True,
+):
     cfg = paths_config or paths.current()
-    return TextArtifactBuilder(paths=cfg).write_play(line_no_prefix=line_no_prefix)
+    return TextArtifactBuilder(paths=cfg).write_play(
+        line_no_prefix=line_no_prefix,
+        include_blocking=include_blocking,
+    )
 
 
-def run_write_roles(line_no_prefix: bool = True, paths_config: paths.PathConfig | None = None):
+def run_write_roles(
+    line_no_prefix: bool = True,
+    paths_config: paths.PathConfig | None = None,
+    include_blocking: bool = True,
+):
     cfg = paths_config or paths.current()
-    return TextArtifactBuilder(paths=cfg).write_roles(line_no_prefix=line_no_prefix)
+    return TextArtifactBuilder(paths=cfg).write_roles(
+        line_no_prefix=line_no_prefix,
+        include_blocking=include_blocking,
+    )
 
 
 def run_write_callout_script(paths_config: paths.PathConfig | None = None):
