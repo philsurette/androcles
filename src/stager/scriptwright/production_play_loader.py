@@ -57,12 +57,17 @@ class ProductionPlayLoader:
                 next_part_no = max(next_part_no, current_part + 1)
                 block = self._title_block(entry, current_part)
                 block_counters[current_part] = 0
+            elif entry.kind == ProductionEntryKind.BLOCKING:
+                block_no = self._blocking_block_no(entry, block_counters.get(current_part, 0))
+                block_id = BlockId(current_part, block_no)
+                block = self._script_block(entry, block_id, blocking_counters)
             else:
                 block_counters[current_part] = block_counters.get(current_part, 0) + 1
                 block_id = BlockId(current_part, block_counters[current_part])
                 block = self._script_block(entry, block_id, blocking_counters)
             play.blocks.append(block)
-            play._by_id[block.block_id] = block
+            if not isinstance(block, BlockingBlock):
+                play._by_id[block.block_id] = block
 
         play.rebuild_parts_index()
         return play
@@ -114,6 +119,11 @@ class ProductionPlayLoader:
             production_id=entry.production_id,
             content_hash=content_hash,
         )
+
+    def _blocking_block_no(self, entry: ProductionEntry, current_block_no: int) -> int:
+        if entry.placement == "after":
+            return current_block_no
+        return current_block_no + 1
 
     def _script_block(self, entry: ProductionEntry, block_id: BlockId, blocking_counters: dict[str, int]):
         hash_parts = entry.roles or entry.targets

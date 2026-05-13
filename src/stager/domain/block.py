@@ -207,31 +207,54 @@ class RoleBlock(Block):
     def split_block_segments(cls, text: str, block_id: BlockId, role: str) -> List[Segment]:
         parts = cls.NARRATION_RE.split(text)
         segments: List[Segment] = []
+        pending_speech_parts: List[str] = []
+        pending_blocking: List[BlockingSegment] = []
         index = 1
+
+        def flush_speech() -> None:
+            nonlocal index
+            speech_text = " ".join(part.strip() for part in pending_speech_parts if part.strip())
+            pending_speech_parts.clear()
+            if not speech_text:
+                return
+            segments.append(
+                SpeechSegment(
+                    segment_id=SegmentId(block_id, index),
+                    text=speech_text,
+                    role=role,
+                )
+            )
+            index += 1
+
+        def flush_blocking() -> None:
+            nonlocal index
+            while pending_blocking:
+                segment = pending_blocking.pop(0)
+                segment.segment_id = SegmentId(block_id, index)
+                segments.append(segment)
+                index += 1
+
         for i, part in enumerate(parts):
             speech = i % 2 == 0
             if speech:
                 if part.strip():
-                    segments.append(
-                        SpeechSegment(
-                            segment_id=SegmentId(block_id, index),
-                            text=part.strip(),
-                            role=role,
-                        )
-                    )
-                    index += 1
+                    pending_speech_parts.append(part)
             else: #narration
                 blocking_segment = cls._blocking_segment(part.strip(), block_id, index)
                 if blocking_segment is not None:
-                    segments.append(blocking_segment)
+                    pending_blocking.append(blocking_segment)
                 else:
+                    flush_speech()
+                    flush_blocking()
                     segments.append(
                         DirectionSegment(
                             segment_id=SegmentId(block_id, index),
                             text=part.strip(),
                         )
                     )
-                index += 1
+                    index += 1
+        flush_speech()
+        flush_blocking()
         return segments
 
     @classmethod

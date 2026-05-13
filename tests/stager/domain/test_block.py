@@ -10,7 +10,7 @@ if str(SRC) not in sys.path:
 
 from stager.domain.block import RoleBlock
 from stager.domain.block_id import BlockId
-from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechSegment
+from stager.domain.segment import BlockingSegment, DirectionSegment, SimultaneousSegment, SpeechSegment
 
 
 def split_segments(text: str, *, part: int | None = 1, block_no: int = 1, role: str = "CALL BOY"):
@@ -79,6 +79,18 @@ def test_roleblock_parse_keeps_leading_i_ellipsis_as_speech() -> None:
     assert isinstance(block.segments[0], SpeechSegment)
     assert block.segments[0].role == "CHRISTINE"
     assert block.segments[0].text == "I... I've had such a wonderful time."
+
+
+def test_roleblock_inline_blocking_does_not_split_speech_audio_segments() -> None:
+    segments = split_segments("I have drawings. (_/CHRISTINE: leans in_) This one is my favourite.", role="LILLIAN")
+
+    assert len(segments) == 2
+    assert isinstance(segments[0], SpeechSegment)
+    assert segments[0].segment_id.segment_no == 1
+    assert segments[0].text == "I have drawings. This one is my favourite."
+    assert isinstance(segments[1], BlockingSegment)
+    assert segments[1].segment_id.segment_no == 2
+    assert segments[1].text == "leans in"
 
 
 def test_roleblock_markdown_includes_rendered_block_id_prefix() -> None:

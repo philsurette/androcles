@@ -58,7 +58,6 @@ I-6 CAPTAIN: Wait (_/MEGAERA: takes CAPTAIN's hand_) now.
     assert [segment.__class__ for segment in play.blocks[6].segments] == [
         SpeechSegment,
         BlockingSegment,
-        SpeechSegment,
     ]
     assert play.getRole("CAPTAIN") is not None
     assert play.getRole("MEGAERA") is not None
@@ -71,7 +70,7 @@ I-6 CAPTAIN: Wait (_/MEGAERA: takes CAPTAIN's hand_) now.
         (1, 4, "CAPTAIN"),
         (1, 4, "MEGAERA"),
         (1, 5, "_NARRATOR"),
-        (1, 6, "CAPTAIN"),
+        (1, 5, "CAPTAIN"),
     ]
     assert play.blocks[0].production_id == "I-0"
     assert play.blocks[0].content_hash.startswith("sha256:")
@@ -86,6 +85,8 @@ I-6 CAPTAIN: Wait (_/MEGAERA: takes CAPTAIN's hand_) now.
     assert play.blocks[5].placement == "before"
     assert play.blocks[5].segments[0].production_id == "I-6:b1"
     assert play.blocks[5].segments[0].placement == "before"
+    assert play.blocks[6].block_id == BlockId(1, 5)
+    assert play.blocks[6].segments[0].production_id == "I-6:s1"
     assert play.blocks[6].segments[1].production_id == "I-6:b2"
     assert play.blocks[6].segments[1].placement == "inline"
 

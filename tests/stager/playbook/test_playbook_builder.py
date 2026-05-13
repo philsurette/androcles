@@ -472,7 +472,6 @@ I-1 ANDROCLES: Hello (_/MEGAERA: crosses behind ANDROCLES_) there.
     play = ProductionPlayLoader(paths_config=cfg).load()
     _write_wav(cfg.segments_dir / "_NARRATOR" / "1_0_1.wav")
     _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_1.wav")
-    _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_3.wav")
 
     PlaybookBuilder(play=play, paths=cfg).build()
     data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
