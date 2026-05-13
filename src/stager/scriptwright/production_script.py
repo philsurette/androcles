@@ -22,6 +22,7 @@ class ProductionEntry:
     heading_level: int | None = None
     roles: tuple[str, ...] = ()
     targets: tuple[str, ...] = ()
+    placement: str | None = None
     leading_comments: tuple[str, ...] = ()
 
 

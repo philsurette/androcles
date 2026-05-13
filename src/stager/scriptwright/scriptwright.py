@@ -173,7 +173,7 @@ class ScriptWright:
             return f"{production_id} @direction: {self._clean_text(block.text)}"
         if isinstance(block, BlockingBlock):
             targets = ", ".join(block.targets)
-            return f"{production_id} /{targets}: {self._clean_text(block.text)}"
+            return f"/{targets}: {self._clean_text(block.text)}"
         if isinstance(block, RoleBlock):
             speakers = ", ".join(block.role_names)
             return f"{production_id} {speakers}: {self._clean_text(block.text)}"
@@ -199,6 +199,9 @@ class ScriptWright:
         assigned: list[tuple[str, ProductionEntry]] = []
         assigned_ids: set[str] = set()
         for entry in entries:
+            if entry.kind == ProductionEntryKind.BLOCKING:
+                self._append_assigned_id(assigned, assigned_ids, f"__blocking_{len(assigned)}", entry)
+                continue
             if entry.production_id is not None:
                 production_id = entry.production_id
                 explicit_structure = production_id.rsplit("-", 1)[0]
@@ -285,7 +288,7 @@ class ScriptWright:
         if entry.kind == ProductionEntryKind.DIRECTION:
             return f"{production_id} @direction: {self._clean_text(entry.text)}"
         if entry.kind == ProductionEntryKind.BLOCKING:
-            return f"{production_id} /{', '.join(entry.targets)}: {self._clean_text(entry.text)}"
+            return f"/{', '.join(entry.targets)}: {self._clean_text(entry.text)}"
         if entry.kind == ProductionEntryKind.ROLE:
             return f"{production_id} {', '.join(entry.roles)}: {self._clean_text(entry.text)}"
         raise RuntimeError(f"Unsupported production entry kind: {entry.kind}")

@@ -113,7 +113,8 @@ const manifestSchema = z.object({
       text: z.string(),
       audio: audioAssetSchema.optional(),
       content_hash: contentHashSchema,
-      targets: z.array(z.string().min(1)).optional()
+      targets: z.array(z.string().min(1)).optional(),
+      placement: z.enum(["before", "after"]).optional()
     })
   ),
   roles: z.array(roleSchema),

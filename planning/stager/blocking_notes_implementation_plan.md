@@ -19,15 +19,15 @@ The source-format contract belongs in [../specs/script_text_format.md](../specs/
 Use terse producer-authored blocking syntax in `production.md`:
 
 ```text
-2.1-20 /LILLIAN: crosses to the window
-2.1-21 /LILLIAN, CHRISTINE: cross downstage
-2.1-22 /*: everyone freezes
+/LILLIAN: crosses to the window
+/LILLIAN, CHRISTINE: cross downstage
+/*: everyone freezes
 ```
 
 This is syntactic sugar for the conceptual form:
 
 ```text
-2.1-20 @blocking[LILLIAN]: crosses to the window
+@blocking[LILLIAN]: crosses to the window
 ```
 
 For inline blocking inside long speeches, use the existing `(_..._)` inline direction delimiters with a leading `/target-list:`:
@@ -48,9 +48,10 @@ ProductionEntryKind.BLOCKING = "blocking"
 
 Standalone blocking entries need:
 
-- `production_id`
+- associated `production_id` resolved by Stager
 - `targets`
 - `text`
+- `placement` (`before` or `after`)
 - `line_no`
 - `content_hash`
 

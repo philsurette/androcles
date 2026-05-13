@@ -114,6 +114,7 @@ describe("normalizePlaybook", () => {
           kind: "blocking",
           speaker: "_NARRATOR",
           targets: ["MEGAERA"],
+          placement: "before",
           text: "Crosses downstage.",
           content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000021"
         }
@@ -175,6 +176,7 @@ describe("normalizePlaybook", () => {
     expect(playbook.context[0]).toMatchObject({
       kind: "blocking",
       targets: ["MEGAERA"],
+      placement: "before",
       audioPath: undefined
     });
     expect(playbook.roles[0].lines[0].blocking).toEqual([

@@ -1,7 +1,7 @@
 """Parse canonical production markdown."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 import re
 
@@ -44,7 +44,7 @@ class ProductionScriptParser:
         path = source_path or self.source_path
         metadata: dict[str, str] = {}
         entries: list[ProductionEntry] = []
-        seen_ids: set[str] = set()
+        seen_non_blocking_ids: set[str] = set()
         in_metadata = True
         pending_comments: list[str] = []
 
@@ -69,18 +69,55 @@ class ProductionScriptParser:
             entry = self._parse_entry(line, locked, index, path, tuple(pending_comments))
             pending_comments = []
             if entry.production_id is not None:
-                if entry.production_id in seen_ids:
+                if entry.production_id in seen_non_blocking_ids and entry.kind != ProductionEntryKind.BLOCKING:
                     self._fail(f"Duplicate production id: {entry.production_id}", index, path)
-                seen_ids.add(entry.production_id)
+                if entry.kind != ProductionEntryKind.BLOCKING:
+                    seen_non_blocking_ids.add(entry.production_id)
             entries.append(entry)
 
         self._validate_metadata(metadata, len(text.splitlines()) or 1, path)
-        return ProductionScript(metadata=metadata, entries=tuple(entries))
+        return ProductionScript(metadata=metadata, entries=tuple(self._resolve_idless_blocking(entries, path)))
 
     def _strip_optional_list_marker(self, line: str) -> str:
         if line.startswith("- "):
             return line[2:].strip()
         return line
+
+    def _resolve_idless_blocking(self, entries: list[ProductionEntry], path: Path | None) -> list[ProductionEntry]:
+        resolved_entries: list[ProductionEntry] = []
+        for index, entry in enumerate(entries):
+            if entry.kind != ProductionEntryKind.BLOCKING or entry.production_id is not None:
+                resolved_entries.append(entry)
+                continue
+            associated_id = self._next_script_unit_id(entries, index)
+            placement = "before"
+            if associated_id is None:
+                associated_id = self._previous_script_unit_id(entries, index)
+                placement = "after"
+            if associated_id is None:
+                self._fail("Blocking entry is missing an associated production id", entry.line_no, path)
+            resolved_entries.append(replace(entry, production_id=associated_id, placement=placement))
+        return resolved_entries
+
+    def _next_script_unit_id(self, entries: list[ProductionEntry], index: int) -> str | None:
+        for candidate in entries[index + 1 :]:
+            if candidate.kind == ProductionEntryKind.HEADING:
+                break
+            if candidate.kind == ProductionEntryKind.BLOCKING:
+                continue
+            if candidate.production_id is not None:
+                return candidate.production_id
+        return None
+
+    def _previous_script_unit_id(self, entries: list[ProductionEntry], index: int) -> str | None:
+        for candidate in reversed(entries[:index]):
+            if candidate.kind == ProductionEntryKind.HEADING:
+                break
+            if candidate.kind == ProductionEntryKind.BLOCKING:
+                continue
+            if candidate.production_id is not None:
+                return candidate.production_id
+        return None
 
     def _parse_metadata_line(
         self,
@@ -135,21 +172,24 @@ class ProductionScriptParser:
                 leading_comments=leading_comments,
             )
 
-        production_id, body = self._extract_optional_id(line, locked, line_no, path)
-        blocking_match = self.BLOCKING_RE.match(body)
-        if blocking_match:
-            targets = self._parse_blocking_targets(blocking_match.group("targets"), line_no, path)
-            text = blocking_match.group("text").strip()
+        idless_blocking_match = self.BLOCKING_RE.match(line)
+        if idless_blocking_match:
+            targets = self._parse_blocking_targets(idless_blocking_match.group("targets"), line_no, path)
+            text = idless_blocking_match.group("text").strip()
             if not text:
                 self._fail("Empty blocking text", line_no, path)
             return ProductionEntry(
                 kind=ProductionEntryKind.BLOCKING,
                 text=text,
                 line_no=line_no,
-                production_id=production_id,
                 targets=targets,
                 leading_comments=leading_comments,
             )
+
+        production_id, body = self._extract_optional_id(line, locked, line_no, path)
+        blocking_match = self.BLOCKING_RE.match(body)
+        if blocking_match:
+            self._fail("Standalone blocking entries must not use explicit production ids", line_no, path)
 
         label_match = self.LABEL_RE.match(body)
         if label_match:

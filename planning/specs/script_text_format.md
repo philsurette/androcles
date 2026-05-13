@@ -128,9 +128,9 @@ Locked production entries have these shapes:
 ### <production-id> <heading text>
 <production-id> @description: <description text>
 <production-id> @direction: <stage direction text>
-<production-id> /<ROLE>: <blocking note>
-<production-id> /<ROLE>, <ROLE>: <blocking note>
-<production-id> /*: <blocking note>
+/<ROLE>: <blocking note>
+/<ROLE>, <ROLE>: <blocking note>
+/*: <blocking note>
 <production-id> <ROLE>: <spoken text>
 <production-id> <ROLE>, <ROLE>: <simultaneous spoken text>
 ```
@@ -166,9 +166,9 @@ Reserved lowercase entry labels:
 Standalone blocking uses a terse shorthand rather than an `@` entry label:
 
 ```text
-I.1-6 /MEGAERA: crosses to the milestone
-I.1-7 /MEGAERA, ANDROCLES: sit on the fallen tree
-I.1-8 /*: everyone freezes
+/MEGAERA: crosses to the milestone
+/MEGAERA, ANDROCLES: sit on the fallen tree
+/*: everyone freezes
 ```
 
 The shorthand is syntactic sugar for the conceptual entry kind `@blocking[targets]`. Producers should normally write the shorthand.
@@ -190,7 +190,7 @@ I.1-2 MEGAERA: I won't go another step.
 I.1-3 ANDROCLES: Oh, not again, dear.
 I.1-4 @direction: The lion roars offstage.
 I.1-5 GLADIATOR_1, GLADIATOR_2: Hail, Caesar!
-I.1-6 /MEGAERA: crosses to the milestone
+/MEGAERA: crosses to the milestone
 ```
 
 ## Inline Stage Directions
@@ -224,8 +224,17 @@ Blocking notes describe production-specific movement. They are not spoken text, 
 Standalone blocking notes use:
 
 ```text
-<production-id> /<target-list>: <blocking text>
+/<target-list>: <blocking text>
 ```
+
+Standalone blocking notes do not use production ids in source. In locked `production.md`, Stager associates id-less blocking with a nearby non-blocking script unit and gives it an internal blocking sub-id such as `<production-id>:b1`.
+
+Association rules:
+
+- A blocking note before another non-blocking script unit in the same section attaches to that following unit with placement `before`.
+- If there is no following non-blocking script unit before the next heading, a trailing blocking note attaches to the previous non-blocking script unit in the same section with placement `after`.
+- A blocking note with neither a previous nor following non-blocking script unit in the same section is invalid.
+- Explicit production ids on standalone blocking notes are invalid. Blocking notes do not consume or revise line ids.
 
 The target list may be:
 
@@ -236,9 +245,11 @@ The target list may be:
 Examples:
 
 ```text
-I.1-6 /MEGAERA: crosses to the milestone
-I.1-7 /MEGAERA, ANDROCLES: sit on the fallen tree
-I.1-8 /*: everyone freezes
+/MEGAERA: crosses to the milestone
+/MEGAERA, ANDROCLES: sit on the fallen tree
+/*: everyone freezes
+/ANDROCLES: reaches for MEGAERA's hand
+I.1-9 MEGAERA: I won't go another step.
 ```
 
 Inline blocking inside spoken lines uses the existing `(_` and `_)` inline direction delimiters. The content inside those delimiters is classified as blocking when it begins with the same `/target-list:` blocking shorthand:
@@ -253,7 +264,7 @@ Rules:
 - Inline blocking may appear inside spoken text.
 - Inline blocking is addressable as a sub-line unit derived from the containing production id, such as `I.1-9:b1`.
 - Inline text that uses `(_..._)` but does not start with `/target-list:` remains an ordinary inline stage direction.
-- Standalone blocking is addressable by its own production id.
+- Standalone blocking is authored without a production id and addressable by its generated `:bN` sub-id.
 - Blocking does not create recordable speech segments.
 - Blocking changes should not by themselves trigger LineRecorder re-recording requests.
 - Nested inline direction or blocking delimiters are not allowed.

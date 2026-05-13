@@ -129,7 +129,7 @@ Optional recording item fields:
 - `section_title`: Actor-facing section title for navigation and context.
 - `scene_heading`
 - `stage_directions`
-- `blocking`: Structured blocking context with `id`, `targets`, `text`, and `placement` (`inline` or `standalone`).
+- `blocking`: Structured blocking context with `id`, `targets`, `text`, and `placement` (`inline`, `before`, or `after`).
 - `reason`: Item-level reason such as `initial_recording`, `script_changed`, `director_request`, `bad_take`, or `actor_request`.
 - `notes`
 - `previous_recording`: Optional path to a previous take included in the zip.

@@ -19,7 +19,7 @@ I.1-1 @description: A dusty Roman road.
 I.1-2 CAPTAIN: I will go (_draws sword_) if I must.
 I.1-3 CAPTAIN, MEGAERA: Together.
 I.1-4 @direction: The soldiers move aside.
-I.1-5 /CAPTAIN: crosses downstage.
+/CAPTAIN: crosses downstage.
 """
     )
 
@@ -36,7 +36,9 @@ I.1-5 /CAPTAIN: crosses downstage.
     assert script.entries[1].production_id == "I.1-0"
     assert script.entries[3].roles == ("CAPTAIN",)
     assert script.entries[4].roles == ("CAPTAIN", "MEGAERA")
+    assert script.entries[6].production_id == "I.1-4"
     assert script.entries[6].targets == ("CAPTAIN",)
+    assert script.entries[6].placement == "after"
 
 
 def test_parse_markdown_list_production_entries():
@@ -49,17 +51,79 @@ def test_parse_markdown_list_production_entries():
 
 - I-1 @description: A dusty Roman road.
 - I-2 CAPTAIN: I will go.
-- I-3 /CAPTAIN: crosses downstage.
+- /CAPTAIN: crosses downstage.
 """
     )
 
-    assert [entry.production_id for entry in script.entries] == ["I-0", "I-1", "I-2", "I-3"]
+    assert [entry.production_id for entry in script.entries] == ["I-0", "I-1", "I-2", "I-2"]
     assert [entry.kind for entry in script.entries] == [
         ProductionEntryKind.HEADING,
         ProductionEntryKind.DESCRIPTION,
         ProductionEntryKind.ROLE,
         ProductionEntryKind.BLOCKING,
     ]
+
+
+def test_parse_rejects_explicit_id_on_standalone_blocking():
+    with pytest.raises(RuntimeError, match="Standalone blocking entries must not use explicit production ids"):
+        ProductionScriptParser().parse_text(
+            """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+- I-1 /CAPTAIN: crosses downstage.
+- I-1 CAPTAIN: I will go.
+"""
+        )
+
+
+def test_parse_associates_idless_blocking_with_following_script_unit():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+- /CAPTAIN: crosses downstage.
+- /MEGAERA: follows CAPTAIN.
+- I-1 CAPTAIN: I will go.
+- /CAPTAIN: exits.
+- I-2 @description: The road is empty.
+"""
+    )
+
+    assert [entry.production_id for entry in script.entries] == ["I-0", "I-1", "I-1", "I-1", "I-2", "I-2"]
+    assert [entry.kind for entry in script.entries] == [
+        ProductionEntryKind.HEADING,
+        ProductionEntryKind.BLOCKING,
+        ProductionEntryKind.BLOCKING,
+        ProductionEntryKind.ROLE,
+        ProductionEntryKind.BLOCKING,
+        ProductionEntryKind.DESCRIPTION,
+    ]
+    assert [entry.placement for entry in script.entries] == [None, "before", "before", None, "before", None]
+
+
+def test_parse_associates_trailing_idless_blocking_with_previous_script_unit():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+- I-1 CAPTAIN: I will go.
+- /CAPTAIN: exits.
+"""
+    )
+
+    assert [entry.production_id for entry in script.entries] == ["I-0", "I-1", "I-1"]
+    assert [entry.kind for entry in script.entries] == [
+        ProductionEntryKind.HEADING,
+        ProductionEntryKind.ROLE,
+        ProductionEntryKind.BLOCKING,
+    ]
+    assert [entry.placement for entry in script.entries] == [None, None, "after"]
 
 
 def test_parse_inline_blocking_targets():
@@ -157,7 +221,7 @@ CAPTAIN: One line.
 // source_kind: production
 // production_ids: locked
 
-I-1 /CAPTAIN, *: bad target list.
+/CAPTAIN, *: bad target list.
 """,
             "Blocking wildcard cannot be combined",
         ),

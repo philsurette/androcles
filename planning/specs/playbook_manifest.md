@@ -157,7 +157,7 @@ Context entries preserve script material that is not a rehearsable actor respons
 }
 ```
 
-Blocking context entries use the same shape but set `kind` to `blocking`, include `targets`, and omit `audio`. Blocking is an instruction to actors, not narrator-spoken script audio.
+Blocking context entries use the same shape but set `kind` to `blocking`, include `targets` and `placement`, and omit `audio`. Blocking is an instruction to actors, not narrator-spoken script audio.
 
 Context fields:
 
@@ -170,6 +170,7 @@ Context fields:
 - `content_hash`: Normalized content fingerprint for detecting changed context text behind a reused production id.
 - `audio`: Required narrator audio for heading, description, and direction context. Omitted for blocking context.
 - `targets`: Role ids affected by a blocking context entry. Present for `blocking`; omitted otherwise.
+- `placement`: `before` or `after` for standalone blocking context. Present for `blocking`; omitted otherwise.
 
 ## Role Payload
 

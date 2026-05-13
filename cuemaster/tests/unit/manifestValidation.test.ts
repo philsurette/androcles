@@ -63,6 +63,7 @@ describe("validatePlaybookManifest", () => {
       kind: "blocking",
       speaker: "_NARRATOR",
       targets: ["MEGAERA"],
+      placement: "before",
       text: "Crosses downstage.",
       content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000021"
     });

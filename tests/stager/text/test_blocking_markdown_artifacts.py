@@ -24,8 +24,8 @@ def _write_production(cfg: paths.PathConfig) -> None:
 
 # I-0 ACT I
 I-1 ANDROCLES: Hello (_/MEGAERA: crosses downstage_) there.
-I-2 /MEGAERA: Moves behind ANDROCLES.
-I-3 /*: Everyone freezes.
+/MEGAERA: Moves behind ANDROCLES.
+/*: Everyone freezes.
 I-4 MEGAERA: I won't go another step.
 """,
         encoding="utf-8",

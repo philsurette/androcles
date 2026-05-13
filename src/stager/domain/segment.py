@@ -37,6 +37,7 @@ class DirectionSegment(Segment):
 @dataclass
 class BlockingSegment(Segment):
     targets: list[str]
+    placement: str = "inline"
 
     def __str__(self) -> str:
         return f"{', '.join(self.targets)}: {self.text}"

@@ -147,6 +147,7 @@ class DirectionBlock(Block):
 @dataclass
 class BlockingBlock(Block):
     targets: List[str] = field(default_factory=list)
+    placement: str = "before"
 
     @property
     def roles(self) -> List[str]:

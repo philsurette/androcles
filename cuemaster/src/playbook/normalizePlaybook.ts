@@ -25,7 +25,8 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
       contentHash: block.content_hash,
       audioPath: block.audio?.path,
       durationMs: block.audio?.duration_ms,
-      targets: block.targets
+      targets: block.targets,
+      placement: block.placement
     })),
     roles: manifest.roles.map((role) => ({
       id: role.id,

@@ -192,6 +192,7 @@ class PlaybookBuilder:
                     content_hash=block.content_hash,
                     audio=audio,
                     targets=list(block.targets) if isinstance(block, BlockingBlock) else None,
+                    placement=block.placement if isinstance(block, BlockingBlock) else None,
                 )
             )
         return context_blocks

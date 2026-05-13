@@ -11,4 +11,5 @@ export type ContextBlock = {
   audioPath?: string;
   durationMs?: number;
   targets?: string[];
+  placement?: "before" | "after";
 };

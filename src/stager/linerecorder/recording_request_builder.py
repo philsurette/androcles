@@ -230,7 +230,7 @@ class RecordingRequestBuilder:
             if isinstance(candidate, BlockingBlock) and self._blocking_targets_role(candidate.targets):
                 for segment in candidate.segments:
                     if isinstance(segment, BlockingSegment):
-                        self._append_blocking(blocking, seen_ids, segment, "standalone")
+                        self._append_blocking(blocking, seen_ids, segment, candidate.placement)
         return blocking
 
     def _adjacent_role_block_index(self, start_index: int, step: int) -> int | None:

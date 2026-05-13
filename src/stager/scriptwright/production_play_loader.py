@@ -49,6 +49,7 @@ class ProductionPlayLoader:
         current_part: int | None = None
         next_part_no = 0
         block_counters: dict[int | None, int] = {}
+        blocking_counters: dict[str, int] = {}
 
         for entry in production.entries:
             if entry.kind == ProductionEntryKind.HEADING:
@@ -59,7 +60,7 @@ class ProductionPlayLoader:
             else:
                 block_counters[current_part] = block_counters.get(current_part, 0) + 1
                 block_id = BlockId(current_part, block_counters[current_part])
-                block = self._script_block(entry, block_id)
+                block = self._script_block(entry, block_id, blocking_counters)
             play.blocks.append(block)
             play._by_id[block.block_id] = block
 
@@ -114,11 +115,14 @@ class ProductionPlayLoader:
             content_hash=content_hash,
         )
 
-    def _script_block(self, entry: ProductionEntry, block_id: BlockId):
+    def _script_block(self, entry: ProductionEntry, block_id: BlockId, blocking_counters: dict[str, int]):
+        hash_parts = entry.roles or entry.targets
+        if entry.kind == ProductionEntryKind.BLOCKING:
+            hash_parts = entry.targets + ((entry.placement or ""),)
         content_hash = self.content_hasher.hash_line(
             entry.kind.value,
             entry.text,
-            entry.roles or entry.targets,
+            hash_parts,
         )
         if entry.kind == ProductionEntryKind.DESCRIPTION:
             return DescriptionBlock(
@@ -152,19 +156,27 @@ class ProductionPlayLoader:
             )
         if entry.kind == ProductionEntryKind.BLOCKING:
             targets = list(entry.targets)
+            segment_production_id = self._blocking_segment_production_id(entry, blocking_counters)
+            placement = entry.placement or "before"
             return BlockingBlock(
                 block_id=block_id,
                 text=entry.text,
                 targets=targets,
-                production_id=entry.production_id,
+                placement=placement,
+                production_id=segment_production_id,
                 content_hash=content_hash,
                 segments=[
                     BlockingSegment(
                         segment_id=SegmentId(block_id, 1),
                         text=entry.text,
                         targets=targets,
-                        production_id=self._segment_production_id(entry, 1, "b"),
-                        content_hash=self.content_hasher.hash_segment("blocking", entry.text, ",".join(targets)),
+                        placement=placement,
+                        production_id=segment_production_id,
+                        content_hash=self.content_hasher.hash_segment(
+                            "blocking",
+                            entry.text,
+                            f"{','.join(targets)}|{placement}",
+                        ),
                     )
                 ],
             )
@@ -193,9 +205,12 @@ class ProductionPlayLoader:
             direction_count = 0
             for segment in segments:
                 if isinstance(segment, BlockingSegment):
-                    direction_count += 1
-                    segment.production_id = self._segment_production_id(entry, direction_count, "b")
-                    segment.content_hash = self.content_hasher.hash_segment("blocking", segment.text, ",".join(segment.targets))
+                    segment.production_id = self._blocking_segment_production_id(entry, blocking_counters)
+                    segment.content_hash = self.content_hasher.hash_segment(
+                        "blocking",
+                        segment.text,
+                        f"{','.join(segment.targets)}|{segment.placement}",
+                    )
                 elif isinstance(segment, DirectionSegment):
                     direction_count += 1
                     segment.production_id = self._segment_production_id(entry, direction_count, "d")
@@ -219,6 +234,12 @@ class ProductionPlayLoader:
         if entry.production_id is None:
             return None
         return f"{entry.production_id}:{prefix}{index}"
+
+    def _blocking_segment_production_id(self, entry: ProductionEntry, counters: dict[str, int]) -> str | None:
+        if entry.production_id is None:
+            return None
+        counters[entry.production_id] = counters.get(entry.production_id, 0) + 1
+        return self._segment_production_id(entry, counters[entry.production_id], "b")
 
     def _load_source_text_metadata(self) -> SourceTextMetadata:
         meta_path = self.paths_config.play_dir / "source_text_metadata.yaml"

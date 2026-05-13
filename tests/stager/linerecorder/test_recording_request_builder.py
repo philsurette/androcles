@@ -283,7 +283,7 @@ def test_recording_request_builder_includes_blocking_context(tmp_path: Path) -> 
             "id": "I-2:b1",
             "targets": ["MEGAERA"],
             "text": "Cross to the milestone.",
-            "placement": "standalone",
+            "placement": "before",
         },
     ]
 

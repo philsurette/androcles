@@ -465,7 +465,7 @@ def test_playbook_manifest_exports_blocking_without_required_audio(tmp_path: Pat
 
 # I-0 ACT I
 I-1 ANDROCLES: Hello (_/MEGAERA: crosses behind ANDROCLES_) there.
-I-2 /MEGAERA: Moves upstage.
+/MEGAERA: Moves upstage.
 """,
         encoding="utf-8",
     )
@@ -491,7 +491,8 @@ I-2 /MEGAERA: Moves upstage.
     ]
     assert line["blocking"][0]["content_hash"].startswith("sha256:")
     blocking_context = next(block for block in data["context"] if block["kind"] == "blocking")
-    assert blocking_context["id"] == "I-2"
+    assert blocking_context["id"] == "I-1:b2"
     assert blocking_context["targets"] == ["MEGAERA"]
+    assert blocking_context["placement"] == "after"
     assert blocking_context["text"] == "Moves upstage."
     assert "audio" not in blocking_context

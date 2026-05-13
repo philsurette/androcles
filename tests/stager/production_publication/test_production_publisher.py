@@ -163,6 +163,32 @@ P-1 LILLIAN: Please (_/CHRISTINE: sits_) do.""",
     assert result.recording_request_paths == ()
 
 
+def test_publish_assigns_internal_ids_to_idless_standalone_blocking(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+/CHRISTINE: crosses.
+P-1 LILLIAN: Please do.""",
+    )
+    result = ProductionPublisher(cfg).publish()
+
+    assert [line.id for line in result.version.lines] == ["P-0", "P-1:b1", "P-1"]
+
+
+def test_publish_attaches_trailing_idless_standalone_blocking_to_previous_line(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+/CHRISTINE: exits.""",
+    )
+    result = ProductionPublisher(cfg).publish()
+
+    assert [line.id for line in result.version.lines] == ["P-0", "P-1", "P-1:b1"]
+
+
 def test_restore_copies_published_version_to_producer_source(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     _write_production(

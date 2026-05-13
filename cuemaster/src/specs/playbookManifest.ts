@@ -39,6 +39,7 @@ export type ManifestContextBlock = {
   audio?: ManifestAudioAsset;
   content_hash: string;
   targets?: string[];
+  placement?: "before" | "after";
 };
 
 export type ManifestSection = {
