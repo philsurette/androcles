@@ -139,22 +139,77 @@ Targeted re-recording requests should only be generated for changed or added spe
 
 ### Playbooks
 
-Playbooks should include blocking as text context for Cuemaster:
+Playbooks should include structured stage directions and structured blocking as text context for Cuemaster.
+
+Directions should be available independently from blocking:
+
+- inline directions attached to the owning line,
+- standalone directions in ordered script context,
+- direction display metadata separate from any cue-audio behavior.
+
+Blocking should be available as:
 
 - role-scoped blocking timeline,
 - inline blocking attached to the owning line,
 - scene-level blocking entries with target roles.
 
-Blocking should not require audio packaging and should not be treated as cue or response audio.
+Recommended line shape:
+
+```json
+{
+  "id": "2.1-24",
+  "directions": [
+    {
+      "id": "2.1-24:d1",
+      "text": "crossing",
+      "placement": "inline"
+    }
+  ],
+  "blocking": [
+    {
+      "id": "2.1-24:b1",
+      "targets": ["CHRISTINE"],
+      "text": "takes LILLIAN's hand",
+      "placement": "inline"
+    }
+  ]
+}
+```
+
+Recommended standalone blocking shape:
+
+```json
+{
+  "id": "2.1-20",
+  "kind": "blocking",
+  "targets": ["LILLIAN"],
+  "text": "crosses to the window"
+}
+```
+
+Directions and blocking should not require audio packaging and should not be treated as cue or response audio.
 
 ### Cuemaster
 
-Cuemaster should surface blocking as visual rehearsal context:
+Cuemaster should surface directions and blocking as visual rehearsal context with independent display settings:
+
+- display stage directions,
+- display blocking,
+- blocking scope: selected role / all.
+
+Recommended defaults:
+
+- display stage directions: on,
+- display blocking: on,
+- blocking scope: selected role.
+
+The display settings should be separate from cue-audio behavior. For example, "display stage directions" should not necessarily mean "play stage direction cue audio."
 
 - show "My Blocking" for the selected role,
 - optionally show "All Blocking" for scene context,
 - include blocking entries in the browse script view,
-- allow blocking visibility to be toggled independently from stage directions.
+- include stage directions in the browse script view,
+- allow stage directions and blocking to be toggled independently.
 
 Blocking does not need playback controls.
 
@@ -218,10 +273,12 @@ Blocking does not need playback controls.
 
 ### Phase 6: Playbook And Cuemaster
 
-- Extend Playbook manifest spec with blocking context.
-- Add Stager Playbook generation for blocking entries.
-- Add Cuemaster UI support for blocking visibility.
-- Add Cuemaster tests for selected-role blocking and all-blocking toggles.
+- Extend Playbook manifest spec with structured `directions` and `blocking` context.
+- Add Stager Playbook generation for inline and standalone direction entries.
+- Add Stager Playbook generation for inline and standalone blocking entries.
+- Add Cuemaster display settings for stage directions and blocking.
+- Keep Cuemaster direction/blocking display settings separate from cue-audio settings.
+- Add Cuemaster tests for direction visibility, selected-role blocking, and all-blocking toggles.
 
 ## Open Questions
 
