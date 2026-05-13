@@ -43,6 +43,7 @@ from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
 from stager.production_publication.production_publisher import ProductionPublisher
+from stager.production_publication.production_source_resolver import ProductionSourceResolver
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
@@ -93,6 +94,13 @@ PLAY_OPTION = typer.Option(
     "--play",
     "-p",
     help="Play directory name under plays/ (default: play-config.yaml play_id)",
+)
+PRODUCTION_SOURCE_OPTION = typer.Option(
+    "auto",
+    "--production-source",
+    "--publication-source",
+    "-ps",
+    help="Production source: auto, published, or working. Auto uses published when available.",
 )
 MODEL_CHOICES = ("tiny", "base", "small", "med")
 MODEL_NAME_MAP = {
@@ -231,6 +239,13 @@ def load_production_play(paths_config: paths.PathConfig) -> Play:
     return ProductionPlayLoader(paths_config=paths_config).load()
 
 
+def apply_production_source(paths_config: paths.PathConfig, production_source: str = "auto") -> paths.PathConfig:
+    try:
+        return ProductionSourceResolver(paths_config).apply_to(production_source)
+    except ValueError as exc:
+        raise typer.BadParameter(str(exc)) from exc
+
+
 @scriptwright_app.command("lock")
 def scriptwright_lock(
     force: bool = typer.Option(False, "--force/--no-force", help="Overwrite an existing locked production.md"),
@@ -267,10 +282,12 @@ def text(
     ctx: typer.Context,
     play: str | None = PLAY_OPTION,
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     if ctx.invoked_subcommand is None:
         build_type = BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve()
         run_text(paths_config=cfg, build_type=build_type)
@@ -280,28 +297,33 @@ def text(
 def write_play(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Write build/text/<play>.md"""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     run_write_play(line_no_prefix, paths_config=cfg)
 
 @text_app.command("write-roles", hidden=True)
 def write_roles(
     line_no_prefix: bool = typer.Option(True, "--line_no_prefix/--no_line_no_prefix", help="prepend line numbers to each block"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Write build/text/<role>.md - all blocks for each role"""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     run_write_roles(line_no_prefix, paths_config=cfg)
 
 
 @text_app.command("write-cues", hidden=True)
-def write_cues(play: str | None = PLAY_OPTION) -> None:
+def write_cues(play: str | None = PLAY_OPTION, production_source: str = PRODUCTION_SOURCE_OPTION) -> None:
     """Generate role cue text files into build/roles."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     run_write_cues(paths_config=cfg)
 
 @app.command("segments", rich_help_panel="build")
@@ -317,10 +339,12 @@ def segments(
     force: bool = typer.Option(False, "--force/--no-force", help="Force re-splitting even if outputs are newer"),
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer splitting"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Split role recordings into segments using silence detection."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     require_audio_tools()
     if role:
         play_obj = load_production_play(cfg)
@@ -348,10 +372,12 @@ def verify(
     too_short: float = typer.Option(0.5, help="Lower bound ratio of actual/expected"),
     too_long: float = typer.Option(2.0, help="Upper bound ratio of actual/expected"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Verify split segments against expected durations."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     require_audio_tools()
     _run_verify(too_short, too_long, paths_config=cfg)
 
@@ -366,10 +392,11 @@ def _run_verify(too_short: float = 0.5, too_long: float = 2.0, paths_config: pat
 
 
 @app.command("check-recording", rich_help_panel="verify")
-def check_recording(play: str | None = PLAY_OPTION) -> None:
+def check_recording(play: str | None = PLAY_OPTION, production_source: str = PRODUCTION_SOURCE_OPTION) -> None:
     """Summarize missing and suspect split segments by role."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     run_check_recording(paths_config=cfg)
 
 
@@ -386,10 +413,12 @@ def generate_timings(
         "--include-decorations/--no-include-decorations",
         help="Include callouts and announcer clips in timings output",
     ),
+    production_source: str = PRODUCTION_SOURCE_OPTION,
     ) -> None:
     """Generate timings spreadsheets for the current play."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     require_audio_tools()
     run_generate_timings(
         librivox=librivox,
@@ -472,10 +501,12 @@ def verify_audio(
     summary: bool = typer.Option(True, "--summary/--no-summary", help="Write concise summary to console"),
     summary_format: str = typer.Option("text", "--summary-format", help="Summary format: text or yaml"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Transcribe and compare role audio to script text, outputting diffs."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     require_audio_tools()
     summary_key = summary_format.lower().strip()
     if summary_key not in SUMMARY_FORMATS:
@@ -809,10 +840,12 @@ def audioplay(
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Assemble final audio play output for a part or full play."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     if target:
         play_obj = load_production_play(cfg)
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
@@ -876,10 +909,12 @@ def cues(
     include_prompts: bool = typer.Option(True, help="Include preceding prompts; disables if set false"),
     callout_spacing_ms: int = typer.Option(300, help="Silence (ms) between prompt callout and prompt"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Generate cue audio snippets for roles."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     require_audio_tools()
     with rich_progress() as progress:
         run_cues(
@@ -898,10 +933,12 @@ def playbook(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type metadata"),
     audio_format: str = typer.Option("wav", "--audio-format", help="Playbook audio format: wav or mp3"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     if audio_format == "mp3":
         require_audio_tools()
     with rich_progress() as progress:
@@ -933,10 +970,12 @@ def recording_request(
     reason: str | None = typer.Option(None, "--reason", help="Reason shown for selected recording items"),
     notes: str | None = typer.Option(None, "--notes", help="Optional request notes for the actor"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Build a LineRecorder Recording Request package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     zip_path = run_recording_request(
         role=role,
         item_ids=selected_recording_item_ids(item, segment),
@@ -1035,10 +1074,12 @@ def recording_import(
     denoise: bool = typer.Option(False, "--denoise", help="Use included floor-noise recordings for import-time denoising"),
     trim_silence: bool = typer.Option(False, "--trim-silence", help="Trim leading and trailing silence during import"),
     play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Import a LineRecorder role recordings package into Stager segments."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    apply_production_source(cfg, production_source)
     if denoise or trim_silence:
         require_audio_tools()
     result = run_recording_import(

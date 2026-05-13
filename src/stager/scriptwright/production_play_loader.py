@@ -25,19 +25,21 @@ class ProductionPlayLoader:
     """Adapt locked `production.md` into the existing `Play` domain model."""
 
     paths_config: paths.PathConfig
+    source_path: Path | None = None
     content_hasher: ContentHasher = field(default_factory=ContentHasher)
 
     def load(self) -> Play:
-        if not self.paths_config.production_markdown.exists():
+        source_path = self.source_path or self.paths_config.production_markdown
+        if not source_path.exists():
             raise RuntimeError(
                 "Missing locked production script "
-                f"{paths.display_path(self.paths_config.production_markdown)}; "
+                f"{paths.display_path(source_path)}; "
                 "run './main scriptwright lock' first."
             )
-        production = ProductionScriptParser(self.paths_config.production_markdown).parse_path()
+        production = ProductionScriptParser(source_path).parse_path()
         if not production.locked:
             raise RuntimeError(
-                f"Stager requires locked production script: {paths.display_path(self.paths_config.production_markdown)}"
+                f"Stager requires locked production script: {paths.display_path(source_path)}"
             )
 
         play = Play(

@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from stager.production_publication.production_publisher import ProductionPublisher
+from stager.production_publication.production_source_resolver import ProductionSourceResolver
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.shared.paths import PathConfig
 
@@ -141,3 +142,38 @@ P-2 LILLIAN: I am Lillian Barnes.""",
     ProductionVersionStore(cfg).restore_source("v0001")
 
     assert "P-2" not in cfg.production_markdown.read_text(encoding="utf-8")
+
+
+def test_production_source_resolver_auto_prefers_published_version(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Published text.""",
+    )
+    ProductionPublisher(cfg).publish()
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Working text.""",
+    )
+
+    resolved = ProductionSourceResolver(cfg).resolve("auto")
+
+    assert resolved.kind == "published"
+    assert resolved.path == cfg.build_dir / "production-history" / "versions" / "v0001" / "production.md"
+
+
+def test_production_source_resolver_auto_falls_back_to_working_without_published_version(tmp_path: Path, caplog) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Working text.""",
+    )
+
+    resolved = ProductionSourceResolver(cfg).resolve("auto")
+
+    assert resolved.kind == "working"
+    assert resolved.path == cfg.production_markdown
+    assert "No published production version exists; using working production source" in caplog.text

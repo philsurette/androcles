@@ -32,6 +32,12 @@ class ProductionVersionStore:
         current = json.loads(self.current_path.read_text(encoding="utf-8"))
         return self.load_version(current["version"])
 
+    def current_production_path(self) -> Path | None:
+        current = self.current()
+        if current is None:
+            return None
+        return self._version_dir(current.version) / "production.md"
+
     def load_version(self, version: int | str) -> PublishedVersion:
         version_no = self._version_number(version)
         manifest_path = self._version_dir(version_no) / "manifest.json"

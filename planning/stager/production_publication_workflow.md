@@ -56,6 +56,30 @@ build/<play_id>/production-history/
 
 By default, changed id reuse should stop publication unless the producer applies recommended ids or explicitly allows id reuse. This protects existing recordings and Playbooks from silently treating changed text as the same line.
 
+## Production Source Selection
+
+Stager build and verification commands should default to `--production-source auto`.
+
+`auto` means:
+
+1. Use the current published `production.md` snapshot when it exists.
+2. If no published snapshot exists, use the working producer source and log a warning.
+
+The explicit choices are:
+
+```sh
+--production-source auto
+--production-source published
+--production-source working
+-ps auto
+-ps published
+-ps working
+```
+
+Use `--production-source published` when a command must fail if the producer has not published yet. Use `--production-source working` for draft previews.
+
+Publication commands are the exception: `publish-production` and `production-diff` operate on the working producer source because their job is to compare or publish that source against the managed history.
+
 ## Recording Requests
 
 When publication includes Recording Requests, Stager should build one package per affected role.

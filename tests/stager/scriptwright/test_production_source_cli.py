@@ -5,6 +5,7 @@ from pathlib import Path
 from typer.testing import CliRunner
 
 from stager.cli import build
+from stager.production_publication.production_publisher import ProductionPublisher
 from stager.scriptwright import ScriptWright
 from stager.shared import paths
 
@@ -78,6 +79,51 @@ def test_text_cli_uses_locked_production_markdown(tmp_path: Path, monkeypatch) -
 
     assert result.exit_code == 0
     assert (cfg.markdown_dir / "Untitled.md").exists()
+
+
+def test_text_cli_auto_uses_published_production_when_available(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    ProductionPublisher(cfg).publish()
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 CAPTAIN: Working text.
+""",
+        encoding="utf-8",
+    )
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["text", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "Stand fast." in (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
+    assert "Working text." not in (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
+
+
+def test_text_cli_short_production_source_option_can_use_working_source(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    ProductionPublisher(cfg).publish()
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 CAPTAIN: Working text.
+""",
+        encoding="utf-8",
+    )
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["text", "-ps", "working", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "Working text." in (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
 
 
 def test_scriptwright_reconcile_reports_not_implemented(tmp_path: Path, monkeypatch) -> None:
