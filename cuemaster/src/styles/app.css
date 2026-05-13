@@ -946,8 +946,23 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .outline-sidecar {
-    position: static;
+  .rehearsal-workspace {
+    display: block;
+  }
+
+  .outline-sidecar.outline-browser {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    background: var(--paper);
+    box-shadow: none;
+  }
+
+  .outline-sidecar.outline-browser .outline-list {
+    max-height: none;
   }
 
   .outline-sidecar.collapsed {

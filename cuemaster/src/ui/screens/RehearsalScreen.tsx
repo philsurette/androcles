@@ -207,6 +207,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     await jumpToLine(section.startLineId);
   }
 
+  async function jumpFromOutline(lineId: string) {
+    await jumpToLine(lineId);
+    if (window.matchMedia("(max-width: 760px)").matches) {
+      setIsOutlineOpen(false);
+    }
+  }
+
   async function goPrevious() {
     engine.previous();
     updatePosition({ revealLine: showLinesByDefault });
@@ -705,7 +712,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             lines={role.lines}
             playbook={playbook}
             sections={playbook.sections}
-            onSelectLine={(lineId) => void jumpToLine(lineId)}
+            onSelectLine={(lineId) => void jumpFromOutline(lineId)}
             onToggleOpen={() => setIsOutlineOpen((current) => !current)}
           />
           <div className="rehearsal-main">
