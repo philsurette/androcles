@@ -15,6 +15,9 @@ from stager.text.play_text_parser import PlayTextParser
 
 logger = logging.getLogger(__name__)
 
+ProductionMarkdownFormat = str
+PRODUCTION_MARKDOWN_FORMATS = {"compact", "list", "doublespace"}
+
 
 @dataclass
 class ScriptWright:
@@ -28,7 +31,8 @@ class ScriptWright:
             "or edit locked production.md directly while preserving existing ids."
         )
 
-    def write_locked(self, force: bool = False) -> Path:
+    def write_locked(self, force: bool = False, output_format: ProductionMarkdownFormat = "list") -> Path:
+        self._validate_output_format(output_format)
         output_path = self.paths_config.production_markdown
         if output_path.exists():
             production = ProductionScriptParser(output_path).parse_path()
@@ -36,32 +40,42 @@ class ScriptWright:
                 raise RuntimeError(
                     f"Refusing to overwrite locked production script: {paths.display_path(output_path)}"
                 )
-            text = self.render_from_play_text() if production.locked else self.render_locked_production(production)
+            text = self.render_from_play_text(output_format=output_format) if production.locked else self.render_locked_production(
+                production,
+                output_format=output_format,
+            )
         else:
-            text = self.render_from_play_text()
+            text = self.render_from_play_text(output_format=output_format)
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(text, encoding="utf-8")
         logger.info("Wrote locked production script %s", paths.display_path(output_path))
         return output_path
 
-    def render_from_play_text(self) -> str:
+    def render_from_play_text(self, output_format: ProductionMarkdownFormat = "list") -> str:
+        self._validate_output_format(output_format)
         play = PlayTextParser(paths_config=self.paths_config).parse()
-        return self.render_play(play)
+        return self.render_play(play, output_format=output_format)
 
-    def write_from_play_text(self, force: bool = False) -> Path:
+    def write_from_play_text(self, force: bool = False, output_format: ProductionMarkdownFormat = "list") -> Path:
+        self._validate_output_format(output_format)
         output_path = self.paths_config.production_markdown
         if output_path.exists() and self._is_locked_output(output_path.read_text(encoding="utf-8")) and not force:
             raise RuntimeError(
                 f"Refusing to overwrite locked production script: {paths.display_path(output_path)}"
-            )
+        )
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
-        output_path.write_text(self.render_from_play_text(), encoding="utf-8")
+        output_path.write_text(self.render_from_play_text(output_format=output_format), encoding="utf-8")
         logger.info("Wrote locked production script %s", paths.display_path(output_path))
         return output_path
 
-    def render_locked_production(self, production: ProductionScript) -> str:
+    def render_locked_production(
+        self,
+        production: ProductionScript,
+        output_format: ProductionMarkdownFormat = "list",
+    ) -> str:
+        self._validate_output_format(output_format)
         lines = [
             "// script_format: quince-production-v1",
             "// source_kind: production",
@@ -70,10 +84,11 @@ class ScriptWright:
         ]
         for production_id, entry in self._assign_ids(production.entries):
             lines.extend(entry.leading_comments)
-            lines.append(self._render_production_entry(production_id, entry))
-        return "\n".join(lines) + "\n"
+            lines.extend(self._formatted_entry_lines(self._render_production_entry(production_id, entry), entry.kind, output_format))
+        return self._finish_lines(lines)
 
-    def render_play(self, play: Play) -> str:
+    def render_play(self, play: Play, output_format: ProductionMarkdownFormat = "list") -> str:
+        self._validate_output_format(output_format)
         structure_ids = self._structure_ids(play)
         lines = [
             "// script_format: quince-production-v1",
@@ -82,8 +97,29 @@ class ScriptWright:
             "",
         ]
         for block in play.blocks:
-            lines.append(self._render_block(block, structure_ids))
-        return "\n".join(lines) + "\n"
+            lines.extend(self._formatted_entry_lines(self._render_block(block, structure_ids), self._kind_for_block(block), output_format))
+        return self._finish_lines(lines)
+
+    def _validate_output_format(self, output_format: ProductionMarkdownFormat) -> None:
+        if output_format not in PRODUCTION_MARKDOWN_FORMATS:
+            raise RuntimeError(f"Unknown production markdown format: {output_format}")
+
+    def _formatted_entry_lines(
+        self,
+        line: str,
+        kind: ProductionEntryKind,
+        output_format: ProductionMarkdownFormat,
+    ) -> list[str]:
+        if output_format == "compact":
+            return [line]
+        if output_format == "doublespace":
+            return [line, ""]
+        if kind == ProductionEntryKind.HEADING:
+            return [line, ""]
+        return [f"- {line}"]
+
+    def _finish_lines(self, lines: list[str]) -> str:
+        return "\n".join(lines).rstrip() + "\n"
 
     def _structure_ids(self, play: Play) -> dict[int | None, str]:
         return {
@@ -122,6 +158,19 @@ class ScriptWright:
             speakers = ", ".join(block.role_names)
             return f"{production_id} {speakers}: {self._clean_text(block.text)}"
 
+        raise RuntimeError(f"Unsupported block type for production output: {type(block).__name__}")
+
+    def _kind_for_block(self, block: Block) -> ProductionEntryKind:
+        if isinstance(block, TitleBlock):
+            return ProductionEntryKind.HEADING
+        if isinstance(block, DescriptionBlock):
+            return ProductionEntryKind.DESCRIPTION
+        if isinstance(block, DirectionBlock):
+            return ProductionEntryKind.DIRECTION
+        if isinstance(block, BlockingBlock):
+            return ProductionEntryKind.BLOCKING
+        if isinstance(block, RoleBlock):
+            return ProductionEntryKind.ROLE
         raise RuntimeError(f"Unsupported block type for production output: {type(block).__name__}")
 
     def _assign_ids(self, entries: tuple[ProductionEntry, ...]) -> list[tuple[str, ProductionEntry]]:

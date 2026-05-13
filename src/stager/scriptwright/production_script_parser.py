@@ -61,6 +61,7 @@ class ProductionScriptParser:
                     pending_comments.append(line)
                 continue
 
+            line = self._strip_optional_list_marker(line)
             in_metadata = False
             if not metadata:
                 self._fail("Missing metadata header", index, path)
@@ -75,6 +76,11 @@ class ProductionScriptParser:
 
         self._validate_metadata(metadata, len(text.splitlines()) or 1, path)
         return ProductionScript(metadata=metadata, entries=tuple(entries))
+
+    def _strip_optional_list_marker(self, line: str) -> str:
+        if line.startswith("- "):
+            return line[2:].strip()
+        return line
 
     def _parse_metadata_line(
         self,

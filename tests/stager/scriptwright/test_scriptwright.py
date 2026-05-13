@@ -40,10 +40,11 @@ GLADIATORS [GLADIATOR-1, GLADIATOR-2]. Hail!
 // production_ids: locked
 
 # P-0 PROLOGUE
-P-1 @description: A road outside Rome.
-P-2 @direction: Thunder offstage.
-P-3 CAPTAIN: Hello (_draws sword_) there.
-P-4 GLADIATOR-1, GLADIATOR-2: Hail!
+
+- P-1 @description: A road outside Rome.
+- P-2 @direction: Thunder offstage.
+- P-3 CAPTAIN: Hello (_draws sword_) there.
+- P-4 GLADIATOR-1, GLADIATOR-2: Hail!
 """
 
 
@@ -95,10 +96,12 @@ CAPTAIN, MEGAERA: Together.
 // production_ids: locked
 
 # I-0 ACT I
+
 ## I.1-0 SCENE I
-I.1-1 @description: A dusty Roman road.
-I.1-2 CAPTAIN: I will go (_draws sword_) if I must.
-I.1-3 CAPTAIN, MEGAERA: Together.
+
+- I.1-1 @description: A dusty Roman road.
+- I.1-2 CAPTAIN: I will go (_draws sword_) if I must.
+- I.1-3 CAPTAIN, MEGAERA: Together.
 """
 
 
@@ -124,9 +127,10 @@ MEGAERA: I will.
 // production_ids: locked
 
 # I-0 ACT I
+
 // Director note: keep this beat.
-I-7 CAPTAIN: Stand fast.
-I-8 MEGAERA: I will.
+- I-7 CAPTAIN: Stand fast.
+- I-8 MEGAERA: I will.
 """
 
 
@@ -152,6 +156,29 @@ I-0 CAPTAIN: Duplicate the generated heading id.
 
     with pytest.raises(RuntimeError, match="Duplicate production id after assignment"):
         ScriptWright(paths_config=cfg).write_locked()
+
+
+def test_render_from_play_text_supports_markdown_formats(tmp_path):
+    cfg = _path_config(tmp_path)
+    cfg.play_text.write_text(
+        """## 1: ACT I ##
+
+CAPTAIN.
+Stand fast.
+
+MEGAERA.
+I will.
+""",
+        encoding="utf-8",
+    )
+
+    compact = ScriptWright(paths_config=cfg).render_from_play_text(output_format="compact")
+    listed = ScriptWright(paths_config=cfg).render_from_play_text(output_format="list")
+    doublespaced = ScriptWright(paths_config=cfg).render_from_play_text(output_format="doublespace")
+
+    assert "\nI-1 CAPTAIN: Stand fast.\nI-2 MEGAERA: I will.\n" in compact
+    assert "\n# I-0 ACT I\n\n- I-1 CAPTAIN: Stand fast.\n- I-2 MEGAERA: I will.\n" in listed
+    assert "\n# I-0 ACT I\n\nI-1 CAPTAIN: Stand fast.\n\nI-2 MEGAERA: I will.\n" in doublespaced
 
 
 def test_androcles_play_text_is_ingestable():

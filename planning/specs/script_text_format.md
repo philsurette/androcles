@@ -35,9 +35,10 @@ Future source formats may be added if ScriptWright can compile them into canonic
 The production format is strict Markdown-friendly text:
 
 - each addressable script unit occupies exactly one physical line,
-- every non-comment, non-blank locked script line starts with a production id,
+- every non-comment, non-blank locked script entry starts with a production id after the optional list marker,
 - draft script lines may omit ids or contain provisional ids that ScriptWright may replace,
 - structural headings use Markdown heading markers,
+- non-heading entries may be written as Markdown unordered list items with a leading `- `,
 - script order is file order, not id sort order,
 - long speeches remain one physical line.
 
@@ -49,12 +50,22 @@ Example:
 // production_ids: locked
 
 # I-0 ACT I
+
 ## I.1-0 SCENE I
-I.1-1 @description: A dusty Roman road at noon.
-I.1-2 CAPTAIN: I will never submit to the depredations of the barbarous invaders. They will be examined, expelled, exterminated, or exfoliated!
-I.1-3 @direction: The soldiers move aside.
-I.1-4 CAPTAIN: I will go (_draws sword_) if I must.
+
+- I.1-1 @description: A dusty Roman road at noon.
+- I.1-2 CAPTAIN: I will never submit to the depredations of the barbarous invaders. They will be examined, expelled, exterminated, or exfoliated!
+- I.1-3 @direction: The soldiers move aside.
+- I.1-4 CAPTAIN: I will go (_draws sword_) if I must.
 ```
+
+ScriptWright can emit three production Markdown formats:
+
+- `list`: headings followed by compact unordered lists. This is the default and gives the best Markdown preview.
+- `compact`: one script entry per physical line, without Markdown list markers or extra spacing.
+- `doublespace`: one script entry per paragraph, with blank lines between entries.
+
+The parser accepts both compact entries and list entries. A leading `- ` is display sugar and is stripped before parsing.
 
 ## Comments
 
@@ -122,6 +133,13 @@ Locked production entries have these shapes:
 <production-id> /*: <blocking note>
 <production-id> <ROLE>: <spoken text>
 <production-id> <ROLE>, <ROLE>: <simultaneous spoken text>
+```
+
+The same entries may be prefixed with `- ` to make proper Markdown unordered lists:
+
+```text
+- <production-id> @description: <description text>
+- <production-id> <ROLE>: <spoken text>
 ```
 
 `<production-id>` is defined by [production_script_ids.md](production_script_ids.md).

@@ -40,6 +40,7 @@ from stager.audiobook.play_plan_builder import PlayPlanBuilder
 from stager.playbook.playbook_builder import PlaybookBuilder
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
+from stager.scriptwright.scriptwright import PRODUCTION_MARKDOWN_FORMATS
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
 from stager.production_publication.production_publisher import ProductionPublisher
@@ -251,12 +252,19 @@ def apply_production_source(paths_config: paths.PathConfig, production_source: s
 @scriptwright_app.command("lock")
 def scriptwright_lock(
     force: bool = typer.Option(False, "--force/--no-force", help="Overwrite an existing locked production.md"),
+    output_format: str = typer.Option(
+        "list",
+        "--format",
+        help="Production markdown output format: compact, list, or doublespace",
+    ),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Create locked production.md from the current play.txt source."""
+    if output_format not in PRODUCTION_MARKDOWN_FORMATS:
+        raise typer.BadParameter("Expected compact, list, or doublespace")
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
-    output_path = ScriptWright(paths_config=cfg).write_locked(force=force)
+    output_path = ScriptWright(paths_config=cfg).write_locked(force=force, output_format=output_format)
     typer.echo(f"Wrote {paths.display_path(output_path)}")
 
 

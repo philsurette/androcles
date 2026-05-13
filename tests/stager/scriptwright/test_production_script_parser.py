@@ -39,6 +39,29 @@ I.1-5 /CAPTAIN: crosses downstage.
     assert script.entries[6].targets == ("CAPTAIN",)
 
 
+def test_parse_markdown_list_production_entries():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+
+- I-1 @description: A dusty Roman road.
+- I-2 CAPTAIN: I will go.
+- I-3 /CAPTAIN: crosses downstage.
+"""
+    )
+
+    assert [entry.production_id for entry in script.entries] == ["I-0", "I-1", "I-2", "I-3"]
+    assert [entry.kind for entry in script.entries] == [
+        ProductionEntryKind.HEADING,
+        ProductionEntryKind.DESCRIPTION,
+        ProductionEntryKind.ROLE,
+        ProductionEntryKind.BLOCKING,
+    ]
+
+
 def test_parse_inline_blocking_targets():
     script = ProductionScriptParser().parse_text(
         """// script_format: quince-production-v1
