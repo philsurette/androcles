@@ -42,6 +42,8 @@ from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
 from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
+from stager.production_publication.production_publisher import ProductionPublisher
+from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.verification.segment_verifier import SegmentVerifier
 from stager.transcription.whisper_model_store import WhisperModelStore
 from stager.verification.role_audio_verifier import RoleAudioVerifier
@@ -174,6 +176,26 @@ def raise_playbook_cli_error(exc: RuntimeError) -> None:
     if message.startswith("Missing required ") and " while building Playbook:" in message:
         raise click.ClickException(message) from exc
     raise exc
+
+
+def render_production_change_report(report) -> str:
+    if report.base_version is None:
+        return "No prior published production version."
+    if not report.changes:
+        return f"No production changes since v{report.base_version:04d}."
+    lines = [f"Production changes since v{report.base_version:04d}:"]
+    for change in report.changes:
+        if change.kind == "changed_id_reuse":
+            lines.append(f"  changed id reused: {change.line_id} -> {change.recommended_id}")
+            if change.previous is not None:
+                lines.append(f"    old: {change.previous.text}")
+            if change.current is not None:
+                lines.append(f"    new: {change.current.text}")
+        elif change.kind == "added" and change.current is not None:
+            lines.append(f"  added: {change.line_id} {change.current.text}")
+        elif change.kind == "removed" and change.previous is not None:
+            lines.append(f"  removed: {change.line_id} {change.previous.text}")
+    return "\n".join(lines)
 
 
 def setup_logging(paths_config: paths.PathConfig) -> None:
@@ -923,6 +945,88 @@ def recording_request(
         paths_config=cfg,
     )
     typer.echo(paths.display_path(zip_path))
+
+
+@app.command("publish-production", rich_help_panel="build")
+def publish_production(
+    apply_id_updates: bool = typer.Option(
+        False,
+        "--apply-id-updates",
+        help="Rewrite changed reused production ids to recommended revision ids before publishing",
+    ),
+    allow_id_reuse: bool = typer.Option(
+        False,
+        "--allow-id-reuse",
+        help="Publish changed text under reused production ids without rewriting them",
+    ),
+    recording_requests: bool = typer.Option(
+        False,
+        "--recording-requests",
+        help="Generate LineRecorder requests for changed and added role lines",
+    ),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Publish the current producer-edited production.md into Stager-managed history."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        result = ProductionPublisher(paths_config=cfg).publish(
+            apply_id_updates=apply_id_updates,
+            allow_id_reuse=allow_id_reuse,
+            recording_requests=recording_requests,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Published production {result.version.label}.")
+    typer.echo(render_production_change_report(result.change_report))
+    if result.id_updates:
+        typer.echo("Applied id updates:" if apply_id_updates else "Recommended id updates:")
+        for old_id, new_id in sorted(result.id_updates.items()):
+            typer.echo(f"  {old_id} -> {new_id}")
+    if result.recording_request_paths:
+        typer.echo("Generated Recording Requests:")
+        for request_path in result.recording_request_paths:
+            typer.echo(f"  {paths.display_path(request_path)}")
+
+
+@app.command("production-diff", rich_help_panel="build")
+def production_diff(play: str | None = PLAY_OPTION) -> None:
+    """Show differences between production.md and the current published version."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        report = ProductionPublisher(paths_config=cfg).diff()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_production_change_report(report))
+
+
+@app.command("production-history", rich_help_panel="build")
+def production_history(play: str | None = PLAY_OPTION) -> None:
+    """List Stager-managed published production versions."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    versions = ProductionVersionStore(cfg).list_versions()
+    if not versions:
+        typer.echo("No published production versions.")
+        return
+    for version in versions:
+        typer.echo(f"{version.label} {version.published_at} {len(version.lines)} lines")
+
+
+@app.command("restore-production", rich_help_panel="build")
+def restore_production(
+    version: str = typer.Argument(..., help="Published version to restore, such as v0002 or 2"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Restore a published production version back to the producer source."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        restored_path = ProductionVersionStore(cfg).restore_source(version)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Restored {version} to {paths.display_path(restored_path)}")
 
 
 @app.command("recording-import", rich_help_panel="build")

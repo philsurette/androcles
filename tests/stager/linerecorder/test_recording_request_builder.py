@@ -287,6 +287,28 @@ def test_recording_request_builder_can_set_selected_item_reason(tmp_path: Path) 
     assert data["items"][0]["reason"] == "director_request"
 
 
+def test_recording_request_builder_can_set_selected_item_reasons(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    first = _speech_block(0, 1, "MEGAERA", "I won't go another step.")
+    second = _speech_block(0, 2, "MEGAERA", "I will go back.")
+    play = _play([_title_block(), first, second])
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        request_kind="production_update_v0002",
+        selected_segment_ids={"I-1:s1", "I-2:s1"},
+        selected_item_reasons={
+            "I-1:s1": "script_changed",
+            "I-2:s1": "script_added",
+        },
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    assert [item["reason"] for item in data["items"]] == ["script_changed", "script_added"]
+
+
 def test_recording_request_builder_uses_synthetic_play_section_for_no_part_material(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     response_block = _speech_block(None, 1, "MEGAERA", "I won't go another step.")
