@@ -32,8 +32,8 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Previous** moves to the previous line.
 - **Next** moves to the next line.
 - **Show lines** shows or hides your expected response, and opens future lines with the same visibility setting.
-- **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
-- **Show blocking** shows or hides blocking notes attached to the current line and script browser entries.
+- **Show stage directions** shows or hides stage directions attached to the current line and outline entries.
+- **Show blocking** shows or hides blocking notes attached to the current line and outline entries.
 - **Hear My Line** plays your reference line at the selected response speed.
 - The compact buttons beside **Your Line** provide quick access to speak-along practice, tempo timing, Show lines, Show blocking, and Show stage directions.
 - **Speak-along practice** changes cue playback so Start, Repeat Cue, Previous, and Next play the cue, wait for the speak-along pause, then play your line at the selected response speed.
@@ -43,7 +43,7 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Bookmark** marks the current line so you can find it again in Review.
 - **Stop** stops playback.
 - **Section** jumps to the first line for your role in the selected section.
-- **Browse Script** shows your role's lines grouped by part, with the current line highlighted.
+- **Outline** shows your role grouped by section, with the current line highlighted. It can show either cue text or line text.
 
 Your current role, production ID position, cue length, stage-direction preference, line visibility preference, playback speed, practice timing preferences, bookmarks, and timing history are saved locally.
 
@@ -88,12 +88,12 @@ Tempo Timing is not automatically re-enabled when you reopen a Playbook. If it w
 
 The bottom drawer has four tabs:
 
-- **Script** jumps directly to a production ID from the selected role's script.
+- **Outline** jumps directly to a production ID from the selected role.
 - **Bookmarks** shows bookmarked production IDs.
 - **Timing Issues** shows production IDs with late pickup, slow delivery, or rushed delivery.
 - **Options** contains practice and timing settings.
 
-Click a line in Script, Bookmarks, or Timing Issues to jump directly to it.
+Click a row in Outline, Bookmarks, or Timing Issues to jump directly to it.
 
 ## Keyboard Shortcuts
 

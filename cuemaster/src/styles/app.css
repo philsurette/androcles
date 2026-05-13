@@ -2,11 +2,15 @@
   min-height: 100vh;
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .shell {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  padding: 2rem;
+  padding: clamp(1rem, 2vw, 2rem);
 }
 
 .hero {
@@ -23,7 +27,8 @@
 }
 
 .rehearsal {
-  width: min(100%, 68rem);
+  width: min(100%, 112rem);
+  max-width: none;
   padding: clamp(1.25rem, 4vw, 2.5rem);
 }
 
@@ -212,10 +217,25 @@ button:disabled {
   opacity: 1;
 }
 
+.rehearsal-workspace {
+  display: grid;
+  grid-template-columns: minmax(19rem, 25rem) minmax(48rem, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  margin-top: 1.25rem;
+}
+
+.rehearsal-workspace.outline-collapsed {
+  grid-template-columns: 4rem minmax(0, 1fr);
+}
+
+.rehearsal-main {
+  min-width: 0;
+}
+
 .rehearsal-line-layout {
   display: grid;
   gap: 1.25rem;
-  margin-top: 1.25rem;
 }
 
 .rehearsal-header {
@@ -640,7 +660,7 @@ button:disabled {
 
 .utility-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.45rem;
   border-radius: 0.85rem;
   background: rgba(30, 38, 31, 0.07);
@@ -709,50 +729,202 @@ button:disabled {
   gap: 0.5rem;
 }
 
-.script-browser {
+.outline-sidecar {
+  position: sticky;
+  top: 1rem;
+}
+
+.outline-sidecar.collapsed {
   display: grid;
-  gap: 1rem;
-  max-height: 24rem;
-  overflow: auto;
-  border-radius: 1.25rem;
+  justify-items: center;
+  gap: 0.75rem;
+  border: 1px solid rgba(30, 38, 31, 0.12);
+  border-radius: 0.85rem;
   background: rgba(255, 255, 255, 0.34);
-  padding: 1rem;
+  padding: 0.65rem 0;
 }
 
-.script-browser h2,
-.script-browser h3 {
-  margin: 0;
-}
-
-.script-browser ol {
+.outline-browser {
   display: grid;
-  gap: 0.5rem;
-  margin: 0.5rem 0 0;
-  padding-left: 1.25rem;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: min(62vh, 42rem);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid rgba(30, 38, 31, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.34);
 }
 
-.script-browser button {
-  display: grid;
+.outline-header {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.12);
+  background: rgba(255, 255, 255, 0.28);
+  padding: 0.75rem;
+}
+
+.outline-header .eyebrow {
+  margin-bottom: 0.1rem;
+  font-size: 0.72rem;
+}
+
+.outline-header-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.outline-mode-toggle {
+  display: inline-flex;
   gap: 0.25rem;
+  border-radius: 0.7rem;
+  background: rgba(30, 38, 31, 0.07);
+  padding: 0.25rem;
+}
+
+.outline-mode-toggle button {
+  min-height: 2rem;
+  border-radius: 0.55rem;
+  background: transparent;
+  padding: 0.25rem 0.65rem;
+}
+
+.outline-mode-toggle button.active {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.08);
+}
+
+.outline-disclosure-button {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  min-width: 2.4rem;
+  min-height: 2.4rem;
+  border-radius: 0.7rem;
+  background: rgba(30, 38, 31, 0.07);
+  color: var(--ink);
+  padding: 0;
+}
+
+.outline-disclosure-button.expanded .context-disclosure::before {
+  transform: translate(-50%, -35%);
+  border-top: 7px solid var(--quiet);
+  border-right: 5px solid transparent;
+  border-bottom: 0;
+  border-left: 5px solid transparent;
+}
+
+.outline-progress {
+  color: var(--quiet);
+  font-size: 0.85rem;
+  font-weight: 900;
+  line-height: 1.1;
+  text-align: center;
+  writing-mode: vertical-rl;
+}
+
+.outline-progress span {
+  margin-top: 0.35rem;
+}
+
+.context-disclosure {
+  position: relative;
+  width: 1rem;
+  height: 1rem;
+}
+
+.context-disclosure::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translate(-35%, -50%);
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-left: 7px solid var(--quiet);
+  content: "";
+}
+
+.outline-list {
+  display: grid;
+  align-content: start;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.outline-section h3 {
+  margin: 0;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.12);
+  color: var(--quiet);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  padding: 0.65rem 0.75rem 0.45rem;
+  text-transform: uppercase;
+}
+
+.outline-section-list {
+  display: grid;
+}
+
+.outline-row {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(3.6rem, max-content) max-content minmax(0, 1fr);
+  gap: 0.55rem;
+  align-items: center;
   width: 100%;
-  border-radius: 0.75rem;
+  min-height: auto;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.1);
+  border-radius: 0;
+  background: rgba(255, 255, 255, 0.2);
+  color: var(--ink);
+  padding: 0.6rem 0.75rem;
   text-align: left;
 }
 
-.script-browser button span {
+.outline-row.selected {
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.outline-row .status-dot {
+  width: 0.65rem;
+  height: 0.65rem;
+  border-radius: 999px;
+  background: rgba(185, 79, 47, 0.18);
+}
+
+.outline-row .status-dot.accepted {
+  background: var(--accent);
+}
+
+.outline-row strong {
+  color: var(--ink);
+}
+
+.outline-speaker {
   color: var(--accent);
   font-size: 0.75rem;
+  font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.script-browser button small {
+.outline-text {
+  overflow: hidden;
   color: var(--quiet);
-  font-style: italic;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.current-script-line button {
-  outline: 3px solid rgba(185, 79, 47, 0.35);
+.outline-row small {
+  grid-column: 3 / -1;
+  color: var(--quiet);
+  font-style: italic;
 }
 
 .review-panel h2,
@@ -769,6 +941,25 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .rehearsal-workspace,
+  .rehearsal-workspace.outline-collapsed {
+    grid-template-columns: 1fr;
+  }
+
+  .outline-sidecar {
+    position: static;
+  }
+
+  .outline-sidecar.collapsed {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.65rem;
+  }
+
+  .outline-progress {
+    writing-mode: horizontal-tb;
+  }
+
   .session-settings {
     align-items: stretch;
   }

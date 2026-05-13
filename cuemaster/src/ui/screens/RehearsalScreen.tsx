@@ -33,7 +33,8 @@ type RehearsalScreenProps = {
 };
 
 type PlaybackUiState = "idle" | "playing" | "paused";
-type UtilityPanel = "script" | "bookmarks" | "timing" | "options";
+type UtilityPanel = "bookmarks" | "timing" | "options";
+type OutlineMode = "cues" | "lines";
 
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
@@ -83,6 +84,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [activeUtilityPanel, setActiveUtilityPanel] = useState<UtilityPanel | null>(null);
+  const [isOutlineOpen, setIsOutlineOpen] = useState(true);
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
@@ -693,98 +695,112 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           </p>
         ) : null}
 
-        {line ? (
-          <div className="rehearsal-line-layout">
-            <section className="cue-strip" aria-label="Cue">
-              <div className="cue-strip-cards">
-                {visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line).map((cue, index) => (
-                  <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
-                ))}
-                {includeBlocking
-                  ? visibleBlockingForLine(line, blockingScope)
-                      .filter((blocking) => blocking.placement !== "inline")
-                      .map((blocking) => (
-                        <article
-                          className="card cue-card cue-blocking-card"
-                          key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
-                        >
-                          <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
-                          <p className="cue-blocking-text">({blocking.text})</p>
-                        </article>
-                      ))
-                  : null}
-              </div>
-            </section>
-
-            <section className="stack" aria-label="Your Line">
-              <div className="line-heading">
-                <div className="line-title-row">
-                  <h2>Your Line</h2>
-                  <div className="quick-practice-toggles" aria-label="Quick practice toggles">
-                    <button
-                      type="button"
-                      className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
-                      aria-pressed={speakAlongEnabled}
-                      aria-label={
-                        speakAlongEnabled
-                          ? "Disable speak-along practice."
-                          : "Enable speak-along practice."
-                      }
-                      data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
-                      disabled={tempoTimingEnabled}
-                      onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
-                    >
-                      <span aria-hidden="true">👄</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
-                      aria-pressed={tempoTimingEnabled}
-                      aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
-                      data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
-                      onClick={() => {
-                        if (tempoTimingEnabled) {
-                          void disableTempoTiming();
-                        } else {
-                          void enableTempoTiming();
-                        }
-                      }}
-                    >
-                      <span aria-hidden="true">⏱</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
-                      aria-pressed={showLinesByDefault}
-                      aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
-                      data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
-                      onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
-                    >
-                      <span aria-hidden="true">👁</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
-                      aria-pressed={includeBlocking}
-                      aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
-                      data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
-                      onClick={() => changeIncludeBlocking(!includeBlocking)}
-                    >
-                      <span aria-hidden="true">♿</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={includeDirections ? "quick-toggle active" : "quick-toggle"}
-                      aria-pressed={includeDirections}
-                      aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
-                      data-tooltip={includeDirections ? "Directions on" : "Directions off"}
-                      onClick={() => changeIncludeDirections(!includeDirections)}
-                    >
-                      <span aria-hidden="true">⌞⌝</span>
-                    </button>
+        <div className={isOutlineOpen ? "rehearsal-workspace" : "rehearsal-workspace outline-collapsed"}>
+          <OutlineSidecar
+            currentLineId={line?.id ?? null}
+            includeBlocking={includeBlocking}
+            blockingScope={blockingScope}
+            includeDirections={includeDirections}
+            isOpen={isOutlineOpen}
+            lines={role.lines}
+            playbook={playbook}
+            sections={playbook.sections}
+            onSelectLine={(lineId) => void jumpToLine(lineId)}
+            onToggleOpen={() => setIsOutlineOpen((current) => !current)}
+          />
+          <div className="rehearsal-main">
+            {line ? (
+              <div className="rehearsal-line-layout">
+                <section className="cue-strip" aria-label="Cue">
+                  <div className="cue-strip-cards">
+                    {visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line).map((cue, index) => (
+                      <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
+                    ))}
+                    {includeBlocking
+                      ? visibleBlockingForLine(line, blockingScope)
+                          .filter((blocking) => blocking.placement !== "inline")
+                          .map((blocking) => (
+                            <article
+                              className="card cue-card cue-blocking-card"
+                              key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
+                            >
+                              <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
+                              <p className="cue-blocking-text">({blocking.text})</p>
+                            </article>
+                          ))
+                      : null}
                   </div>
-                </div>
-                <div className="transport inline-transport">
+                </section>
+
+                <section className="stack" aria-label="Your Line">
+                  <div className="line-heading">
+                    <div className="line-title-row">
+                      <h2>Your Line</h2>
+                      <div className="quick-practice-toggles" aria-label="Quick practice toggles">
+                        <button
+                          type="button"
+                          className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={speakAlongEnabled}
+                          aria-label={
+                            speakAlongEnabled
+                              ? "Disable speak-along practice."
+                              : "Enable speak-along practice."
+                          }
+                          data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
+                          disabled={tempoTimingEnabled}
+                          onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
+                        >
+                          <span aria-hidden="true">👄</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={tempoTimingEnabled}
+                          aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
+                          data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
+                          onClick={() => {
+                            if (tempoTimingEnabled) {
+                              void disableTempoTiming();
+                            } else {
+                              void enableTempoTiming();
+                            }
+                          }}
+                        >
+                          <span aria-hidden="true">⏱</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={showLinesByDefault}
+                          aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
+                          data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
+                          onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
+                        >
+                          <span aria-hidden="true">👁</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={includeBlocking}
+                          aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
+                          data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
+                          onClick={() => changeIncludeBlocking(!includeBlocking)}
+                        >
+                          <span aria-hidden="true">♿</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={includeDirections ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={includeDirections}
+                          aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
+                          data-tooltip={includeDirections ? "Directions on" : "Directions off"}
+                          onClick={() => changeIncludeDirections(!includeDirections)}
+                        >
+                          <span aria-hidden="true">⌞⌝</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="transport inline-transport">
                   <div className="transport-group" aria-label="Playback controls">
                     <button
                       type="button"
@@ -885,23 +901,25 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       </span>
                     </button>
                   </div>
-                </div>
+                    </div>
+                  </div>
+                  {isLineRevealed ? (
+                    <LineCard
+                      line={line}
+                      includeDirections={includeDirections}
+                      includeBlocking={includeBlocking}
+                      blockingScope={blockingScope}
+                    />
+                  ) : (
+                    <article className="card hidden-line">Line hidden</article>
+                  )}
+                </section>
               </div>
-              {isLineRevealed ? (
-                <LineCard
-                  line={line}
-                  includeDirections={includeDirections}
-                  includeBlocking={includeBlocking}
-                  blockingScope={blockingScope}
-                />
-              ) : (
-                <article className="card hidden-line">Line hidden</article>
-              )}
-            </section>
+            ) : (
+              <p className="empty">This role has no rehearsable lines.</p>
+            )}
           </div>
-        ) : (
-          <p className="empty">This role has no rehearsable lines.</p>
-        )}
+        </div>
 
         <div className="session-settings">
           <label className="section-jumper">
@@ -933,15 +951,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           ) : null}
           <div className="utility-drawer">
             <div className="utility-tabs" aria-label="Rehearsal utilities">
-              <button
-                type="button"
-                className={activeUtilityPanel === "script" ? "utility-tab active" : "utility-tab"}
-                aria-pressed={activeUtilityPanel === "script"}
-                onClick={() => void showUtilityPanel("script")}
-              >
-                <span aria-hidden="true">▤</span>
-                Script
-              </button>
               <button
                 type="button"
                 className={activeUtilityPanel === "bookmarks" ? "utility-tab active" : "utility-tab"}
@@ -1053,17 +1062,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     </p>
                   </div>
                 ) : null}
-                {activeUtilityPanel === "script" ? (
-                  <ScriptBrowserPanel
-                    currentLineId={line?.id ?? null}
-                    includeBlocking={includeBlocking}
-                    blockingScope={blockingScope}
-                    includeDirections={includeDirections}
-                    lines={role.lines}
-                    sections={playbook.sections}
-                    onSelectLine={(lineId) => void jumpToLine(lineId)}
-                  />
-                ) : null}
                 {activeUtilityPanel === "bookmarks" ? (
                   <BookmarksPanel bookmarks={bookmarks} role={role} onSelectLine={(lineId) => void jumpToLine(lineId)} />
                 ) : null}
@@ -1083,45 +1081,146 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   );
 }
 
-function ScriptBrowserPanel({
+function OutlineSidecar({
   currentLineId,
   includeBlocking,
   blockingScope,
   includeDirections,
+  isOpen,
+  playbook,
   lines,
   sections,
-  onSelectLine
+  onSelectLine,
+  onToggleOpen
 }: {
   currentLineId: string | null;
   includeBlocking: boolean;
   blockingScope: BlockingScope;
   includeDirections: boolean;
+  isOpen: boolean;
+  playbook: Playbook;
   lines: Line[];
   sections: Playbook["sections"];
   onSelectLine: (lineId: string) => void;
+  onToggleOpen: () => void;
 }) {
-  const currentLineRef = useRef<HTMLLIElement | null>(null);
-
-  useEffect(() => {
-    currentLineRef.current?.scrollIntoView({ block: "center" });
-  }, [currentLineId]);
+  if (!isOpen) {
+    return (
+      <aside className="outline-sidecar collapsed" aria-label="Rehearsal outline">
+        <button
+          type="button"
+          className="outline-disclosure-button"
+          aria-label="Show outline."
+          title="Show outline"
+          onClick={onToggleOpen}
+        >
+          <span className="context-disclosure" aria-hidden="true" />
+        </button>
+        <span className="outline-progress" aria-label={`${currentLineId ?? "No line"} selected`}>
+          {currentLineId ?? "No line"}
+          <span>current</span>
+        </span>
+      </aside>
+    );
+  }
 
   return (
-    <div className="script-browser">
-      <h2>Script</h2>
-      {scriptBrowserSections(lines, sections).map((section) => (
-        <section key={section.id}>
-          <h3>{section.title}</h3>
-          <ol>
-            {section.lines.map((line) => (
-              <li
-                key={line.id}
-                className={line.id === currentLineId ? "current-script-line" : undefined}
-                ref={line.id === currentLineId ? currentLineRef : undefined}
-              >
-                <button type="button" className="secondary" onClick={() => onSelectLine(line.id)}>
+    <OutlinePanel
+      currentLineId={currentLineId}
+      includeBlocking={includeBlocking}
+      blockingScope={blockingScope}
+      includeDirections={includeDirections}
+      playbook={playbook}
+      lines={lines}
+      sections={sections}
+      onSelectLine={onSelectLine}
+      onToggleOpen={onToggleOpen}
+    />
+  );
+}
+
+function OutlinePanel({
+  currentLineId,
+  includeBlocking,
+  blockingScope,
+  includeDirections,
+  playbook,
+  lines,
+  sections,
+  onSelectLine,
+  onToggleOpen
+}: {
+  currentLineId: string | null;
+  includeBlocking: boolean;
+  blockingScope: BlockingScope;
+  includeDirections: boolean;
+  playbook: Playbook;
+  lines: Line[];
+  sections: Playbook["sections"];
+  onSelectLine: (lineId: string) => void;
+  onToggleOpen: () => void;
+}) {
+  const [mode, setMode] = useState<OutlineMode>("cues");
+  const currentLineRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    currentLineRef.current?.scrollIntoView({ block: "nearest" });
+  }, [currentLineId, mode]);
+
+  return (
+    <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
+      <div className="outline-header">
+        <div>
+          <p className="eyebrow">Outline</p>
+          <strong>{mode === "cues" ? "Showing cues" : "Showing lines"}</strong>
+        </div>
+        <div className="outline-header-actions">
+          <div className="outline-mode-toggle" aria-label="Outline display">
+            <button
+              type="button"
+              className={mode === "cues" ? "active" : undefined}
+              aria-pressed={mode === "cues"}
+              onClick={() => setMode("cues")}
+            >
+              Cues
+            </button>
+            <button
+              type="button"
+              className={mode === "lines" ? "active" : undefined}
+              aria-pressed={mode === "lines"}
+              onClick={() => setMode("lines")}
+            >
+              Lines
+            </button>
+          </div>
+          <button
+            type="button"
+            className="outline-disclosure-button expanded"
+            aria-label="Hide outline."
+            title="Hide outline"
+            onClick={onToggleOpen}
+          >
+            <span className="context-disclosure" aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <div className="outline-list">
+        {scriptBrowserSections(lines, sections).map((section) => (
+          <section className="outline-section" key={section.id}>
+            <h3>{section.title}</h3>
+            <div className="outline-section-list">
+              {section.lines.map((line) => (
+                <button
+                  type="button"
+                  key={line.id}
+                  className={line.id === currentLineId ? "outline-row selected" : "outline-row"}
+                  ref={line.id === currentLineId ? currentLineRef : undefined}
+                  onClick={() => onSelectLine(line.id)}
+                >
+                  <span className={line.id === currentLineId ? "status-dot accepted" : "status-dot"} aria-hidden="true" />
                   <strong>{line.id}</strong>
-                  <span>{line.speaker}</span>
+                  <span className="outline-speaker">{outlineSpeaker(line, mode, includeDirections, playbook)}</span>
+                  <span className="outline-text">{outlineText(line, mode, includeDirections, playbook)}</span>
                   {includeDirections && line.directions.length > 0 ? (
                     <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
                   ) : null}
@@ -1132,15 +1231,28 @@ function ScriptBrowserPanel({
                         .join(" ")}
                     </small>
                   ) : null}
-                  {line.responseText.slice(0, 120)}
                 </button>
-              </li>
-            ))}
-          </ol>
-        </section>
-      ))}
-    </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </aside>
   );
+}
+
+function outlineSpeaker(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
+  if (mode === "lines") {
+    return line.speaker;
+  }
+  return visibleCuesForDisplay([line.cue], includeDirections, playbook.context, playbook, line)[0]?.speaker ?? line.cue.speaker;
+}
+
+function outlineText(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
+  if (mode === "lines") {
+    return line.responseText;
+  }
+  return visibleCuesForDisplay([line.cue], includeDirections, playbook.context, playbook, line)[0]?.text ?? line.cue.text;
 }
 
 function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
