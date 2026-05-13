@@ -62,6 +62,12 @@ describe("RehearsalEngine", () => {
     ]);
   });
 
+  it("does not expand the 2s cue preset to earlier cues", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-3" });
+
+    expect(engine.cuePayloads("last_2s").map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
+  });
+
   it("preserves line-specific target hesitation timing", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
 

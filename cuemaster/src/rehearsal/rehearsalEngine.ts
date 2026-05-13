@@ -72,6 +72,10 @@ export class RehearsalEngine {
       const line = this.currentLine();
       return line ? [line.cue] : [];
     }
+    if (preset.id === "last_2s") {
+      const line = this.currentLine();
+      return line ? [line.cue] : [];
+    }
 
     const cues: Array<Line["cue"]> = [];
     let durationMs = 0;
