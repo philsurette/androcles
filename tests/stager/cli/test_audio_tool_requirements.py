@@ -43,6 +43,25 @@ def test_wav_playbook_does_not_check_required_audio_tools(tmp_path: Path, monkey
     assert result.exit_code == 0
 
 
+def test_playbook_reports_missing_required_audio_without_traceback(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _patch_path_config(monkeypatch, cfg)
+
+    def fail_playbook(**kwargs) -> Path:
+        raise RuntimeError(
+            "Missing required cue audio for role ALICE segment 1_0_1 "
+            "while building Playbook: build/test/audio/segments/ALICE/1_0_1.wav"
+        )
+
+    monkeypatch.setattr(build, "run_playbook", fail_playbook)
+
+    result = CliRunner().invoke(build.app, ["playbook", "--play", "test"])
+
+    assert result.exit_code != 0
+    assert "Missing required cue audio for role ALICE segment 1_0_1" in result.output
+    assert "Traceback" not in result.output
+
+
 def test_mp3_playbook_checks_required_audio_tools(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)

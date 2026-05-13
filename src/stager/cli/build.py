@@ -169,6 +169,13 @@ def require_audio_tools() -> None:
         raise click.ClickException(str(exc)) from exc
 
 
+def raise_playbook_cli_error(exc: RuntimeError) -> None:
+    message = str(exc)
+    if message.startswith("Missing required ") and " while building Playbook:" in message:
+        raise click.ClickException(message) from exc
+    raise exc
+
+
 def setup_logging(paths_config: paths.PathConfig) -> None:
     paths_config.build_dir.mkdir(parents=True, exist_ok=True)
     paths_config.logs_dir.mkdir(parents=True, exist_ok=True)
@@ -876,12 +883,15 @@ def playbook(
     if audio_format == "mp3":
         require_audio_tools()
     with rich_progress() as progress:
-        run_playbook(
-            paths_config=cfg,
-            build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
-            audio_format=audio_format,
-            progress_reporter=RichPlaybookProgressReporter(progress),
-        )
+        try:
+            run_playbook(
+                paths_config=cfg,
+                build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
+                audio_format=audio_format,
+                progress_reporter=RichPlaybookProgressReporter(progress),
+            )
+        except RuntimeError as exc:
+            raise_playbook_cli_error(exc)
 
 
 @app.command("recording-request", rich_help_panel="build")

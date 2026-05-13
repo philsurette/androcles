@@ -2,11 +2,21 @@ from __future__ import annotations
 
 from pathlib import Path
 from dataclasses import dataclass, field
+import sys
 from typing import Dict
 
 from stager.shared.play_config import DEFAULT_PLAY_ID, PlayConfig
 
-ROOT = Path(__file__).resolve().parents[2]
+def _default_root() -> Path:
+    if getattr(sys, "frozen", False):
+        return Path.cwd() / "src"
+    package_root = Path(__file__).resolve().parents[2]
+    if (package_root.parent / "src" / "stager").exists():
+        return package_root
+    return Path.cwd() / "src"
+
+
+ROOT = _default_root()
 DEFAULT_PLAY_NAME = DEFAULT_PLAY_ID
 
 
