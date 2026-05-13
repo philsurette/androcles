@@ -22,6 +22,12 @@ export function LineCard({
 
   return (
     <article className="card line-card">
+      {visibleBlocking.map((blocking) => (
+        <p className="blocking-note" key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}>
+          <span className="blocking-target">{blocking.targets.join(", ")}</span>
+          <span className="blocking-text">({blocking.text})</span>
+        </p>
+      ))}
       <p>
         <span className="speaker inline-speaker">{line.speaker}</span>
         {includeDirections
@@ -31,11 +37,6 @@ export function LineCard({
               </span>
             ))
           : null}
-        {visibleBlocking.map((blocking) => (
-          <span className="inline-stage-direction" key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}>
-            {blocking.targets.join(", ")}: {blocking.text}
-          </span>
-        ))}
         {line.responseText}
       </p>
     </article>

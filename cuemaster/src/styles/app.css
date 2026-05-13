@@ -338,6 +338,28 @@ button:disabled {
   line-height: 1.45;
 }
 
+.blocking-note {
+  color: var(--quiet);
+  font-size: 1rem;
+  font-style: italic;
+  line-height: 1.35;
+  margin-bottom: 0.45rem;
+}
+
+.blocking-target {
+  color: var(--quiet);
+  font-size: 0.8rem;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  margin-right: 0.45rem;
+  text-transform: uppercase;
+}
+
+.blocking-text {
+  opacity: 0.85;
+}
+
 .hidden-line {
   color: var(--quiet);
   font-size: 1.25rem;
