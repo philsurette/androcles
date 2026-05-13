@@ -23,7 +23,12 @@ export type StageDirection = {
   placement: "top_level" | "inline" | "description";
 };
 
-export type BlockingNote = StageDirection & {
+export type BlockingNote = {
+  id: string;
+  segmentId?: string;
+  contentHash: string;
+  text: string;
+  placement: "inline" | "before" | "after";
   targets: string[];
 };
 

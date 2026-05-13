@@ -2,6 +2,8 @@ import type { Playbook } from "../domain/playbook";
 import type { PlaybookManifest } from "../specs/playbookManifest";
 
 export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
+  const standaloneBlocking = standaloneBlockingByLine(manifest);
+
   return {
     id: manifest.play.id,
     title: manifest.play.title,
@@ -69,14 +71,17 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           text: direction.text,
           placement: direction.placement
         })),
-        blocking: (line.blocking ?? []).map((blocking) => ({
-          id: blocking.id,
-          segmentId: blocking.segment_id,
-          contentHash: blocking.content_hash,
-          targets: blocking.targets,
-          text: blocking.text,
-          placement: blocking.placement
-        })),
+        blocking: [
+          ...(standaloneBlocking.get(line.id) ?? []),
+          ...(line.blocking ?? []).map((blocking) => ({
+            id: blocking.id,
+            segmentId: blocking.segment_id,
+            contentHash: blocking.content_hash,
+            targets: blocking.targets,
+            text: blocking.text,
+            placement: "inline" as const
+          }))
+        ],
         previousRoles: line.previous_roles,
         timing:
           line.timing?.target_hesitation_ms === undefined
@@ -85,4 +90,38 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
       }))
     }))
   };
+}
+
+function lineIdForBlockingId(id: string): string {
+  return id.split(":", 1)[0];
+}
+
+function standaloneBlockingByLine(manifest: PlaybookManifest) {
+  const byLine = new Map<
+    string,
+    Array<{
+      id: string;
+      contentHash: string;
+      targets: string[];
+      text: string;
+      placement: "before" | "after";
+    }>
+  >();
+  for (const block of manifest.context) {
+    if (block.kind !== "blocking") {
+      continue;
+    }
+    const lineId = lineIdForBlockingId(block.id);
+    byLine.set(lineId, [
+      ...(byLine.get(lineId) ?? []),
+      {
+        id: block.id,
+        contentHash: block.content_hash,
+        targets: block.targets ?? [],
+        text: block.text,
+        placement: block.placement ?? "before"
+      }
+    ]);
+  }
+  return byLine;
 }

@@ -32,7 +32,7 @@ export function LineCard({
             ))
           : null}
         {visibleBlocking.map((blocking) => (
-          <span className="inline-stage-direction" key={`${blocking.segmentId}-${blocking.placement}`}>
+          <span className="inline-stage-direction" key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}>
             {blocking.targets.join(", ")}: {blocking.text}
           </span>
         ))}

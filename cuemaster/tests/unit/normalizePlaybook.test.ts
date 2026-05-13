@@ -108,7 +108,7 @@ describe("normalizePlaybook", () => {
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
       context: [
         {
-          id: "I-2",
+          id: "I-1:b2",
           part_id: 0,
           block_id: "0.2",
           kind: "blocking",
@@ -180,6 +180,13 @@ describe("normalizePlaybook", () => {
       audioPath: undefined
     });
     expect(playbook.roles[0].lines[0].blocking).toEqual([
+      {
+        id: "I-1:b2",
+        contentHash: "sha256:0000000000000000000000000000000000000000000000000000000000000021",
+        targets: ["MEGAERA"],
+        text: "Crosses downstage.",
+        placement: "before"
+      },
       {
         id: "I-1:b1",
         segmentId: "0_1_2",
