@@ -33,8 +33,9 @@ Large Playbooks can take time to import. Cuemaster shows progress while it valid
 - **Next** moves to the next line.
 - **Show lines** shows or hides your expected response, and opens future lines with the same visibility setting.
 - **Show stage directions** shows or hides stage directions attached to the current line and script browser entries.
+- **Show blocking** shows or hides blocking notes attached to the current line and script browser entries.
 - **Hear My Line** plays your reference line at the selected response speed.
-- The compact buttons beside **Your Line** provide quick access to speak-along practice, tempo timing, and Show lines.
+- The compact buttons beside **Your Line** provide quick access to speak-along practice, tempo timing, Show lines, and Show blocking.
 - **Speak-along practice** changes cue playback so Start, Repeat Cue, Previous, and Next play the cue, wait for the speak-along pause, then play your line at the selected response speed.
 - **Speak-along pause** controls the delay between cue playback and reference-line playback during speak-along practice.
 - **Tempo pickup target** controls the pickup timing Cuemaster uses to label tempo attempts as sharp, close, or late.

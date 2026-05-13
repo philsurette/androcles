@@ -747,6 +747,16 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     >
                       <span aria-hidden="true">👁</span>
                     </button>
+                    <button
+                      type="button"
+                      className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
+                      aria-pressed={includeBlocking}
+                      aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
+                      data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
+                      onClick={() => changeIncludeBlocking(!includeBlocking)}
+                    >
+                      <span aria-hidden="true">♿</span>
+                    </button>
                   </div>
                 </div>
                 <div className="transport inline-transport">
@@ -965,27 +975,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     <label className="check-setting">
                       <input
                         type="checkbox"
-                        checked={speakAlongEnabled}
-                        disabled={tempoTimingEnabled}
-                        onChange={(event) => changeSpeakAlongEnabled(event.target.checked)}
-                      />
-                      Speak-along practice
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
                         checked={includeDirections}
                         onChange={(event) => changeIncludeDirections(event.target.checked)}
                       />
                       Show stage directions
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
-                        checked={includeBlocking}
-                        onChange={(event) => changeIncludeBlocking(event.target.checked)}
-                      />
-                      Show blocking
                     </label>
                     <label className="timing-setting">
                       Blocking scope
@@ -997,28 +990,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                         <option value="role">My role</option>
                         <option value="all">All roles</option>
                       </select>
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
-                        checked={showLinesByDefault}
-                        onChange={(event) => changeShowLinesByDefault(event.target.checked)}
-                      />
-                      Show lines
-                    </label>
-                    <label className="check-setting">
-                      <input
-                        type="checkbox"
-                        checked={tempoTimingEnabled}
-                        onChange={(event) => {
-                          if (event.target.checked) {
-                            void enableTempoTiming();
-                          } else {
-                            void disableTempoTiming();
-                          }
-                        }}
-                      />
-                      Enable Tempo Timing
                     </label>
                     <fieldset className="timing-options">
                       <legend>Timing targets</legend>
