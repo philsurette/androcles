@@ -412,12 +412,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     );
   }
 
-  function toggleLineReveal() {
-    const nextRevealLine = !isLineRevealed;
-    setIsLineRevealed(nextRevealLine);
-    void saveSession(position.index, playbackRate, speakAlongEnabled, tempoTimingPreferred, nextRevealLine);
-  }
-
   function changeShowLinesByDefault(nextShowLinesByDefault: boolean) {
     setShowLinesByDefault(nextShowLinesByDefault);
     setIsLineRevealed(nextShowLinesByDefault);
@@ -709,7 +703,52 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
             <section className="stack" aria-label="Your Line">
               <div className="line-heading">
-                <h2>Your Line</h2>
+                <div className="line-title-row">
+                  <h2>Your Line</h2>
+                  <div className="quick-practice-toggles" aria-label="Quick practice toggles">
+                    <button
+                      type="button"
+                      className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
+                      aria-pressed={speakAlongEnabled}
+                      aria-label={
+                        speakAlongEnabled
+                          ? "Disable speak-along practice."
+                          : "Enable speak-along practice."
+                      }
+                      data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
+                      disabled={tempoTimingEnabled}
+                      onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
+                    >
+                      <span aria-hidden="true">👄</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
+                      aria-pressed={tempoTimingEnabled}
+                      aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
+                      data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
+                      onClick={() => {
+                        if (tempoTimingEnabled) {
+                          void disableTempoTiming();
+                        } else {
+                          void enableTempoTiming();
+                        }
+                      }}
+                    >
+                      <span aria-hidden="true">⏱</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
+                      aria-pressed={showLinesByDefault}
+                      aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
+                      data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
+                      onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
+                    >
+                      <span aria-hidden="true">👁</span>
+                    </button>
+                  </div>
+                </div>
                 <div className="transport inline-transport">
                   <div className="transport-group" aria-label="Playback controls">
                     <button
@@ -812,15 +851,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     </button>
                   </div>
                 </div>
-                <label className="line-visibility-toggle">
-                  <input
-                    type="checkbox"
-                    checked={isLineRevealed}
-                    disabled={!line}
-                    onChange={toggleLineReveal}
-                  />
-                  Show my line
-                </label>
               </div>
               {isLineRevealed ? (
                 <LineCard
@@ -974,7 +1004,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                         checked={showLinesByDefault}
                         onChange={(event) => changeShowLinesByDefault(event.target.checked)}
                       />
-                      Show lines by default
+                      Show lines
                     </label>
                     <label className="check-setting">
                       <input
