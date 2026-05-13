@@ -84,7 +84,12 @@ class ScriptWright:
         ]
         for production_id, entry in self._assign_ids(production.entries):
             lines.extend(entry.leading_comments)
-            lines.extend(self._formatted_entry_lines(self._render_production_entry(production_id, entry), entry.kind, output_format))
+            self._append_formatted_entry(
+                lines,
+                self._render_production_entry(production_id, entry),
+                entry.kind,
+                output_format,
+            )
         return self._finish_lines(lines)
 
     def render_play(self, play: Play, output_format: ProductionMarkdownFormat = "list") -> str:
@@ -97,25 +102,40 @@ class ScriptWright:
             "",
         ]
         for block in play.blocks:
-            lines.extend(self._formatted_entry_lines(self._render_block(block, structure_ids), self._kind_for_block(block), output_format))
+            self._append_formatted_entry(
+                lines,
+                self._render_block(block, structure_ids),
+                self._kind_for_block(block),
+                output_format,
+            )
         return self._finish_lines(lines)
 
     def _validate_output_format(self, output_format: ProductionMarkdownFormat) -> None:
         if output_format not in PRODUCTION_MARKDOWN_FORMATS:
             raise RuntimeError(f"Unknown production markdown format: {output_format}")
 
+    def _append_formatted_entry(
+        self,
+        lines: list[str],
+        line: str,
+        kind: ProductionEntryKind,
+        output_format: ProductionMarkdownFormat,
+    ) -> None:
+        lines.extend(self._formatted_entry_lines(line, kind, output_format, bool(lines and lines[-1] != "")))
+
     def _formatted_entry_lines(
         self,
         line: str,
         kind: ProductionEntryKind,
         output_format: ProductionMarkdownFormat,
+        needs_heading_separator: bool = False,
     ) -> list[str]:
         if output_format == "compact":
             return [line]
         if output_format == "doublespace":
             return [line, ""]
         if kind == ProductionEntryKind.HEADING:
-            return [line, ""]
+            return ["", line] if needs_heading_separator else [line]
         return [f"- {line}"]
 
     def _finish_lines(self, lines: list[str]) -> str:
