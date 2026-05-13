@@ -1,4 +1,4 @@
-export type ContextKind = "heading" | "description" | "direction";
+export type ContextKind = "heading" | "description" | "direction" | "blocking";
 
 export type ContextBlock = {
   id: string;
@@ -8,6 +8,7 @@ export type ContextBlock = {
   speaker: "_NARRATOR";
   text: string;
   contentHash: string;
-  audioPath: string;
-  durationMs: number;
+  audioPath?: string;
+  durationMs?: number;
+  targets?: string[];
 };

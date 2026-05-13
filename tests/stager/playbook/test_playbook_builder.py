@@ -453,3 +453,45 @@ I-2 MEGAERA: (_suddenly_) I won't go another step.
     assert line["directions"][0]["segment_id"] == "1_2_1"
     assert line["directions"][0]["content_hash"].startswith("sha256:")
     assert "production_id" not in json.dumps(data)
+
+
+def test_playbook_manifest_exports_blocking_without_required_audio(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Hello (_/MEGAERA: crosses behind ANDROCLES_) there.
+I-2 /MEGAERA: Moves upstage.
+""",
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "1_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_3.wav")
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    androcles = next(role for role in data["roles"] if role["id"] == "ANDROCLES")
+    line = androcles["lines"][0]
+    assert line["blocking"] == [
+        {
+            "id": "I-1:b1",
+            "targets": ["MEGAERA"],
+            "text": "crosses behind ANDROCLES",
+            "placement": "inline",
+            "segment_id": "1_1_2",
+            "content_hash": line["blocking"][0]["content_hash"],
+        }
+    ]
+    assert line["blocking"][0]["content_hash"].startswith("sha256:")
+    blocking_context = next(block for block in data["context"] if block["kind"] == "blocking")
+    assert blocking_context["id"] == "I-2"
+    assert blocking_context["targets"] == ["MEGAERA"]
+    assert blocking_context["text"] == "Moves upstage."
+    assert "audio" not in blocking_context

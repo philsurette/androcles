@@ -23,6 +23,10 @@ export type StageDirection = {
   placement: "top_level" | "inline" | "description";
 };
 
+export type BlockingNote = StageDirection & {
+  targets: string[];
+};
+
 export type Line = {
   id: string;
   partId: number | null;
@@ -34,6 +38,7 @@ export type Line = {
   responseText: string;
   responseSegments: ResponseSegment[];
   directions: StageDirection[];
+  blocking?: BlockingNote[];
   previousRoles: string[];
   timing?: LineTiming;
 };

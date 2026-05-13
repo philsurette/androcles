@@ -6,10 +6,11 @@ from pathlib import Path
 import shutil
 import zipfile
 
-from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
+from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
-from stager.domain.segment import DirectionSegment, SimultaneousSegment, SpeechSegment
+from stager.domain.segment import BlockingSegment, DirectionSegment, SimultaneousSegment, SpeechSegment
 from stager.playbook.app_audio_asset import AppAudioAsset
+from stager.playbook.app_blocking import AppBlocking
 from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_cue import AppCue
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
@@ -114,16 +115,18 @@ class PlaybookBuilder:
             )
         return sections
 
-    def _context_blocks(self) -> list[TitleBlock | DescriptionBlock | DirectionBlock]:
+    def _context_blocks(self) -> list[TitleBlock | DescriptionBlock | DirectionBlock | BlockingBlock]:
         return [
             block
             for block in self.play.blocks
-            if isinstance(block, (TitleBlock, DescriptionBlock, DirectionBlock)) and block.segments
+            if isinstance(block, (TitleBlock, DescriptionBlock, DirectionBlock, BlockingBlock)) and block.segments
         ]
 
     def _context_audio_work_items(self) -> list[PlaybookAudioWorkItem]:
         work_items: list[PlaybookAudioWorkItem] = []
         for block in self._context_blocks():
+            if isinstance(block, BlockingBlock):
+                continue
             segment_id = str(block.segments[0].segment_id)
             work_items.append(
                 PlaybookAudioWorkItem(
@@ -170,6 +173,14 @@ class PlaybookBuilder:
         for block in self._context_blocks():
             segment = block.segments[0]
             segment_id = str(segment.segment_id)
+            audio = None
+            if not isinstance(block, BlockingBlock):
+                audio = self._copy_required_audio(
+                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                    role="_NARRATOR",
+                    segment_id=segment_id,
+                    category="context",
+                )
             context_blocks.append(
                 AppContextBlock(
                     id=self._required_production_id(block.production_id, f"context block {block.block_id}"),
@@ -179,12 +190,8 @@ class PlaybookBuilder:
                     speaker="_NARRATOR",
                     text=self._context_text_for(block),
                     content_hash=block.content_hash,
-                    audio=self._copy_required_audio(
-                        source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
-                        role="_NARRATOR",
-                        segment_id=segment_id,
-                        category="context",
-                    ),
+                    audio=audio,
+                    targets=list(block.targets) if isinstance(block, BlockingBlock) else None,
                 )
             )
         return context_blocks
@@ -215,6 +222,11 @@ class PlaybookBuilder:
                         for segment in block.segments
                         if isinstance(segment, DirectionSegment)
                     ],
+                    blocking=[
+                        AppBlocking.from_segment(segment, placement="inline")
+                        for segment in block.segments
+                        if isinstance(segment, BlockingSegment)
+                    ],
                     previous_roles=self.play.getPrecedingRoles(block.block_id, include_meta_roles=True),
                     simultaneous=any(isinstance(segment, SimultaneousSegment) for segment in response_segments),
                 )
@@ -235,14 +247,16 @@ class PlaybookBuilder:
         part = block.block_id.part_id if block.block_id.part_id is not None else ""
         return f"{part}.{block.block_id.block_no}"
 
-    def _context_kind_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock) -> str:
+    def _context_kind_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock | BlockingBlock) -> str:
         if isinstance(block, TitleBlock):
             return "heading"
         if isinstance(block, DescriptionBlock):
             return "description"
+        if isinstance(block, BlockingBlock):
+            return "blocking"
         return "direction"
 
-    def _context_text_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock) -> str:
+    def _context_text_for(self, block: TitleBlock | DescriptionBlock | DirectionBlock | BlockingBlock) -> str:
         if isinstance(block, TitleBlock):
             return block.heading
         return block.text

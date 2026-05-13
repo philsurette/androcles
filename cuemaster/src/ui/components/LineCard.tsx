@@ -1,6 +1,14 @@
 import type { Line } from "../../domain/line";
 
-export function LineCard({ line, includeDirections = false }: { line: Line; includeDirections?: boolean }) {
+export function LineCard({
+  line,
+  includeDirections = false,
+  includeBlocking = true
+}: {
+  line: Line;
+  includeDirections?: boolean;
+  includeBlocking?: boolean;
+}) {
   return (
     <article className="card line-card">
       <p>
@@ -9,6 +17,13 @@ export function LineCard({ line, includeDirections = false }: { line: Line; incl
           ? line.directions.map((direction) => (
               <span className="inline-stage-direction" key={`${direction.segmentId}-${direction.placement}`}>
                 {direction.text}
+              </span>
+            ))
+          : null}
+        {includeBlocking
+          ? (line.blocking ?? []).map((blocking) => (
+              <span className="inline-stage-direction" key={`${blocking.segmentId}-${blocking.placement}`}>
+                {blocking.targets.join(", ")}: {blocking.text}
               </span>
             ))
           : null}

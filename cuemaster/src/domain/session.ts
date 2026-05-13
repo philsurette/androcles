@@ -4,6 +4,7 @@ export type RehearsalSession = {
   lineIndex: number;
   cueDepth: number;
   includeDirections: boolean;
+  includeBlocking?: boolean;
   revealLine: boolean;
   showLinesByDefault: boolean;
   cueWindowPresetId: string;

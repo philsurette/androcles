@@ -53,4 +53,31 @@ describe("validatePlaybookManifest", () => {
       requested_window_ms: 0
     });
   });
+
+  it("accepts blocking context without audio and line blocking ids", () => {
+    const manifest = structuredClone(manifestFixture) as PlaybookManifest;
+    manifest.context.push({
+      id: "I-2",
+      part_id: 0,
+      block_id: "0.2",
+      kind: "blocking",
+      speaker: "_NARRATOR",
+      targets: ["MEGAERA"],
+      text: "Crosses downstage.",
+      content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000021"
+    });
+    manifest.roles[0].lines[0].blocking = [
+      {
+        id: "I-1:b1",
+        segment_id: "0_1_2",
+        content_hash: "sha256:0000000000000000000000000000000000000000000000000000000000000022",
+        targets: ["ANDROCLES"],
+        text: "takes MEGAERA's hand",
+        placement: "inline"
+      }
+    ];
+
+    expect(validatePlaybookManifest(manifest).context.at(-1)?.kind).toBe("blocking");
+    expect(validatePlaybookManifest(manifest).roles[0].lines[0].blocking?.[0].id).toBe("I-1:b1");
+  });
 });

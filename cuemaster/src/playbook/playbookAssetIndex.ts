@@ -30,7 +30,9 @@ export function collectRequiredAudioAssetPaths(manifest: PlaybookManifest): stri
   }
 
   for (const contextBlock of manifest.context) {
-    addRequiredAudioPath(paths, contextBlock.audio);
+    if (contextBlock.audio) {
+      addRequiredAudioPath(paths, contextBlock.audio);
+    }
   }
 
   for (const role of manifest.roles) {

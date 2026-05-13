@@ -33,11 +33,12 @@ export type ManifestContextBlock = {
   id: string;
   part_id: number | null;
   block_id: string;
-  kind: "heading" | "description" | "direction";
+  kind: "heading" | "description" | "direction" | "blocking";
   speaker: "_NARRATOR";
   text: string;
-  audio: ManifestAudioAsset;
+  audio?: ManifestAudioAsset;
   content_hash: string;
+  targets?: string[];
 };
 
 export type ManifestSection = {
@@ -85,6 +86,14 @@ export type ManifestLine = {
     id: string;
     segment_id: string;
     content_hash: string;
+    text: string;
+    placement: "top_level" | "inline" | "description";
+  }>;
+  blocking?: Array<{
+    id: string;
+    segment_id: string;
+    content_hash: string;
+    targets: string[];
     text: string;
     placement: "top_level" | "inline" | "description";
   }>;

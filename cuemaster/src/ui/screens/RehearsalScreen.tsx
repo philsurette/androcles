@@ -55,6 +55,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
   );
   const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
+  const [includeBlocking, setIncludeBlocking] = useState(initialSession?.includeBlocking ?? true);
   const [hasStarted, setHasStarted] = useState(false);
   const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
   const [speakAlongPauseMs, setSpeakAlongPauseMs] = useState(
@@ -235,7 +236,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     nextShowLinesByDefault = showLinesByDefault,
     nextSpeakAlongPauseMs = speakAlongPauseMs,
     nextTempoTargetHesitationMs = tempoTargetHesitationMs,
-    nextSyncPracticeTiming = syncPracticeTiming
+    nextSyncPracticeTiming = syncPracticeTiming,
+    nextIncludeBlocking = includeBlocking
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -244,6 +246,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         lineIndex,
         cueDepth: 1,
         includeDirections: nextIncludeDirections,
+        includeBlocking: nextIncludeBlocking,
         revealLine: nextRevealLine,
         showLinesByDefault: nextShowLinesByDefault,
         cueWindowPresetId: nextCueWindowPresetId,
@@ -438,6 +441,24 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       isLineRevealed,
       cueWindowPresetId,
       nextIncludeDirections
+    );
+  }
+
+  function changeIncludeBlocking(nextIncludeBlocking: boolean) {
+    setIncludeBlocking(nextIncludeBlocking);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      nextIncludeBlocking
     );
   }
 
@@ -780,7 +801,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 </label>
               </div>
               {isLineRevealed ? (
-                <LineCard line={line} includeDirections={includeDirections} />
+                <LineCard line={line} includeDirections={includeDirections} includeBlocking={includeBlocking} />
               ) : (
                 <article className="card hidden-line">Line hidden</article>
               )}
@@ -904,6 +925,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                     <label className="check-setting">
                       <input
                         type="checkbox"
+                        checked={includeBlocking}
+                        onChange={(event) => changeIncludeBlocking(event.target.checked)}
+                      />
+                      Show blocking
+                    </label>
+                    <label className="check-setting">
+                      <input
+                        type="checkbox"
                         checked={showLinesByDefault}
                         onChange={(event) => changeShowLinesByDefault(event.target.checked)}
                       />
@@ -971,6 +1000,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 {activeUtilityPanel === "script" ? (
                   <ScriptBrowserPanel
                     currentLineId={line?.id ?? null}
+                    includeBlocking={includeBlocking}
                     includeDirections={includeDirections}
                     lines={role.lines}
                     sections={playbook.sections}
@@ -998,12 +1028,14 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
 function ScriptBrowserPanel({
   currentLineId,
+  includeBlocking,
   includeDirections,
   lines,
   sections,
   onSelectLine
 }: {
   currentLineId: string | null;
+  includeBlocking: boolean;
   includeDirections: boolean;
   lines: Line[];
   sections: Playbook["sections"];
@@ -1033,6 +1065,13 @@ function ScriptBrowserPanel({
                   <span>{line.speaker}</span>
                   {includeDirections && line.directions.length > 0 ? (
                     <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
+                  ) : null}
+                  {includeBlocking && (line.blocking?.length ?? 0) > 0 ? (
+                    <small>
+                      {line.blocking
+                        ?.map((blocking) => `${blocking.targets.join(", ")}: ${blocking.text}`)
+                        .join(" ")}
+                    </small>
                   ) : null}
                   {line.responseText.slice(0, 120)}
                 </button>

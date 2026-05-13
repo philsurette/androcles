@@ -138,7 +138,7 @@ Every role line's `part_id` should match one section's `part_id`. Synthetic fall
 
 ## Context Payload
 
-Context entries preserve script material that is not a rehearsable actor response but is still needed for browsing, cue display, cue-depth expansion, and direction playback.
+Context entries preserve script material that is not a rehearsable actor response but is still needed for browsing, cue display, cue-depth expansion, direction playback, and blocking display.
 
 ```json
 {
@@ -157,16 +157,19 @@ Context entries preserve script material that is not a rehearsable actor respons
 }
 ```
 
+Blocking context entries use the same shape but set `kind` to `blocking`, include `targets`, and omit `audio`. Blocking is an instruction to actors, not narrator-spoken script audio.
+
 Context fields:
 
 - `id`: Stable segment id for the context audio/text.
 - `part_id`: Numeric play part id, or `null` for no-part preamble material.
 - `block_id`: Human-readable block id using dot format.
-- `kind`: `heading`, `description`, or `direction`.
+- `kind`: `heading`, `description`, `direction`, or `blocking`.
 - `speaker`: `_NARRATOR` for schema version 1 context entries.
 - `text`: Display text. Headings should use the cleaned heading text, not raw source markers.
 - `content_hash`: Normalized content fingerprint for detecting changed context text behind a reused production id.
-- `audio`: Required narrator audio for the context segment.
+- `audio`: Required narrator audio for heading, description, and direction context. Omitted for blocking context.
+- `targets`: Role ids affected by a blocking context entry. Present for `blocking`; omitted otherwise.
 
 ## Role Payload
 
@@ -232,6 +235,7 @@ Each line item describes one expected response opportunity for one role.
     ]
   },
   "directions": [],
+  "blocking": [],
   "previous_roles": [
     "_NARRATOR"
   ]
@@ -249,7 +253,21 @@ Line fields:
 - `cue`: Prompt shown or played before the response.
 - `response`: Expected actor response for this role.
 - `directions`: Stage directions associated with the response block.
+- `blocking`: Blocking notes associated with the response block.
 - `previous_roles`: Useful display/context hint, matching the play model's preceding-role concept.
+
+Line-level `blocking` items are structured like directions with an additional `targets` list:
+
+```json
+{
+  "id": "0-5:b1",
+  "segment_id": "0_5_2",
+  "content_hash": "sha256:...",
+  "targets": ["MEGAERA"],
+  "text": "crosses downstage",
+  "placement": "inline"
+}
+```
 
 ## Cue Payload
 

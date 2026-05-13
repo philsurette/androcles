@@ -20,7 +20,7 @@ const contentHashSchema = z.string().regex(/^sha256:[0-9a-f]{64}$/);
 const productionIdSchema = z
   .string()
   .regex(
-    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdm][0-9]+)?$/,
+    /^[A-Z0-9]+(?:\.[A-Z0-9]+)*-[0-9]+(?:\.[0-9]+)?[a-z]?(?::[sdmb][0-9]+)?$/,
     "Expected a production id such as I-3 or I-3:s1"
   );
 
@@ -30,6 +30,10 @@ const directionSchema = z.object({
   content_hash: contentHashSchema,
   text: z.string(),
   placement: z.enum(["top_level", "inline", "description"])
+});
+
+const blockingSchema = directionSchema.extend({
+  targets: z.array(z.string().min(1)).min(1)
 });
 
 const sectionSchema = z.object({
@@ -67,6 +71,7 @@ const lineSchema = z.object({
     segments: z.array(responseSegmentSchema).min(1)
   }),
   directions: z.array(directionSchema),
+  blocking: z.array(blockingSchema).optional(),
   previous_roles: z.array(z.string()),
   simultaneous: z.boolean().optional(),
   timing: z
@@ -103,11 +108,12 @@ const manifestSchema = z.object({
       id: productionIdSchema,
       part_id: z.number().int().nullable(),
       block_id: z.string().min(1),
-      kind: z.enum(["heading", "description", "direction"]),
+      kind: z.enum(["heading", "description", "direction", "blocking"]),
       speaker: z.literal("_NARRATOR"),
       text: z.string(),
-      audio: audioAssetSchema,
-      content_hash: contentHashSchema
+      audio: audioAssetSchema.optional(),
+      content_hash: contentHashSchema,
+      targets: z.array(z.string().min(1)).optional()
     })
   ),
   roles: z.array(roleSchema),

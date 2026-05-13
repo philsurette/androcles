@@ -23,8 +23,9 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
       speaker: block.speaker,
       text: block.text,
       contentHash: block.content_hash,
-      audioPath: block.audio.path,
-      durationMs: block.audio.duration_ms
+      audioPath: block.audio?.path,
+      durationMs: block.audio?.duration_ms,
+      targets: block.targets
     })),
     roles: manifest.roles.map((role) => ({
       id: role.id,
@@ -66,6 +67,14 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
           contentHash: direction.content_hash,
           text: direction.text,
           placement: direction.placement
+        })),
+        blocking: (line.blocking ?? []).map((blocking) => ({
+          id: blocking.id,
+          segmentId: blocking.segment_id,
+          contentHash: blocking.content_hash,
+          targets: blocking.targets,
+          text: blocking.text,
+          placement: blocking.placement
         })),
         previousRoles: line.previous_roles,
         timing:

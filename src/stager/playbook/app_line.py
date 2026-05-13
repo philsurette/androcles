@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from stager.domain.block import RoleBlock
+from stager.playbook.app_blocking import AppBlocking
 from stager.playbook.app_cue import AppCue
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_response import AppResponse
@@ -20,6 +21,7 @@ class AppLine:
     response: AppResponse
     content_hash: str | None = None
     directions: list[AppDirection] = field(default_factory=list)
+    blocking: list[AppBlocking] = field(default_factory=list)
     previous_roles: list[str] = field(default_factory=list)
     simultaneous: bool = False
 
@@ -44,6 +46,7 @@ class AppLine:
             "cue": self.cue.to_dict(),
             "response": self.response.to_dict(),
             "directions": [direction.to_dict() for direction in self.directions],
+            "blocking": [blocking.to_dict() for blocking in self.blocking],
             "previous_roles": list(self.previous_roles),
         }
         if self.content_hash is not None:
