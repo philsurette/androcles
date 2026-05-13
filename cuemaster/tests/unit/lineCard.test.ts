@@ -33,11 +33,10 @@ const line: Line = {
 };
 
 describe("LineCard", () => {
-  it("renders blocking separately from the spoken line", () => {
+  it("does not render out-of-line blocking with the spoken line", () => {
     render(createElement(LineCard, { line, includeBlocking: true }));
 
-    expect(screen.getByText("LILLIAN")).toHaveClass("blocking-target");
-    expect(screen.getByText("(settles beside the recorder.)")).toHaveClass("blocking-text");
+    expect(screen.queryByText("(settles beside the recorder.)")).not.toBeInTheDocument();
     expect(screen.getByText("Please do.")).not.toHaveTextContent("settles beside the recorder");
   });
 });

@@ -305,6 +305,21 @@ button:disabled {
   white-space: nowrap;
 }
 
+.cue-blocking-card {
+  color: var(--quiet);
+}
+
+.cue-blocking-card .blocking-target {
+  margin-right: 0;
+}
+
+.cue-blocking-text {
+  color: var(--quiet);
+  font-size: 1rem;
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .line-heading {
   display: flex;
   flex-wrap: wrap;

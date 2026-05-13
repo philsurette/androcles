@@ -698,6 +698,19 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 {cues.map((cue, index) => (
                   <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
                 ))}
+                {includeBlocking
+                  ? visibleBlockingForLine(line, blockingScope)
+                      .filter((blocking) => blocking.placement !== "inline")
+                      .map((blocking) => (
+                        <article
+                          className="card cue-card cue-blocking-card"
+                          key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
+                        >
+                          <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
+                          <p className="cue-blocking-text">({blocking.text})</p>
+                        </article>
+                      ))
+                  : null}
               </div>
             </section>
 

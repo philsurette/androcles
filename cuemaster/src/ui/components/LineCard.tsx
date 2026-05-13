@@ -16,7 +16,9 @@ export function LineCard({
   const visibleBlocking =
     includeBlocking && line.blocking
       ? line.blocking.filter(
-          (blocking) => blockingScope === "all" || blocking.targets.includes("*") || blocking.targets.includes(line.role)
+          (blocking) =>
+            blocking.placement === "inline" &&
+            (blockingScope === "all" || blocking.targets.includes("*") || blocking.targets.includes(line.role))
         )
       : [];
 
