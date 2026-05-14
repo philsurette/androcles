@@ -722,9 +722,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             >
               <span aria-hidden="true">←</span>
             </button>
-            <p className="breadcrumb">
-              {playbook.title} / {role.displayName}
-            </p>
+            <div className="rehearsal-title-stack">
+              <p className="rehearsal-play-title">{playbook.title}</p>
+              <p className="rehearsal-role-title">{role.displayName}</p>
+            </div>
           </div>
           <div className="rehearsal-line-metadata">
             <button

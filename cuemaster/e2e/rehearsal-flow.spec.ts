@@ -13,7 +13,8 @@ test("resumes the last role and line after reload", async ({ page }) => {
   await page.reload();
   await page.getByRole("button", { name: "Rehearse!" }).click();
 
-  await expect(page.getByText("Androcles and the Lion / ANDROCLES")).toBeVisible();
+  await expect(page.getByText("Androcles and the Lion")).toBeVisible();
+  await expect(page.getByText("ANDROCLES")).toBeVisible();
   await expect(page.locator("p.line-position").getByText("I-3")).toBeVisible();
 });
 

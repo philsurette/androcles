@@ -12,9 +12,7 @@ body {
   min-height: 100%;
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(circle at 12% 18%, rgba(185, 79, 47, 0.22), transparent 24rem),
-    linear-gradient(135deg, #efe3c2 0%, #f8f2e2 45%, #d8dfc4 100%);
+  background: var(--paper);
 }
 
 html,
