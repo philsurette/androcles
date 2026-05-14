@@ -649,16 +649,20 @@ button:disabled {
   border: 1px solid rgba(30, 38, 31, 0.12);
   border-radius: 0.95rem;
   background: rgba(255, 255, 255, 0.28);
-  padding: 0.55rem 0.62rem 0.62rem;
+  padding: 0.2rem 0.6rem 0.55rem;
   display: grid;
   gap: 0.4rem;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
 }
 
 .cue-section-title {
   margin: 0;
+  padding: 0 0.3rem;
   color: var(--accent);
-  font-size: 0.86rem;
-  letter-spacing: 0.09em;
+  font-size: 0.76rem;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
   font-weight: 900;
 }

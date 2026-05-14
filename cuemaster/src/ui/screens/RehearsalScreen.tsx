@@ -1587,8 +1587,8 @@ export function RehearsalScreen({
           <div className="rehearsal-main">
             {line ? (
               <div className={`rehearsal-line-layout rehearsal-text-size rehearsal-text-size-${rehearsalTextSize}`}>
-                <section className="cue-section-panel" aria-label={`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}>
-                  <h2 className="cue-section-title">{`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}</h2>
+                <fieldset className="cue-section-panel" aria-label={`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}>
+                  <legend className="cue-section-title">{`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}</legend>
                   <section className="cue-strip" aria-label="Cue">
                     <section className="control-strip cue-control-strip" aria-label="Cue controls">
                       <div className="transport">
@@ -1727,7 +1727,7 @@ export function RehearsalScreen({
                         : null}
                     </div>
                   </section>
-                </section>
+                </fieldset>
 
                   <section className="stack" aria-label="Current cue and line">
                     <div className="rehearsal-line-content">
