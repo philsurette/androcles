@@ -15,7 +15,7 @@ import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehear
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { deliveryLabel, tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
-import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
+import { defaultTargetHesitationMs, endOfLineSilenceMs, defaultTempoTimingConfig } from "../../rehearsal/tempoTimingConfig";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
@@ -210,6 +210,9 @@ export function RehearsalScreen({
   );
   const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
     normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
+  );
+  const [tempoEndOfLineSilenceMs, setTempoEndOfLineSilenceMs] = useState(
+    normalizeTempoEndOfLineSilenceMs(initialSession?.tempoEndOfLineSilenceMs ?? endOfLineSilenceMs)
   );
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
@@ -540,7 +543,8 @@ export function RehearsalScreen({
     nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
     nextTempoTolerancePercent = tempoTolerancePercent,
     nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs,
-    nextRehearsalTextSize = rehearsalTextSize
+    nextRehearsalTextSize = rehearsalTextSize,
+    nextTempoEndOfLineSilenceMs = tempoEndOfLineSilenceMs
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -562,6 +566,7 @@ export function RehearsalScreen({
         absoluteTempoForgivenessMs: nextAbsoluteTempoForgivenessMs,
         tempoTolerancePercent: nextTempoTolerancePercent,
         absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
+        tempoEndOfLineSilenceMs: nextTempoEndOfLineSilenceMs,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         rehearsalTextSize: nextRehearsalTextSize,
@@ -654,6 +659,13 @@ export function RehearsalScreen({
     setPlaybackState("idle");
     setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
+  }
+
+  function makeTempoTimingDetector(): VoiceActivityDetector {
+    return new VoiceActivityDetector(handleVoiceActivity, {
+      ...defaultTempoTimingConfig,
+      endOfLineSilenceMs: tempoEndOfLineSilenceMs
+    });
   }
 
   function changePlaybackRate(nextPlaybackRate: number) {
@@ -936,6 +948,33 @@ export function RehearsalScreen({
     );
   }
 
+  function changeTempoEndOfLineSilenceMs(nextTempoEndOfLineSilenceMs: number) {
+    const normalizedTempoEndOfLineSilenceMs = normalizeTempoEndOfLineSilenceMs(nextTempoEndOfLineSilenceMs);
+    setTempoEndOfLineSilenceMs(normalizedTempoEndOfLineSilenceMs);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent,
+      absolutePickupForgivenessMs,
+      rehearsalTextSize,
+      normalizedTempoEndOfLineSilenceMs
+    );
+  }
+
   function changeAbsolutePickupForgiveness(nextToleranceMs: number) {
     const normalizedToleranceMs = normalizeAbsolutePickupForgivenessMs(nextToleranceMs);
     setAbsolutePickupForgivenessMs(normalizedToleranceMs);
@@ -1050,7 +1089,7 @@ export function RehearsalScreen({
   }
 
   async function enableTempoTiming() {
-    const detector = new VoiceActivityDetector(handleVoiceActivity);
+    const detector = makeTempoTimingDetector();
 
     try {
       await detector.start();
@@ -1087,19 +1126,18 @@ export function RehearsalScreen({
       setTimingStatusMessage(null);
       return;
     }
-    let detector = voiceActivityDetector;
-    if (!detector) {
-      detector = new VoiceActivityDetector(handleVoiceActivity);
-      try {
-        await detector.start();
-      } catch (error) {
-        setStorageStatus(userFacingErrorMessage(error));
-        return;
-      }
-      setVoiceActivityDetector(detector);
-      // Keep capture running for the remainder of the timing session.
-      void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
+    const detector = makeTempoTimingDetector();
+    voiceActivityDetector?.stop();
+    try {
+      await detector.start();
+    } catch (error) {
+      detector.stop();
+      setStorageStatus(userFacingErrorMessage(error));
+      return;
     }
+    setVoiceActivityDetector(detector);
+    // Keep capture running for the remainder of the timing session.
+    void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
     activeTimingLineIdRef.current = timingLine.id;
     setTimingStatusMessage(null);
     setPlaybackStatus("Waiting for your line...");
@@ -1429,6 +1467,18 @@ export function RehearsalScreen({
                   label: formatAbsoluteTempoForgiveness(optionMs)
                 }))}
                 onSelect={(next) => changeAbsolutePickupForgiveness(Number(next))}
+              />
+            </label>
+            <label className="timing-setting">
+              Line silence
+              <PracticeSelect
+                label="Line silence"
+                value={String(tempoEndOfLineSilenceMs)}
+                options={tempoEndOfLineSilenceOptionsMs.map((optionMs) => ({
+                  value: String(optionMs),
+                  label: formatTempoEndOfLineSilence(optionMs)
+                }))}
+                onSelect={(next) => changeTempoEndOfLineSilenceMs(Number(next))}
               />
             </label>
           </div>
@@ -2530,6 +2580,9 @@ const minAbsolutePickupForgivenessMs = 50;
 const maxAbsolutePickupForgivenessMs = 500;
 const minTempoTolerancePercent = 0.05;
 const maxTempoTolerancePercent = 0.3;
+const minTempoEndOfLineSilenceMs = 1000;
+const maxTempoEndOfLineSilenceMs = 3000;
+const tempoEndOfLineSilenceStepMs = 500;
 const absoluteTempoForgivenessOptionsMs = [
   100,
   200,
@@ -2557,6 +2610,7 @@ const practicePaceMultiplierOptions = [
   1.2,
   1.3
 ];
+const tempoEndOfLineSilenceOptionsMs = [1000, 1500, 2000, 2500, 3000];
 const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px), (orientation: landscape) and (max-height: 540px)";
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
 const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
@@ -2579,6 +2633,10 @@ function formatAbsoluteTempoForgiveness(optionMs: number): string {
 
 function formatTempoTolerancePercent(optionPercent: number): string {
   return `±${(optionPercent * 100).toFixed(0)}%`;
+}
+
+function formatTempoEndOfLineSilence(optionMs: number): string {
+  return `${(optionMs / 1000).toFixed(1)}s`;
 }
 
 export function clampPlaybackRate(playbackRate: number): number {
@@ -2623,6 +2681,15 @@ export function normalizeTempoTolerancePercent(value: number | undefined): numbe
     return 0.2;
   }
   return Math.min(maxTempoTolerancePercent, Math.max(minTempoTolerancePercent, parsedValue));
+}
+
+export function normalizeTempoEndOfLineSilenceMs(value: number | undefined): number {
+  const parsedValue = value ?? endOfLineSilenceMs;
+  if (!Number.isFinite(parsedValue)) {
+    return endOfLineSilenceMs;
+  }
+  const quantizedValue = Math.round(parsedValue / tempoEndOfLineSilenceStepMs) * tempoEndOfLineSilenceStepMs;
+  return Math.min(maxTempoEndOfLineSilenceMs, Math.max(minTempoEndOfLineSilenceMs, quantizedValue));
 }
 
 export function visibleCuesForDisplay(

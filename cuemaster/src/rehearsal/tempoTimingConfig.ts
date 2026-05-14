@@ -1,6 +1,6 @@
 export const defaultTargetHesitationMs = 750;
 export const internalPauseGraceMs = 750;
-export const endOfLineSilenceMs = 1500;
+export const endOfLineSilenceMs = 2000;
 export const speechEnergyThreshold = 0.025;
 
 export type TempoTimingConfig = {

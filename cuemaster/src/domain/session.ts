@@ -18,6 +18,7 @@ export type RehearsalSession = {
   absoluteTempoForgivenessMs?: number;
   absolutePickupForgivenessMs?: number;
   tempoTolerancePercent?: number;
+  tempoEndOfLineSilenceMs?: number;
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
   rehearsalTextSize?: "small" | "medium" | "large" | "x-large";
