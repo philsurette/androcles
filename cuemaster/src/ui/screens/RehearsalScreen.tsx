@@ -33,7 +33,6 @@ type RehearsalScreenProps = {
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
-type UtilityPanel = "options";
 type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "timed";
 
@@ -81,7 +80,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
-  const [activeUtilityPanel, setActiveUtilityPanel] = useState<UtilityPanel | null>(null);
+  const [isOptionsPageVisible, setIsOptionsPageVisible] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
@@ -253,7 +252,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
-    setActiveUtilityPanel(null);
   }
 
   async function jumpFromOutline(lineId: string) {
@@ -734,12 +732,121 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     return { previousLineId, nextLineId };
   }, [bookmarks, line, role.lines]);
 
-  async function showUtilityPanel(panel: UtilityPanel) {
-    const nextPanel = activeUtilityPanel === panel ? null : panel;
-    setActiveUtilityPanel(nextPanel);
-    if (nextPanel === "options") {
-      await loadReviewAttempts();
-    }
+  function openOptionsPage() {
+    void loadReviewAttempts();
+    setIsOptionsPageVisible(true);
+  }
+
+  function closeOptionsPage() {
+    setIsOptionsPageVisible(false);
+  }
+
+  const practiceOptionsPanel = (
+    <div className="practice-options-page">
+      <div className="practice-options-panel">
+        <label className="timing-setting">
+          Cue length
+          <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
+            {cueWindowPresets.map((preset) => (
+              <option key={preset.id} value={preset.id}>
+                {preset.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="timing-setting">
+          Response speed
+          <select value={playbackRate} onChange={(event) => changePlaybackRate(Number(event.target.value))}>
+            {playbackRates.map((rate) => (
+              <option key={rate} value={rate}>
+                {rate.toFixed(1)}x
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="timing-setting">
+          Blocking scope
+          <select value={blockingScope} disabled={!includeBlocking} onChange={(event) => changeBlockingScope(event.target.value as BlockingScope)}>
+            <option value="role">My role</option>
+            <option value="all">All roles</option>
+          </select>
+        </label>
+        <fieldset className="timing-options">
+          <legend>Timing targets</legend>
+          <div className="timing-options-controls">
+            <label className="timing-setting">
+              Speak-along pause
+              <select value={speakAlongPauseMs} onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}>
+                {practiceTimingOptionsMs.map((optionMs) => (
+                  <option key={optionMs} value={optionMs}>
+                    {formatTimingOption(optionMs)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="timing-setting">
+              Tempo pickup target
+              <select
+                value={tempoTargetHesitationMs}
+                disabled={syncPracticeTiming}
+                onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
+              >
+                {practiceTimingOptionsMs.map((optionMs) => (
+                  <option key={optionMs} value={optionMs}>
+                    {formatTimingOption(optionMs)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="check-setting timing-sync">
+              <input
+                type="checkbox"
+                checked={syncPracticeTiming}
+                onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
+              />
+              Keep timing targets in sync
+            </label>
+          </div>
+        </fieldset>
+        <p className="status">
+          Tempo timing uses microphone energy only: no recording, no transcription, no upload.
+        </p>
+      </div>
+    </div>
+  );
+
+  if (isOptionsPageVisible) {
+    return (
+      <main className="shell">
+        <section className="hero rehearsal">
+          <header className="rehearsal-header">
+            <div className="breadcrumb-row">
+              <button
+                type="button"
+                className="icon-button secondary"
+                aria-label="Back to rehearsal."
+                data-tooltip="Back to rehearsal"
+                onClick={closeOptionsPage}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+              <div className="rehearsal-title-stack">
+                <p className="rehearsal-play-title">{playbook.title}</p>
+                <p className="rehearsal-role-title">Options</p>
+              </div>
+            </div>
+          </header>
+          {storageStatus ? (
+            <p className="error" role="alert">
+              {storageStatus}
+            </p>
+          ) : null}
+          <div className="rehearsal-workspace">
+            {practiceOptionsPanel}
+          </div>
+        </section>
+      </main>
+    );
   }
 
   return (
@@ -1028,57 +1135,68 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
         <div className="session-settings">
           <div className="quick-practice-toggles rehearsal-quick-toggles" aria-label="Quick practice toggles">
+            <div className="rehearsal-practice-toggles-inline">
+              <button
+                type="button"
+                className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={tempoTimingEnabled}
+                aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
+                data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
+                disabled={speakAlongEnabled}
+                onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
+              >
+                <span aria-hidden="true">⏱</span>
+              </button>
+              <button
+                type="button"
+                className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={speakAlongEnabled}
+                aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
+                data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
+                disabled={tempoTimingEnabled}
+                onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
+              >
+                <span aria-hidden="true">👄</span>
+              </button>
+              <button
+                type="button"
+                className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={showLinesByDefault}
+                aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
+                data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
+                onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
+              >
+                <span aria-hidden="true">👁</span>
+              </button>
+              <button
+                type="button"
+                className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={includeBlocking}
+                aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
+                data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
+                onClick={() => changeIncludeBlocking(!includeBlocking)}
+              >
+                <span aria-hidden="true">♿</span>
+              </button>
+              <button
+                type="button"
+                className={includeDirections ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={includeDirections}
+                aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
+                data-tooltip={includeDirections ? "Directions on" : "Directions off"}
+                onClick={() => changeIncludeDirections(!includeDirections)}
+              >
+                <span aria-hidden="true">⌞⌝</span>
+              </button>
+            </div>
             <button
               type="button"
-              className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={tempoTimingEnabled}
-              aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
-              data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
-              disabled={speakAlongEnabled}
-              onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
+              className="quick-toggle rehearsal-options-button"
+              aria-label="Open options"
+              data-tooltip="Options"
+              onClick={openOptionsPage}
             >
-              <span aria-hidden="true">⏱</span>
-            </button>
-            <button
-              type="button"
-              className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={speakAlongEnabled}
-              aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
-              data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
-              disabled={tempoTimingEnabled}
-              onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
-            >
-              <span aria-hidden="true">👄</span>
-            </button>
-            <button
-              type="button"
-              className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={showLinesByDefault}
-              aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
-              data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
-              onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
-            >
-              <span aria-hidden="true">👁</span>
-            </button>
-            <button
-              type="button"
-              className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={includeBlocking}
-              aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
-              data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
-              onClick={() => changeIncludeBlocking(!includeBlocking)}
-            >
-              <span aria-hidden="true">♿</span>
-            </button>
-            <button
-              type="button"
-              className={includeDirections ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={includeDirections}
-              aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
-              data-tooltip={includeDirections ? "Directions on" : "Directions off"}
-              onClick={() => changeIncludeDirections(!includeDirections)}
-            >
-              <span aria-hidden="true">⌞⌝</span>
+              <span aria-hidden="true">⚙</span>
             </button>
           </div>
           {playbackStatus ? (
@@ -1086,102 +1204,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbackStatus}
             </p>
           ) : null}
-          <div className="utility-drawer">
-            <button
-              type="button"
-              className={activeUtilityPanel === "options" ? "utility-tab active" : "utility-tab"}
-              aria-pressed={activeUtilityPanel === "options"}
-              onClick={() => void showUtilityPanel("options")}
-            >
-              <span aria-hidden="true">⚙</span>
-              Options
-            </button>
-            {activeUtilityPanel ? (
-              <div className="utility-content">
-                {activeUtilityPanel === "options" ? (
-                  <div className="practice-options-panel">
-                    <label className="timing-setting">
-                      Cue length
-                      <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
-                        {cueWindowPresets.map((preset) => (
-                          <option key={preset.id} value={preset.id}>
-                            {preset.label}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="timing-setting">
-                      Response speed
-                      <select
-                        value={playbackRate}
-                        onChange={(event) => changePlaybackRate(Number(event.target.value))}
-                      >
-                        {playbackRates.map((rate) => (
-                          <option key={rate} value={rate}>
-                            {rate.toFixed(1)}x
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    <label className="timing-setting">
-                      Blocking scope
-                      <select
-                        value={blockingScope}
-                        disabled={!includeBlocking}
-                        onChange={(event) => changeBlockingScope(event.target.value as BlockingScope)}
-                      >
-                        <option value="role">My role</option>
-                        <option value="all">All roles</option>
-                      </select>
-                    </label>
-                    <fieldset className="timing-options">
-                      <legend>Timing targets</legend>
-                      <div className="timing-options-controls">
-                        <label className="timing-setting">
-                          Speak-along pause
-                          <select
-                            value={speakAlongPauseMs}
-                            onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}
-                          >
-                            {practiceTimingOptionsMs.map((optionMs) => (
-                              <option key={optionMs} value={optionMs}>
-                                {formatTimingOption(optionMs)}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="timing-setting">
-                          Tempo pickup target
-                          <select
-                            value={tempoTargetHesitationMs}
-                            disabled={syncPracticeTiming}
-                            onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
-                          >
-                            {practiceTimingOptionsMs.map((optionMs) => (
-                              <option key={optionMs} value={optionMs}>
-                                {formatTimingOption(optionMs)}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                        <label className="check-setting timing-sync">
-                          <input
-                            type="checkbox"
-                            checked={syncPracticeTiming}
-                            onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
-                          />
-                          Keep timing targets in sync
-                        </label>
-                      </div>
-                    </fieldset>
-                    <p className="status">
-                      Tempo timing uses microphone energy only: no recording, no transcription, no upload.
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
         </div>
       </div>
       </section>

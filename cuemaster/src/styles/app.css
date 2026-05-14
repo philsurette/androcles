@@ -781,6 +781,28 @@ button:disabled {
   align-items: center;
 }
 
+.rehearsal-quick-toggles {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  width: 100%;
+}
+
+.rehearsal-practice-toggles-inline {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.18rem;
+  align-items: center;
+}
+
+.rehearsal-options-button {
+  align-self: center;
+}
+
+.practice-options-page {
+  width: 100%;
+}
+
 .line-duration-panel {
   margin-top: 0.45rem;
   border: 1px solid rgba(30, 38, 31, 0.14);
