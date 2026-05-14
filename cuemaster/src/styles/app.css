@@ -9,6 +9,7 @@
 .shell {
   min-height: 100vh;
   min-height: 100dvh;
+  height: 100dvh;
   display: grid;
   justify-items: stretch;
   align-items: stretch;
@@ -264,12 +265,23 @@ button:disabled {
   margin-top: 2rem;
 }
 
+.role-select-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+}
+
 .role-select-list {
   list-style: none;
   margin: 1rem 0 0;
   padding: 0;
   display: grid;
   width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 
 .role-select-list li {

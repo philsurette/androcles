@@ -18,7 +18,7 @@ export function RoleSelectScreen({
 }: RoleSelectScreenProps) {
   return (
     <main className="shell">
-      <section className="hero library">
+      <section className="hero library role-select-screen">
         <header className="role-select-header rehearsal-header">
           <div className="breadcrumb-row">
             <button
