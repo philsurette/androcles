@@ -11,6 +11,7 @@ import { userFacingErrorMessage } from "../ui/errors/userFacingErrorMessage";
 export function App() {
   const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [highlightedRoleId, setHighlightedRoleId] = useState<string | null>(null);
   const [selectedSession, setSelectedSession] = useState<RehearsalSession | null>(null);
   const [storageStatus, setStorageStatus] = useState<string>("");
 
@@ -34,7 +35,7 @@ export function App() {
       <RoleSelectScreen
         playbook={selectedPlaybook}
         storageStatus={storageStatus}
-        selectedRoleId={selectedRole?.id}
+        selectedRoleId={highlightedRoleId ?? selectedRole?.id}
         onBack={() => setSelectedPlaybook(null)}
         onSelectRole={(role) => void selectRole(selectedPlaybook, role)}
       />
@@ -61,6 +62,7 @@ export function App() {
       : undefined;
 
     setSelectedPlaybook(playbook);
+    setHighlightedRoleId(latestRole?.id ?? null);
     setSelectedRole(latestRole ?? null);
     setSelectedSession(latestRole ? (latestSession ?? null) : null);
   }
@@ -70,6 +72,7 @@ export function App() {
     try {
       const savedSession = (await indexedDbStorage.sessions.get(playbook.id, role.id)) ?? null;
       setSelectedRole(role);
+      setHighlightedRoleId(role.id);
       setSelectedSession(savedSession);
     } catch (error) {
       setStorageStatus(userFacingErrorMessage(error));

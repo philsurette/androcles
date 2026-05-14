@@ -47,7 +47,7 @@ export function RoleSelectScreen({
           <span className="role-select-table-header-label">Lines</span>
         </div>
         <ul className="role-select-list role-select-listbox" role="listbox" aria-label="Roles">
-          {playbook.roles.map((role) => {
+          {sortedRoles(playbook.roles, selectedRoleId).map((role) => {
             const isSelected = role.id === selectedRoleId;
             return (
               <li
@@ -75,4 +75,18 @@ export function RoleSelectScreen({
       </section>
     </main>
   );
+}
+
+function sortedRoles(roles: Role[], selectedRoleId?: string): Role[] {
+  if (!selectedRoleId) {
+    return roles;
+  }
+
+  const selectedIndex = roles.findIndex((role) => role.id === selectedRoleId);
+  if (selectedIndex < 0) {
+    return roles;
+  }
+
+  const selected = roles[selectedIndex];
+  return [selected, ...roles.slice(0, selectedIndex), ...roles.slice(selectedIndex + 1)];
 }
