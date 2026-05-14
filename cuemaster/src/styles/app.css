@@ -1338,6 +1338,10 @@ button:disabled {
   min-width: 0;
 }
 
+.practice-options-inline-row {
+  display: contents;
+}
+
 .practice-options-panel .timing-setting > .practice-select-wrap {
   width: min(6.8rem, 40vw);
   max-width: 6.8rem;
@@ -2160,6 +2164,51 @@ button:disabled {
     padding: 0.35rem 0.6rem;
   }
 
+  .rehearsal-header {
+    gap: 0.3rem 0.7rem;
+    align-items: center;
+    padding-bottom: 0.28rem;
+  }
+
+  .rehearsal-header .breadcrumb-row {
+    gap: 0.45rem;
+    align-items: center;
+  }
+
+  .rehearsal-header .icon-button.secondary {
+    width: 2rem;
+    min-width: 2rem;
+    min-height: 2rem;
+  }
+
+  .rehearsal-title-stack {
+    gap: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: flex-end;
+    min-width: 0;
+    width: 100%;
+    white-space: nowrap;
+  }
+
+  .rehearsal-play-title {
+    order: 2;
+    margin-left: auto;
+    text-align: right;
+    font-size: 0.78rem;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 45%;
+  }
+
+  .rehearsal-role-title {
+    font-size: 1.08rem;
+    line-height: 1.08;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
   .hero {
     max-width: none;
     padding: 0.75rem 0.8rem;
@@ -2269,6 +2318,18 @@ button:disabled {
     height: 1.6rem;
   }
 
+  .practice-options-inline-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem 0.7rem;
+    grid-column: 1 / -1;
+  }
+
+  .practice-options-inline-row .timing-setting > .practice-select-wrap {
+    width: min(6.2rem, 20vw);
+    max-width: 6.2rem;
+  }
+
   .practice-options-page {
     min-height: 0;
     overflow: visible;
@@ -2276,6 +2337,18 @@ button:disabled {
 
   .rehearsal-workspace.options-workspace {
     overflow: visible;
+  }
+
+  .practice-options-inline-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.45rem 0.7rem;
+    grid-column: 1 / -1;
+  }
+
+  .practice-options-inline-row .timing-setting > .practice-select-wrap {
+    width: min(6.2rem, 20vw);
+    max-width: 6.2rem;
   }
 
   .practice-options-panel {

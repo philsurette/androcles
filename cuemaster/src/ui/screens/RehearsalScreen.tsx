@@ -1274,42 +1274,44 @@ export function RehearsalScreen({
   }
 
   const practiceOptionsPanel = (
-    <div className="practice-options-page">
+      <div className="practice-options-page">
       <div className="practice-options-panel">
-        <label className="timing-setting timing-setting-wide">
-          Cue length
-          <PracticeSelect
-            label="Cue length"
-            value={cueWindowPresetId}
-            options={cueWindowPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
-            onSelect={changeCueWindowPreset}
-          />
-        </label>
-        <label className="timing-setting timing-setting-wide">
-          Blocking scope
-          <PracticeSelect
-            label="Blocking scope"
-            value={blockingScope}
-            disabled={!includeBlocking}
-            options={[
-              { value: "role", label: "My role" },
-              { value: "all", label: "All roles" }
-            ]}
-            onSelect={(next) => changeBlockingScope(next as BlockingScope)}
-          />
-        </label>
-        <label className="timing-setting timing-setting-wide">
-          Text size
-          <PracticeSelect
-            label="Text size"
-            value={rehearsalTextSize}
-            options={rehearsalTextSizeOptions.map((option) => ({
-              value: option,
-              label: option
-            }))}
-            onSelect={changeRehearsalTextSize}
-          />
-        </label>
+        <div className="practice-options-inline-row">
+          <label className="timing-setting timing-setting-inline">
+            Cue length
+            <PracticeSelect
+              label="Cue length"
+              value={cueWindowPresetId}
+              options={cueWindowPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
+              onSelect={changeCueWindowPreset}
+            />
+          </label>
+          <label className="timing-setting timing-setting-inline">
+            Blocking scope
+            <PracticeSelect
+              label="Blocking scope"
+              value={blockingScope}
+              disabled={!includeBlocking}
+              options={[
+                { value: "role", label: "My role" },
+                { value: "all", label: "All roles" }
+              ]}
+              onSelect={(next) => changeBlockingScope(next as BlockingScope)}
+            />
+          </label>
+          <label className="timing-setting timing-setting-inline">
+            Text size
+            <PracticeSelect
+              label="Text size"
+              value={rehearsalTextSize}
+              options={rehearsalTextSizeOptions.map((option) => ({
+                value: option,
+                label: option
+              }))}
+              onSelect={changeRehearsalTextSize}
+            />
+          </label>
+        </div>
         <fieldset className="timing-options">
           <legend>Tempo</legend>
           <div className="timing-options-controls">
