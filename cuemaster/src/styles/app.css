@@ -1382,6 +1382,12 @@ button:disabled {
   max-width: 12rem;
 }
 
+.practice-options-panel .timing-setting-2x > .practice-select-wrap {
+  width: min(13.6rem, 85vw) !important;
+  max-width: 13.6rem !important;
+  flex: 0 0 auto;
+}
+
 .timing-options {
   display: grid;
   flex-basis: 100%;

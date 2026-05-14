@@ -1667,10 +1667,15 @@ export function RehearsalScreen({
                 onSelect={(next) => changeTempoEndOfLineSilenceMs(Number(next))}
               />
             </label>
-              <label className="timing-setting">
-                Auto-advance
+            </div>
+          </fieldset>
+          <fieldset className="timing-options">
+            <legend>Autoadvance</legend>
+            <div className="timing-options-controls">
+              <label className="timing-setting timing-setting-2x">
+                Advance
                 <PracticeSelect
-                  label="Auto-advance"
+                  label="Advance"
                   value={autoAdvanceMode}
                   options={[
                     { value: "disabled", label: "Disabled" },
@@ -1680,10 +1685,10 @@ export function RehearsalScreen({
                   onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
                 />
               </label>
-              <label className="timing-setting">
-                Autoplay line
+              <label className="timing-setting timing-setting-2x">
+                Play line
                 <PracticeSelect
-                  label="Autoplay line"
+                  label="Play line"
                   value={autoPlayLineMode}
                   options={[
                     { value: "disabled", label: "Disabled" },
