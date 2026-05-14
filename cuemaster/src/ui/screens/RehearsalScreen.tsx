@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Bookmark } from "../../domain/bookmark";
 import type { ContextBlock } from "../../domain/context";
 import type { Cue } from "../../domain/cue";
@@ -700,6 +700,39 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
   }
 
+  const bookmarkNeighbors = useMemo(() => {
+    const lineIndexById = new Map(role.lines.map((playbookLine, index) => [playbookLine.id, index]));
+    const orderedBookmarks = bookmarks
+      .map((bookmark) => bookmark.lineId)
+      .filter((lineId) => lineIndexById.has(lineId))
+      .sort((left, right) => (lineIndexById.get(left) ?? 0) - (lineIndexById.get(right) ?? 0));
+
+    if (!line) {
+      return { previousLineId: null, nextLineId: null };
+    }
+
+    const currentLineIndex = lineIndexById.get(line.id);
+    if (currentLineIndex === undefined) {
+      return { previousLineId: null, nextLineId: null };
+    }
+
+    let previousLineId: string | null = null;
+    let nextLineId: string | null = null;
+    for (const bookmarkLineId of orderedBookmarks) {
+      const bookmarkedLineIndex = lineIndexById.get(bookmarkLineId);
+      if (bookmarkedLineIndex === undefined) {
+        continue;
+      }
+      if (bookmarkedLineIndex < currentLineIndex) {
+        previousLineId = bookmarkLineId;
+      } else if (bookmarkedLineIndex > currentLineIndex && nextLineId === null) {
+        nextLineId = bookmarkLineId;
+      }
+    }
+
+    return { previousLineId, nextLineId };
+  }, [bookmarks, line, role.lines]);
+
   async function showUtilityPanel(panel: UtilityPanel) {
     const nextPanel = activeUtilityPanel === panel ? null : panel;
     setActiveUtilityPanel(nextPanel);
@@ -874,6 +907,38 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                             ♫
                           </span>
                         </button>
+                        <button
+                          type="button"
+                          className="quick-toggle"
+                          aria-label="Go to previous bookmark."
+                          data-tooltip="Previous bookmark"
+                          onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
+                          disabled={!bookmarkNeighbors.previousLineId}
+                        >
+                          <span aria-hidden="true">↤</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={isCurrentLineBookmarked}
+                          aria-label={
+                          isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."
+                        }
+                        data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
+                        onClick={() => void runCommand("bookmark")}
+                      >
+                          <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="quick-toggle"
+                          aria-label="Go to next bookmark."
+                          data-tooltip="Next bookmark"
+                          onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
+                          disabled={!bookmarkNeighbors.nextLineId}
+                        >
+                          <span aria-hidden="true">↦</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -948,18 +1013,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                         onClick={() => changeIncludeDirections(!includeDirections)}
                       >
                         <span aria-hidden="true">⌞⌝</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
-                        aria-pressed={isCurrentLineBookmarked}
-                        aria-label={
-                          isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."
-                        }
-                        data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
-                        onClick={() => void runCommand("bookmark")}
-                      >
-                        <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
                       </button>
                     </div>
                 </section>
