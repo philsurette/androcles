@@ -951,9 +951,52 @@ button:disabled {
 
 .timing-options-controls {
   display: grid;
-  gap: 0.85rem;
-  grid-template-columns: repeat(2, minmax(10rem, 1fr)) minmax(14rem, 1fr);
+  gap: 0.5rem;
   align-items: end;
+}
+
+.timing-targets-row {
+  display: flex;
+  align-items: center;
+  justify-content: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.timing-targets-controls {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.timing-sync-toggle {
+  width: 2rem;
+  min-width: 2rem;
+  min-height: 2rem;
+  border-radius: 0.55rem;
+  background: rgba(30, 38, 31, 0.08);
+  color: var(--ink);
+  padding: 0;
+  align-self: center;
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.timing-sync-toggle.linked {
+  background: rgba(30, 38, 31, 0.16);
+  color: var(--accent);
+}
+
+.timing-sync-toggle:hover,
+.timing-sync-toggle:focus-visible {
+  background: rgba(30, 38, 31, 0.15);
+}
+
+.timing-sync-toggle span {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .timing-setting {
@@ -961,10 +1004,6 @@ button:disabled {
   gap: 0.35rem;
   color: var(--quiet);
   font-weight: 800;
-}
-
-.timing-sync {
-  padding-bottom: 0.6rem;
 }
 
 .utility-drawer {
@@ -1503,8 +1542,17 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
-  .timing-sync {
-    padding-bottom: 0;
+  .timing-targets-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 2.2rem;
+  }
+
+  .timing-targets-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .timing-sync-toggle {
+    justify-self: start;
   }
 
   .timing-review-grid {

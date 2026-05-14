@@ -774,38 +774,45 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         <fieldset className="timing-options">
           <legend>Timing targets</legend>
           <div className="timing-options-controls">
-            <label className="timing-setting">
-              Speak-along pause
-              <select value={speakAlongPauseMs} onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}>
-                {practiceTimingOptionsMs.map((optionMs) => (
-                  <option key={optionMs} value={optionMs}>
-                    {formatTimingOption(optionMs)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="timing-setting">
-              Tempo pickup target
-              <select
-                value={tempoTargetHesitationMs}
-                disabled={syncPracticeTiming}
-                onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
+            <div className="timing-targets-row">
+              <div className="timing-targets-controls">
+                <label className="timing-setting">
+                  Speaking pause
+                  <select value={speakAlongPauseMs} onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}>
+                    {practiceTimingOptionsMs.map((optionMs) => (
+                      <option key={optionMs} value={optionMs}>
+                        {formatTimingOption(optionMs)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="timing-setting">
+                  Tempo pickup target
+                  <select
+                    value={tempoTargetHesitationMs}
+                    disabled={syncPracticeTiming}
+                    onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
+                  >
+                    {practiceTimingOptionsMs.map((optionMs) => (
+                      <option key={optionMs} value={optionMs}>
+                        {formatTimingOption(optionMs)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+              <button
+                type="button"
+                className={`timing-sync-toggle ${syncPracticeTiming ? "linked" : ""}`}
+                aria-label={syncPracticeTiming ? "Disable sync for timing targets." : "Keep timing targets in sync."}
+                aria-pressed={syncPracticeTiming}
+                data-tooltip={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
+                onClick={() => changeSyncPracticeTiming(!syncPracticeTiming)}
+                title={syncPracticeTiming ? "Timing targets linked" : "Timing targets unlinked"}
               >
-                {practiceTimingOptionsMs.map((optionMs) => (
-                  <option key={optionMs} value={optionMs}>
-                    {formatTimingOption(optionMs)}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="check-setting timing-sync">
-              <input
-                type="checkbox"
-                checked={syncPracticeTiming}
-                onChange={(event) => changeSyncPracticeTiming(event.target.checked)}
-              />
-              Keep timing targets in sync
-            </label>
+                <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
+              </button>
+            </div>
           </div>
         </fieldset>
         <p className="status">
