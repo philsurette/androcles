@@ -475,7 +475,16 @@ button:disabled {
 .line-card {
   max-height: none;
   overflow: visible;
-  padding-right: 1.15rem;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0.2rem 0 0;
+}
+
+.line-card::before,
+.line-card::after {
+  display: none;
 }
 
 .line-card p,
@@ -1362,4 +1371,18 @@ button:disabled {
   border-radius: 1rem;
   background: var(--panel);
   padding: 1rem;
+}
+
+.rehearsal .card.line-card {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0.2rem 0 0;
+}
+
+.rehearsal .line-card p,
+.rehearsal .line-card .blocking-note {
+  margin-right: 0;
+  padding-right: 0;
 }
