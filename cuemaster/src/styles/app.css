@@ -314,6 +314,10 @@ button:disabled {
   grid-template-columns: 4rem minmax(0, 1fr);
 }
 
+.rehearsal-workspace.no-outline {
+  grid-template-columns: 1fr;
+}
+
 .rehearsal-main {
   min-width: 0;
   width: 100%;
@@ -322,6 +326,7 @@ button:disabled {
 
 .rehearsal-line-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.4rem;
   min-width: 0;
   width: 100%;
@@ -413,8 +418,10 @@ button:disabled {
 
 .stack {
   display: grid;
+  min-width: 0;
   align-content: start;
   gap: 0.35rem;
+  width: 100%;
 }
 
 .stack h2 {
@@ -423,6 +430,7 @@ button:disabled {
 
 .cue-strip {
   display: grid;
+  min-width: 0;
   gap: 0.3rem;
 }
 
@@ -495,6 +503,7 @@ button:disabled {
 
 .line-card {
   max-height: none;
+  min-width: 0;
   overflow: visible;
   background: transparent;
   border: 0;
@@ -515,6 +524,8 @@ button:disabled {
 
 .line-practice-controls {
   display: grid;
+  width: 100%;
+  min-width: 0;
   gap: 0.35rem;
 }
 
@@ -524,12 +535,14 @@ button:disabled {
 }
 
 .cue-control-strip .transport {
-  display: flex !important;
-  align-items: center;
+  display: flex;
   justify-content: space-between;
+  flex-wrap: nowrap;
+  align-items: center;
   width: 100%;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin-top: 0.2rem;
+  min-width: 0;
 }
 
 .cue-control-strip .cue-play-group {
@@ -550,6 +563,7 @@ button:disabled {
   gap: 0.26rem;
   align-items: center;
   flex-shrink: 0;
+  min-width: max-content;
 }
 
 .cue-card p:last-child,
@@ -1371,7 +1385,7 @@ button:disabled {
   }
 
   .rehearsal-workspace {
-    grid-template-columns: minmax(16rem, 30vw) minmax(0, 1fr);
+    grid-template-columns: minmax(16rem, 1fr) minmax(0, 2.4fr);
     gap: 0.75rem;
   }
 
@@ -1388,11 +1402,53 @@ button:disabled {
     font-size: 0.84rem;
     padding-inline: 0.38rem;
   }
+
+  .cue-control-strip .transport {
+    gap: 0.24rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .cue-control-strip .control-group {
+    gap: 0.2rem;
+  }
+
+  .cue-control-strip .transport-button {
+    width: 1.85rem;
+    min-height: 1.85rem;
+    min-width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .cue-control-strip .quick-toggle {
+    width: 1.55rem;
+    min-height: 1.55rem;
+    min-width: 1.55rem;
+    height: 1.55rem;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 540px) {
   .shell {
     padding: 0.25rem 0.5rem;
+  }
+
+  .outline-sidecar.outline-browser {
+    position: fixed;
+    inset: 0;
+    height: 100dvh;
+    z-index: 20;
+    max-height: none;
+    border: 0;
+    border-radius: 0;
+    background: var(--paper);
+    box-shadow: none;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    width: 100%;
+  }
+
+  .outline-sidecar.outline-browser .outline-list {
+    max-height: none;
   }
 
   .hero {
@@ -1437,9 +1493,33 @@ button:disabled {
     gap: 0.25rem;
     margin-top: 0.18rem;
   }
+
+  .cue-control-strip .transport {
+    gap: 0.2rem;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+  }
+
+  .cue-control-strip .control-group {
+    gap: 0.18rem;
+  }
+
+  .cue-control-strip .transport-button {
+    width: 1.7rem;
+    min-height: 1.7rem;
+    min-width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  .cue-control-strip .quick-toggle {
+    width: 1.45rem;
+    min-height: 1.45rem;
+    min-width: 1.45rem;
+    height: 1.45rem;
+  }
 }
 
-@media (max-width: 760px) and (orientation: portrait) {
+@media (max-width: 760px) {
   .transport {
     margin-top: 0.35rem;
     gap: 0.28rem;
@@ -1447,6 +1527,7 @@ button:disabled {
 
   .cue-control-strip .transport {
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .transport-button {

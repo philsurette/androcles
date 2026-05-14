@@ -789,7 +789,15 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         ) : null}
 
         <div className="rehearsal-body">
-          <div className={isOutlineOpen ? "rehearsal-workspace" : "rehearsal-workspace outline-collapsed"}>
+          <div
+            className={
+              isOutlineOpen
+                ? "rehearsal-workspace"
+                : isCompactViewport
+                  ? "rehearsal-workspace no-outline"
+                  : "rehearsal-workspace outline-collapsed"
+            }
+          >
           <OutlineSidecar
             currentLineId={line?.id ?? null}
             includeBlocking={includeBlocking}
@@ -1620,7 +1628,7 @@ function BookmarkReviewSection({
 
 const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
-const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px)";
+const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px), (orientation: landscape) and (max-height: 540px)";
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
 const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
 
