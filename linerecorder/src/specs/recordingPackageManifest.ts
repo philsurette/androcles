@@ -50,7 +50,7 @@ export type RecordingRequestItemManifest = {
     id: string;
     targets: string[];
     text: string;
-    placement: "inline" | "standalone";
+    placement: "inline" | "before" | "after";
   }[];
   reason?: string;
   notes?: string;

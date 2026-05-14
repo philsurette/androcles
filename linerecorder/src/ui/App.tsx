@@ -560,8 +560,13 @@ type ItemListProps = {
 };
 
 function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem }: ItemListProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   const selectedRowRef = useRef<HTMLButtonElement | null>(null);
+  const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase();
+  const filteredProgress = progress.filter(({ item }) =>
+    recordingItemSearchText(item).toLocaleLowerCase().includes(normalizedSearchQuery)
+  );
 
   useLayoutEffect(() => {
     if (isOpen) {
@@ -598,8 +603,25 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
           <span className="context-disclosure" aria-hidden="true" />
         </button>
       </div>
+      <label className="item-search">
+        <span>Search lines</span>
+        <div>
+          <input
+            type="search"
+            value={searchQuery}
+            placeholder="Find a cue or line"
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+          {searchQuery ? (
+            <button type="button" aria-label="Clear line search." onClick={() => setSearchQuery("")}>
+              ×
+            </button>
+          ) : null}
+        </div>
+      </label>
       <div className="item-list">
-        {progress.map(({ item, status }) => (
+        {filteredProgress.length === 0 ? <p className="item-empty">No matching lines.</p> : null}
+        {filteredProgress.map(({ item, status }) => (
           <button
             key={item.id}
             ref={item.id === selectedItemId ? selectedRowRef : undefined}
@@ -615,6 +637,29 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
       </div>
     </aside>
   );
+}
+
+export function recordingItemSearchText(item: RecordingItem): string {
+  return [
+    item.id,
+    item.lineId,
+    item.displayText,
+    item.segmentText,
+    item.cueSpeaker,
+    item.cueText,
+    item.previousSpeaker,
+    item.previousText,
+    item.nextSpeaker,
+    item.nextText,
+    item.sectionTitle,
+    item.sceneHeading,
+    item.reason,
+    item.notes,
+    ...item.stageDirections,
+    ...item.blocking.map((blocking) => `${blocking.targets.join(" ")} ${blocking.text}`)
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 type ItemDetailProps = {

@@ -34,7 +34,7 @@ const itemSchema = z.object({
     id: productionIdSchema,
     targets: z.array(z.string().min(1)),
     text: z.string().min(1),
-    placement: z.enum(["inline", "standalone"])
+    placement: z.enum(["inline", "before", "after"])
   })).optional(),
   reason: z.string().optional(),
   notes: z.string().optional(),

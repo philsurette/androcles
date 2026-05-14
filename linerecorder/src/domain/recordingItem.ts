@@ -2,7 +2,7 @@ export type RecordingItemBlocking = {
   id: string;
   targets: string[];
   text: string;
-  placement: "inline" | "standalone";
+  placement: "inline" | "before" | "after";
 };
 
 export type RecordingItem = {

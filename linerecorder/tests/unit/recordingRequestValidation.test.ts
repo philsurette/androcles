@@ -51,8 +51,14 @@ describe("validateRecordingRequestManifest", () => {
             {
               id: "I-12:b1",
               targets: ["CENTURION"],
-              text: "crosses to the gate",
+              text: "checks the gate",
               placement: "inline"
+            },
+            {
+              id: "I-12:b2",
+              targets: ["CENTURION"],
+              text: "crosses to the gate",
+              placement: "before"
             }
           ],
           reason: "initial_recording",
@@ -80,8 +86,14 @@ describe("validateRecordingRequestManifest", () => {
         {
           id: "I-12:b1",
           targets: ["CENTURION"],
-          text: "crosses to the gate",
+          text: "checks the gate",
           placement: "inline"
+        },
+        {
+          id: "I-12:b2",
+          targets: ["CENTURION"],
+          text: "crosses to the gate",
+          placement: "before"
         }
       ]
     });

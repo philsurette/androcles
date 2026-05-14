@@ -353,7 +353,7 @@ select {
 
 .item-explorer {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   max-height: min(62vh, 680px);
   min-height: 0;
   overflow: hidden;
@@ -419,6 +419,47 @@ select {
   margin-top: 6px;
 }
 
+.item-search {
+  display: grid;
+  gap: 7px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.item-search span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.item-search div {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.item-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fffaf0;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+}
+
+.item-search button {
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 8px;
+  color: var(--accent);
+  background: var(--surface-muted);
+}
+
 .item-list {
   display: grid;
   align-content: start;
@@ -426,6 +467,13 @@ select {
   overflow-y: auto;
   overflow-x: hidden;
   background: var(--surface);
+}
+
+.item-empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--muted);
+  font-weight: 800;
 }
 
 .item-row {
