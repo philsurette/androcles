@@ -59,6 +59,11 @@ h1 {
   line-height: 1.55;
 }
 
+.library h1 {
+  font-size: clamp(2.2rem, 4.8vw, 3.2rem);
+  line-height: 1.02;
+}
+
 .import-panel {
   display: flex;
   flex-wrap: wrap;
@@ -168,6 +173,12 @@ button:disabled {
   flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: flex-end;
+  flex-shrink: 0;
+  min-width: 11rem;
+}
+
+.row-actions button {
+  min-width: 5.5rem;
 }
 
 .playbook-row h3,
@@ -1039,6 +1050,8 @@ button:disabled {
   }
 
   .playbook-row {
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 0.75rem;
     padding: 0.85rem;
   }
@@ -1046,6 +1059,7 @@ button:disabled {
   .row-actions {
     width: 100%;
     justify-content: stretch;
+    margin-top: 0.25rem;
   }
 
   .row-actions button {

@@ -95,7 +95,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
     <main className="shell">
       <section className="hero library">
         <p className="eyebrow">Cuemaster</p>
-        <h1>Rehearse from Playbooks.</h1>
+        <h1>Run Lines</h1>
         <p>
           Import a Stager-generated Playbook, choose a role, hear your cues, and drill your
           expected responses.
@@ -134,8 +134,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
                   <div>
                     <h3>{playbook.title}</h3>
                     <p>
-                      {playbook.roles.length} role{playbook.roles.length === 1 ? "" : "s"}:{" "}
-                      {playbook.roles.map((role) => role.displayName).join(", ")}
+                      {playbook.roles.length} role{playbook.roles.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <div className="row-actions">
