@@ -58,6 +58,21 @@ test("back returns to the previous line", async ({ page }) => {
   await expect(page.getByLabel("Cue", { exact: true }).getByText("PROLOGUE")).toBeVisible();
 });
 
+test("does not show the removed bookmarks utility tab", async ({ page }) => {
+  await openAndroclesRole(page);
+
+  await expect(page.getByRole("button", { name: "Timing" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Options" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bookmarks" })).toHaveCount(0);
+});
+
+test("filters outline to bookmarked lines only in browse mode", async ({ page }) => {
+  await openAndroclesRole(page);
+
+  await page.getByRole("button", { name: "Show bookmarked lines only" }).click();
+  await expect(page.getByText("No matching bookmarked cues.")).toBeVisible();
+});
+
 async function openAndroclesRole(page: Page) {
   await page.goto("/");
 
