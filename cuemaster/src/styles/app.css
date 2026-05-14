@@ -193,9 +193,15 @@ button:disabled {
 
 .status-timing {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 0.45rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+  width: 100%;
+  max-height: 1.35rem;
 }
 
 .timing-status-pill {
@@ -213,6 +219,8 @@ button:disabled {
   font-size: 0.8rem;
   line-height: 1.25;
   cursor: pointer;
+  white-space: nowrap;
+  max-height: 1.45rem;
 }
 
 .rehearsal-bottom-strip .timing-status-pill {
@@ -240,6 +248,10 @@ button:disabled {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-height: 1.35rem;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
 }
 
 .timing-status-pill--good {
@@ -848,6 +860,8 @@ button:disabled {
   align-items: center;
   gap: 0.35rem;
   min-width: 0;
+  max-height: 1.35rem;
+  min-height: 1.15rem;
   margin: 0;
   font-size: 0.82rem;
   line-height: 1.2;
