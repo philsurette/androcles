@@ -2473,15 +2473,15 @@ function OutlinePanel({
           ) : null}
         </div>
       </div>
-      <label className="outline-search">
-        <span>Search {mode === "cues" ? "cues" : "lines"}</span>
-        <div>
-          <input
-            type="search"
-            value={searchQuery}
-            placeholder={mode === "cues" ? "Find a cue or line" : "Find a line"}
-            onChange={(event) => setSearchQuery(event.target.value)}
-          />
+        <label className="outline-search">
+          <span>Search {mode === "cues" ? "cues" : "lines"}</span>
+          <div>
+            <input
+              type="search"
+              value={searchQuery}
+              placeholder={mode === "cues" ? "Find a cue" : "Find a line"}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
           {searchQuery ? (
             <button
               type="button"
@@ -2554,7 +2554,7 @@ export function outlineSearchText(
     outlineText(line, mode, includeDirections, playbook)
   ];
   if (mode === "cues") {
-    parts.push(line.speaker, line.responseText);
+    return parts.join(" ");
   }
   if (mode === "lines" && includeDirections) {
     parts.push(...line.directions.map((direction) => direction.text));
