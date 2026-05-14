@@ -14,6 +14,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   const [selectedFilename, setSelectedFilename] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false);
   const [importStatus, setImportStatus] = useState("");
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [message, setMessage] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [storageEstimate, setStorageEstimate] = useState<StorageEstimate | null>(null);
@@ -94,12 +95,43 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
   return (
     <main className="shell">
       <section className="hero library">
-        <p className="eyebrow">Cuemaster</p>
-        <h1>Run Lines</h1>
-        <p>
-          Import a Stager-generated Playbook, choose a role, hear your cues, and drill your
-          expected responses.
-        </p>
+        <div className="library-title-row">
+          <p className="eyebrow">QUINCE CUEMASTER</p>
+        </div>
+        <div className="library-intro-row">
+          <p>
+            Import a playbook.<br />
+            Practice your lines.
+          </p>
+          <button
+            type="button"
+            className="secondary library-about-button"
+            aria-expanded={isAboutOpen}
+            aria-controls="library-about-panel"
+            aria-label="About Cuemaster"
+            onClick={() => setIsAboutOpen((open) => !open)}
+          >
+            ℹ
+          </button>
+        </div>
+        {isAboutOpen ? (
+          <section id="library-about-panel" className="library-info" role="note" aria-live="polite">
+            {storageEstimate ? (
+              <>
+                <p>Browser storage: {formatBytes(storageEstimate.usageBytes)} used of {formatBytes(storageEstimate.quotaBytes)}.</p>
+                <p>
+                  {storageEstimate.persisted === null
+                    ? "Storage persistence depends on browser settings."
+                    : storageEstimate.persisted
+                      ? "Persistent storage is enabled."
+                      : "Storage is currently best effort."}
+                </p>
+              </>
+            ) : (
+              <p>Storage usage is still loading.</p>
+            )}
+          </section>
+        ) : null}
 
         <div className="import-panel">
           <label className="button">
@@ -116,15 +148,9 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
             {error}
           </p>
         ) : null}
-        {storageEstimate ? (
-          <p className="status">
-            Browser storage: {formatBytes(storageEstimate.usageBytes)} used of {formatBytes(storageEstimate.quotaBytes)}
-            {storageEstimate.persisted === null ? "" : storageEstimate.persisted ? ", persistent" : ", best effort"}.
-          </p>
-        ) : null}
 
         <section className="library-list" aria-label="Imported Playbooks">
-          <h2>Library</h2>
+          <h2>Playbook Library</h2>
           {playbooks.length === 0 ? (
             <p className="empty">No Playbooks imported yet.</p>
           ) : (
