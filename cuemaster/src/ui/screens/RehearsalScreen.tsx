@@ -1844,7 +1844,6 @@ function OutlineSidecar({
         </button>
         <span className="outline-progress" aria-label={`${currentLineId ?? "No line"} selected`}>
           {currentLineId ?? "No line"}
-          <span>current</span>
         </span>
       </aside>
     );
@@ -1985,91 +1984,93 @@ function OutlinePanel({
   }, [isModeMenuOpen]);
 
   return (
-    <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
+      <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
       <div className="outline-header">
         <div className="outline-header-actions">
-          {isCompactViewport ? (
+          <div className="outline-header-left">
+            {isCompactViewport ? (
+              <button
+                type="button"
+                className="icon-button secondary"
+                aria-label="Back to rehearsal."
+                onClick={onToggleOpen}
+              >
+                <span aria-hidden="true">←</span>
+              </button>
+            ) : null}
+            <div className="outline-timing-filter-group" aria-label="Timing filters">
+              {(["slow", "good", "fast", "untimed"] as TimingLineStatus[]).map((status) => {
+                const isActive = activeTimingFilters.includes(status);
+                return (
+                  <button
+                    type="button"
+                    key={status}
+                    className={`outline-timing-filter ${isActive ? "active" : ""}`}
+                    aria-pressed={isActive}
+                    aria-label={`Show ${timingFilterLabel(status)} lines`}
+                    title={isActive ? `Hide ${timingFilterLabel(status)} lines` : `Show ${timingFilterLabel(status)} lines`}
+                    onClick={() => toggleTimingFilter(status)}
+                  >
+                    {timingFilterGlyph(status)}
+                  </button>
+                );
+              })}
+            </div>
             <button
               type="button"
-              className="icon-button secondary"
-              aria-label="Back to rehearsal."
-              onClick={onToggleOpen}
+              className={showBookmarksOnly ? "outline-bookmark-filter active" : "outline-bookmark-filter"}
+              aria-pressed={showBookmarksOnly}
+              aria-label={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
+              onClick={() => setShowBookmarksOnly((current) => !current)}
+              title={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
             >
-              <span aria-hidden="true">←</span>
+              {showBookmarksOnly ? "★" : "☆"}
             </button>
-          ) : null}
-          <div className="outline-timing-filter-group" aria-label="Timing filters">
-            {(["slow", "good", "fast", "untimed"] as TimingLineStatus[]).map((status) => {
-              const isActive = activeTimingFilters.includes(status);
-              return (
+            <div className="outline-mode-select-wrap" ref={modeMenuRef}>
+              <button
+                type="button"
+                className="outline-mode-select"
+                aria-label="Outline mode"
+                aria-expanded={isModeMenuOpen}
+                aria-controls="outline-mode-options"
+                onClick={() => setIsModeMenuOpen((current) => !current)}
+              >
+                <span>{mode === "cues" ? "Cues" : "Lines"}</span>
+                <span className="outline-mode-select-caret" aria-hidden="true">
+                  ▾
+                </span>
+              </button>
+              <div
+                id="outline-mode-options"
+                className={`outline-mode-select-options ${isModeMenuOpen ? "open" : ""}`}
+                role="listbox"
+                aria-label="Outline mode"
+              >
                 <button
                   type="button"
-                  key={status}
-                  className={`outline-timing-filter ${isActive ? "active" : ""}`}
-                  aria-pressed={isActive}
-                  aria-label={`Show ${timingFilterLabel(status)} lines`}
-                  title={isActive ? `Hide ${timingFilterLabel(status)} lines` : `Show ${timingFilterLabel(status)} lines`}
-                  onClick={() => toggleTimingFilter(status)}
+                  role="option"
+                  className={mode === "cues" ? "outline-mode-select-option active" : "outline-mode-select-option"}
+                  aria-selected={mode === "cues"}
+                  onClick={() => {
+                    setMode("cues");
+                    setIsModeMenuOpen(false);
+                  }}
                 >
-                  {timingFilterGlyph(status)}
+                  Cues
                 </button>
-              );
-            })}
-          </div>
-          <button
-            type="button"
-            className={showBookmarksOnly ? "outline-bookmark-filter active" : "outline-bookmark-filter"}
-            aria-pressed={showBookmarksOnly}
-            aria-label={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
-            onClick={() => setShowBookmarksOnly((current) => !current)}
-            title={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
-          >
-            {showBookmarksOnly ? "★" : "☆"}
-          </button>
-          <div className="outline-mode-select-wrap" ref={modeMenuRef}>
-            <button
-              type="button"
-              className="outline-mode-select"
-              aria-label="Outline mode"
-              aria-expanded={isModeMenuOpen}
-              aria-controls="outline-mode-options"
-              onClick={() => setIsModeMenuOpen((current) => !current)}
-            >
-              <span>{mode === "cues" ? "Cues" : "Lines"}</span>
-              <span className="outline-mode-select-caret" aria-hidden="true">
-                ▾
-              </span>
-            </button>
-            <div
-              id="outline-mode-options"
-              className={`outline-mode-select-options ${isModeMenuOpen ? "open" : ""}`}
-              role="listbox"
-              aria-label="Outline mode"
-            >
-              <button
-                type="button"
-                role="option"
-                className={mode === "cues" ? "outline-mode-select-option active" : "outline-mode-select-option"}
-                aria-selected={mode === "cues"}
-                onClick={() => {
-                  setMode("cues");
-                  setIsModeMenuOpen(false);
-                }}
-              >
-                Cues
-              </button>
-              <button
-                type="button"
-                role="option"
-                className={mode === "lines" ? "outline-mode-select-option active" : "outline-mode-select-option"}
-                aria-selected={mode === "lines"}
-                onClick={() => {
-                  setMode("lines");
-                  setIsModeMenuOpen(false);
-                }}
-              >
-                Lines
-              </button>
+                <button
+                  type="button"
+                  role="option"
+                  className={mode === "lines" ? "outline-mode-select-option active" : "outline-mode-select-option"}
+                  aria-selected={mode === "lines"}
+                  onClick={() => {
+                    setMode("lines");
+                    setIsModeMenuOpen(false);
+                  }}
+                >
+                  Lines
+                </button>
+              </div>
             </div>
           </div>
           {!isCompactViewport ? (
