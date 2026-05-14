@@ -64,6 +64,7 @@ export function RehearsalScreen({
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
+  const [timingStatusMessage, setTimingStatusMessage] = useState<string>("");
   const [showLinesByDefault, setShowLinesByDefault] = useState(
     initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
   );
@@ -82,7 +83,7 @@ export function RehearsalScreen({
     initialSession?.tempoTargetHesitationMs ?? initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
   );
   const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
-  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
+  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
@@ -93,9 +94,14 @@ export function RehearsalScreen({
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const activeTimingLineIdRef = useRef<string | null>(null);
+  const tempoTimingRestoreStartedRef = useRef(false);
   const line = useMemo(
     () => role.lines.find((candidate) => candidate.id === activeLineId) ?? null,
     [activeLineId, role.lines]
+  );
+  const latestLineTimingAttempt = useMemo(
+    () => reviewAttempts.find((attempt) => attempt.lineId === line?.id) ?? null,
+    [reviewAttempts, line?.id]
   );
   const cues = engine.cuePayloads(cueWindowPresetId);
   const visibleCues = useMemo(
@@ -112,6 +118,18 @@ export function RehearsalScreen({
     }
     return statusByLine;
   }, [reviewAttempts, role.lines]);
+  const displayedPlaybackStatus = useMemo(() => {
+    if (timingStatusMessage) {
+      return timingStatusMessage;
+    }
+    if (!playbackStatus) {
+      return "";
+    }
+    if (/^Line Timed\.?$/i.test(playbackStatus) && latestLineTimingAttempt) {
+      return formatTimingAttempt(latestLineTimingAttempt);
+    }
+    return playbackStatus;
+  }, [playbackStatus, latestLineTimingAttempt, timingStatusMessage]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -122,6 +140,14 @@ export function RehearsalScreen({
       voiceActivityDetector?.stop();
     };
   }, [voiceActivityDetector]);
+
+  useEffect(() => {
+    if (tempoTimingRestoreStartedRef.current || !tempoTimingPreferred || tempoTimingEnabled || speakAlongEnabled) {
+      return;
+    }
+    tempoTimingRestoreStartedRef.current = true;
+    void enableTempoTiming();
+  }, [tempoTimingPreferred, tempoTimingEnabled, speakAlongEnabled]);
 
   useEffect(() => {
     void loadCurrentBookmark();
@@ -338,6 +364,7 @@ export function RehearsalScreen({
     const currentLine = currentLineFromEngine();
     setHasStarted(true);
     setPlaybackSource("cue");
+    setTimingStatusMessage("");
     setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
     try {
@@ -373,6 +400,7 @@ export function RehearsalScreen({
       return;
     }
     setPlaybackSource("line");
+    setTimingStatusMessage("");
     setPlaybackStatus("Playing your line...");
     setPlaybackState("playing");
     try {
@@ -408,6 +436,7 @@ export function RehearsalScreen({
   function stopPlayback() {
     audioQueue.cancel();
     activeTimingLineIdRef.current = null;
+    setTimingStatusMessage("");
     setPlaybackState("idle");
     setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
@@ -591,16 +620,33 @@ export function RehearsalScreen({
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
   }
 
-  function beginTimedAttempt() {
-    if (!tempoTimingEnabled || !voiceActivityDetector) {
-      return;
-    }
+  async function beginTimedAttempt() {
     const timingLine = currentLineFromEngine();
     if (!timingLine) {
       return;
     }
+    if (!tempoTimingEnabled) {
+      setPlaybackStatus("Enable Tempo timing to start timing capture.");
+      setTimingStatusMessage("");
+      return;
+    }
+    let detector = voiceActivityDetector;
+    if (!detector) {
+      detector = new VoiceActivityDetector(handleVoiceActivity);
+      try {
+        await detector.start();
+      } catch (error) {
+        setStorageStatus(userFacingErrorMessage(error));
+        return;
+      }
+      setVoiceActivityDetector(detector);
+      // Keep capture running for the remainder of the timing session.
+      void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
+    }
     activeTimingLineIdRef.current = timingLine.id;
-    voiceActivityDetector.beginAttempt();
+    setTimingStatusMessage("");
+    setPlaybackStatus("Waiting for your line...");
+    detector.beginAttempt();
   }
 
   function handleVoiceActivity(result: VoiceActivityResult) {
@@ -615,12 +661,19 @@ export function RehearsalScreen({
     }
     if (result.event === "speech-started") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
-    } else {
+      setTimingStatusMessage("");
+      setPlaybackStatus(`Speech detected${hesitationMs > 0 ? ` (${hesitationMs}ms pause)` : ""}.`);
+    } else if (result.event === "delivery-ended") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
-      const deliveryMs = Math.round(result.deliveryMs ?? 0);
+      const deliveryMs = Math.max(0, Math.round(result.deliveryMs ?? 0));
       const feedback = tempoFeedbackFor(timingLine, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
+      const timingResult = formatTimingResult(feedback);
+      setTimingStatusMessage(timingResult);
+      setPlaybackStatus(timingResult);
       void saveTimingAttempt(timingLine.id, feedback);
       activeTimingLineIdRef.current = null;
+    } else {
+      return;
     }
   }
 
@@ -1225,9 +1278,9 @@ export function RehearsalScreen({
               </button>
             </div>
           </div>
-          {playbackStatus ? (
+          {displayedPlaybackStatus ? (
             <p className="status" aria-live="polite">
-              {playbackStatus}
+              {displayedPlaybackStatus}
             </p>
           ) : null}
         </div>
@@ -1541,6 +1594,28 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
     return "Timed";
   }
   return "Untimed";
+}
+
+function formatTimingResult(feedback: ReturnType<typeof tempoFeedbackFor>): string {
+  const deliveryLabel = feedback.delivery?.label === "fast" ? "fast" : feedback.delivery?.label === "slow" ? "slow" : "good";
+  const pickupLabel =
+    feedback.hesitation.label === "sharp" ? "fast pickup" : feedback.hesitation.label === "late" ? "late pickup" : "good pickup";
+  const measuredDeliveryMs = feedback.delivery?.measuredMs ?? 0;
+  const targetDeliveryMs = feedback.delivery?.targetMs ?? 0;
+  const measuredPickupMs = feedback.hesitation.measuredMs;
+  const targetPickupMs = feedback.hesitation.targetMs;
+  return `${deliveryLabel} delivery: ${(measuredDeliveryMs / 1000).toFixed(1)}s←${(targetDeliveryMs / 1000).toFixed(1)}s, ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(
+    targetPickupMs / 1000
+  ).toFixed(2)}s`;
+}
+
+function formatTimingAttempt(attempt: TimingAttempt): string {
+  const deliveryLabel = attempt.deliveryLabel === "fast" ? "fast" : attempt.deliveryLabel === "slow" ? "slow" : "good";
+  const pickupLabel =
+    attempt.hesitationLabel === "sharp" ? "fast pickup" : attempt.hesitationLabel === "late" ? "late pickup" : "good pickup";
+  return `${deliveryLabel} delivery: ${(attempt.deliveryMs / 1000).toFixed(1)}s←${(attempt.targetDeliveryMs / 1000).toFixed(
+    1
+  )}s, ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(2)}s`;
 }
 
 const minPlaybackRate = 0.4;

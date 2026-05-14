@@ -21,6 +21,9 @@ export class VoiceActivityDetector {
     this.stop();
     this.stream = await requestMicrophoneStream();
     this.audioContext = new AudioContext();
+    if (this.audioContext.state !== "running") {
+      await this.audioContext.resume();
+    }
     const source = this.audioContext.createMediaStreamSource(this.stream);
     this.analyser = this.audioContext.createAnalyser();
     this.analyser.fftSize = 1024;
