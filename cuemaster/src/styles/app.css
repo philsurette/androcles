@@ -40,6 +40,19 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
+  --rehearsal-sidecar-track: 0px;
+}
+
+.rehearsal.rehearsal-outline-open {
+  --rehearsal-sidecar-track: minmax(16rem, 24rem);
+}
+
+.rehearsal.rehearsal-outline-collapsed {
+  --rehearsal-sidecar-track: 4rem;
+}
+
+.rehearsal.rehearsal-no-outline {
+  --rehearsal-sidecar-track: 0px;
 }
 
 .rehearsal-body {
@@ -603,6 +616,7 @@ button:disabled {
 
 .line-practice-controls {
   flex: 0 0 auto;
+  width: 100%;
 }
 
 .rehearsal-line-content {
@@ -745,9 +759,130 @@ button:disabled {
   gap: 0.35rem;
 }
 
+.line-control-strip .transport {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  justify-content: stretch;
+  width: 100%;
+  gap: 0.4rem;
+  margin-top: 0;
+}
+
+.line-control-strip .control-group {
+  margin: 0;
+  justify-content: center;
+  flex-wrap: nowrap;
+}
+
+.line-control-strip .control-group + .control-group {
+  margin-left: 0;
+}
+
+.rehearsal-bottom-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+  width: 100%;
+}
+
+.rehearsal-bottom-strip .line-control-strip .transport {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.22rem;
+  margin-top: 0;
+  width: max-content;
+  justify-self: start;
+}
+
+.rehearsal-bottom-strip .line-control-strip .control-group {
+  margin: 0;
+  display: inline-flex;
+  justify-content: flex-start;
+  gap: 0.22rem;
+  width: max-content;
+  flex: 0 0 auto;
+}
+
+.rehearsal-bottom-strip .line-control-strip .line-playback-group {
+  width: min-content;
+}
+
+.rehearsal-bottom-strip .transport-button,
+.rehearsal-bottom-strip .quick-toggle {
+  width: 1.55rem;
+  min-width: 1.55rem;
+  min-height: 1.55rem;
+  height: 1.55rem;
+}
+
+.rehearsal-practice-toggles-inline,
+.rehearsal-quick-actions {
+  display: inline-flex;
+  align-items: center;
+}
+
+.rehearsal-practice-toggles-inline {
+  justify-content: flex-start;
+  gap: 0.18rem;
+  flex-wrap: nowrap;
+  overflow: visible;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.rehearsal-bottom-strip .rehearsal-practice-toggles-inline .quick-toggle,
+.rehearsal-bottom-strip .rehearsal-quick-actions .quick-toggle {
+  flex: 0 0 auto;
+}
+
+.rehearsal-quick-actions {
+  justify-content: flex-end;
+  gap: 0.18rem;
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.quick-practice-toggles,
+.rehearsal-quick-toggles {
+  min-width: 0;
+}
+
+.rehearsal-bottom-strip > .status {
+  grid-column: 1 / -1;
+}
+
+.line-control-strip .line-playback-group {
+  justify-content: flex-start;
+}
+
+.line-control-strip .line-navigation-group {
+  justify-content: center;
+}
+
+.line-control-strip .line-bookmark-group {
+  justify-content: flex-end;
+}
+
+.line-control-strip .transport-button,
+.line-control-strip .quick-toggle {
+  width: 1.7rem;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
+  height: 1.7rem;
+}
+
 .control-strip {
   display: block;
   width: 100%;
+}
+
+.rehearsal-bottom-strip .control-strip {
+  width: max-content;
+  justify-self: start;
 }
 
 .cue-control-strip .transport {
@@ -951,19 +1086,38 @@ button:disabled {
   width: 100%;
 }
 
+.session-settings.rehearsal-bottom-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
 @media (min-width: 761px) {
   .rehearsal-workspace {
     align-items: stretch;
   }
 
-.rehearsal-body .session-settings {
-    width: auto;
-    margin-top: 0.65rem;
-    margin-left: auto;
-    justify-content: flex-end;
+  .rehearsal > .rehearsal-body {
+    grid-template-columns: var(--rehearsal-sidecar-track) minmax(0, 1fr);
+    column-gap: 0.75rem;
   }
 
-  .rehearsal > .session-settings {
+  .rehearsal.rehearsal-no-outline > .rehearsal-body {
+    column-gap: 0;
+  }
+
+  .rehearsal > .rehearsal-body > .rehearsal-workspace {
+    grid-column: 1 / -1;
+  }
+
+  .rehearsal > .rehearsal-body > .session-settings.rehearsal-bottom-strip {
+    grid-column: 2 / -1;
+    width: 100%;
+    justify-self: start;
+  }
+
+  .rehearsal-body .session-settings:not(.rehearsal-bottom-strip) {
     width: auto;
     margin-top: 0.65rem;
     margin-left: auto;
@@ -1010,7 +1164,7 @@ button:disabled {
 
 .quick-practice-toggles {
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.18rem;
   align-items: center;
 }
@@ -1021,22 +1175,6 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   width: 100%;
-}
-
-.rehearsal-practice-toggles-inline {
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 0.18rem;
-  align-items: center;
-  min-width: 0;
-  flex: 1;
-}
-
-.rehearsal-quick-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.18rem;
-  flex-shrink: 0;
 }
 
 .rehearsal-options-button {
@@ -2056,6 +2194,24 @@ button:disabled {
     height: 1.55rem;
   }
 
+  .line-control-strip .transport {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.36rem;
+  }
+
+  .rehearsal-bottom-strip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.35rem;
+  }
+
+  .line-control-strip .transport-button,
+  .line-control-strip .quick-toggle {
+    width: 1.6rem;
+    min-width: 1.6rem;
+    min-height: 1.6rem;
+    height: 1.6rem;
+  }
+
   .practice-options-page {
     min-height: 0;
     overflow: hidden;
@@ -2184,6 +2340,28 @@ button:disabled {
     height: 1.45rem;
   }
 
+  .line-control-strip .transport {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.32rem;
+  }
+
+  .rehearsal-bottom-strip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.28rem;
+  }
+
+  .line-control-strip .control-group {
+    gap: 0.16rem;
+  }
+
+  .line-control-strip .transport-button,
+  .line-control-strip .quick-toggle {
+    width: 1.45rem;
+    min-width: 1.45rem;
+    min-height: 1.45rem;
+    height: 1.45rem;
+  }
+
   .practice-options-panel {
     gap: 0.6rem 0.9rem;
     padding: 0.2rem;
@@ -2209,6 +2387,38 @@ button:disabled {
     overflow-x: hidden;
   }
 
+  .line-control-strip .transport {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.26rem;
+  }
+
+  .line-control-strip .transport-button,
+  .line-control-strip .quick-toggle {
+    width: 1.55rem;
+    min-width: 1.55rem;
+    min-height: 1.55rem;
+    height: 1.55rem;
+  }
+
+  .rehearsal-bottom-strip {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 0.24rem;
+  }
+
+  .rehearsal-bottom-strip .transport-button,
+  .rehearsal-bottom-strip .quick-toggle {
+    width: 1.35rem;
+    min-width: 1.35rem;
+    min-height: 1.35rem;
+    height: 1.35rem;
+  }
+
+  .rehearsal-practice-toggles-inline {
+    overflow: visible;
+    gap: 0.12rem;
+  }
+
   .transport-button {
     width: 2rem;
     min-height: 2rem;
@@ -2221,6 +2431,14 @@ button:disabled {
     min-height: 1.75rem;
     min-width: 1.75rem;
     height: 1.75rem;
+  }
+
+  .rehearsal-bottom-strip .transport-button,
+  .rehearsal-bottom-strip .quick-toggle {
+    width: 1.35rem;
+    min-width: 1.35rem;
+    min-height: 1.35rem;
+    height: 1.35rem;
   }
 
   .session-settings {
