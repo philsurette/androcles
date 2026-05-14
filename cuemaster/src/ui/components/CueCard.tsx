@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import type { Cue } from "../../domain/cue";
 
-export function CueCard({ cue }: { cue: Cue }) {
+export function CueCard({ cue, showSpeaker = true }: { cue: Cue; showSpeaker?: boolean }) {
   const cueTextRef = useRef<HTMLParagraphElement | null>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
 
@@ -25,7 +25,7 @@ export function CueCard({ cue }: { cue: Cue }) {
 
   return (
     <article className="card cue-card">
-      <p className="speaker">{cue.speaker}</p>
+      {showSpeaker ? <p className="speaker">{cue.speaker}</p> : null}
       <div className="cue-text-window">
         {isOverflowing ? <span className="cue-overflow-prefix" aria-hidden="true">…</span> : null}
         <p className="cue-text-clip" ref={cueTextRef}>

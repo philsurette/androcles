@@ -90,6 +90,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
+  const visibleCues = useMemo(
+    () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
+    [cues, includeDirections, playbook, line]
+  );
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -814,141 +818,146 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <div className="rehearsal-main">
             {line ? (
               <div className="rehearsal-line-layout">
-                <section className="cue-strip" aria-label="Cue">
-                  <section className="control-strip cue-control-strip" aria-label="Cue controls">
-                    <div className="transport">
-                      <div className="control-group transport-group cue-play-group">
-                        {playbackSource === "cue" && playbackState === "playing" ? (
+                <section className="cue-section-panel" aria-label={`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}>
+                  <h2 className="cue-section-title">{`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}</h2>
+                  <section className="cue-strip" aria-label="Cue">
+                    <section className="control-strip cue-control-strip" aria-label="Cue controls">
+                      <div className="transport">
+                        <div className="control-group transport-group cue-play-group">
+                          {playbackSource === "cue" && playbackState === "playing" ? (
+                            <button
+                              type="button"
+                              className="transport-button secondary"
+                              aria-label="Pause cue playback. Shortcut: Space."
+                              data-tooltip="Pause cue"
+                              onClick={() => void runCommand("pause")}
+                            >
+                              <span aria-hidden="true" className="transport-icon">
+                                ⏸
+                              </span>
+                            </button>
+                          ) : null}
+                          {playbackSource === "cue" && playbackState === "paused" ? (
+                            <button
+                              type="button"
+                              className="transport-button secondary"
+                              aria-label="Resume cue playback. Shortcut: Space."
+                              data-tooltip="Resume cue"
+                              onClick={() => void runCommand("resume")}
+                            >
+                              <span aria-hidden="true" className="transport-icon">
+                                ▶
+                              </span>
+                            </button>
+                          ) : null}
+                          {playbackSource !== "cue" || playbackState === "idle" ? (
+                            <button
+                              type="button"
+                              className="transport-button secondary"
+                              aria-label={`${hasStarted ? "Replay cue" : "Play cue"}. Shortcut: R.`}
+                              data-tooltip={hasStarted ? "Replay cue" : "Play cue"}
+                              onClick={() => void runCommand("repeat-cue")}
+                            >
+                              <span aria-hidden="true" className="transport-icon">
+                                ▶
+                              </span>
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="transport-button secondary"
-                            aria-label="Pause cue playback. Shortcut: Space."
-                            data-tooltip="Pause cue"
-                            onClick={() => void runCommand("pause")}
+                            aria-label="Stop cue playback. Shortcut: Escape."
+                            data-tooltip="Stop"
+                            onClick={() => void runCommand("stop")}
                           >
                             <span aria-hidden="true" className="transport-icon">
-                              ⏸
+                              ■
                             </span>
                           </button>
-                        ) : null}
-                        {playbackSource === "cue" && playbackState === "paused" ? (
+                        </div>
+                        <div className="control-group transport-group cue-navigation-group">
                           <button
                             type="button"
                             className="transport-button secondary"
-                            aria-label="Resume cue playback. Shortcut: Space."
-                            data-tooltip="Resume cue"
-                            onClick={() => void runCommand("resume")}
+                            aria-label="Go to previous line. Shortcut: Left arrow."
+                            data-tooltip="Previous line"
+                            disabled={position.atBeginning}
+                            onClick={() => void runCommand("back")}
                           >
                             <span aria-hidden="true" className="transport-icon">
-                              ▶
+                              ⏮
                             </span>
                           </button>
-                        ) : null}
-                        {playbackSource !== "cue" || playbackState === "idle" ? (
                           <button
                             type="button"
                             className="transport-button secondary"
-                            aria-label={`${hasStarted ? "Replay cue" : "Play cue"}. Shortcut: R.`}
-                            data-tooltip={hasStarted ? "Replay cue" : "Play cue"}
-                            onClick={() => void runCommand("repeat-cue")}
+                            aria-label="Go to next line. Shortcut: Right arrow."
+                            data-tooltip="Next line"
+                            disabled={position.atEnd}
+                            onClick={() => void runCommand("next")}
                           >
                             <span aria-hidden="true" className="transport-icon">
-                              ▶
+                              ⏭
                             </span>
                           </button>
-                        ) : null}
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Stop cue playback. Shortcut: Escape."
-                          data-tooltip="Stop"
-                          onClick={() => void runCommand("stop")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ■
-                          </span>
-                        </button>
+                        </div>
+                        <div className="control-group transport-group cue-bookmark-group">
+                          <button
+                            type="button"
+                            className="quick-toggle"
+                            aria-label="Go to previous bookmark."
+                            data-tooltip="Previous bookmark"
+                            onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
+                            disabled={!bookmarkNeighbors.previousLineId}
+                          >
+                            <span aria-hidden="true">↤</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
+                            aria-pressed={isCurrentLineBookmarked}
+                            aria-label={
+                              isCurrentLineBookmarked
+                                ? "Remove bookmark from current line."
+                                : "Bookmark current line."
+                            }
+                            data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
+                            onClick={() => void runCommand("bookmark")}
+                          >
+                            <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="quick-toggle"
+                            aria-label="Go to next bookmark."
+                            data-tooltip="Next bookmark"
+                            onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
+                            disabled={!bookmarkNeighbors.nextLineId}
+                          >
+                            <span aria-hidden="true">↦</span>
+                          </button>
+                        </div>
                       </div>
-                      <div className="control-group transport-group cue-navigation-group">
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Go to previous line. Shortcut: Left arrow."
-                          data-tooltip="Previous line"
-                          disabled={position.atBeginning}
-                          onClick={() => void runCommand("back")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ⏮
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Go to next line. Shortcut: Right arrow."
-                          data-tooltip="Next line"
-                          disabled={position.atEnd}
-                          onClick={() => void runCommand("next")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ⏭
-                          </span>
-                        </button>
-                      </div>
-                      <div className="control-group transport-group cue-bookmark-group">
-                        <button
-                          type="button"
-                          className="quick-toggle"
-                          aria-label="Go to previous bookmark."
-                          data-tooltip="Previous bookmark"
-                          onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
-                          disabled={!bookmarkNeighbors.previousLineId}
-                        >
-                          <span aria-hidden="true">↤</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
-                          aria-pressed={isCurrentLineBookmarked}
-                          aria-label={
-                            isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."
-                          }
-                          data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
-                          onClick={() => void runCommand("bookmark")}
-                        >
-                          <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="quick-toggle"
-                          aria-label="Go to next bookmark."
-                          data-tooltip="Next bookmark"
-                          onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
-                          disabled={!bookmarkNeighbors.nextLineId}
-                        >
-                          <span aria-hidden="true">↦</span>
-                        </button>
-                      </div>
+                    </section>
+                    <div className="cue-strip-cards">
+                    {visibleCues.map((cue, index) => (
+                      <CueCard cue={cue} showSpeaker={false} key={`${line.id}-cue-${index}`} />
+                      ))}
+                      {includeBlocking
+                        ? visibleBlockingForLine(line, blockingScope)
+                            .filter((blocking) => blocking.placement !== "inline")
+                            .map((blocking) => (
+                              <article
+                                className="card cue-card cue-blocking-card"
+                                key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
+                              >
+                                <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
+                                <p className="cue-blocking-text">({blocking.text})</p>
+                              </article>
+                            ))
+                        : null}
                     </div>
                   </section>
-                  <div className="cue-strip-cards">
-                    {visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line).map((cue, index) => (
-                      <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
-                    ))}
-                    {includeBlocking
-                      ? visibleBlockingForLine(line, blockingScope)
-                          .filter((blocking) => blocking.placement !== "inline")
-                          .map((blocking) => (
-                            <article
-                              className="card cue-card cue-blocking-card"
-                              key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
-                            >
-                              <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
-                              <p className="cue-blocking-text">({blocking.text})</p>
-                            </article>
-                          ))
-                      : null}
-                  </div>
                 </section>
 
                 <section className="stack" aria-label="Current cue and line">
