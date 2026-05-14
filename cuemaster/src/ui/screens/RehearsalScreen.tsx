@@ -35,6 +35,7 @@ type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
 type UtilityPanel = "timing" | "options";
 type OutlineMode = "cues" | "lines";
+type TimingLineStatus = "untimed" | "slow" | "timed";
 
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
   const [engine] = useState(() =>
@@ -95,6 +96,15 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     [cues, includeDirections, playbook, line]
   );
   const bookmarkedLineIds = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.lineId)), [bookmarks]);
+  const lineTimingStatusByLineId = useMemo(() => {
+    const statusByLine = new Map<string, TimingLineStatus>(
+      role.lines.map((roleLine) => [roleLine.id, "untimed" as const])
+    );
+    for (const attempt of reviewAttempts) {
+      statusByLine.set(attempt.lineId, attempt.deliveryLabel === "slow" ? "slow" : "timed");
+    }
+    return statusByLine;
+  }, [reviewAttempts, role.lines]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -113,6 +123,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   useEffect(() => {
     void loadBookmarks();
+    void loadReviewAttempts();
   }, []);
 
   useEffect(() => {
@@ -803,12 +814,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                   : "rehearsal-workspace outline-collapsed"
             }
           >
-          <OutlineSidecar
+            <OutlineSidecar
             currentLineId={line?.id ?? null}
             includeBlocking={includeBlocking}
             blockingScope={blockingScope}
             includeDirections={includeDirections}
             bookmarkedLineIds={bookmarkedLineIds}
+            lineTimingStatusByLineId={lineTimingStatusByLineId}
             isOpen={isOutlineOpen}
             isCompactViewport={isCompactViewport}
             lines={role.lines}
@@ -1238,6 +1250,7 @@ function OutlineSidecar({
   blockingScope,
   includeDirections,
   bookmarkedLineIds,
+  lineTimingStatusByLineId,
   isOpen,
   isCompactViewport,
   playbook,
@@ -1251,6 +1264,7 @@ function OutlineSidecar({
   blockingScope: BlockingScope;
   includeDirections: boolean;
   bookmarkedLineIds: Set<string>;
+  lineTimingStatusByLineId: Map<string, TimingLineStatus>;
   isOpen: boolean;
   isCompactViewport: boolean;
   playbook: Playbook;
@@ -1292,6 +1306,7 @@ function OutlineSidecar({
       lines={lines}
       sections={sections}
       bookmarkedLineIds={bookmarkedLineIds}
+      lineTimingStatusByLineId={lineTimingStatusByLineId}
       onSelectLine={onSelectLine}
       onToggleOpen={onToggleOpen}
     />
@@ -1304,6 +1319,7 @@ function OutlinePanel({
   blockingScope,
   includeDirections,
   bookmarkedLineIds,
+  lineTimingStatusByLineId,
   playbook,
   lines,
   sections,
@@ -1315,6 +1331,7 @@ function OutlinePanel({
   blockingScope: BlockingScope;
   includeDirections: boolean;
   bookmarkedLineIds: Set<string>;
+  lineTimingStatusByLineId: Map<string, TimingLineStatus>;
   playbook: Playbook;
   lines: Line[];
   sections: Playbook["sections"];
@@ -1324,6 +1341,7 @@ function OutlinePanel({
   const [mode, setMode] = useState<OutlineMode>("cues");
   const [searchQuery, setSearchQuery] = useState("");
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
+  const [localShowSlowTimingsOnly, setLocalShowSlowTimingsOnly] = useState(false);
   const currentLineRef = useRef<HTMLButtonElement | null>(null);
   const normalizedSearchQuery = searchQuery.trim();
   const sectionGroups = scriptBrowserSections(lines, sections)
@@ -1331,6 +1349,7 @@ function OutlinePanel({
       ...section,
       lines: section.lines
         .filter((line) => (showBookmarksOnly ? bookmarkedLineIds.has(line.id) : true))
+        .filter((line) => (localShowSlowTimingsOnly ? lineTimingStatusByLineId.get(line.id) === "slow" : true))
         .filter((line) =>
           outlineSearchText(line, mode, includeDirections, includeBlocking, blockingScope, playbook)
             .toLocaleLowerCase()
@@ -1351,6 +1370,16 @@ function OutlinePanel({
           <strong>{mode === "cues" ? "Showing cues" : "Showing lines"}</strong>
         </div>
         <div className="outline-header-actions">
+          <button
+            type="button"
+            className={localShowSlowTimingsOnly ? "outline-timing-filter active" : "outline-timing-filter"}
+            aria-pressed={localShowSlowTimingsOnly}
+            aria-label={localShowSlowTimingsOnly ? "Show all lines" : "Show slow timing lines only"}
+            onClick={() => setLocalShowSlowTimingsOnly((current) => !current)}
+            title={localShowSlowTimingsOnly ? "Show all lines" : "Show slow timing lines only"}
+          >
+            ⏱
+          </button>
           <button
             type="button"
             className={showBookmarksOnly ? "outline-bookmark-filter active" : "outline-bookmark-filter"}
@@ -1410,6 +1439,7 @@ function OutlinePanel({
         {sectionGroups.length === 0 ? (
           <p className="outline-empty">
             No matching {showBookmarksOnly ? "bookmarked " : ""}
+            {localShowSlowTimingsOnly ? "slow " : ""}
             {mode === "cues" ? "cues" : "lines"}.
           </p>
         ) : null}
@@ -1426,9 +1456,14 @@ function OutlinePanel({
                   onClick={() => onSelectLine(line.id)}
                 >
                   <span
-                    className={`status-dot${line.id === currentLineId ? " accepted" : ""} ${
-                      bookmarkedLineIds.has(line.id) ? "bookmark" : ""
-                    }`}
+                    className={`status-dot timing timing-${lineTimingStatusByLineId.get(line.id) ?? "untimed"}`}
+                    title={timingLineStatusToLabel(lineTimingStatusByLineId.get(line.id) ?? "untimed")}
+                    aria-hidden="true"
+                  >
+                    {timingLineStatusToGlyph(lineTimingStatusByLineId.get(line.id) ?? "untimed")}
+                  </span>
+                  <span
+                    className={`status-dot${bookmarkedLineIds.has(line.id) ? " bookmark" : ""}`}
                     aria-hidden="true"
                   >
                     {bookmarkedLineIds.has(line.id) ? "★" : null}
@@ -1516,6 +1551,20 @@ function TempoFeedbackPanel({ feedback }: { feedback: TempoFeedback }) {
       ) : null}
     </div>
   );
+}
+
+function timingLineStatusToGlyph(status: TimingLineStatus): string {
+  return "⏱";
+}
+
+function timingLineStatusToLabel(status: TimingLineStatus): string {
+  if (status === "slow") {
+    return "Slow timing";
+  }
+  if (status === "timed") {
+    return "Timed";
+  }
+  return "Untimed";
 }
 
 function TimingAttemptPanel({ attempt }: { attempt: TimingAttempt }) {

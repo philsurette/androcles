@@ -73,6 +73,13 @@ test("filters outline to bookmarked lines only in browse mode", async ({ page })
   await expect(page.getByText("No matching bookmarked cues.")).toBeVisible();
 });
 
+test("filters outline to slow timing lines only", async ({ page }) => {
+  await openAndroclesRole(page);
+
+  await page.getByRole("button", { name: "Show slow timing lines only" }).click();
+  await expect(page.getByText("No matching slow cues.")).toBeVisible();
+});
+
 async function openAndroclesRole(page: Page) {
   await page.goto("/");
 

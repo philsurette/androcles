@@ -1011,7 +1011,8 @@ button:disabled {
   padding: 0.25rem;
 }
 
-.outline-bookmark-filter {
+.outline-bookmark-filter,
+.outline-timing-filter {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1027,13 +1028,18 @@ button:disabled {
   border: 0;
 }
 
-.outline-bookmark-filter.active {
+.outline-bookmark-filter.active,
+.outline-timing-filter.active {
   background: rgba(255, 255, 255, 0.55);
   color: var(--accent);
   box-shadow:
     inset 0 0.16rem 0.35rem rgba(30, 38, 31, 0.22),
     inset 0 0 0 1px rgba(30, 38, 31, 0.12);
   transform: translateY(1px);
+}
+
+.outline-timing-filter {
+  color: var(--quiet);
 }
 
 .outline-mode-toggle button {
@@ -1176,7 +1182,7 @@ button:disabled {
 
 .outline-row {
   display: grid;
-  grid-template-columns: 0.75rem minmax(3.6rem, max-content) max-content minmax(0, 1fr);
+  grid-template-columns: 0.75rem 0.75rem minmax(3.6rem, max-content) max-content minmax(0, 1fr);
   gap: 0.55rem;
   align-items: center;
   width: 100%;
@@ -1194,14 +1200,28 @@ button:disabled {
 }
 
 .outline-row .status-dot {
-  width: 0.65rem;
-  height: 0.65rem;
+  width: 0.78rem;
+  height: 0.78rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 999px;
-  background: rgba(185, 79, 47, 0.18);
+  color: rgba(128, 128, 128, 0.55);
+  background: transparent;
+  font-size: 0.78rem;
+  line-height: 1;
 }
 
-.outline-row .status-dot.accepted {
-  background: var(--accent);
+.outline-row .status-dot.timing {
+  color: rgba(111, 118, 95, 0.45);
+}
+
+.outline-row .status-dot.timing-slow {
+  color: #b94f2f;
+}
+
+.outline-row .status-dot.timing-timed {
+  color: var(--ink);
 }
 
 .outline-row .status-dot.bookmark {
