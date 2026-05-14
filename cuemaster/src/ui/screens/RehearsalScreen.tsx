@@ -203,6 +203,7 @@ export function RehearsalScreen({
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
+  const [showLineInfo, setShowLineInfo] = useState(false);
   const [isOptionsPageVisible, setIsOptionsPageVisible] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
@@ -213,6 +214,12 @@ export function RehearsalScreen({
     () => role.lines.find((candidate) => candidate.id === activeLineId) ?? null,
     [activeLineId, role.lines]
   );
+  const lineLengthMs = useMemo(() => {
+    if (!line) {
+      return 0;
+    }
+    return line.responseSegments.reduce((total, segment) => total + segment.durationMs, 0);
+  }, [line]);
   const latestLineTimingAttempt = useMemo(
     () => reviewAttempts.find((attempt) => attempt.lineId === line?.id) ?? null,
     [reviewAttempts, line?.id]
@@ -290,6 +297,10 @@ export function RehearsalScreen({
 
   useEffect(() => {
     void loadCurrentBookmark();
+  }, [line?.id]);
+
+  useEffect(() => {
+    setShowLineInfo(false);
   }, [line?.id]);
 
   useEffect(() => {
@@ -1451,6 +1462,16 @@ export function RehearsalScreen({
               <button
                 type="button"
                 className="quick-toggle"
+                aria-label={showLineInfo ? "Hide line info." : "Show line info."}
+                aria-pressed={showLineInfo}
+                data-tooltip="Line info"
+                onClick={() => setShowLineInfo((current) => !current)}
+              >
+                <span aria-hidden="true">ⓘ</span>
+              </button>
+              <button
+                type="button"
+                className="quick-toggle"
                 aria-label="Choose role."
                 data-tooltip="Choose role."
                 onClick={onSelectRole}
@@ -1509,6 +1530,20 @@ export function RehearsalScreen({
                 </>
               )}
             </p>
+          ) : null}
+          {showLineInfo && line ? (
+            <div className="line-duration-panel" role="note" aria-live="polite">
+              <p>Playbook: {playbook.id}</p>
+              <p>Line/Cue ID: {line.id}</p>
+              <p>Cue file: {line.cue.audioPath}</p>
+              <p>Cue length: {formatDurationMs(line.cue.durationMs)}</p>
+              <p>Line length: {formatDurationMs(lineLengthMs)}</p>
+              {latestLineTimingAttempt ? (
+                <p>Timing target: {formatDurationMs(latestLineTimingAttempt.targetDeliveryMs)}</p>
+              ) : (
+                <p>Timing target: {formatDurationMs(lineLengthMs)}</p>
+              )}
+            </div>
           ) : null}
         </div>
       </div>
@@ -2021,6 +2056,10 @@ function timingDeltaText(measuredMs: number, targetMs: number): string {
     return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (+${deltaSec.toFixed(2)}s, +${percent}% over)`;
   }
   return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (${deltaSec.toFixed(2)}s under, -${percent}%)`;
+}
+
+function formatDurationMs(durationMs: number): string {
+  return `${(Math.max(0, durationMs) / 1000).toFixed(2)}s`;
 }
 
 const minPlaybackRate = 0.4;
