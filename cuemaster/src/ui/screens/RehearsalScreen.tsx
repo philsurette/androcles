@@ -1002,7 +1002,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                 onClick={() => void showUtilityPanel("timing")}
               >
                 <span aria-hidden="true">⏱</span>
-                Timing Issues
+                Timing
               </button>
               <button
                 type="button"

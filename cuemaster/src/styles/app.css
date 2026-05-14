@@ -802,17 +802,20 @@ button:disabled {
 .utility-drawer {
   grid-column: 1 / -1;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.3rem;
   width: 100%;
 }
 
 .utility-tabs {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.45rem;
-  border-radius: 0.85rem;
-  background: rgba(30, 38, 31, 0.07);
-  padding: 0.35rem;
+  display: flex;
+  gap: 0.25rem;
+  justify-content: stretch;
+  align-items: stretch;
+  width: 100%;
+  border-radius: 0.6rem;
+  background: rgba(30, 38, 31, 0.04);
+  padding: 0.2rem;
+  border: 1px solid rgba(30, 38, 31, 0.08);
 }
 
 .utility-tab {
@@ -820,20 +823,21 @@ button:disabled {
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  min-height: 2.25rem;
-  border-radius: 0.65rem;
+  min-height: 1.65rem;
+  flex: 1 1 auto;
+  border-radius: 0.45rem;
   background: transparent;
   color: var(--ink);
   font-family: var(--display-font);
-  font-size: 0.95rem;
+  font-size: 0.88rem;
   font-weight: 900;
-  padding: 0.35rem 0.65rem;
+  padding: 0.2rem 0.5rem;
 }
 
 .utility-tab.active {
-  background: rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--accent);
-  box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.12);
 }
 
 .utility-content {
@@ -1269,10 +1273,6 @@ button:disabled {
     align-items: stretch;
   }
 
-  .utility-tabs {
-    grid-template-columns: 1fr;
-  }
-
   .timing-options-controls {
     grid-template-columns: 1fr;
   }
@@ -1341,8 +1341,9 @@ button:disabled {
     padding-bottom: 0.35rem;
   }
 
-  .utility-tabs {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .utility-tab {
+    font-size: 0.84rem;
+    padding-inline: 0.38rem;
   }
 }
 
