@@ -16,12 +16,14 @@ describe("RehearsalSession", () => {
       speakAlongEnabled: false,
       speakAlongPauseMs: 750,
       tempoTargetHesitationMs: 750,
+      practiceTargetPaceMultiplier: 1,
       syncPracticeTiming: true,
       tempoTimingPreferred: true,
       updatedAt: 1000
     };
 
     expect(session.tempoTimingPreferred).toBe(true);
+    expect(session.practiceTargetPaceMultiplier).toBe(1);
     expect("tempoTimingEnabled" in session).toBe(false);
   });
 });

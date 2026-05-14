@@ -42,15 +42,21 @@ export function hesitationLabel(measuredMs: number, targetMs: number): TempoFeed
   return "close";
 }
 
-export function deliveryLabel(measuredMs: number, targetMs: number): NonNullable<TempoFeedback["delivery"]>["label"] {
+export function deliveryLabel(
+  measuredMs: number,
+  targetMs: number,
+  targetPaceMultiplier = 1
+): NonNullable<TempoFeedback["delivery"]>["label"] {
+  const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
+  const adjustedTargetMs = targetMs / normalizedMultiplier;
   const slowThresholdMs = 500;
-  if (targetMs <= 0) {
+  if (adjustedTargetMs <= 0) {
     return "close";
   }
-  if (measuredMs < targetMs * 0.8 && targetMs - measuredMs >= slowThresholdMs) {
+  if (measuredMs < adjustedTargetMs * 0.8 && adjustedTargetMs - measuredMs >= slowThresholdMs) {
     return "fast";
   }
-  if (measuredMs > targetMs * 1.25 && measuredMs - targetMs >= slowThresholdMs) {
+  if (measuredMs > adjustedTargetMs * 1.25 && measuredMs - adjustedTargetMs >= slowThresholdMs) {
     return "slow";
   }
   return "close";
@@ -59,9 +65,11 @@ export function deliveryLabel(measuredMs: number, targetMs: number): NonNullable
 export function tempoFeedbackFor(
   line: Line,
   measured: { hesitationMs: number; deliveryMs?: number },
-  targetHesitationMs?: number
+  targetHesitationMs?: number,
+  targetPaceMultiplier = 1
 ): TempoFeedback {
   const targets = timingTargetsForLine(line, targetHesitationMs);
+  const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
   return {
     hesitation: {
       measuredMs: measured.hesitationMs,
@@ -74,7 +82,7 @@ export function tempoFeedbackFor(
         : {
             measuredMs: measured.deliveryMs,
             targetMs: targets.targetDeliveryMs,
-            label: deliveryLabel(measured.deliveryMs, targets.targetDeliveryMs)
+            label: deliveryLabel(measured.deliveryMs, targets.targetDeliveryMs, normalizedMultiplier)
           }
   };
 }

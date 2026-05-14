@@ -13,6 +13,7 @@ export type RehearsalSession = {
   speakAlongEnabled: boolean;
   speakAlongPauseMs: number;
   tempoTargetHesitationMs: number;
+  practiceTargetPaceMultiplier?: number;
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
   updatedAt: number;

@@ -158,6 +158,7 @@ function session(playbookId: string, roleId: string, lineIndex: number): Rehears
     speakAlongEnabled: false,
     speakAlongPauseMs: 750,
     tempoTargetHesitationMs: 750,
+    practiceTargetPaceMultiplier: 1,
     syncPracticeTiming: true,
     tempoTimingPreferred: false,
     updatedAt: 1000

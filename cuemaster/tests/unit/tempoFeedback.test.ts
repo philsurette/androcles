@@ -70,6 +70,12 @@ describe("tempoFeedback", () => {
     expect(deliveryLabel(3000, 2200)).toBe("slow");
   });
 
+  it("applies practice pace multiplier to delivery label", () => {
+    expect(deliveryLabel(1900, 2200, 1)).toBe("close");
+    expect(deliveryLabel(1900, 2200, 0.5)).toBe("fast");
+    expect(deliveryLabel(1900, 2200, 1.3)).toBe("close");
+  });
+
   it("requires both percentage and 500ms thresholds for delivery extremes", () => {
     expect(deliveryLabel(1750, 2200)).toBe("close");
     expect(deliveryLabel(3000, 2800)).toBe("close");
@@ -86,6 +92,13 @@ describe("tempoFeedback", () => {
     expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 2400 }, 500)).toEqual({
       hesitation: { measuredMs: 600, targetMs: 500, label: "close" },
       delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
+    });
+  });
+
+  it("uses practice pace multiplier when supplied", () => {
+    expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 1900 }, 750, 0.5)).toEqual({
+      hesitation: { measuredMs: 600, targetMs: 750, label: "close" },
+      delivery: { measuredMs: 1900, targetMs: 2200, label: "fast" }
     });
   });
 });

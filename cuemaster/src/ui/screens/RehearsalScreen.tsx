@@ -14,7 +14,7 @@ import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
-import { tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
+import { deliveryLabel, tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
@@ -190,6 +190,9 @@ export function RehearsalScreen({
   const [speakAlongPauseMs, setSpeakAlongPauseMs] = useState(
     initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
   );
+  const [practiceTargetPaceMultiplier, setPracticeTargetPaceMultiplier] = useState(
+    normalizePracticeTargetPaceMultiplier(initialSession?.practiceTargetPaceMultiplier)
+  );
   const [tempoTargetHesitationMs, setTempoTargetHesitationMs] = useState(
     initialSession?.tempoTargetHesitationMs ?? initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
   );
@@ -225,18 +228,19 @@ export function RehearsalScreen({
       role.lines.map((roleLine) => [roleLine.id, "untimed" as const])
     );
     for (const attempt of reviewAttempts) {
-      if (attempt.deliveryLabel === "slow") {
+      const attemptDeliveryLabel = deliveryLabel(attempt.deliveryMs, attempt.targetDeliveryMs, practiceTargetPaceMultiplier);
+      if (attemptDeliveryLabel === "slow") {
         statusByLine.set(attempt.lineId, "slow");
         continue;
       }
-      if (attempt.deliveryLabel === "fast") {
+      if (attemptDeliveryLabel === "fast") {
         statusByLine.set(attempt.lineId, "fast");
         continue;
       }
       statusByLine.set(attempt.lineId, "good");
     }
     return statusByLine;
-  }, [reviewAttempts, role.lines]);
+  }, [practiceTargetPaceMultiplier, reviewAttempts, role.lines]);
   const displayedPlaybackStatus = useMemo(() => {
     if (timingStatusMessage) {
       return timingStatusMessage;
@@ -245,10 +249,10 @@ export function RehearsalScreen({
       return null;
     }
     if (/^Line Timed\.?$/i.test(playbackStatus) && latestLineTimingAttempt) {
-      return formatTimingAttempt(latestLineTimingAttempt);
+      return formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier);
     }
     return playbackStatus;
-  }, [playbackStatus, latestLineTimingAttempt, timingStatusMessage]);
+  }, [playbackStatus, latestLineTimingAttempt, practiceTargetPaceMultiplier, timingStatusMessage]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -267,6 +271,22 @@ export function RehearsalScreen({
     tempoTimingRestoreStartedRef.current = true;
     void enableTempoTiming();
   }, [tempoTimingPreferred, tempoTimingEnabled, speakAlongEnabled]);
+
+  useEffect(() => {
+    if (!timingStatusMessage || !latestLineTimingAttempt) {
+      return;
+    }
+    if (!line || latestLineTimingAttempt.lineId !== line.id) {
+      return;
+    }
+    const nextTimingStatusMessage = formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier);
+    setTimingStatusMessage((current) => {
+      if (current && current.details === nextTimingStatusMessage.details) {
+        return current;
+      }
+      return nextTimingStatusMessage;
+    });
+  }, [line?.id, latestLineTimingAttempt, practiceTargetPaceMultiplier, timingStatusMessage]);
 
   useEffect(() => {
     void loadCurrentBookmark();
@@ -389,6 +409,7 @@ export function RehearsalScreen({
 
   async function goNext() {
     activeTimingLineIdRef.current = null;
+    setTimingStatusMessage(null);
     engine.next();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
@@ -399,6 +420,7 @@ export function RehearsalScreen({
 
   async function jumpToLine(lineId: string) {
     activeTimingLineIdRef.current = null;
+    setTimingStatusMessage(null);
     const targetLine = engine.jumpToLine(lineId);
     if (!targetLine) {
       throw new Error(`Line not found for role ${role.id}: ${lineId}`);
@@ -416,6 +438,7 @@ export function RehearsalScreen({
 
   async function goPrevious() {
     activeTimingLineIdRef.current = null;
+    setTimingStatusMessage(null);
     engine.previous();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
@@ -451,7 +474,8 @@ export function RehearsalScreen({
     nextTempoTargetHesitationMs = tempoTargetHesitationMs,
     nextSyncPracticeTiming = syncPracticeTiming,
     nextIncludeBlocking = includeBlocking,
-    nextBlockingScope = blockingScope
+    nextBlockingScope = blockingScope,
+    nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -469,6 +493,7 @@ export function RehearsalScreen({
         speakAlongEnabled: nextSpeakAlongEnabled,
         speakAlongPauseMs: nextSpeakAlongPauseMs,
         tempoTargetHesitationMs: nextTempoTargetHesitationMs,
+        practiceTargetPaceMultiplier: nextPracticeTargetPaceMultiplier,
         syncPracticeTiming: nextSyncPracticeTiming,
         tempoTimingPreferred: nextTempoTimingPreferred,
         updatedAt: Date.now()
@@ -610,6 +635,30 @@ export function RehearsalScreen({
       showLinesByDefault,
       nextSpeakAlongPauseMs,
       nextTargetMs
+    );
+  }
+
+  function changePracticeTargetPaceMultiplier(nextMultiplier: number) {
+    const normalizedMultiplier = normalizePracticeTargetPaceMultiplier(nextMultiplier);
+    setPracticeTargetPaceMultiplier(normalizedMultiplier);
+    if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+      setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, normalizedMultiplier));
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      normalizedMultiplier
     );
   }
 
@@ -785,8 +834,13 @@ export function RehearsalScreen({
     } else if (result.event === "delivery-ended") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
       const deliveryMs = Math.max(0, Math.round(result.deliveryMs ?? 0));
-      const feedback = tempoFeedbackFor(timingLine, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
-      const timingResult = formatTimingResult(feedback);
+      const feedback = tempoFeedbackFor(
+        timingLine,
+        { hesitationMs, deliveryMs },
+        tempoTargetHesitationMs,
+        practiceTargetPaceMultiplier
+      );
+      const timingResult = formatTimingResult(feedback, practiceTargetPaceMultiplier);
       setTimingStatusMessage(timingResult);
       setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
@@ -934,7 +988,7 @@ export function RehearsalScreen({
           />
         </label>
         <label className="timing-setting">
-          Response speed
+          Speakalong speed
           <PracticeSelect
             label="Response speed"
             value={String(playbackRate)}
@@ -998,6 +1052,18 @@ export function RehearsalScreen({
                 <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
               </button>
             </div>
+            <label className="timing-setting">
+              Practice target pace multiplier
+              <PracticeSelect
+                label="Practice target pace multiplier"
+                value={String(practiceTargetPaceMultiplier)}
+                options={practicePaceMultiplierOptions.map((optionMultiplier) => ({
+                  value: String(optionMultiplier),
+                  label: `${optionMultiplier.toFixed(1)}x`
+                }))}
+                onSelect={(next) => changePracticeTargetPaceMultiplier(Number(next))}
+              />
+            </label>
           </div>
         </fieldset>
         <p className="status">
@@ -1866,11 +1932,16 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
   return "Untimed";
 }
 
-function formatTimingResult(feedback: ReturnType<typeof tempoFeedbackFor>): TimingStatusPill {
+function formatTimingResult(
+  feedback: ReturnType<typeof tempoFeedbackFor>,
+  practiceTargetPaceMultiplier = 1
+): TimingStatusPill {
   const deliveryLabel = feedback.delivery?.label === "fast" ? "fast" : feedback.delivery?.label === "slow" ? "slow" : "good";
   const pickupLabel = feedback.hesitation.label === "sharp" ? "fast" : feedback.hesitation.label === "late" ? "slow" : "good";
   const measuredDeliveryMs = feedback.delivery?.measuredMs ?? 0;
-  const targetDeliveryMs = feedback.delivery?.targetMs ?? 0;
+  const baseTargetDeliveryMs = feedback.delivery?.targetMs ?? 0;
+  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
+  const targetDeliveryMs = baseTargetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
   const measuredPickupMs = feedback.hesitation.measuredMs;
   const targetPickupMs = feedback.hesitation.targetMs;
   return {
@@ -1884,30 +1955,35 @@ function formatTimingResult(feedback: ReturnType<typeof tempoFeedbackFor>): Timi
       measuredMs: measuredPickupMs,
       targetMs: targetPickupMs
     },
-    details: `${deliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(1)}s←${(targetDeliveryMs / 1000).toFixed(1)}s, pickup ${pickupLabel} ${(
+    details: `${deliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(2)}s, pickup ${pickupLabel} ${(
       measuredPickupMs / 1000
     ).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
   };
 }
 
-function formatTimingAttempt(attempt: TimingAttempt): TimingStatusPill {
-  const deliveryLabel = attempt.deliveryLabel === "fast" ? "fast" : attempt.deliveryLabel === "slow" ? "slow" : "good";
+function formatTimingAttempt(attempt: TimingAttempt, practiceTargetPaceMultiplier = 1): TimingStatusPill {
+  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
+  const targetDeliveryMs = attempt.targetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
+  const lineDeliveryLabel = deliveryLabel(attempt.deliveryMs, attempt.targetDeliveryMs, normalizedPracticeTargetPaceMultiplier);
+  const displayDeliveryLabel = lineDeliveryLabel === "fast" ? "fast" : lineDeliveryLabel === "slow" ? "slow" : "good";
   const pickupLabel =
     attempt.hesitationLabel === "sharp" ? "fast" : attempt.hesitationLabel === "late" ? "slow" : "good";
   return {
     delivery: {
-      label: deliveryLabel,
+      label: displayDeliveryLabel,
       measuredMs: attempt.deliveryMs,
-      targetMs: attempt.targetDeliveryMs
+      targetMs: targetDeliveryMs
     },
     pickup: {
       label: pickupLabel,
       measuredMs: attempt.hesitationMs,
       targetMs: attempt.targetHesitationMs
     },
-    details: `${deliveryLabel} ${(attempt.deliveryMs / 1000).toFixed(1)}s←${(attempt.targetDeliveryMs / 1000).toFixed(
-      1
-    )}s, pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(2)}s`
+    details: `${displayDeliveryLabel} ${(attempt.deliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(
+      2
+    )}s, pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(
+      2
+    )}s`
   };
 }
 
@@ -1949,6 +2025,20 @@ function timingDeltaText(measuredMs: number, targetMs: number): string {
 
 const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
+const minPracticeTargetPaceMultiplier = 0.4;
+const maxPracticeTargetPaceMultiplier = 1.3;
+const practicePaceMultiplierOptions = [
+  0.4,
+  0.5,
+  0.6,
+  0.7,
+  0.8,
+  0.9,
+  1.0,
+  1.1,
+  1.2,
+  1.3
+];
 const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px), (orientation: landscape) and (max-height: 540px)";
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
 const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
@@ -1967,6 +2057,14 @@ function formatTimingOption(optionMs: number): string {
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
+}
+
+export function normalizePracticeTargetPaceMultiplier(value: number | undefined): number {
+  const parsedValue = value ?? 1;
+  if (!Number.isFinite(parsedValue)) {
+    return 1;
+  }
+  return Math.min(maxPracticeTargetPaceMultiplier, Math.max(minPracticeTargetPaceMultiplier, parsedValue));
 }
 
 export function visibleCuesForDisplay(
