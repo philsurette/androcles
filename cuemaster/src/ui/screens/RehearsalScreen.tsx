@@ -1625,16 +1625,18 @@ export function RehearsalScreen({
                       </div>
                     </section>
                   </div>
-                  {isLineRevealed ? (
-                    <LineCard
-                      line={line}
-                      includeDirections={includeDirections}
-                      includeBlocking={includeBlocking}
-                      blockingScope={blockingScope}
-                    />
-                  ) : (
-                    <article className="card hidden-line">Line hidden</article>
-                  )}
+                  <div className="rehearsal-line-content">
+                    {isLineRevealed ? (
+                      <LineCard
+                        line={line}
+                        includeDirections={includeDirections}
+                        includeBlocking={includeBlocking}
+                        blockingScope={blockingScope}
+                      />
+                    ) : (
+                      <article className="card hidden-line">Line hidden</article>
+                    )}
+                  </div>
                 </section>
               </div>
             ) : (
