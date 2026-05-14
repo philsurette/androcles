@@ -1293,32 +1293,32 @@ export function RehearsalScreen({
                 <span aria-hidden="true">{syncSpeakAlongSpeed ? "🔒" : "🔓"}</span>
               </button>
             </div>
-              <label className="timing-setting">
-                Absolute tempo forgiveness
-                <PracticeSelect
-                  label="Absolute tempo forgiveness"
-                  value={String(absoluteTempoForgivenessMs)}
+            <label className="timing-setting">
+              Absolute tempo forgiveness
+              <PracticeSelect
+                label="Absolute tempo forgiveness"
+                value={String(absoluteTempoForgivenessMs)}
                 options={absoluteTempoForgivenessOptionsMs.map((optionMs) => ({
                   value: String(optionMs),
                   label: formatAbsoluteTempoForgiveness(optionMs)
                 }))}
-                  onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
-                />
-              </label>
-              <label className="timing-setting">
-                Tempo forgiveness
-                <PracticeSelect
-                  label="Tempo forgiveness"
-                  value={String(tempoTolerancePercent)}
-                  options={tempoToleranceOptionsPercent.map((optionPercent) => ({
-                    value: String(optionPercent),
-                    label: formatTempoTolerancePercent(optionPercent)
-                  }))}
-                  onSelect={(next) => changeTempoTolerancePercent(Number(next))}
-                />
-              </label>
-            </div>
-          </fieldset>
+                onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
+              />
+            </label>
+            <label className="timing-setting">
+              Tempo forgiveness
+              <PracticeSelect
+                label="Tempo forgiveness"
+                value={String(tempoTolerancePercent)}
+                options={tempoToleranceOptionsPercent.map((optionPercent) => ({
+                  value: String(optionPercent),
+                  label: formatTempoTolerancePercent(optionPercent)
+                }))}
+                onSelect={(next) => changeTempoTolerancePercent(Number(next))}
+              />
+            </label>
+          </div>
+        </fieldset>
         <p className="status">
           Tempo timing uses microphone energy only: no recording, no transcription, no upload.
         </p>
@@ -1352,7 +1352,7 @@ export function RehearsalScreen({
               {storageStatus}
             </p>
           ) : null}
-          <div className="rehearsal-workspace">
+          <div className="rehearsal-workspace no-outline">
             {practiceOptionsPanel}
           </div>
         </section>

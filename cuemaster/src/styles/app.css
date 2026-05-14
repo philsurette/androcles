@@ -1010,6 +1010,11 @@ button:disabled {
 }
 
 .practice-options-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
   width: 100%;
 }
 
@@ -1099,15 +1104,21 @@ button:disabled {
 }
 
 .practice-options-panel {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 0.85rem 1.25rem;
   align-items: flex-start;
   padding: 0.35rem;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  flex: 1 1 auto;
 }
 
 .practice-options-panel .status {
-  flex-basis: 100%;
+  grid-column: 1 / -1;
   margin: 0;
 }
 
@@ -1998,6 +2009,31 @@ button:disabled {
     min-width: 1.55rem;
     height: 1.55rem;
   }
+
+  .practice-options-page {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .practice-options-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-content: start;
+    width: 100%;
+    min-width: 0;
+    gap: 0.7rem 0.9rem;
+  }
+
+  .practice-options-panel .timing-options {
+    grid-column: 1 / -1;
+  }
+
+  .practice-options-panel .status {
+    grid-column: 1 / -1;
+  }
+
+  .practice-options-panel .timing-setting {
+    grid-column: auto;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 540px) {
@@ -2100,6 +2136,17 @@ button:disabled {
     min-height: 1.45rem;
     min-width: 1.45rem;
     height: 1.45rem;
+  }
+
+  .practice-options-panel {
+    gap: 0.6rem 0.9rem;
+    padding: 0.2rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .practice-options-panel .timing-options {
+    padding: 0.7rem;
   }
 }
 
