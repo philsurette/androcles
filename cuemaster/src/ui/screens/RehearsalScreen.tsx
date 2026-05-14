@@ -1769,7 +1769,12 @@ export function RehearsalScreen({
                   ) : null}
                   {expandedTimingPill === "pickup" ? (
                     <span className="timing-status-details">
-                      Pickup: {timingDeltaText(displayedPlaybackStatus.pickup.measuredMs, displayedPlaybackStatus.pickup.targetMs)}.
+                      {formatDeliveryTimingDetails(
+                        displayedPlaybackStatus.pickup.measuredMs,
+                        displayedPlaybackStatus.pickup.targetMs,
+                        absoluteTempoForgivenessMs,
+                        tempoTolerancePercent
+                      )}
                     </span>
                   ) : null}
                 </>
@@ -2273,7 +2278,12 @@ function formatTimingResult(
       targetDeliveryMs,
       absoluteTempoForgivenessMs,
       tempoTolerancePercent
-    )}; pickup ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
+    )}; ${formatDeliveryTimingDetails(
+      measuredPickupMs,
+      targetPickupMs,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent
+    )}`
   };
 }
 
@@ -2311,9 +2321,12 @@ function formatTimingAttempt(
       targetDeliveryMs,
       absoluteTempoForgivenessMs,
       tempoTolerancePercent
-    )}; pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(
-      2
-    )}s`
+    )}; ${formatDeliveryTimingDetails(
+      attempt.hesitationMs,
+      attempt.targetHesitationMs,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent
+    )}`
   };
 }
 
@@ -2335,22 +2348,6 @@ function pickupPillForLabel(label: TimingLabel): string {
     return "🐢";
   }
   return "🎯";
-}
-
-function timingDeltaText(measuredMs: number, targetMs: number): string {
-  if (targetMs <= 0) {
-    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
-  }
-  const deltaMs = measuredMs - targetMs;
-  const deltaSec = Math.abs(deltaMs) / 1000;
-  const percent = ((Math.abs(deltaMs) / targetMs) * 100).toFixed(2);
-  if (deltaMs === 0) {
-    return `on target at ${(measuredMs / 1000).toFixed(2)}s`;
-  }
-  if (deltaMs > 0) {
-    return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (+${deltaSec.toFixed(2)}s, +${percent}% over)`;
-  }
-  return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (${deltaSec.toFixed(2)}s under, -${percent}%)`;
 }
 
 function formatDeliveryTimingDetails(
