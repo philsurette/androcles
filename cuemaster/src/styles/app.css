@@ -478,6 +478,10 @@ button:disabled {
   overflow: hidden;
 }
 
+.rehearsal-workspace.options-workspace {
+  overflow: visible;
+}
+
 .rehearsal-workspace.outline-collapsed {
   grid-template-columns: 4rem minmax(0, 1fr);
 }
@@ -1178,8 +1182,10 @@ button:disabled {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
+  overflow-x: hidden;
   width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 .line-duration-panel {
@@ -1238,15 +1244,34 @@ button:disabled {
   padding: 0.35rem;
   width: 100%;
   min-width: 0;
-  min-height: 0;
-  overflow-y: auto;
+  min-height: min-content;
+  overflow-y: visible;
   scrollbar-gutter: stable;
-  flex: 1 1 auto;
+  flex: 0 0 auto;
 }
 
 .practice-options-panel .status {
   grid-column: 1 / -1;
   margin: 0;
+}
+
+.practice-options-panel .timing-setting {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.practice-options-panel .timing-setting > .practice-select-wrap {
+  width: min(6.8rem, 40vw);
+  max-width: 6.8rem;
+  flex: 0 0 auto;
+}
+
+.practice-options-panel .timing-setting-wide > .practice-select-wrap {
+  width: min(12rem, 72vw);
+  max-width: 12rem;
 }
 
 .timing-options {
@@ -1369,10 +1394,12 @@ button:disabled {
   display: none;
   flex-direction: column;
   min-width: 100%;
+  max-height: min(50dvh, 14rem);
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 1px solid rgba(30, 38, 31, 0.2);
   border-radius: 0.65rem;
   background: rgba(255, 255, 255, 0.95);
-  overflow: hidden;
   box-shadow:
     0 0.6rem 1.2rem rgba(10, 14, 12, 0.18),
     inset 0 0.16rem 0.35rem rgba(30, 38, 31, 0.04);
@@ -2169,7 +2196,11 @@ button:disabled {
 
   .practice-options-page {
     min-height: 0;
-    overflow: hidden;
+    overflow: visible;
+  }
+
+  .rehearsal-workspace.options-workspace {
+    overflow: visible;
   }
 
   .practice-options-panel {

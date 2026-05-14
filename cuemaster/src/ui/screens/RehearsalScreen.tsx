@@ -202,6 +202,9 @@ export function RehearsalScreen({
   const [absoluteTempoForgivenessMs, setAbsoluteTempoForgivenessMs] = useState(
     normalizeAbsoluteTempoForgivenessMs(initialSession?.absoluteTempoForgivenessMs)
   );
+  const [absolutePickupForgivenessMs, setAbsolutePickupForgivenessMs] = useState(
+    normalizeAbsolutePickupForgivenessMs(initialSession?.absolutePickupForgivenessMs)
+  );
   const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
     normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
   );
@@ -275,7 +278,8 @@ export function RehearsalScreen({
         latestLineTimingAttempt,
         practiceTargetPaceMultiplier,
         absoluteTempoForgivenessMs,
-        tempoTolerancePercent
+        tempoTolerancePercent,
+        absolutePickupForgivenessMs
       );
     }
     return playbackStatus;
@@ -285,6 +289,7 @@ export function RehearsalScreen({
     practiceTargetPaceMultiplier,
     absoluteTempoForgivenessMs,
     tempoTolerancePercent,
+    absolutePickupForgivenessMs,
     timingStatusMessage
   ]);
 
@@ -317,7 +322,8 @@ export function RehearsalScreen({
       latestLineTimingAttempt,
       practiceTargetPaceMultiplier,
       absoluteTempoForgivenessMs,
-      tempoTolerancePercent
+      tempoTolerancePercent,
+      absolutePickupForgivenessMs
     );
     setTimingStatusMessage((current) => {
       if (current && current.details === nextTimingStatusMessage.details) {
@@ -331,6 +337,7 @@ export function RehearsalScreen({
     practiceTargetPaceMultiplier,
     absoluteTempoForgivenessMs,
     tempoTolerancePercent,
+    absolutePickupForgivenessMs,
     timingStatusMessage
   ]);
 
@@ -528,7 +535,8 @@ export function RehearsalScreen({
     nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier,
     nextSyncSpeakAlongSpeed = syncSpeakAlongSpeed,
     nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
-    nextTempoTolerancePercent = tempoTolerancePercent
+    nextTempoTolerancePercent = tempoTolerancePercent,
+    nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -549,6 +557,7 @@ export function RehearsalScreen({
         practiceTargetPaceMultiplier: nextPracticeTargetPaceMultiplier,
         absoluteTempoForgivenessMs: nextAbsoluteTempoForgivenessMs,
         tempoTolerancePercent: nextTempoTolerancePercent,
+        absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         tempoTimingPreferred: nextTempoTimingPreferred,
@@ -652,8 +661,14 @@ export function RehearsalScreen({
       setPracticeTargetPaceMultiplier(nextPracticeTarget);
       if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
         setTimingStatusMessage(
-          formatTimingAttempt(latestLineTimingAttempt, nextPracticeTarget, absoluteTempoForgivenessMs, tempoTolerancePercent)
-        );
+        formatTimingAttempt(
+          latestLineTimingAttempt,
+          nextPracticeTarget,
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent,
+          absolutePickupForgivenessMs
+        )
+      );
       }
     }
     void saveSession(
@@ -732,7 +747,8 @@ export function RehearsalScreen({
           latestLineTimingAttempt,
           normalizedMultiplier,
           absoluteTempoForgivenessMs,
-          tempoTolerancePercent
+          tempoTolerancePercent,
+          absolutePickupForgivenessMs
         )
       );
     }
@@ -792,12 +808,13 @@ export function RehearsalScreen({
       if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
         setTimingStatusMessage(
           formatTimingAttempt(
-            latestLineTimingAttempt,
-            nextPracticeTargetPaceMultiplier,
-            absoluteTempoForgivenessMs,
-            tempoTolerancePercent
-          )
-        );
+          latestLineTimingAttempt,
+          nextPracticeTargetPaceMultiplier,
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent,
+          absolutePickupForgivenessMs
+        )
+      );
       }
     }
     void saveSession(
@@ -828,7 +845,8 @@ export function RehearsalScreen({
           latestLineTimingAttempt,
           practiceTargetPaceMultiplier,
           normalizedToleranceMs,
-          tempoTolerancePercent
+          tempoTolerancePercent,
+          absolutePickupForgivenessMs
         )
       );
     }
@@ -861,7 +879,8 @@ export function RehearsalScreen({
           latestLineTimingAttempt,
           practiceTargetPaceMultiplier,
           absoluteTempoForgivenessMs,
-          normalizedTolerancePercent
+          normalizedTolerancePercent,
+          absolutePickupForgivenessMs
         )
       );
     }
@@ -883,6 +902,42 @@ export function RehearsalScreen({
       syncSpeakAlongSpeed,
       absoluteTempoForgivenessMs,
       normalizedTolerancePercent
+    );
+  }
+
+  function changeAbsolutePickupForgiveness(nextToleranceMs: number) {
+    const normalizedToleranceMs = normalizeAbsolutePickupForgivenessMs(nextToleranceMs);
+    setAbsolutePickupForgivenessMs(normalizedToleranceMs);
+    if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+      setTimingStatusMessage(
+        formatTimingAttempt(
+          latestLineTimingAttempt,
+          practiceTargetPaceMultiplier,
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent,
+          normalizedToleranceMs
+        )
+      );
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent,
+      normalizedToleranceMs
     );
   }
 
@@ -1043,13 +1098,15 @@ export function RehearsalScreen({
         tempoTargetHesitationMs,
         practiceTargetPaceMultiplier,
         absoluteTempoForgivenessMs,
-        tempoTolerancePercent
+        tempoTolerancePercent,
+        absolutePickupForgivenessMs
       );
       const timingResult = formatTimingResult(
         feedback,
         practiceTargetPaceMultiplier,
         absoluteTempoForgivenessMs,
-        tempoTolerancePercent
+        tempoTolerancePercent,
+        absolutePickupForgivenessMs
       );
       setTimingStatusMessage(timingResult);
       setPlaybackStatus(timingResult.details);
@@ -1188,7 +1245,7 @@ export function RehearsalScreen({
   const practiceOptionsPanel = (
     <div className="practice-options-page">
       <div className="practice-options-panel">
-        <label className="timing-setting">
+        <label className="timing-setting timing-setting-wide">
           Cue length
           <PracticeSelect
             label="Cue length"
@@ -1197,7 +1254,7 @@ export function RehearsalScreen({
             onSelect={changeCueWindowPreset}
           />
         </label>
-        <label className="timing-setting">
+        <label className="timing-setting timing-setting-wide">
           Blocking scope
           <PracticeSelect
             label="Blocking scope"
@@ -1211,67 +1268,23 @@ export function RehearsalScreen({
           />
         </label>
         <fieldset className="timing-options">
-          <legend>Cue Pickup</legend>
-          <div className="timing-options-controls">
-            <div className="timing-targets-row">
-              <div className="timing-targets-controls">
-                <label className="timing-setting">
-                  Speaking pause
-                  <PracticeSelect
-                    label="Speaking pause"
-                    value={String(speakAlongPauseMs)}
-                    options={practiceTimingOptionsMs.map((optionMs) => ({
-                      value: String(optionMs),
-                      label: formatTimingOption(optionMs)
-                    }))}
-                    onSelect={(next) => changeSpeakAlongPauseMs(Number(next))}
-                  />
-                </label>
-                <label className="timing-setting">
-                  Tempo pickup target
-                  <PracticeSelect
-                    label="Tempo pickup target"
-                    value={String(tempoTargetHesitationMs)}
-                    options={practiceTimingOptionsMs.map((optionMs) => ({
-                      value: String(optionMs),
-                      label: formatTimingOption(optionMs)
-                    }))}
-                    onSelect={(next) => changeTempoTargetHesitationMs(Number(next))}
-                    disabled={syncPracticeTiming}
-                  />
-                </label>
-              </div>
-              <button
-                type="button"
-                className={`timing-sync-toggle ${syncPracticeTiming ? "linked" : ""}`}
-                aria-label={syncPracticeTiming ? "Disable sync for timing targets." : "Keep timing targets in sync."}
-                aria-pressed={syncPracticeTiming}
-                title={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
-                onClick={() => changeSyncPracticeTiming(!syncPracticeTiming)}
-              >
-                <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
-              </button>
-            </div>
-          </div>
-        </fieldset>
-        <fieldset className="timing-options">
           <legend>Tempo</legend>
           <div className="timing-options-controls">
             <div className="timing-targets-row">
               <div className="timing-targets-controls">
                 <label className="timing-setting">
-                  Speakalong speed
+                  Speakalong
                   <PracticeSelect
-                    label="Speakalong speed"
+                    label="Speakalong"
                     value={String(playbackRate)}
                     options={playbackRates.map((rate) => ({ value: String(rate), label: `${rate.toFixed(1)}x` }))}
                     onSelect={(next) => changePlaybackRate(Number(next))}
                   />
                 </label>
                 <label className="timing-setting">
-                  Target tempo adjustment
+                  Target adj.
                   <PracticeSelect
-                    label="Target tempo adjustment"
+                    label="Target adj."
                     value={String(practiceTargetPaceMultiplier)}
                     options={practicePaceMultiplierOptions.map((optionMultiplier) => ({
                       value: String(optionMultiplier),
@@ -1294,9 +1307,9 @@ export function RehearsalScreen({
               </button>
             </div>
             <label className="timing-setting">
-              Absolute tempo forgiveness
+              Forgiveness(abs)
               <PracticeSelect
-                label="Absolute tempo forgiveness"
+                label="Forgiveness(abs)"
                 value={String(absoluteTempoForgivenessMs)}
                 options={absoluteTempoForgivenessOptionsMs.map((optionMs) => ({
                   value: String(optionMs),
@@ -1306,15 +1319,71 @@ export function RehearsalScreen({
               />
             </label>
             <label className="timing-setting">
-              Tempo forgiveness
+              Forgiveness(%)
               <PracticeSelect
-                label="Tempo forgiveness"
+                label="Forgiveness(%)"
                 value={String(tempoTolerancePercent)}
                 options={tempoToleranceOptionsPercent.map((optionPercent) => ({
                   value: String(optionPercent),
                   label: formatTempoTolerancePercent(optionPercent)
                 }))}
                 onSelect={(next) => changeTempoTolerancePercent(Number(next))}
+              />
+            </label>
+          </div>
+        </fieldset>
+        <fieldset className="timing-options">
+          <legend>Cue Pickup</legend>
+          <div className="timing-options-controls">
+            <div className="timing-targets-row">
+              <div className="timing-targets-controls">
+                <label className="timing-setting">
+                  Speaking pause
+                  <PracticeSelect
+                    label="Speaking pause"
+                    value={String(speakAlongPauseMs)}
+                    options={practiceTimingOptionsMs.map((optionMs) => ({
+                      value: String(optionMs),
+                      label: formatTimingOption(optionMs)
+                    }))}
+                    onSelect={(next) => changeSpeakAlongPauseMs(Number(next))}
+                  />
+                </label>
+                <label className="timing-setting">
+                  Pickup target
+                  <PracticeSelect
+                    label="Pickup target"
+                    value={String(tempoTargetHesitationMs)}
+                    options={practiceTimingOptionsMs.map((optionMs) => ({
+                      value: String(optionMs),
+                      label: formatTimingOption(optionMs)
+                    }))}
+                    onSelect={(next) => changeTempoTargetHesitationMs(Number(next))}
+                    disabled={syncPracticeTiming}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                className={`timing-sync-toggle ${syncPracticeTiming ? "linked" : ""}`}
+                aria-label={syncPracticeTiming ? "Disable sync for timing targets." : "Keep timing targets in sync."}
+                aria-pressed={syncPracticeTiming}
+                title={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
+                onClick={() => changeSyncPracticeTiming(!syncPracticeTiming)}
+              >
+                <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
+              </button>
+            </div>
+            <label className="timing-setting">
+              Forgiveness
+              <PracticeSelect
+                label="Forgiveness"
+                value={String(absolutePickupForgivenessMs)}
+                options={absolutePickupForgivenessOptionsMs.map((optionMs) => ({
+                  value: String(optionMs),
+                  label: formatAbsoluteTempoForgiveness(optionMs)
+                }))}
+                onSelect={(next) => changeAbsolutePickupForgiveness(Number(next))}
               />
             </label>
           </div>
@@ -1352,7 +1421,7 @@ export function RehearsalScreen({
               {storageStatus}
             </p>
           ) : null}
-          <div className="rehearsal-workspace no-outline">
+          <div className="rehearsal-workspace no-outline options-workspace">
             {practiceOptionsPanel}
           </div>
         </section>
@@ -1769,11 +1838,10 @@ export function RehearsalScreen({
                   ) : null}
                   {expandedTimingPill === "pickup" ? (
                     <span className="timing-status-details">
-                      {formatDeliveryTimingDetails(
+                      {formatPickupTimingDetails(
                         displayedPlaybackStatus.pickup.measuredMs,
                         displayedPlaybackStatus.pickup.targetMs,
-                        absoluteTempoForgivenessMs,
-                        tempoTolerancePercent
+                        absolutePickupForgivenessMs
                       )}
                     </span>
                   ) : null}
@@ -2239,7 +2307,8 @@ function formatTimingResult(
   feedback: ReturnType<typeof tempoFeedbackFor>,
   practiceTargetPaceMultiplier = 1,
   absoluteTempoForgivenessMs = 500,
-  tempoTolerancePercent = 0.2
+  tempoTolerancePercent = 0.2,
+  absolutePickupForgivenessMs = 250
 ): TimingStatusPill {
   const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const displayedDeliveryLabel =
@@ -2278,11 +2347,10 @@ function formatTimingResult(
       targetDeliveryMs,
       absoluteTempoForgivenessMs,
       tempoTolerancePercent
-    )}; ${formatDeliveryTimingDetails(
+    )}; ${formatPickupTimingDetails(
       measuredPickupMs,
       targetPickupMs,
-      absoluteTempoForgivenessMs,
-      tempoTolerancePercent
+      absolutePickupForgivenessMs
     )}`
   };
 }
@@ -2291,7 +2359,8 @@ function formatTimingAttempt(
   attempt: TimingAttempt,
   practiceTargetPaceMultiplier = 1,
   absoluteTempoForgivenessMs = 500,
-  tempoTolerancePercent = 0.2
+  tempoTolerancePercent = 0.2,
+  absolutePickupForgivenessMs = 250
 ): TimingStatusPill {
   const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const targetDeliveryMs = attempt.targetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
@@ -2303,8 +2372,11 @@ function formatTimingAttempt(
     tempoTolerancePercent
   );
   const displayDeliveryLabel = lineDeliveryLabel === "fast" ? "fast" : lineDeliveryLabel === "slow" ? "slow" : "good";
-  const pickupLabel =
-    attempt.hesitationLabel === "sharp" ? "fast" : attempt.hesitationLabel === "late" ? "slow" : "good";
+  const pickupLabel = pickupLabelForFeedback(
+    attempt.hesitationMs,
+    attempt.targetHesitationMs,
+    absolutePickupForgivenessMs
+  );
   return {
     delivery: {
       label: displayDeliveryLabel,
@@ -2321,12 +2393,7 @@ function formatTimingAttempt(
       targetDeliveryMs,
       absoluteTempoForgivenessMs,
       tempoTolerancePercent
-    )}; ${formatDeliveryTimingDetails(
-      attempt.hesitationMs,
-      attempt.targetHesitationMs,
-      absoluteTempoForgivenessMs,
-      tempoTolerancePercent
-    )}`
+    )}; ${formatPickupTimingDetails(attempt.hesitationMs, attempt.targetHesitationMs, absolutePickupForgivenessMs)}`
   };
 }
 
@@ -2370,6 +2437,43 @@ function formatDeliveryTimingDetails(
   return `${(measuredMs / 1000).toFixed(2)}s (target: ${(minMs / 1000).toFixed(2)}s - ${(maxMs / 1000).toFixed(2)}s)`;
 }
 
+function formatPickupTimingDetails(
+  measuredMs: number,
+  targetMs: number,
+  absolutePickupForgivenessMs: number
+): string {
+  if (targetMs <= 0) {
+    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
+  }
+  const absoluteForgivenessMs = Number.isFinite(absolutePickupForgivenessMs)
+    ? Math.max(0, absolutePickupForgivenessMs)
+    : 250;
+  const minMs = Math.max(0, targetMs - absoluteForgivenessMs);
+  const maxMs = targetMs + absoluteForgivenessMs;
+  return `${(measuredMs / 1000).toFixed(2)}s (target: ${(minMs / 1000).toFixed(2)}s - ${(maxMs / 1000).toFixed(2)}s)`;
+}
+
+function pickupLabelForFeedback(
+  measuredMs: number,
+  targetMs: number,
+  absolutePickupForgivenessMs: number
+): TimingLabel {
+  const normalizedForgivenessMs = Number.isFinite(absolutePickupForgivenessMs)
+    ? Math.max(0, absolutePickupForgivenessMs)
+    : 250;
+  const fastToleranceMs = Math.round(normalizedForgivenessMs * 0.8);
+  if (targetMs <= 0) {
+    return "good";
+  }
+  if (targetMs - measuredMs > fastToleranceMs) {
+    return "fast";
+  }
+  if (measuredMs - targetMs > normalizedForgivenessMs) {
+    return "slow";
+  }
+  return "good";
+}
+
 function formatDurationMs(durationMs: number): string {
   return `${(Math.max(0, durationMs) / 1000).toFixed(2)}s`;
 }
@@ -2380,6 +2484,8 @@ const minPracticeTargetPaceMultiplier = 0.4;
 const maxPracticeTargetPaceMultiplier = 1.3;
 const minAbsoluteTempoForgivenessMs = 100;
 const maxAbsoluteTempoForgivenessMs = 1000;
+const minAbsolutePickupForgivenessMs = 50;
+const maxAbsolutePickupForgivenessMs = 500;
 const minTempoTolerancePercent = 0.05;
 const maxTempoTolerancePercent = 0.3;
 const absoluteTempoForgivenessOptionsMs = [
@@ -2394,6 +2500,7 @@ const absoluteTempoForgivenessOptionsMs = [
   900,
   1000
 ];
+const absolutePickupForgivenessOptionsMs = [500, 450, 400, 350, 300, 250, 200, 150, 100, 50];
 const tempoToleranceOptionsPercent = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
 const practicePaceMultiplierOptions = [
   0.4,
@@ -2423,7 +2530,8 @@ function formatTimingOption(optionMs: number): string {
 }
 
 function formatAbsoluteTempoForgiveness(optionMs: number): string {
-  return `±${(optionMs / 1000).toFixed(1)}s`;
+  const seconds = (optionMs / 1000).toFixed(2).replace(/\.?0+$/, "");
+  return `±${seconds}s`;
 }
 
 function formatTempoTolerancePercent(optionPercent: number): string {
@@ -2449,6 +2557,14 @@ export function normalizeAbsoluteTempoForgivenessMs(value: number | undefined): 
     return 500;
   }
   return Math.min(maxAbsoluteTempoForgivenessMs, Math.max(minAbsoluteTempoForgivenessMs, parsedValue));
+}
+
+export function normalizeAbsolutePickupForgivenessMs(value: number | undefined): number {
+  const parsedValue = value ?? 250;
+  if (!Number.isFinite(parsedValue)) {
+    return 250;
+  }
+  return Math.min(maxAbsolutePickupForgivenessMs, Math.max(minAbsolutePickupForgivenessMs, parsedValue));
 }
 
 export function normalizeTempoTolerancePercent(value: number | undefined): number {

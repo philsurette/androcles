@@ -62,6 +62,7 @@ describe("tempoFeedback", () => {
     expect(hesitationLabel(500, 500)).toBe("close");
     expect(hesitationLabel(751, 500)).toBe("late");
     expect(hesitationLabel(750, 500)).toBe("close");
+    expect(hesitationLabel(1300, 500, 900)).toBe("close");
   });
 
   it("labels delivery timing", () => {
@@ -131,6 +132,17 @@ describe("tempoFeedback", () => {
     expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 3000 }, 750, 1, 900)).toEqual({
       hesitation: { measuredMs: 600, targetMs: 750, label: "close" },
       delivery: { measuredMs: 3000, targetMs: 2200, label: "close" }
+    });
+  });
+
+  it("uses explicit pickup forgiveness when supplied", () => {
+    expect(tempoFeedbackFor(line, { hesitationMs: 1300, deliveryMs: 2400 }, 750, 1, 0, 0.2, 900)).toEqual({
+      hesitation: { measuredMs: 1300, targetMs: 750, label: "close" },
+      delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
+    });
+    expect(tempoFeedbackFor(line, { hesitationMs: 1300, deliveryMs: 2400 }, 750, 1, 0, 0.2, 500)).toEqual({
+      hesitation: { measuredMs: 1300, targetMs: 750, label: "late" },
+      delivery: { measuredMs: 2400, targetMs: 2200, label: "close" }
     });
   });
 });

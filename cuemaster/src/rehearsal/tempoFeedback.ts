@@ -26,9 +26,16 @@ export function timingTargetsForLine(line: Line, targetHesitationMs = line.timin
   };
 }
 
-export function hesitationLabel(measuredMs: number, targetMs: number): TempoFeedback["hesitation"]["label"] {
-  const fastPickupMs = 200;
-  const slowPickupMs = 250;
+export function hesitationLabel(
+  measuredMs: number,
+  targetMs: number,
+  absolutePickupForgivenessMs = 250
+): TempoFeedback["hesitation"]["label"] {
+  const normalizedPickupForgivenessMs = Number.isFinite(absolutePickupForgivenessMs)
+    ? Math.max(0, absolutePickupForgivenessMs)
+    : 250;
+  const fastPickupMs = Math.round(normalizedPickupForgivenessMs * 0.8);
+  const slowPickupMs = Math.max(0, normalizedPickupForgivenessMs);
 
   if (targetMs <= 0) {
     return "close";
@@ -79,7 +86,8 @@ export function tempoFeedbackFor(
   targetHesitationMs?: number,
   targetPaceMultiplier = 1,
   absoluteTempoForgivenessMs = 0,
-  tempoTolerancePercent = 0.2
+  tempoTolerancePercent = 0.2,
+  absolutePickupForgivenessMs = 250
 ): TempoFeedback {
   const targets = timingTargetsForLine(line, targetHesitationMs);
   const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
@@ -87,7 +95,11 @@ export function tempoFeedbackFor(
     hesitation: {
       measuredMs: measured.hesitationMs,
       targetMs: targets.targetHesitationMs,
-      label: hesitationLabel(measured.hesitationMs, targets.targetHesitationMs)
+      label: hesitationLabel(
+        measured.hesitationMs,
+        targets.targetHesitationMs,
+        absolutePickupForgivenessMs
+      )
     },
     delivery:
       measured.deliveryMs === undefined

@@ -16,6 +16,7 @@ export type RehearsalSession = {
   practiceTargetPaceMultiplier?: number;
   syncSpeakAlongSpeed?: boolean;
   absoluteTempoForgivenessMs?: number;
+  absolutePickupForgivenessMs?: number;
   tempoTolerancePercent?: number;
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
