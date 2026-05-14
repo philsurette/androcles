@@ -68,7 +68,7 @@ h1 {
 
 .library-title-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
 }
@@ -82,14 +82,15 @@ h1 {
   align-items: center;
   justify-content: center;
   align-self: start;
-  width: 2.15rem;
-  min-width: 2.15rem;
-  min-height: 2.15rem;
-  border-radius: 0.75rem;
+  width: 1.65rem;
+  min-width: 1.65rem;
+  min-height: 1.65rem;
+  border-radius: 0.65rem;
   padding: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   flex-shrink: 0;
   white-space: nowrap;
+  margin-top: 0;
 }
 
 .library h1 {
@@ -1070,7 +1071,7 @@ button:disabled {
 
 @media (max-width: 760px) and (orientation: portrait) {
   .library-about-button {
-    margin-top: 0.1rem;
+    margin-top: 0;
   }
 
   .library-info {

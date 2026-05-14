@@ -97,11 +97,6 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
       <section className="hero library">
         <div className="library-title-row">
           <p className="eyebrow">QUINCE CUEMASTER</p>
-        </div>
-        <div className="library-intro-row">
-          <p>
-            Import a playbook. Rehearse.
-          </p>
           <button
             type="button"
             className="secondary library-about-button"
@@ -110,8 +105,13 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
             aria-label="About Cuemaster"
             onClick={() => setIsAboutOpen((open) => !open)}
           >
-            ℹ
+            ⓘ
           </button>
+        </div>
+        <div className="library-intro-row">
+          <p>
+            Import a playbook. Rehearse.
+          </p>
         </div>
         {isAboutOpen ? (
           <section id="library-about-panel" className="library-info" role="note" aria-live="polite">
