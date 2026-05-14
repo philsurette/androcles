@@ -100,7 +100,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
         </div>
         <div className="library-intro-row">
           <p>
-            Import a playbook. Practice your lines.
+            Import a playbook. Rehearse.
           </p>
           <button
             type="button"
@@ -164,7 +164,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
                   </div>
                   <div className="row-actions">
                     <button type="button" onClick={() => onSelectPlaybook(playbook)}>
-                      Open
+                      Rehearse!
                     </button>
                     <button type="button" className="secondary" onClick={() => void deletePlaybook(playbook.id)}>
                       Remove
