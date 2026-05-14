@@ -45,12 +45,17 @@ export function hesitationLabel(measuredMs: number, targetMs: number): TempoFeed
 export function deliveryLabel(
   measuredMs: number,
   targetMs: number,
-  targetPaceMultiplier = 1
+  targetPaceMultiplier = 1,
+  absoluteTempoForgivenessMs = 0
 ): NonNullable<TempoFeedback["delivery"]>["label"] {
   const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
   const adjustedTargetMs = targetMs / normalizedMultiplier;
+  const normalizedAbsoluteForgivenessMs = Math.max(0, Number.isFinite(absoluteTempoForgivenessMs) ? absoluteTempoForgivenessMs : 0);
   const slowThresholdMs = 500;
   if (adjustedTargetMs <= 0) {
+    return "close";
+  }
+  if (Math.abs(adjustedTargetMs - measuredMs) <= normalizedAbsoluteForgivenessMs) {
     return "close";
   }
   if (measuredMs < adjustedTargetMs * 0.8 && adjustedTargetMs - measuredMs >= slowThresholdMs) {
@@ -66,7 +71,8 @@ export function tempoFeedbackFor(
   line: Line,
   measured: { hesitationMs: number; deliveryMs?: number },
   targetHesitationMs?: number,
-  targetPaceMultiplier = 1
+  targetPaceMultiplier = 1,
+  absoluteTempoForgivenessMs = 0
 ): TempoFeedback {
   const targets = timingTargetsForLine(line, targetHesitationMs);
   const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
@@ -78,11 +84,16 @@ export function tempoFeedbackFor(
     },
     delivery:
       measured.deliveryMs === undefined
-        ? undefined
-        : {
-            measuredMs: measured.deliveryMs,
-            targetMs: targets.targetDeliveryMs,
-            label: deliveryLabel(measured.deliveryMs, targets.targetDeliveryMs, normalizedMultiplier)
-          }
+      ? undefined
+      : {
+          measuredMs: measured.deliveryMs,
+          targetMs: targets.targetDeliveryMs,
+          label: deliveryLabel(
+            measured.deliveryMs,
+            targets.targetDeliveryMs,
+            normalizedMultiplier,
+            absoluteTempoForgivenessMs
+          )
+        }
   };
 }

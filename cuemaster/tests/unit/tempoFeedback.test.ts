@@ -76,6 +76,16 @@ describe("tempoFeedback", () => {
     expect(deliveryLabel(1900, 2200, 1.3)).toBe("close");
   });
 
+  it("treats absolute tempo forgiveness as good", () => {
+    expect(deliveryLabel(3000, 2200, 1, 900)).toBe("close");
+    expect(deliveryLabel(700, 1200, 1, 150)).toBe("fast");
+  });
+
+  it("keeps percentage-based fast/slow outside forgiveness window", () => {
+    expect(deliveryLabel(2900, 2200, 1, 500)).toBe("slow");
+    expect(deliveryLabel(700, 1200, 1, 500)).toBe("fast");
+  });
+
   it("requires both percentage and 500ms thresholds for delivery extremes", () => {
     expect(deliveryLabel(1750, 2200)).toBe("close");
     expect(deliveryLabel(3000, 2800)).toBe("close");
@@ -99,6 +109,13 @@ describe("tempoFeedback", () => {
     expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 1900 }, 750, 0.5)).toEqual({
       hesitation: { measuredMs: 600, targetMs: 750, label: "close" },
       delivery: { measuredMs: 1900, targetMs: 2200, label: "fast" }
+    });
+  });
+
+  it("uses absolute tempo forgiveness when supplied", () => {
+    expect(tempoFeedbackFor(line, { hesitationMs: 600, deliveryMs: 3000 }, 750, 1, 900)).toEqual({
+      hesitation: { measuredMs: 600, targetMs: 750, label: "close" },
+      delivery: { measuredMs: 3000, targetMs: 2200, label: "close" }
     });
   });
 });

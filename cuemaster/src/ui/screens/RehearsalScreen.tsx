@@ -197,6 +197,10 @@ export function RehearsalScreen({
     initialSession?.tempoTargetHesitationMs ?? initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
   );
   const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
+  const [syncSpeakAlongSpeed, setSyncSpeakAlongSpeed] = useState(initialSession?.syncSpeakAlongSpeed ?? true);
+  const [absoluteTempoForgivenessMs, setAbsoluteTempoForgivenessMs] = useState(
+    normalizeAbsoluteTempoForgivenessMs(initialSession?.absoluteTempoForgivenessMs)
+  );
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
@@ -235,7 +239,12 @@ export function RehearsalScreen({
       role.lines.map((roleLine) => [roleLine.id, "untimed" as const])
     );
     for (const attempt of reviewAttempts) {
-      const attemptDeliveryLabel = deliveryLabel(attempt.deliveryMs, attempt.targetDeliveryMs, practiceTargetPaceMultiplier);
+      const attemptDeliveryLabel = deliveryLabel(
+        attempt.deliveryMs,
+        attempt.targetDeliveryMs,
+        practiceTargetPaceMultiplier,
+        absoluteTempoForgivenessMs
+      );
       if (attemptDeliveryLabel === "slow") {
         statusByLine.set(attempt.lineId, "slow");
         continue;
@@ -247,7 +256,7 @@ export function RehearsalScreen({
       statusByLine.set(attempt.lineId, "good");
     }
     return statusByLine;
-  }, [practiceTargetPaceMultiplier, reviewAttempts, role.lines]);
+  }, [practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, reviewAttempts, role.lines]);
   const displayedPlaybackStatus = useMemo(() => {
     if (timingStatusMessage) {
       return timingStatusMessage;
@@ -256,10 +265,10 @@ export function RehearsalScreen({
       return null;
     }
     if (/^Line Timed\.?$/i.test(playbackStatus) && latestLineTimingAttempt) {
-      return formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier);
+      return formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs);
     }
     return playbackStatus;
-  }, [playbackStatus, latestLineTimingAttempt, practiceTargetPaceMultiplier, timingStatusMessage]);
+  }, [playbackStatus, latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, timingStatusMessage]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -286,14 +295,18 @@ export function RehearsalScreen({
     if (!line || latestLineTimingAttempt.lineId !== line.id) {
       return;
     }
-    const nextTimingStatusMessage = formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier);
+    const nextTimingStatusMessage = formatTimingAttempt(
+      latestLineTimingAttempt,
+      practiceTargetPaceMultiplier,
+      absoluteTempoForgivenessMs
+    );
     setTimingStatusMessage((current) => {
       if (current && current.details === nextTimingStatusMessage.details) {
         return current;
       }
       return nextTimingStatusMessage;
     });
-  }, [line?.id, latestLineTimingAttempt, practiceTargetPaceMultiplier, timingStatusMessage]);
+  }, [line?.id, latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, timingStatusMessage]);
 
   useEffect(() => {
     void loadCurrentBookmark();
@@ -486,7 +499,9 @@ export function RehearsalScreen({
     nextSyncPracticeTiming = syncPracticeTiming,
     nextIncludeBlocking = includeBlocking,
     nextBlockingScope = blockingScope,
-    nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier
+    nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier,
+    nextSyncSpeakAlongSpeed = syncSpeakAlongSpeed,
+    nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -505,6 +520,8 @@ export function RehearsalScreen({
         speakAlongPauseMs: nextSpeakAlongPauseMs,
         tempoTargetHesitationMs: nextTempoTargetHesitationMs,
         practiceTargetPaceMultiplier: nextPracticeTargetPaceMultiplier,
+        absoluteTempoForgivenessMs: nextAbsoluteTempoForgivenessMs,
+        syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         tempoTimingPreferred: nextTempoTimingPreferred,
         updatedAt: Date.now()
@@ -599,8 +616,33 @@ export function RehearsalScreen({
 
   function changePlaybackRate(nextPlaybackRate: number) {
     const clampedPlaybackRate = clampPlaybackRate(nextPlaybackRate);
+    const nextPracticeTarget = syncSpeakAlongSpeed
+      ? normalizePracticeTargetPaceMultiplier(clampedPlaybackRate)
+      : practiceTargetPaceMultiplier;
     setPlaybackRate(clampedPlaybackRate);
-    void saveSession(position.index, clampedPlaybackRate);
+    if (syncSpeakAlongSpeed) {
+      setPracticeTargetPaceMultiplier(nextPracticeTarget);
+      if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+        setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, nextPracticeTarget, absoluteTempoForgivenessMs));
+      }
+    }
+    void saveSession(
+      position.index,
+      clampedPlaybackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      nextPracticeTarget,
+      syncSpeakAlongSpeed
+    );
   }
 
   function changeCueWindowPreset(nextCueWindowPresetId: string) {
@@ -651,13 +693,15 @@ export function RehearsalScreen({
 
   function changePracticeTargetPaceMultiplier(nextMultiplier: number) {
     const normalizedMultiplier = normalizePracticeTargetPaceMultiplier(nextMultiplier);
+    const nextPlaybackRate = syncSpeakAlongSpeed ? clampPlaybackRate(normalizedMultiplier) : playbackRate;
+    setPlaybackRate(nextPlaybackRate);
     setPracticeTargetPaceMultiplier(normalizedMultiplier);
     if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
-      setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, normalizedMultiplier));
+      setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, normalizedMultiplier, absoluteTempoForgivenessMs));
     }
     void saveSession(
       position.index,
-      playbackRate,
+      nextPlaybackRate,
       speakAlongEnabled,
       tempoTimingPreferred,
       isLineRevealed,
@@ -669,7 +713,8 @@ export function RehearsalScreen({
       syncPracticeTiming,
       includeBlocking,
       blockingScope,
-      normalizedMultiplier
+      normalizedMultiplier,
+      syncSpeakAlongSpeed
     );
   }
 
@@ -690,7 +735,72 @@ export function RehearsalScreen({
       showLinesByDefault,
       speakAlongPauseMs,
       nextTempoTargetMs,
-      nextSyncPracticeTiming
+      nextSyncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed
+    );
+  }
+
+  function changeSyncSpeakAlongSpeed(nextSyncSpeakAlongSpeed: boolean) {
+    const nextPracticeTargetPaceMultiplier = nextSyncSpeakAlongSpeed
+      ? normalizePracticeTargetPaceMultiplier(playbackRate)
+      : practiceTargetPaceMultiplier;
+    const nextPlaybackRate = syncSpeakAlongSpeed ? clampPlaybackRate(playbackRate) : playbackRate;
+    setSyncSpeakAlongSpeed(nextSyncSpeakAlongSpeed);
+    if (nextSyncSpeakAlongSpeed) {
+      setPlaybackRate(nextPlaybackRate);
+      setPracticeTargetPaceMultiplier(nextPracticeTargetPaceMultiplier);
+      if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+        setTimingStatusMessage(
+          formatTimingAttempt(latestLineTimingAttempt, nextPracticeTargetPaceMultiplier, absoluteTempoForgivenessMs)
+        );
+      }
+    }
+    void saveSession(
+      position.index,
+      nextPlaybackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      nextPracticeTargetPaceMultiplier,
+      nextSyncSpeakAlongSpeed
+    );
+  }
+
+  function changeAbsoluteTempoForgiveness(nextToleranceMs: number) {
+    setAbsoluteTempoForgivenessMs(nextToleranceMs);
+    if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+      setTimingStatusMessage(
+        formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier, nextToleranceMs)
+      );
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      nextToleranceMs
     );
   }
 
@@ -849,9 +959,10 @@ export function RehearsalScreen({
         timingLine,
         { hesitationMs, deliveryMs },
         tempoTargetHesitationMs,
-        practiceTargetPaceMultiplier
+        practiceTargetPaceMultiplier,
+        absoluteTempoForgivenessMs
       );
-      const timingResult = formatTimingResult(feedback, practiceTargetPaceMultiplier);
+      const timingResult = formatTimingResult(feedback, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs);
       setTimingStatusMessage(timingResult);
       setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
@@ -999,15 +1110,6 @@ export function RehearsalScreen({
           />
         </label>
         <label className="timing-setting">
-          Speakalong speed
-          <PracticeSelect
-            label="Response speed"
-            value={String(playbackRate)}
-            options={playbackRates.map((rate) => ({ value: String(rate), label: `${rate.toFixed(1)}x` }))}
-            onSelect={(next) => changePlaybackRate(Number(next))}
-          />
-        </label>
-        <label className="timing-setting">
           Blocking scope
           <PracticeSelect
             label="Blocking scope"
@@ -1021,7 +1123,7 @@ export function RehearsalScreen({
           />
         </label>
         <fieldset className="timing-options">
-          <legend>Timing targets</legend>
+          <legend>Cue Pickup</legend>
           <div className="timing-options-controls">
             <div className="timing-targets-row">
               <div className="timing-targets-controls">
@@ -1063,16 +1165,57 @@ export function RehearsalScreen({
                 <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
               </button>
             </div>
+          </div>
+        </fieldset>
+        <fieldset className="timing-options">
+          <legend>Tempo</legend>
+          <div className="timing-options-controls">
+            <div className="timing-targets-row">
+              <div className="timing-targets-controls">
+                <label className="timing-setting">
+                  Speakalong speed
+                  <PracticeSelect
+                    label="Speakalong speed"
+                    value={String(playbackRate)}
+                    options={playbackRates.map((rate) => ({ value: String(rate), label: `${rate.toFixed(1)}x` }))}
+                    onSelect={(next) => changePlaybackRate(Number(next))}
+                  />
+                </label>
+                <label className="timing-setting">
+                  Target tempo adjustment
+                  <PracticeSelect
+                    label="Target tempo adjustment"
+                    value={String(practiceTargetPaceMultiplier)}
+                    options={practicePaceMultiplierOptions.map((optionMultiplier) => ({
+                      value: String(optionMultiplier),
+                      label: `${optionMultiplier.toFixed(1)}x`
+                    }))}
+                    onSelect={(next) => changePracticeTargetPaceMultiplier(Number(next))}
+                  />
+                </label>
+              </div>
+              <button
+                type="button"
+                className={`timing-sync-toggle ${syncSpeakAlongSpeed ? "linked" : ""}`}
+                aria-label={syncSpeakAlongSpeed ? "Disable speed control sync." : "Keep speed controls in sync."}
+                aria-pressed={syncSpeakAlongSpeed}
+                data-tooltip={syncSpeakAlongSpeed ? "Unlock speed controls" : "Lock speed controls"}
+                onClick={() => changeSyncSpeakAlongSpeed(!syncSpeakAlongSpeed)}
+                title={syncSpeakAlongSpeed ? "Speed controls linked" : "Speed controls unlinked"}
+              >
+                <span aria-hidden="true">{syncSpeakAlongSpeed ? "🔒" : "🔓"}</span>
+              </button>
+            </div>
             <label className="timing-setting">
-              Practice target pace multiplier
+              Absolute tempo forgiveness
               <PracticeSelect
-                label="Practice target pace multiplier"
-                value={String(practiceTargetPaceMultiplier)}
-                options={practicePaceMultiplierOptions.map((optionMultiplier) => ({
-                  value: String(optionMultiplier),
-                  label: `${optionMultiplier.toFixed(1)}x`
+                label="Absolute tempo forgiveness"
+                value={String(absoluteTempoForgivenessMs)}
+                options={absoluteTempoForgivenessOptionsMs.map((optionMs) => ({
+                  value: String(optionMs),
+                  label: formatAbsoluteTempoForgiveness(optionMs)
                 }))}
-                onSelect={(next) => changePracticeTargetPaceMultiplier(Number(next))}
+                onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
               />
             </label>
           </div>
@@ -1969,19 +2112,32 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
 
 function formatTimingResult(
   feedback: ReturnType<typeof tempoFeedbackFor>,
-  practiceTargetPaceMultiplier = 1
+  practiceTargetPaceMultiplier = 1,
+  absoluteTempoForgivenessMs = 500
 ): TimingStatusPill {
-  const deliveryLabel = feedback.delivery?.label === "fast" ? "fast" : feedback.delivery?.label === "slow" ? "slow" : "good";
+  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
+  const displayedDeliveryLabel =
+    feedback.delivery === undefined
+      ? "good"
+      : deliveryLabel(
+          feedback.delivery.measuredMs,
+          feedback.delivery.targetMs,
+          normalizedPracticeTargetPaceMultiplier,
+          absoluteTempoForgivenessMs
+        ) === "fast"
+        ? "fast"
+        : feedback.delivery.label === "slow"
+          ? "slow"
+          : "good";
   const pickupLabel = feedback.hesitation.label === "sharp" ? "fast" : feedback.hesitation.label === "late" ? "slow" : "good";
   const measuredDeliveryMs = feedback.delivery?.measuredMs ?? 0;
   const baseTargetDeliveryMs = feedback.delivery?.targetMs ?? 0;
-  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const targetDeliveryMs = baseTargetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
   const measuredPickupMs = feedback.hesitation.measuredMs;
   const targetPickupMs = feedback.hesitation.targetMs;
   return {
     delivery: {
-      label: deliveryLabel,
+      label: displayedDeliveryLabel,
       measuredMs: measuredDeliveryMs,
       targetMs: targetDeliveryMs
     },
@@ -1990,16 +2146,25 @@ function formatTimingResult(
       measuredMs: measuredPickupMs,
       targetMs: targetPickupMs
     },
-    details: `${deliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(2)}s, pickup ${pickupLabel} ${(
-      measuredPickupMs / 1000
-    ).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
+    details: `${displayedDeliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(
+      2
+    )}s, pickup ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
   };
 }
 
-function formatTimingAttempt(attempt: TimingAttempt, practiceTargetPaceMultiplier = 1): TimingStatusPill {
+function formatTimingAttempt(
+  attempt: TimingAttempt,
+  practiceTargetPaceMultiplier = 1,
+  absoluteTempoForgivenessMs = 500
+): TimingStatusPill {
   const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const targetDeliveryMs = attempt.targetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
-  const lineDeliveryLabel = deliveryLabel(attempt.deliveryMs, attempt.targetDeliveryMs, normalizedPracticeTargetPaceMultiplier);
+  const lineDeliveryLabel = deliveryLabel(
+    attempt.deliveryMs,
+    attempt.targetDeliveryMs,
+    normalizedPracticeTargetPaceMultiplier,
+    absoluteTempoForgivenessMs
+  );
   const displayDeliveryLabel = lineDeliveryLabel === "fast" ? "fast" : lineDeliveryLabel === "slow" ? "slow" : "good";
   const pickupLabel =
     attempt.hesitationLabel === "sharp" ? "fast" : attempt.hesitationLabel === "late" ? "slow" : "good";
@@ -2066,6 +2231,20 @@ const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
 const minPracticeTargetPaceMultiplier = 0.4;
 const maxPracticeTargetPaceMultiplier = 1.3;
+const minAbsoluteTempoForgivenessMs = 100;
+const maxAbsoluteTempoForgivenessMs = 1000;
+const absoluteTempoForgivenessOptionsMs = [
+  100,
+  200,
+  300,
+  400,
+  500,
+  600,
+  700,
+  800,
+  900,
+  1000
+];
 const practicePaceMultiplierOptions = [
   0.4,
   0.5,
@@ -2093,6 +2272,10 @@ function formatTimingOption(optionMs: number): string {
   return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;
 }
 
+function formatAbsoluteTempoForgiveness(optionMs: number): string {
+  return `±${(optionMs / 1000).toFixed(1)}s`;
+}
+
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
@@ -2104,6 +2287,14 @@ export function normalizePracticeTargetPaceMultiplier(value: number | undefined)
     return 1;
   }
   return Math.min(maxPracticeTargetPaceMultiplier, Math.max(minPracticeTargetPaceMultiplier, parsedValue));
+}
+
+export function normalizeAbsoluteTempoForgivenessMs(value: number | undefined): number {
+  const parsedValue = value ?? 500;
+  if (!Number.isFinite(parsedValue)) {
+    return 500;
+  }
+  return Math.min(maxAbsoluteTempoForgivenessMs, Math.max(minAbsoluteTempoForgivenessMs, parsedValue));
 }
 
 export function visibleCuesForDisplay(
