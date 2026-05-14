@@ -100,8 +100,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
         </div>
         <div className="library-intro-row">
           <p>
-            Import a playbook.<br />
-            Practice your lines.
+            Import a playbook. Practice your lines.
           </p>
           <button
             type="button"
