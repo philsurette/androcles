@@ -60,6 +60,8 @@ type PracticeSelectOption = {
   label: string;
 };
 
+type AutoPlayLineMode = "disabled" | "always" | "off-target";
+
 function PracticeSelect({
   label,
   value,
@@ -159,6 +161,8 @@ export function RehearsalScreen({
   onBack,
   onSelectRole
 }: RehearsalScreenProps) {
+  const initialAutoAdvanceMode = initialSession?.autoAdvanceMode ??
+    (initialSession?.autoAdvanceOnGoodTempo ? "on-target" : "disabled");
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
@@ -210,8 +214,10 @@ export function RehearsalScreen({
     normalizeAbsolutePickupForgivenessMs(initialSession?.absolutePickupForgivenessMs)
   );
   const [autoAdvanceMode, setAutoAdvanceMode] = useState<AutoAdvanceMode>(
-    initialSession?.autoAdvanceMode ??
-      (initialSession?.autoAdvanceOnGoodTempo ? "on-target" : "disabled")
+    initialAutoAdvanceMode
+  );
+  const [autoPlayLineMode, setAutoPlayLineMode] = useState<AutoPlayLineMode>(
+    initialAutoAdvanceMode === "disabled" ? "disabled" : (initialSession?.autoPlayLineMode ?? "disabled")
   );
   const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
     normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
@@ -467,7 +473,7 @@ export function RehearsalScreen({
         await playCue();
         return;
       case "hear-line":
-        await playResponse();
+        await playResponse(currentLineFromEngine());
         return;
       case "pause":
         pausePlayback();
@@ -487,7 +493,7 @@ export function RehearsalScreen({
     }
   }
 
-  async function goNext(playNextCue = false) {
+  async function goNext(playNextCue = false, autoPlayLine = false) {
     activeTimingLineIdRef.current = null;
     setTimingStatusMessage(null);
     engine.next();
@@ -495,6 +501,9 @@ export function RehearsalScreen({
     setIsLineRevealed(showLinesByDefault);
     if (playNextCue || hasStarted) {
       await playCue();
+      if (autoPlayLine && !speakAlongEnabled) {
+        await playResponse(currentLineFromEngine());
+      }
     }
   }
 
@@ -561,9 +570,11 @@ export function RehearsalScreen({
     nextTempoTolerancePercent = tempoTolerancePercent,
     nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs,
     nextAutoAdvanceMode = autoAdvanceMode,
+    nextAutoPlayLineMode = autoPlayLineMode,
     nextRehearsalTextSize = rehearsalTextSize,
     nextTempoEndOfLineSilenceMs = tempoEndOfLineSilenceMs
   ) {
+    const normalizedAutoPlayLineMode: AutoPlayLineMode = nextAutoAdvanceMode === "disabled" ? "disabled" : nextAutoPlayLineMode;
     try {
       await indexedDbStorage.sessions.save({
         playbookId: playbook.id,
@@ -586,6 +597,7 @@ export function RehearsalScreen({
         absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
         tempoEndOfLineSilenceMs: nextTempoEndOfLineSilenceMs,
         autoAdvanceMode: nextAutoAdvanceMode,
+        autoPlayLineMode: normalizedAutoPlayLineMode,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         rehearsalTextSize: nextRehearsalTextSize,
@@ -704,8 +716,8 @@ export function RehearsalScreen({
     await new Promise((resolve) => setTimeout(resolve, cursor - now + 40));
   }
 
-  async function playResponse() {
-    if (!line) {
+  async function playResponse(responseLine: Line | null) {
+    if (!responseLine) {
       return;
     }
     setPlaybackSource("line");
@@ -713,7 +725,7 @@ export function RehearsalScreen({
     setPlaybackStatus("Playing your line...");
     setPlaybackState("playing");
     try {
-      await audioQueue.play(responsePlaybackItems(line, playbackRate));
+      await audioQueue.play(responsePlaybackItems(responseLine, playbackRate));
       setPlaybackStatus("Line complete.");
       setPlaybackState("idle");
       setPlaybackSource(null);
@@ -1102,7 +1114,10 @@ export function RehearsalScreen({
   }
 
   function changeAutoAdvanceMode(nextAutoAdvanceMode: AutoAdvanceMode) {
+    const nextAutoPlayLineMode: AutoPlayLineMode =
+      nextAutoAdvanceMode === "disabled" ? "disabled" : autoPlayLineMode;
     setAutoAdvanceMode(nextAutoAdvanceMode);
+    setAutoPlayLineMode(nextAutoPlayLineMode);
     void saveSession(
       position.index,
       playbackRate,
@@ -1124,7 +1139,37 @@ export function RehearsalScreen({
       absolutePickupForgivenessMs,
       rehearsalTextSize,
       tempoEndOfLineSilenceMs,
-      nextAutoAdvanceMode
+      nextAutoAdvanceMode,
+      nextAutoPlayLineMode
+    );
+  }
+
+  function changeAutoPlayLineMode(nextAutoPlayLineMode: AutoPlayLineMode) {
+    const normalizedMode = autoAdvanceMode === "disabled" ? "disabled" : nextAutoPlayLineMode;
+    setAutoPlayLineMode(normalizedMode);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent,
+      absolutePickupForgivenessMs,
+      autoAdvanceMode,
+      normalizedMode,
+      rehearsalTextSize,
+      tempoEndOfLineSilenceMs
     );
   }
 
@@ -1299,16 +1344,24 @@ export function RehearsalScreen({
       void saveTimingAttempt(timingLine.id, feedback);
       const shouldAutoAdvance =
         autoAdvanceMode === "always" || (autoAdvanceMode === "on-target" && timingResult.delivery.label === "good");
+      const shouldAutoPlayLine =
+        autoPlayLineMode !== "disabled" &&
+        autoAdvanceMode !== "disabled" &&
+        (autoPlayLineMode === "always" || !shouldAutoAdvance);
       if (autoAdvanceMode !== "disabled" && tempoTimingEnabled && !engine.position().atEnd) {
         const shouldRepeatCue = autoAdvanceMode === "on-target" && !shouldAutoAdvance;
         if (shouldAutoAdvance) {
           void (async () => {
             await playTimingFeedbackTone("auto-advance");
-            await goNext(true);
+            await goNext(true, shouldAutoPlayLine);
           })();
         } else if (shouldRepeatCue) {
           void (async () => {
             await playTimingFeedbackTone("retry");
+            if (shouldAutoPlayLine) {
+              await playResponse(currentLineFromEngine());
+              await new Promise((resolve) => setTimeout(resolve, 2000));
+            }
             await playCue();
           })();
         }
@@ -1614,23 +1667,37 @@ export function RehearsalScreen({
                 onSelect={(next) => changeTempoEndOfLineSilenceMs(Number(next))}
               />
             </label>
-            <label className="timing-setting">
-              Auto-advance
-              <PracticeSelect
-                label="Auto-advance"
-                value={autoAdvanceMode}
-                options={[
-                  { value: "disabled", label: "Disabled" },
-                  { value: "always", label: "Always" },
-                  { value: "on-target", label: "When on target" }
-                ]}
-                onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
-              />
-            </label>
-          </div>
-        </fieldset>
+              <label className="timing-setting">
+                Auto-advance
+                <PracticeSelect
+                  label="Auto-advance"
+                  value={autoAdvanceMode}
+                  options={[
+                    { value: "disabled", label: "Disabled" },
+                    { value: "always", label: "Always" },
+                    { value: "on-target", label: "When on target" }
+                  ]}
+                  onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
+                />
+              </label>
+              <label className="timing-setting">
+                Autoplay line
+                <PracticeSelect
+                  label="Autoplay line"
+                  value={autoPlayLineMode}
+                  options={[
+                    { value: "disabled", label: "Disabled" },
+                    { value: "always", label: "Always" },
+                    { value: "off-target", label: "When off target" }
+                  ]}
+                  onSelect={(next) => changeAutoPlayLineMode(next as AutoPlayLineMode)}
+                  disabled={autoAdvanceMode === "disabled"}
+                />
+              </label>
+            </div>
+          </fieldset>
+        </div>
       </div>
-    </div>
   );
 
   if (isOptionsPageVisible) {

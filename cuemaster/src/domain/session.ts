@@ -22,6 +22,7 @@ export type RehearsalSession = {
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
   autoAdvanceMode?: "disabled" | "always" | "on-target";
+  autoPlayLineMode?: "disabled" | "always" | "off-target";
   autoAdvanceOnGoodTempo?: boolean;
   rehearsalTextSize?: "small" | "medium" | "large" | "x-large";
   updatedAt: number;
