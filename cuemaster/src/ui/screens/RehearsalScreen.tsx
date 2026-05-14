@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useId, useState } from "react";
 import type { Bookmark } from "../../domain/bookmark";
 import type { ContextBlock } from "../../domain/context";
 import type { Cue } from "../../domain/cue";
@@ -51,6 +51,101 @@ type TimingStatusPill = {
   };
   details: string;
 };
+
+type PracticeSelectOption = {
+  value: string;
+  label: string;
+};
+
+function PracticeSelect({
+  label,
+  value,
+  options,
+  onSelect,
+  disabled = false
+}: {
+  label: string;
+  value: string;
+  options: PracticeSelectOption[];
+  onSelect: (nextValue: string) => void;
+  disabled?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement | null>(null);
+  const selectId = useId();
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!selectRef.current?.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!disabled) {
+      return;
+    }
+    setIsOpen(false);
+  }, [disabled]);
+
+  const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
+
+  return (
+    <div className="practice-select-wrap" ref={selectRef}>
+      <button
+        type="button"
+        className="practice-select-trigger"
+        aria-label={label}
+        aria-expanded={isOpen}
+        aria-controls={`${selectId}-options`}
+        onClick={() => setIsOpen((current) => !current)}
+        disabled={disabled}
+      >
+        <span>{selectedLabel}</span>
+        <span className="practice-select-caret" aria-hidden="true">
+          ▾
+        </span>
+      </button>
+      <div id={`${selectId}-options`} role="listbox" className={`practice-select-options ${isOpen ? "open" : ""}`} aria-label={label}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            role="option"
+            aria-selected={option.value === value}
+            className={option.value === value ? "practice-select-option active" : "practice-select-option"}
+            onClick={() => {
+              onSelect(option.value);
+              setIsOpen(false);
+            }}
+            disabled={disabled}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function RehearsalScreen({
   playbook,
@@ -831,30 +926,34 @@ export function RehearsalScreen({
       <div className="practice-options-panel">
         <label className="timing-setting">
           Cue length
-          <select value={cueWindowPresetId} onChange={(event) => changeCueWindowPreset(event.target.value)}>
-            {cueWindowPresets.map((preset) => (
-              <option key={preset.id} value={preset.id}>
-                {preset.label}
-              </option>
-            ))}
-          </select>
+          <PracticeSelect
+            label="Cue length"
+            value={cueWindowPresetId}
+            options={cueWindowPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
+            onSelect={changeCueWindowPreset}
+          />
         </label>
         <label className="timing-setting">
           Response speed
-          <select value={playbackRate} onChange={(event) => changePlaybackRate(Number(event.target.value))}>
-            {playbackRates.map((rate) => (
-              <option key={rate} value={rate}>
-                {rate.toFixed(1)}x
-              </option>
-            ))}
-          </select>
+          <PracticeSelect
+            label="Response speed"
+            value={String(playbackRate)}
+            options={playbackRates.map((rate) => ({ value: String(rate), label: `${rate.toFixed(1)}x` }))}
+            onSelect={(next) => changePlaybackRate(Number(next))}
+          />
         </label>
         <label className="timing-setting">
           Blocking scope
-          <select value={blockingScope} disabled={!includeBlocking} onChange={(event) => changeBlockingScope(event.target.value as BlockingScope)}>
-            <option value="role">My role</option>
-            <option value="all">All roles</option>
-          </select>
+          <PracticeSelect
+            label="Blocking scope"
+            value={blockingScope}
+            disabled={!includeBlocking}
+            options={[
+              { value: "role", label: "My role" },
+              { value: "all", label: "All roles" }
+            ]}
+            onSelect={(next) => changeBlockingScope(next as BlockingScope)}
+          />
         </label>
         <fieldset className="timing-options">
           <legend>Timing targets</legend>
@@ -863,27 +962,28 @@ export function RehearsalScreen({
               <div className="timing-targets-controls">
                 <label className="timing-setting">
                   Speaking pause
-                  <select value={speakAlongPauseMs} onChange={(event) => changeSpeakAlongPauseMs(Number(event.target.value))}>
-                    {practiceTimingOptionsMs.map((optionMs) => (
-                      <option key={optionMs} value={optionMs}>
-                        {formatTimingOption(optionMs)}
-                      </option>
-                    ))}
-                  </select>
+                  <PracticeSelect
+                    label="Speaking pause"
+                    value={String(speakAlongPauseMs)}
+                    options={practiceTimingOptionsMs.map((optionMs) => ({
+                      value: String(optionMs),
+                      label: formatTimingOption(optionMs)
+                    }))}
+                    onSelect={(next) => changeSpeakAlongPauseMs(Number(next))}
+                  />
                 </label>
                 <label className="timing-setting">
                   Tempo pickup target
-                  <select
-                    value={tempoTargetHesitationMs}
+                  <PracticeSelect
+                    label="Tempo pickup target"
+                    value={String(tempoTargetHesitationMs)}
+                    options={practiceTimingOptionsMs.map((optionMs) => ({
+                      value: String(optionMs),
+                      label: formatTimingOption(optionMs)
+                    }))}
+                    onSelect={(next) => changeTempoTargetHesitationMs(Number(next))}
                     disabled={syncPracticeTiming}
-                    onChange={(event) => changeTempoTargetHesitationMs(Number(event.target.value))}
-                  >
-                    {practiceTimingOptionsMs.map((optionMs) => (
-                      <option key={optionMs} value={optionMs}>
-                        {formatTimingOption(optionMs)}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </label>
               </div>
               <button
