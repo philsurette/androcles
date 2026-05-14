@@ -103,6 +103,7 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
             aria-expanded={isAboutOpen}
             aria-controls="library-about-panel"
             aria-label="About Cuemaster"
+            title="About Cuemaster"
             onClick={() => setIsAboutOpen((open) => !open)}
           >
             ⓘ

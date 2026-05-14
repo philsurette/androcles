@@ -115,6 +115,7 @@ function PracticeSelect({
         type="button"
         className="practice-select-trigger"
         aria-label={label}
+        title={label}
         aria-expanded={isOpen}
         aria-controls={`${selectId}-options`}
         onClick={() => setIsOpen((current) => !current)}
@@ -1368,6 +1369,7 @@ export function RehearsalScreen({
               type="button"
               className="icon-button secondary"
               aria-label="Back to library."
+              title="Back to library."
               onClick={onBack}
             >
               <span aria-hidden="true">←</span>
@@ -1990,6 +1992,7 @@ function OutlinePanel({
                 type="button"
                 className="icon-button secondary"
                 aria-label="Back to rehearsal."
+                title="Back to rehearsal."
                 onClick={onToggleOpen}
               >
                 <span aria-hidden="true">←</span>
@@ -2030,6 +2033,7 @@ function OutlinePanel({
                 aria-label="Outline mode"
                 aria-expanded={isModeMenuOpen}
                 aria-controls="outline-mode-options"
+                title={mode === "cues" ? "Outline mode: cues" : "Outline mode: lines"}
                 onClick={() => setIsModeMenuOpen((current) => !current)}
               >
                 <span>{mode === "cues" ? "Cues" : "Lines"}</span>
@@ -2048,6 +2052,7 @@ function OutlinePanel({
                   role="option"
                   className={mode === "cues" ? "outline-mode-select-option active" : "outline-mode-select-option"}
                   aria-selected={mode === "cues"}
+                  title="Show cues"
                   onClick={() => {
                     setMode("cues");
                     setIsModeMenuOpen(false);
@@ -2060,6 +2065,7 @@ function OutlinePanel({
                   role="option"
                   className={mode === "lines" ? "outline-mode-select-option active" : "outline-mode-select-option"}
                   aria-selected={mode === "lines"}
+                  title="Show lines"
                   onClick={() => {
                     setMode("lines");
                     setIsModeMenuOpen(false);
@@ -2093,7 +2099,12 @@ function OutlinePanel({
             onChange={(event) => setSearchQuery(event.target.value)}
           />
           {searchQuery ? (
-            <button type="button" aria-label="Clear outline search." onClick={() => setSearchQuery("")}>
+            <button
+              type="button"
+              aria-label="Clear outline search."
+              title="Clear outline search."
+              onClick={() => setSearchQuery("")}
+            >
               ×
             </button>
           ) : null}
