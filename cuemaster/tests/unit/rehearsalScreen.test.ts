@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { clampPlaybackRate, outlineSearchText, visibleCuesForDisplay } from "../../src/ui/screens/RehearsalScreen";
+import {
+  clampPlaybackRate,
+  outlineSearchText,
+  resolveCurrentLineFromEngine,
+  visibleCuesForDisplay
+} from "../../src/ui/screens/RehearsalScreen";
 import type { Line } from "../../src/domain/line";
 import type { Playbook } from "../../src/domain/playbook";
 
@@ -210,5 +215,77 @@ describe("outlineSearchText", () => {
     expect(outlineSearchText(line, "lines", true, false, "role", playbook)).not.toContain(
       "settles beside the recorder"
     );
+  });
+});
+
+describe("resolveCurrentLineFromEngine", () => {
+  const lines: Line[] = [
+    {
+      id: "line-1",
+      partId: 1,
+      blockId: "1.1",
+      role: "CHRISTINE",
+      speaker: "CHRISTINE",
+      contentHash: "sha256:line1",
+      cue: {
+        speaker: "NARRATOR",
+        text: "Line one cue",
+        audioPath: "audio/line-1.wav",
+        durationMs: 500
+      },
+      responseText: "Line one response",
+      responseSegments: [],
+      directions: [],
+      previousRoles: []
+    },
+    {
+      id: "line-2",
+      partId: 1,
+      blockId: "1.2",
+      role: "CHRISTINE",
+      speaker: "CHRISTINE",
+      contentHash: "sha256:line2",
+      cue: {
+        speaker: "NARRATOR",
+        text: "Line two cue",
+        audioPath: "audio/line-2.wav",
+        durationMs: 600
+      },
+      responseText: "Line two response",
+      responseSegments: [],
+      directions: [],
+      previousRoles: []
+    }
+  ];
+
+  const fallbackLine: Line = {
+    id: "line-stale",
+    partId: 1,
+    blockId: "1.f",
+    role: "CHRISTINE",
+    speaker: "CHRISTINE",
+    contentHash: "sha256:stale",
+    cue: {
+      speaker: "NARRATOR",
+      text: "Stale cue",
+      audioPath: "audio/stale.wav",
+      durationMs: 100
+    },
+    responseText: "Stale response",
+    responseSegments: [],
+    directions: [],
+    previousRoles: []
+  };
+
+  it("uses the engine-position line when available", () => {
+    const lineFromEngine = resolveCurrentLineFromEngine(lines, 1, fallbackLine);
+
+    expect(lineFromEngine?.id).toBe("line-2");
+  });
+
+  it("falls back only when engine-position line is unavailable", () => {
+    const lineFromEngine = resolveCurrentLineFromEngine(lines, 10, fallbackLine);
+
+    expect(lineFromEngine?.id).toBe("line-stale");
   });
 });

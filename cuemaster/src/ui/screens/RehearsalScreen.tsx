@@ -14,7 +14,7 @@ import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
-import { tempoFeedbackFor, timingTargetsForLine, type TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
@@ -33,7 +33,7 @@ type RehearsalScreenProps = {
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
-type UtilityPanel = "timing" | "options";
+type UtilityPanel = "options";
 type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "timed";
 
@@ -77,14 +77,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
-  const [tempoStatus, setTempoStatus] = useState<string>(
-    initialSession?.tempoTimingPreferred
-      ? "Tempo timing was enabled last session. Enable it again to use the microphone."
-      : ""
-  );
-  const [tempoFeedback, setTempoFeedback] = useState<TempoFeedback | null>(null);
-  const [lastTimingAttempt, setLastTimingAttempt] = useState<TimingAttempt | null>(null);
-  const [recentTimingAttempts, setRecentTimingAttempts] = useState<TimingAttempt[]>([]);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
@@ -94,14 +86,11 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const activeTimingLineIdRef = useRef<string | null>(null);
-  const timingLoadRequestRef = useRef(0);
-  const [showLineDurationInfo, setShowLineDurationInfo] = useState(false);
   const line = useMemo(
     () => role.lines.find((candidate) => candidate.id === activeLineId) ?? null,
     [activeLineId, role.lines]
   );
   const cues = engine.cuePayloads(cueWindowPresetId);
-  const lineTimingTargets = useMemo(() => (line ? timingTargetsForLine(line) : null), [line]);
   const visibleCues = useMemo(
     () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
     [cues, includeDirections, playbook, line]
@@ -128,9 +117,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }, [voiceActivityDetector]);
 
   useEffect(() => {
-    void loadLastTimingAttempt();
     void loadCurrentBookmark();
-    setShowLineDurationInfo(false);
   }, [line?.id]);
 
   useEffect(() => {
@@ -209,7 +196,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   function currentLineFromEngine(): Line | null {
-    return role.lines[engine.position().index] ?? engine.currentLine() ?? null;
+    return resolveCurrentLineFromEngine(role.lines, engine.position().index, engine.currentLine() ?? null);
   }
 
   async function runCommand(command: RehearsalCommand) {
@@ -291,7 +278,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const nextRevealLine = options.revealLine ?? isLineRevealed;
     setPosition(nextPosition);
     setActiveLineId(nextPosition.index >= 0 && nextPosition.index < role.lines.length ? role.lines[nextPosition.index].id : null);
-    setTempoFeedback(null);
     void saveSession(
       nextPosition.index,
       playbackRate,
@@ -419,7 +405,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     setPlaybackState("idle");
     setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
-    setTempoStatus(tempoTimingEnabled ? "Tempo timing is idle." : tempoStatus);
   }
 
   function changePlaybackRate(nextPlaybackRate: number) {
@@ -564,7 +549,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   function changeSpeakAlongEnabled(nextSpeakAlongEnabled: boolean) {
     setSpeakAlongEnabled(nextSpeakAlongEnabled);
     if (nextSpeakAlongEnabled && tempoTimingEnabled) {
-      void disableTempoTiming("Tempo timing disabled while speak-along practice is enabled.");
+      void disableTempoTiming();
     }
     if (nextSpeakAlongEnabled) {
       setTempoTimingPreferred(false);
@@ -573,7 +558,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function enableTempoTiming() {
-    setTempoStatus("Requesting microphone permission...");
     const detector = new VoiceActivityDetector(handleVoiceActivity);
 
     try {
@@ -584,22 +568,20 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       setTempoTimingEnabled(true);
       setTempoTimingPreferred(true);
       setSpeakAlongEnabled(false);
-      setTempoStatus("Tempo timing enabled. Press Start or Repeat Cue to time an attempt.");
       await saveSession(position.index, playbackRate, false, true);
     } catch (error) {
       detector.stop();
       setTempoTimingEnabled(false);
-      setTempoStatus(userFacingErrorMessage(error));
+      setStorageStatus(userFacingErrorMessage(error));
     }
   }
 
-  async function disableTempoTiming(message = "Tempo timing disabled."): Promise<void> {
+  async function disableTempoTiming(): Promise<void> {
     voiceActivityDetector?.stop();
     activeTimingLineIdRef.current = null;
     setVoiceActivityDetector(null);
     setTempoTimingEnabled(false);
     setTempoTimingPreferred(false);
-    setTempoStatus(message);
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
   }
 
@@ -609,12 +591,9 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     const timingLine = currentLineFromEngine();
     if (!timingLine) {
-      setTempoStatus("No line selected for timing.");
       return;
     }
     activeTimingLineIdRef.current = timingLine.id;
-    setTempoFeedback(null);
-    setTempoStatus("Listening for your pickup...");
     voiceActivityDetector.beginAttempt();
   }
 
@@ -630,19 +609,16 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     }
     if (result.event === "speech-started") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
-      setTempoStatus(`Pickup detected after ${hesitationMs} ms. Continue speaking; pause when finished.`);
     } else {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
       const deliveryMs = Math.round(result.deliveryMs ?? 0);
       const feedback = tempoFeedbackFor(timingLine, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
-      setTempoFeedback(feedback);
       void saveTimingAttempt(timingLine.id, feedback);
       activeTimingLineIdRef.current = null;
-      setTempoStatus("Timed attempt complete.");
     }
   }
 
-  async function saveTimingAttempt(lineId: string, feedback: TempoFeedback) {
+  async function saveTimingAttempt(lineId: string, feedback: ReturnType<typeof tempoFeedbackFor>) {
     if (!feedback.delivery) {
       return;
     }
@@ -663,57 +639,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     try {
       await indexedDbStorage.timingAttempts.save(attempt);
       setStorageStatus("");
-      if (line?.id === lineId) {
-        setLastTimingAttempt(attempt);
-      }
-      await loadRecentTimingAttempts();
       await loadReviewAttempts();
     } catch (error) {
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function loadLastTimingAttempt() {
-    const currentLine = line;
-    if (!currentLine) {
-      setLastTimingAttempt(null);
-      setRecentTimingAttempts([]);
-      return;
-    }
-    const requestId = ++timingLoadRequestRef.current;
-    try {
-      const latest = await indexedDbStorage.timingAttempts.latestForLine(playbook.id, role.id, currentLine.id);
-      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
-        return;
-      }
-      setLastTimingAttempt(latest ?? null);
-      const recent = await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, currentLine.id, 5);
-      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
-        return;
-      }
-      setRecentTimingAttempts(recent);
-    } catch (error) {
-      setLastTimingAttempt(null);
-      setRecentTimingAttempts([]);
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function loadRecentTimingAttempts() {
-    const currentLine = line;
-    if (!currentLine) {
-      setRecentTimingAttempts([]);
-      return;
-    }
-    const requestId = ++timingLoadRequestRef.current;
-    try {
-      const recent = await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, currentLine.id, 5);
-      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
-        return;
-      }
-      setRecentTimingAttempts(recent);
-    } catch (error) {
-      setRecentTimingAttempts([]);
       setStorageStatus(userFacingErrorMessage(error));
     }
   }
@@ -810,7 +737,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   async function showUtilityPanel(panel: UtilityPanel) {
     const nextPanel = activeUtilityPanel === panel ? null : panel;
     setActiveUtilityPanel(nextPanel);
-    if (nextPanel === "timing") {
+    if (nextPanel === "options") {
       await loadReviewAttempts();
     }
   }
@@ -1103,6 +1030,17 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
           <div className="quick-practice-toggles rehearsal-quick-toggles" aria-label="Quick practice toggles">
             <button
               type="button"
+              className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
+              aria-pressed={tempoTimingEnabled}
+              aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
+              data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
+              disabled={speakAlongEnabled}
+              onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
+            >
+              <span aria-hidden="true">⏱</span>
+            </button>
+            <button
+              type="button"
               className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
               aria-pressed={speakAlongEnabled}
               aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
@@ -1111,22 +1049,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
             >
               <span aria-hidden="true">👄</span>
-            </button>
-            <button
-              type="button"
-              className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={tempoTimingEnabled}
-              aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
-              data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
-              onClick={() => {
-                if (tempoTimingEnabled) {
-                  void disableTempoTiming();
-                } else {
-                  void enableTempoTiming();
-                }
-              }}
-            >
-              <span aria-hidden="true">⏱</span>
             </button>
             <button
               type="button"
@@ -1158,66 +1080,22 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             >
               <span aria-hidden="true">⌞⌝</span>
             </button>
-            <button
-              type="button"
-              className={showLineDurationInfo ? "quick-toggle active" : "quick-toggle"}
-              aria-label={showLineDurationInfo ? "Hide line timing info." : "Show line timing info."}
-              aria-pressed={showLineDurationInfo}
-              disabled={!line}
-              data-tooltip={showLineDurationInfo ? "Hide line timing info" : "Show line timing info"}
-              onClick={() => setShowLineDurationInfo((current) => !current)}
-            >
-              <span aria-hidden="true">ⓘ</span>
-            </button>
           </div>
-          {showLineDurationInfo && line ? (
-            <div className="line-duration-panel">
-              <p>Build ID: {playbook.importMetadata?.buildId ?? "unknown"}</p>
-              <p>Artifact: {playbook.importMetadata?.filename ?? playbook.id}</p>
-              <p>Line ID: {line.id}</p>
-              <p>
-                Response: {formatDurationMs(lineTimingTargets?.targetDeliveryMs ?? 0)} target
-              </p>
-              <p>
-                Line total:{" "}
-                {formatDurationMs((lineTimingTargets ? lineTimingTargets.targetDeliveryMs : 0) + line.cue.durationMs)}
-              </p>
-            </div>
-          ) : null}
-          {tempoStatus ? (
-            <p className="status" aria-live="polite">
-              {tempoStatus}
-            </p>
-          ) : null}
-          {tempoFeedback ? <TempoFeedbackPanel feedback={tempoFeedback} /> : null}
-          {!tempoFeedback && lastTimingAttempt ? <TimingAttemptPanel attempt={lastTimingAttempt} /> : null}
-          {recentTimingAttempts.length > 1 ? <RecentAttemptsPanel attempts={recentTimingAttempts} /> : null}
           {playbackStatus ? (
             <p className="status" aria-live="polite">
               {playbackStatus}
             </p>
           ) : null}
           <div className="utility-drawer">
-            <div className="utility-tabs" aria-label="Rehearsal utilities">
-              <button
-                type="button"
-                className={activeUtilityPanel === "timing" ? "utility-tab active" : "utility-tab"}
-                aria-pressed={activeUtilityPanel === "timing"}
-                onClick={() => void showUtilityPanel("timing")}
-              >
-                <span aria-hidden="true">⏱</span>
-                Timing
-              </button>
-              <button
-                type="button"
-                className={activeUtilityPanel === "options" ? "utility-tab active" : "utility-tab"}
-                aria-pressed={activeUtilityPanel === "options"}
-                onClick={() => void showUtilityPanel("options")}
-              >
-                <span aria-hidden="true">⚙</span>
-                Options
-              </button>
-            </div>
+            <button
+              type="button"
+              className={activeUtilityPanel === "options" ? "utility-tab active" : "utility-tab"}
+              aria-pressed={activeUtilityPanel === "options"}
+              onClick={() => void showUtilityPanel("options")}
+            >
+              <span aria-hidden="true">⚙</span>
+              Options
+            </button>
             {activeUtilityPanel ? (
               <div className="utility-content">
                 {activeUtilityPanel === "options" ? (
@@ -1300,13 +1178,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       Tempo timing uses microphone energy only: no recording, no transcription, no upload.
                     </p>
                   </div>
-                ) : null}
-                {activeUtilityPanel === "timing" ? (
-                  <TimingIssuesPanel
-                    attempts={reviewAttempts}
-                    role={role}
-                    onSelectLine={(lineId) => void jumpToLine(lineId)}
-                  />
                 ) : null}
               </div>
             ) : null}
@@ -1610,23 +1481,6 @@ function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
   );
 }
 
-function TempoFeedbackPanel({ feedback }: { feedback: TempoFeedback }) {
-  return (
-    <div className="tempo-feedback">
-      <p>
-        Pickup: {feedback.hesitation.measuredMs} ms target {feedback.hesitation.targetMs} ms,{" "}
-        {feedback.hesitation.label}.
-      </p>
-      {feedback.delivery ? (
-        <p>
-          Delivery: {feedback.delivery.measuredMs} ms target {feedback.delivery.targetMs} ms,{" "}
-          {feedback.delivery.label}.
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
 function timingLineStatusToGlyph(status: TimingLineStatus): string {
   return "⏱";
 }
@@ -1639,94 +1493,6 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
     return "Timed";
   }
   return "Untimed";
-}
-
-function TimingAttemptPanel({ attempt }: { attempt: TimingAttempt }) {
-  return (
-    <div className="tempo-feedback">
-      <p>Last attempt:</p>
-      <p>
-        Pickup: {attempt.hesitationMs} ms target {attempt.targetHesitationMs} ms, {attempt.hesitationLabel}.
-      </p>
-      <p>
-        Delivery: {attempt.deliveryMs} ms target {attempt.targetDeliveryMs} ms, {attempt.deliveryLabel}.
-      </p>
-    </div>
-  );
-}
-
-function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
-  return (
-    <div className="tempo-feedback">
-      <p>Recent attempts:</p>
-      <ol className="attempt-list">
-        {attempts.map((attempt) => (
-          <li key={attempt.id}>
-            pickup {attempt.hesitationMs} ms ({attempt.hesitationLabel}), delivery {attempt.deliveryMs} ms (
-            {attempt.deliveryLabel})
-          </li>
-        ))}
-      </ol>
-    </div>
-  );
-}
-
-function TimingIssuesPanel({
-  attempts,
-  role,
-  onSelectLine
-}: {
-  attempts: TimingAttempt[];
-  role: Role;
-  onSelectLine: (lineId: string) => void;
-}) {
-  const linesById = new Map(role.lines.map((line) => [line.id, line]));
-  const latePickupAttempts = attempts.filter((attempt) => attempt.hesitationLabel === "late");
-  const slowDeliveryAttempts = attempts.filter((attempt) => attempt.deliveryLabel === "slow");
-  const rushedDeliveryAttempts = attempts.filter((attempt) => attempt.deliveryLabel === "fast");
-
-  return (
-    <div className="review-panel">
-      <h2>Timing Issues</h2>
-      <div className="timing-review-grid">
-        <TimingReviewSection title="Late Pickup" attempts={latePickupAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-        <TimingReviewSection title="Slow Delivery" attempts={slowDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-        <TimingReviewSection title="Rushed Delivery" attempts={rushedDeliveryAttempts} linesById={linesById} onSelectLine={onSelectLine} />
-      </div>
-      {attempts.length === 0 ? <p className="empty">No timing attempts yet.</p> : null}
-    </div>
-  );
-}
-
-function TimingReviewSection({
-  title,
-  attempts,
-  linesById,
-  onSelectLine
-}: {
-  title: string;
-  attempts: TimingAttempt[];
-  linesById: Map<string, Line>;
-  onSelectLine: (lineId: string) => void;
-}) {
-  return (
-    <section>
-      <h3>{title}</h3>
-      {attempts.length === 0 ? (
-        <p className="empty">None.</p>
-      ) : (
-        <ul>
-          {attempts.map((attempt) => (
-            <li key={attempt.id}>
-              <button type="button" className="secondary" onClick={() => onSelectLine(attempt.lineId)}>
-                {attempt.lineId} {linesById.get(attempt.lineId)?.responseText.slice(0, 80) ?? ""}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
 }
 
 const minPlaybackRate = 0.4;
@@ -1744,14 +1510,6 @@ function isCompactRehearsalViewport() {
 
 function formatTimingOption(optionMs: number): string {
   return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;
-}
-
-function formatDurationMs(durationMs: number): string {
-  const safeDurationMs = Math.max(0, durationMs);
-  if (safeDurationMs < 1000) {
-    return `${safeDurationMs} ms`;
-  }
-  return `${(safeDurationMs / 1000).toFixed(2).replace(/\.?0+$/, "")}s`;
 }
 
 export function clampPlaybackRate(playbackRate: number): number {
@@ -1781,6 +1539,14 @@ export function visibleCuesForDisplay(
     }
     return cue;
   });
+}
+
+export function resolveCurrentLineFromEngine(
+  roleLines: Line[],
+  positionIndex: number,
+  fallbackLine: Line | null
+): Line | null {
+  return roleLines[positionIndex] ?? fallbackLine;
 }
 
 function cueKey(speaker: string, text: string, audioPath: string) {
