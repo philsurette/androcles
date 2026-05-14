@@ -1335,15 +1335,18 @@ function OutlinePanel({
 }) {
   const [mode, setMode] = useState<OutlineMode>("cues");
   const [searchQuery, setSearchQuery] = useState("");
+  const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
   const currentLineRef = useRef<HTMLButtonElement | null>(null);
   const normalizedSearchQuery = searchQuery.trim();
   const sectionGroups = scriptBrowserSections(lines, sections)
     .map((section) => ({
       ...section,
-      lines: section.lines.filter((line) =>
-        outlineSearchText(line, mode, includeDirections, includeBlocking, blockingScope, playbook)
-          .toLocaleLowerCase()
-          .includes(normalizedSearchQuery.toLocaleLowerCase())
+      lines: section.lines
+        .filter((line) => (showBookmarksOnly ? bookmarkedLineIds.has(line.id) : true))
+        .filter((line) =>
+          outlineSearchText(line, mode, includeDirections, includeBlocking, blockingScope, playbook)
+            .toLocaleLowerCase()
+            .includes(normalizedSearchQuery.toLocaleLowerCase())
       )
     }))
     .filter((section) => section.lines.length > 0);
@@ -1360,6 +1363,16 @@ function OutlinePanel({
           <strong>{mode === "cues" ? "Showing cues" : "Showing lines"}</strong>
         </div>
         <div className="outline-header-actions">
+          <button
+            type="button"
+            className={showBookmarksOnly ? "outline-bookmark-filter active" : "outline-bookmark-filter"}
+            aria-pressed={showBookmarksOnly}
+            aria-label={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
+            onClick={() => setShowBookmarksOnly((current) => !current)}
+            title={showBookmarksOnly ? "Show all lines" : "Show bookmarked lines only"}
+          >
+            {showBookmarksOnly ? "★" : "☆"}
+          </button>
           <div className="outline-mode-toggle" aria-label="Outline display">
             <button
               type="button"
@@ -1407,7 +1420,10 @@ function OutlinePanel({
       </label>
       <div className="outline-list">
         {sectionGroups.length === 0 ? (
-          <p className="outline-empty">No matching {mode === "cues" ? "cues" : "lines"}.</p>
+          <p className="outline-empty">
+            No matching {showBookmarksOnly ? "bookmarked " : ""}
+            {mode === "cues" ? "cues" : "lines"}.
+          </p>
         ) : null}
         {sectionGroups.map((section) => (
           <section className="outline-section" key={section.id}>
