@@ -726,12 +726,18 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbook.title} / {role.displayName}
             </p>
           </div>
-          {isCompactViewport && !isOutlineOpen ? (
-            <button type="button" className="outline-open-button secondary" onClick={() => setIsOutlineOpen(true)}>
-              Browse cues
+          <div className="rehearsal-line-metadata">
+            <button
+              type="button"
+              className="outline-open-button icon-button secondary"
+              aria-label={isOutlineOpen ? "Browse cues" : "Open cues"}
+              data-tooltip={isOutlineOpen ? "Browse cues" : "Open cues"}
+              onClick={() => setIsOutlineOpen(true)}
+            >
+              <span aria-hidden="true">📋</span>
             </button>
-          ) : null}
-          <p className="line-position">{line ? line.id : "No lines"}</p>
+            <p className="line-position">{line ? line.id : "No lines"}</p>
+          </div>
         </header>
         {storageStatus ? (
           <p className="error" role="alert">

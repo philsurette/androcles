@@ -327,13 +327,22 @@ button:disabled {
   min-width: 0;
   gap: 0.75rem;
   align-items: center;
+  flex: 1 1 auto;
 }
 
 .outline-open-button {
-  align-self: stretch;
-  min-height: 2.35rem;
-  margin-inline-start: auto;
-  padding-inline: 0.95rem;
+  width: 2rem;
+  min-width: 0;
+  min-height: 2rem;
+  padding: 0;
+}
+
+.rehearsal-line-metadata {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  justify-content: flex-end;
+  margin-inline-start: 0.25rem;
 }
 
 .breadcrumb,
@@ -1161,7 +1170,7 @@ button:disabled {
   }
 
   .outline-open-button {
-    width: 100%;
+    width: 2rem;
     margin: 0;
     order: 1;
   }
