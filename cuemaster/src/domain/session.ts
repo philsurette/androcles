@@ -21,6 +21,8 @@ export type RehearsalSession = {
   tempoEndOfLineSilenceMs?: number;
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
+  autoAdvanceMode?: "disabled" | "always" | "on-target";
+  autoAdvanceOnGoodTempo?: boolean;
   rehearsalTextSize?: "small" | "medium" | "large" | "x-large";
   updatedAt: number;
 };

@@ -38,6 +38,7 @@ type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "fast" | "good";
 type TimingLabel = "fast" | "slow" | "good";
 type TimingPill = "delivery" | "pickup";
+type AutoAdvanceMode = "disabled" | "always" | "on-target";
 type TimingStatusPill = {
   delivery: {
     label: TimingLabel;
@@ -208,6 +209,10 @@ export function RehearsalScreen({
   const [absolutePickupForgivenessMs, setAbsolutePickupForgivenessMs] = useState(
     normalizeAbsolutePickupForgivenessMs(initialSession?.absolutePickupForgivenessMs)
   );
+  const [autoAdvanceMode, setAutoAdvanceMode] = useState<AutoAdvanceMode>(
+    initialSession?.autoAdvanceMode ??
+      (initialSession?.autoAdvanceOnGoodTempo ? "on-target" : "disabled")
+  );
   const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
     normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
   );
@@ -225,6 +230,7 @@ export function RehearsalScreen({
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
+  const timingToneAudioContextRef = useRef<AudioContext | null>(null);
   const rehearsalLayoutClass = isCompactViewport ? "rehearsal-no-outline" : isOutlineOpen ? "rehearsal-outline-open" : "rehearsal-outline-collapsed";
   const activeTimingLineIdRef = useRef<string | null>(null);
   const tempoTimingRestoreStartedRef = useRef(false);
@@ -392,6 +398,17 @@ export function RehearsalScreen({
   }, []);
 
   useEffect(() => {
+    return () => {
+      const toneContext = timingToneAudioContextRef.current;
+      if (!toneContext) {
+        return;
+      }
+      void toneContext.close();
+      timingToneAudioContextRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!isCompactViewport || !isOutlineOpen) {
       return;
     }
@@ -470,13 +487,13 @@ export function RehearsalScreen({
     }
   }
 
-  async function goNext() {
+  async function goNext(playNextCue = false) {
     activeTimingLineIdRef.current = null;
     setTimingStatusMessage(null);
     engine.next();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
-    if (hasStarted) {
+    if (playNextCue || hasStarted) {
       await playCue();
     }
   }
@@ -543,6 +560,7 @@ export function RehearsalScreen({
     nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
     nextTempoTolerancePercent = tempoTolerancePercent,
     nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs,
+    nextAutoAdvanceMode = autoAdvanceMode,
     nextRehearsalTextSize = rehearsalTextSize,
     nextTempoEndOfLineSilenceMs = tempoEndOfLineSilenceMs
   ) {
@@ -567,6 +585,7 @@ export function RehearsalScreen({
         tempoTolerancePercent: nextTempoTolerancePercent,
         absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
         tempoEndOfLineSilenceMs: nextTempoEndOfLineSilenceMs,
+        autoAdvanceMode: nextAutoAdvanceMode,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         rehearsalTextSize: nextRehearsalTextSize,
@@ -611,7 +630,78 @@ export function RehearsalScreen({
       setPlaybackState("idle");
       setPlaybackSource(null);
       setPlaybackStatus(userFacingErrorMessage(error));
+      }
+  }
+
+  function getTimingToneAudioContext(): AudioContext | null {
+    if (typeof window === "undefined") {
+      return null;
     }
+
+    const audioContextConstructor =
+      window.AudioContext ??
+      (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
+      null;
+    if (!audioContextConstructor) {
+      return null;
+    }
+
+    if (!timingToneAudioContextRef.current) {
+      timingToneAudioContextRef.current = new audioContextConstructor();
+    }
+
+    return timingToneAudioContextRef.current;
+  }
+
+  async function playTimingFeedbackTone(kind: "auto-advance" | "retry"): Promise<void> {
+    const context = getTimingToneAudioContext();
+    if (!context) {
+      return;
+    }
+
+    if (context.state === "suspended") {
+      try {
+        await context.resume();
+      } catch (_error) {
+        return;
+      }
+    }
+
+    const now = context.currentTime;
+    const pattern =
+      kind === "auto-advance"
+        ? [
+            { frequency: 640, durationMs: 120, gapMs: 35, volume: 0.06 },
+            { frequency: 860, durationMs: 120, gapMs: 0, volume: 0.06 }
+          ]
+        : [{ frequency: 260, durationMs: 210, gapMs: 0, volume: 0.06 }];
+    let cursor = now;
+
+    for (const tone of pattern) {
+      if (context.state !== "running") {
+        break;
+      }
+
+      const oscillator = context.createOscillator();
+      const gain = context.createGain();
+      const start = cursor;
+      const end = start + tone.durationMs / 1000;
+
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(tone.frequency, start);
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(tone.volume, start + 0.015);
+      gain.gain.linearRampToValueAtTime(0, end);
+
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(end + 0.03);
+
+      cursor = end + tone.gapMs / 1000;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, cursor - now + 40));
   }
 
   async function playResponse() {
@@ -1011,6 +1101,33 @@ export function RehearsalScreen({
     );
   }
 
+  function changeAutoAdvanceMode(nextAutoAdvanceMode: AutoAdvanceMode) {
+    setAutoAdvanceMode(nextAutoAdvanceMode);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent,
+      absolutePickupForgivenessMs,
+      rehearsalTextSize,
+      tempoEndOfLineSilenceMs,
+      nextAutoAdvanceMode
+    );
+  }
+
   function changeShowLinesByDefault(nextShowLinesByDefault: boolean) {
     setShowLinesByDefault(nextShowLinesByDefault);
     setIsLineRevealed(nextShowLinesByDefault);
@@ -1180,6 +1297,22 @@ export function RehearsalScreen({
       setTimingStatusMessage(timingResult);
       setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
+      const shouldAutoAdvance =
+        autoAdvanceMode === "always" || (autoAdvanceMode === "on-target" && timingResult.delivery.label === "good");
+      if (autoAdvanceMode !== "disabled" && tempoTimingEnabled && !engine.position().atEnd) {
+        const shouldRepeatCue = autoAdvanceMode === "on-target" && !shouldAutoAdvance;
+        if (shouldAutoAdvance) {
+          void (async () => {
+            await playTimingFeedbackTone("auto-advance");
+            await goNext(true);
+          })();
+        } else if (shouldRepeatCue) {
+          void (async () => {
+            await playTimingFeedbackTone("retry");
+            await playCue();
+          })();
+        }
+      }
       activeTimingLineIdRef.current = null;
     } else {
       return;
@@ -1479,6 +1612,19 @@ export function RehearsalScreen({
                   label: formatTempoEndOfLineSilence(optionMs)
                 }))}
                 onSelect={(next) => changeTempoEndOfLineSilenceMs(Number(next))}
+              />
+            </label>
+            <label className="timing-setting">
+              Auto-advance
+              <PracticeSelect
+                label="Auto-advance"
+                value={autoAdvanceMode}
+                options={[
+                  { value: "disabled", label: "Disabled" },
+                  { value: "always", label: "Always" },
+                  { value: "on-target", label: "When on target" }
+                ]}
+                onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
               />
             </label>
           </div>
