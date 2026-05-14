@@ -2212,7 +2212,7 @@ button:disabled {
   }
 
   .practice-options-panel .timing-options {
-    grid-column: 1 / -1;
+    grid-column: auto;
   }
 
   .practice-options-panel .status {
