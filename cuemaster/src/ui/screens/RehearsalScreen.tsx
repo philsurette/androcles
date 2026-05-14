@@ -1726,8 +1726,10 @@ export function RehearsalScreen({
               {storageStatus}
             </p>
           ) : null}
-          <div className="rehearsal-workspace no-outline options-workspace">
-            {practiceOptionsPanel}
+          <div className="rehearsal-workspace no-outline options-workspace options-workspace-shell">
+            <div className="practice-options-scroll">
+              {practiceOptionsPanel}
+            </div>
           </div>
         </section>
       </main>
