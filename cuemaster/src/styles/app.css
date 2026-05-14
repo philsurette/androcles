@@ -554,21 +554,24 @@ button:disabled {
 
 .cue-control-strip .transport {
   display: flex;
-  justify-content: space-between;
-  flex-wrap: nowrap;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   align-items: center;
   width: 100%;
   gap: 0.35rem;
   margin-top: 0.2rem;
   min-width: 0;
+  overflow: visible;
+  overflow-x: auto;
+  padding-bottom: 0.05rem;
 }
 
 .cue-control-strip .cue-play-group {
-  margin-right: auto;
+  margin-right: 0;
 }
 
 .cue-control-strip .cue-navigation-group {
-  margin-right: auto;
+  margin-right: 0;
 }
 
 .cue-control-strip .cue-bookmark-group {
@@ -1480,8 +1483,8 @@ button:disabled {
 
   .cue-control-strip .transport {
     gap: 0.24rem;
-    flex-wrap: nowrap;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .cue-control-strip .control-group {
@@ -1571,8 +1574,8 @@ button:disabled {
 
   .cue-control-strip .transport {
     gap: 0.2rem;
-    flex-wrap: nowrap;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .cue-control-strip .control-group {
