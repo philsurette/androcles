@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { clampPlaybackRate, visibleCuesForDisplay } from "../../src/ui/screens/RehearsalScreen";
+import { clampPlaybackRate, outlineSearchText, visibleCuesForDisplay } from "../../src/ui/screens/RehearsalScreen";
+import type { Line } from "../../src/domain/line";
+import type { Playbook } from "../../src/domain/playbook";
 
 describe("clampPlaybackRate", () => {
   it("clamps response playback speed to the supported range", () => {
@@ -138,5 +140,75 @@ describe("visibleCuesForDisplay", () => {
         kind: "speech"
       }
     ]);
+  });
+});
+
+describe("outlineSearchText", () => {
+  const playbook: Playbook = {
+    id: "fairies",
+    title: "Fairies",
+    authors: [],
+    schemaVersion: 1,
+    sections: [],
+    context: [],
+    roles: []
+  };
+
+  const line: Line = {
+    id: "2-3:s1",
+    partId: 2,
+    blockId: "2.3",
+    role: "LILLIAN",
+    speaker: "LILLIAN",
+    contentHash: "sha256:test",
+    cue: {
+      speaker: "CHRISTINE",
+      text: "Do you mind if I record?",
+      audioPath: "audio/christine.wav",
+      durationMs: 1000,
+      kind: "speech"
+    },
+    responseText: "Please do.",
+    responseSegments: [],
+    directions: [
+      {
+        id: "2-3:d1",
+        segmentId: "2_3_d1",
+        contentHash: "sha256:direction",
+        text: "softly",
+        placement: "inline"
+      }
+    ],
+    previousRoles: [],
+    blocking: [
+      {
+        id: "2-3:b1",
+        contentHash: "sha256:blocking",
+        placement: "before",
+        targets: ["LILLIAN"],
+        text: "settles beside the recorder"
+      }
+    ]
+  };
+
+  it("matches cue text and response text in cue mode", () => {
+    const text = outlineSearchText(line, "cues", true, true, "role", playbook).toLocaleLowerCase();
+
+    expect(text).toContain("do you mind");
+    expect(text).toContain("please do");
+  });
+
+  it("does not include cue text in line mode", () => {
+    const text = outlineSearchText(line, "lines", true, true, "role", playbook).toLocaleLowerCase();
+
+    expect(text).not.toContain("do you mind");
+    expect(text).toContain("please do");
+  });
+
+  it("matches visible blocking text", () => {
+    expect(outlineSearchText(line, "lines", true, true, "role", playbook)).toContain("settles beside the recorder");
+    expect(outlineSearchText(line, "lines", true, false, "role", playbook)).not.toContain(
+      "settles beside the recorder"
+    );
   });
 });

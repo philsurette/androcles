@@ -1168,7 +1168,19 @@ function OutlinePanel({
   onToggleOpen: () => void;
 }) {
   const [mode, setMode] = useState<OutlineMode>("cues");
+  const [searchQuery, setSearchQuery] = useState("");
   const currentLineRef = useRef<HTMLButtonElement | null>(null);
+  const normalizedSearchQuery = searchQuery.trim();
+  const sectionGroups = scriptBrowserSections(lines, sections)
+    .map((section) => ({
+      ...section,
+      lines: section.lines.filter((line) =>
+        outlineSearchText(line, mode, includeDirections, includeBlocking, blockingScope, playbook)
+          .toLocaleLowerCase()
+          .includes(normalizedSearchQuery.toLocaleLowerCase())
+      )
+    }))
+    .filter((section) => section.lines.length > 0);
 
   useEffect(() => {
     currentLineRef.current?.scrollIntoView({ block: "nearest" });
@@ -1211,8 +1223,27 @@ function OutlinePanel({
           </button>
         </div>
       </div>
+      <label className="outline-search">
+        <span>Search {mode === "cues" ? "cues" : "lines"}</span>
+        <div>
+          <input
+            type="search"
+            value={searchQuery}
+            placeholder={mode === "cues" ? "Find a cue or line" : "Find a line"}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
+          {searchQuery ? (
+            <button type="button" aria-label="Clear outline search." onClick={() => setSearchQuery("")}>
+              ×
+            </button>
+          ) : null}
+        </div>
+      </label>
       <div className="outline-list">
-        {scriptBrowserSections(lines, sections).map((section) => (
+        {sectionGroups.length === 0 ? (
+          <p className="outline-empty">No matching {mode === "cues" ? "cues" : "lines"}.</p>
+        ) : null}
+        {sectionGroups.map((section) => (
           <section className="outline-section" key={section.id}>
             <h3>{section.title}</h3>
             <div className="outline-section-list">
@@ -1246,6 +1277,31 @@ function OutlinePanel({
       </div>
     </aside>
   );
+}
+
+export function outlineSearchText(
+  line: Line,
+  mode: OutlineMode,
+  includeDirections: boolean,
+  includeBlocking: boolean,
+  blockingScope: BlockingScope,
+  playbook: Playbook
+): string {
+  const parts = [
+    line.id,
+    outlineSpeaker(line, mode, includeDirections, playbook),
+    outlineText(line, mode, includeDirections, playbook)
+  ];
+  if (mode === "cues") {
+    parts.push(line.speaker, line.responseText);
+  }
+  if (includeDirections) {
+    parts.push(...line.directions.map((direction) => direction.text));
+  }
+  if (includeBlocking) {
+    parts.push(...visibleBlockingForLine(line, blockingScope).map((blocking) => `${blocking.targets.join(" ")} ${blocking.text}`));
+  }
+  return parts.join(" ");
 }
 
 function outlineSpeaker(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {

@@ -746,7 +746,7 @@ button:disabled {
 
 .outline-browser {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr);
   max-height: min(62vh, 42rem);
   min-height: 0;
   overflow: hidden;
@@ -815,6 +815,53 @@ button:disabled {
   border-right: 5px solid transparent;
   border-bottom: 0;
   border-left: 5px solid transparent;
+}
+
+.outline-search {
+  display: grid;
+  gap: 0.45rem;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.12);
+  padding: 0.65rem 0.75rem;
+}
+
+.outline-search span {
+  color: var(--quiet);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.outline-search div {
+  display: flex;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.outline-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 2.55rem;
+  border: 1px solid rgba(30, 38, 31, 0.16);
+  border-radius: 0.65rem;
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 800;
+  padding: 0.55rem 0.65rem;
+}
+
+.outline-search button {
+  min-height: 2.4rem;
+  border-radius: 0.65rem;
+  background: rgba(30, 38, 31, 0.07);
+  color: var(--accent);
+  padding: 0 0.75rem;
+}
+
+.outline-empty {
+  margin: 0;
+  color: var(--quiet);
+  font-weight: 800;
+  padding: 0.9rem 0.75rem;
 }
 
 .outline-progress {
