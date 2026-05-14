@@ -1761,7 +1761,12 @@ export function RehearsalScreen({
                   </button>
                   {expandedTimingPill === "delivery" ? (
                     <span className="timing-status-details">
-                      Delivery: {timingDeltaText(displayedPlaybackStatus.delivery.measuredMs, displayedPlaybackStatus.delivery.targetMs)}.
+                      {formatDeliveryTimingDetails(
+                        displayedPlaybackStatus.delivery.measuredMs,
+                        displayedPlaybackStatus.delivery.targetMs,
+                        absoluteTempoForgivenessMs,
+                        tempoTolerancePercent
+                      )}
                     </span>
                   ) : null}
                   {expandedTimingPill === "pickup" ? (
@@ -2247,9 +2252,12 @@ function formatTimingResult(
       measuredMs: measuredPickupMs,
       targetMs: targetPickupMs
     },
-    details: `${displayedDeliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(
-      2
-    )}s, pickup ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
+    details: `${formatDeliveryTimingDetails(
+      measuredDeliveryMs,
+      targetDeliveryMs,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent
+    )}; pickup ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
   };
 }
 
@@ -2282,9 +2290,12 @@ function formatTimingAttempt(
       measuredMs: attempt.hesitationMs,
       targetMs: attempt.targetHesitationMs
     },
-    details: `${displayDeliveryLabel} ${(attempt.deliveryMs / 1000).toFixed(2)}s←${(targetDeliveryMs / 1000).toFixed(
-      2
-    )}s, pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(
+    details: `${formatDeliveryTimingDetails(
+      attempt.deliveryMs,
+      targetDeliveryMs,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent
+    )}; pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(
       2
     )}s`
   };
@@ -2324,6 +2335,26 @@ function timingDeltaText(measuredMs: number, targetMs: number): string {
     return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (+${deltaSec.toFixed(2)}s, +${percent}% over)`;
   }
   return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (${deltaSec.toFixed(2)}s under, -${percent}%)`;
+}
+
+function formatDeliveryTimingDetails(
+  measuredMs: number,
+  targetMs: number,
+  absoluteTempoForgivenessMs: number,
+  tempoTolerancePercent: number
+): string {
+  if (targetMs <= 0) {
+    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
+  }
+  const normalizedTolerancePercent = Number.isFinite(tempoTolerancePercent)
+    ? Math.min(maxTempoTolerancePercent, Math.max(minTempoTolerancePercent, tempoTolerancePercent))
+    : 0.2;
+  const absoluteForgivenessMs = Number.isFinite(absoluteTempoForgivenessMs) ? Math.max(0, absoluteTempoForgivenessMs) : 0;
+  const toleranceMs = targetMs * normalizedTolerancePercent;
+  const forgivenessMs = Math.max(absoluteForgivenessMs, toleranceMs);
+  const minMs = Math.max(0, targetMs - forgivenessMs);
+  const maxMs = targetMs + forgivenessMs;
+  return `${(measuredMs / 1000).toFixed(2)}s (target: ${(minMs / 1000).toFixed(2)}s - ${(maxMs / 1000).toFixed(2)}s)`;
 }
 
 function formatDurationMs(durationMs: number): string {
