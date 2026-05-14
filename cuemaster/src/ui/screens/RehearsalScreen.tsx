@@ -1357,10 +1357,10 @@ export function RehearsalScreen({
           })();
         } else if (shouldRepeatCue) {
           void (async () => {
-            await playTimingFeedbackTone("retry");
-            if (shouldAutoPlayLine) {
-              await playResponse(currentLineFromEngine());
-              await new Promise((resolve) => setTimeout(resolve, 2000));
+              await playTimingFeedbackTone("retry");
+              if (shouldAutoPlayLine) {
+                await playResponse(currentLineFromEngine());
+              await new Promise((resolve) => setTimeout(resolve, 1000));
             }
             await playCue();
           })();
@@ -1501,7 +1501,7 @@ export function RehearsalScreen({
       <div className="practice-options-page">
       <div className="practice-options-panel">
         <div className="practice-options-inline-row">
-          <label className="timing-setting timing-setting-inline">
+          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
             Cue length
             <PracticeSelect
               label="Cue length"
@@ -1510,7 +1510,7 @@ export function RehearsalScreen({
               onSelect={changeCueWindowPreset}
             />
           </label>
-          <label className="timing-setting timing-setting-inline">
+          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
             Blocking scope
             <PracticeSelect
               label="Blocking scope"
@@ -1523,7 +1523,7 @@ export function RehearsalScreen({
               onSelect={(next) => changeBlockingScope(next as BlockingScope)}
             />
           </label>
-          <label className="timing-setting timing-setting-inline">
+          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
             Text size
             <PracticeSelect
               label="Text size"

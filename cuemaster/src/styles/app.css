@@ -1352,6 +1352,11 @@ button:disabled {
   flex: 0 0 auto;
 }
 
+.practice-options-inline-row .timing-setting-inline-wide > .practice-select-wrap {
+  width: min(10.2rem, 60vw);
+  max-width: 10.2rem;
+}
+
 .practice-options-panel .timing-setting-wide > .practice-select-wrap {
   width: min(12rem, 72vw);
   max-width: 12rem;
@@ -2332,6 +2337,11 @@ button:disabled {
   .practice-options-inline-row .timing-setting > .practice-select-wrap {
     width: min(6.2rem, 20vw);
     max-width: 6.2rem;
+  }
+
+  .practice-options-inline-row .timing-setting-inline-wide > .practice-select-wrap {
+    width: min(9.3rem, 30vw);
+    max-width: 9.3rem;
   }
 
   .practice-options-page {
