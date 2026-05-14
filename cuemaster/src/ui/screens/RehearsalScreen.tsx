@@ -1448,15 +1448,18 @@ function OutlinePanel({
   const [mode, setMode] = useState<OutlineMode>("cues");
   const [searchQuery, setSearchQuery] = useState("");
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
-  const [localShowSlowTimingsOnly, setLocalShowSlowTimingsOnly] = useState(false);
+  const [activeTimingFilters, setActiveTimingFilters] = useState<TimingLineStatus[]>([]);
   const currentLineRef = useRef<HTMLButtonElement | null>(null);
+  const showAllTimings = activeTimingFilters.length === 0;
   const normalizedSearchQuery = searchQuery.trim();
   const sectionGroups = scriptBrowserSections(lines, sections)
     .map((section) => ({
       ...section,
       lines: section.lines
         .filter((line) => (showBookmarksOnly ? bookmarkedLineIds.has(line.id) : true))
-        .filter((line) => (localShowSlowTimingsOnly ? lineTimingStatusByLineId.get(line.id) === "slow" : true))
+        .filter((line) =>
+          showAllTimings ? true : activeTimingFilters.includes(lineTimingStatusByLineId.get(line.id) ?? "untimed")
+        )
         .filter((line) =>
           outlineSearchText(line, mode, includeDirections, includeBlocking, blockingScope, playbook)
             .toLocaleLowerCase()
@@ -1464,6 +1467,42 @@ function OutlinePanel({
       )
     }))
     .filter((section) => section.lines.length > 0);
+  const activeTimingFilterSummary = showAllTimings ? "" : activeTimingFilters.join(" + ");
+
+  function toggleTimingFilter(target: TimingLineStatus) {
+    setActiveTimingFilters((current) => {
+      if (current.includes(target)) {
+        return current.filter((status) => status !== target);
+      }
+      return [...current, target];
+    });
+  }
+
+  function timingFilterGlyph(status: TimingLineStatus): string {
+    if (status === "slow") {
+      return "🐢";
+    }
+    if (status === "fast") {
+      return "🐇";
+    }
+    if (status === "good") {
+      return "🎯";
+    }
+    return "⏱";
+  }
+
+  function timingFilterLabel(status: TimingLineStatus): string {
+    if (status === "slow") {
+      return "slow";
+    }
+    if (status === "fast") {
+      return "fast";
+    }
+    if (status === "good") {
+      return "on target";
+    }
+    return "untimed";
+  }
 
   useEffect(() => {
     currentLineRef.current?.scrollIntoView({ block: "nearest" });
@@ -1472,21 +1511,25 @@ function OutlinePanel({
   return (
     <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
       <div className="outline-header">
-        <div>
-          <p className="eyebrow">Outline</p>
-          <strong>{mode === "cues" ? "Showing cues" : "Showing lines"}</strong>
-        </div>
         <div className="outline-header-actions">
-          <button
-            type="button"
-            className={localShowSlowTimingsOnly ? "outline-timing-filter active" : "outline-timing-filter"}
-            aria-pressed={localShowSlowTimingsOnly}
-            aria-label={localShowSlowTimingsOnly ? "Show all lines" : "Show slow timing lines only"}
-            onClick={() => setLocalShowSlowTimingsOnly((current) => !current)}
-            title={localShowSlowTimingsOnly ? "Show all lines" : "Show slow timing lines only"}
-          >
-            ⏱
-          </button>
+          <div className="outline-timing-filter-group" aria-label="Timing filters">
+            {(["slow", "good", "fast", "untimed"] as TimingLineStatus[]).map((status) => {
+              const isActive = activeTimingFilters.includes(status);
+              return (
+                <button
+                  type="button"
+                  key={status}
+                  className={`outline-timing-filter ${isActive ? "active" : ""}`}
+                  aria-pressed={isActive}
+                  aria-label={`Show ${timingFilterLabel(status)} lines`}
+                  title={isActive ? `Hide ${timingFilterLabel(status)} lines` : `Show ${timingFilterLabel(status)} lines`}
+                  onClick={() => toggleTimingFilter(status)}
+                >
+                  {timingFilterGlyph(status)}
+                </button>
+              );
+            })}
+          </div>
           <button
             type="button"
             className={showBookmarksOnly ? "outline-bookmark-filter active" : "outline-bookmark-filter"}
@@ -1497,24 +1540,17 @@ function OutlinePanel({
           >
             {showBookmarksOnly ? "★" : "☆"}
           </button>
-          <div className="outline-mode-toggle" aria-label="Outline display">
-            <button
-              type="button"
-              className={mode === "cues" ? "active" : undefined}
-              aria-pressed={mode === "cues"}
-              onClick={() => setMode("cues")}
+          <label className="outline-mode-select-wrap">
+            <select
+              aria-label="Outline mode"
+              value={mode}
+              onChange={(event) => setMode(event.currentTarget.value as "cues" | "lines")}
+              className="outline-mode-select"
             >
-              Cues
-            </button>
-            <button
-              type="button"
-              className={mode === "lines" ? "active" : undefined}
-              aria-pressed={mode === "lines"}
-              onClick={() => setMode("lines")}
-            >
-              Lines
-            </button>
-          </div>
+              <option value="cues">Cues</option>
+              <option value="lines">Lines</option>
+            </select>
+          </label>
           <button
             type="button"
             className="outline-disclosure-button expanded"
@@ -1546,7 +1582,7 @@ function OutlinePanel({
         {sectionGroups.length === 0 ? (
           <p className="outline-empty">
             No matching {showBookmarksOnly ? "bookmarked " : ""}
-            {localShowSlowTimingsOnly ? "slow " : ""}
+            {!showAllTimings ? ` ${activeTimingFilterSummary} ` : ""}
             {mode === "cues" ? "cues" : "lines"}.
           </p>
         ) : null}
