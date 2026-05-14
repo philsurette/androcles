@@ -7,10 +7,11 @@
 }
 
 .shell {
+  min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   justify-items: stretch;
-  align-items: start;
+  align-items: stretch;
   width: 100%;
   max-width: 100%;
   overflow-x: hidden;
@@ -21,6 +22,7 @@
   max-width: 48rem;
   padding: clamp(2rem, 6vw, 5rem);
   width: 100%;
+  min-height: 0;
   border: 1px solid rgba(30, 38, 31, 0.16);
   border-radius: 2rem;
   background: var(--panel);
@@ -36,6 +38,7 @@
   width: 100%;
   max-width: none;
   padding: clamp(1.25rem, 4vw, 2.5rem);
+  min-height: 0;
 }
 
 .eyebrow {
