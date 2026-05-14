@@ -601,13 +601,6 @@ button:disabled {
   align-items: center;
 }
 
-.session-settings .section-jumper {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem;
-  align-items: center;
-}
-
 .session-settings select {
   border: 1px solid rgba(30, 38, 31, 0.18);
   border-radius: 0.75rem;

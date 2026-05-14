@@ -13,7 +13,6 @@ import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
-import { sectionOptionsForRole } from "../../rehearsal/sectionOptions";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
@@ -89,8 +88,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
-  const sectionOptions = sectionOptionsForRole(playbook, role);
-  const currentSectionId = currentRoleSectionId(sectionOptions, line);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -240,14 +237,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
     setActiveUtilityPanel(null);
-  }
-
-  async function jumpToSection(sectionId: string) {
-    const section = sectionOptions.find((candidate) => candidate.id === sectionId);
-    if (!section) {
-      throw new Error(`Section not found for role ${role.id}: ${sectionId}`);
-    }
-    await jumpToLine(section.startLineId);
   }
 
   async function jumpFromOutline(lineId: string) {
@@ -975,20 +964,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         </div>
 
         <div className="session-settings">
-          <label className="section-jumper">
-            Jump to
-            <select
-              value={currentSectionId}
-              disabled={sectionOptions.length === 0}
-              onChange={(event) => void jumpToSection(event.target.value)}
-            >
-              {sectionOptions.map((section) => (
-                <option key={section.id} value={section.id}>
-                  {section.title}
-                </option>
-              ))}
-            </select>
-          </label>
           {tempoStatus ? (
             <p className="status" aria-live="polite">
               {tempoStatus}
@@ -1525,16 +1500,6 @@ function BookmarkReviewSection({
       )}
     </>
   );
-}
-
-function currentRoleSectionId(
-  sections: Array<{ id: string; partId: number | null }>,
-  line: Line | null
-): string {
-  if (!line || sections.length === 0) {
-    return "";
-  }
-  return sections.find((section) => section.partId === line.partId)?.id ?? sections[0].id;
 }
 
 const minPlaybackRate = 0.4;

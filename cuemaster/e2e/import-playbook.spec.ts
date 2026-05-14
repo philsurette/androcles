@@ -17,9 +17,9 @@ test("imports a Playbook and shows actor roles", async ({ page }) => {
 
   await expect(page.getByText("Imported Androcles and the Lion")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Androcles and the Lion" })).toBeVisible();
-  await expect(page.getByText("2 roles: ANDROCLES, MEGAERA")).toBeVisible();
+  await expect(page.getByText("2 roles")).toBeVisible();
 
-  await page.getByRole("button", { name: "Open" }).click();
+  await page.getByRole("button", { name: "Rehearse!" }).click();
 
   await expect(page.getByText("Choose Role")).toBeVisible();
   await expect(page.getByRole("heading", { name: "ANDROCLES", exact: true })).toBeVisible();
