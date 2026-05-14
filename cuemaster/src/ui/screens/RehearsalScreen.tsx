@@ -2476,12 +2476,12 @@ function OutlinePanel({
         <label className="outline-search">
           <span>Search {mode === "cues" ? "cues" : "lines"}</span>
           <div>
-            <input
-              type="search"
-              value={searchQuery}
-              placeholder={mode === "cues" ? "Find a cue" : "Find a line"}
-              onChange={(event) => setSearchQuery(event.target.value)}
-            />
+          <input
+            type="search"
+            value={searchQuery}
+            placeholder={mode === "cues" ? "Find a line by cue text or line id" : "Find a line by line text or line id"}
+            onChange={(event) => setSearchQuery(event.target.value)}
+          />
           {searchQuery ? (
             <button
               type="button"
