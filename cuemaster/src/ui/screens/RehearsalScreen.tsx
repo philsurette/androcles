@@ -35,7 +35,7 @@ type RehearsalScreenProps = {
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
 type OutlineMode = "cues" | "lines";
-type TimingLineStatus = "untimed" | "slow" | "timed";
+type TimingLineStatus = "untimed" | "slow" | "fast" | "good";
 type TimingLabel = "fast" | "slow" | "good";
 type TimingPill = "delivery" | "pickup";
 type TimingStatusPill = {
@@ -130,7 +130,15 @@ export function RehearsalScreen({
       role.lines.map((roleLine) => [roleLine.id, "untimed" as const])
     );
     for (const attempt of reviewAttempts) {
-      statusByLine.set(attempt.lineId, attempt.deliveryLabel === "slow" ? "slow" : "timed");
+      if (attempt.deliveryLabel === "slow") {
+        statusByLine.set(attempt.lineId, "slow");
+        continue;
+      }
+      if (attempt.deliveryLabel === "fast") {
+        statusByLine.set(attempt.lineId, "fast");
+        continue;
+      }
+      statusByLine.set(attempt.lineId, "good");
     }
     return statusByLine;
   }, [reviewAttempts, role.lines]);
@@ -1636,6 +1644,15 @@ function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
 }
 
 function timingLineStatusToGlyph(status: TimingLineStatus): string {
+  if (status === "slow") {
+    return "🐢";
+  }
+  if (status === "fast") {
+    return "🐇";
+  }
+  if (status === "good") {
+    return "🎯";
+  }
   return "⏱";
 }
 
@@ -1643,8 +1660,11 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
   if (status === "slow") {
     return "Slow timing";
   }
-  if (status === "timed") {
-    return "Timed";
+  if (status === "fast") {
+    return "Fast timing";
+  }
+  if (status === "good") {
+    return "Good timing";
   }
   return "Untimed";
 }
