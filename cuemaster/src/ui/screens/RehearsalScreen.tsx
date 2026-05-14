@@ -1191,6 +1191,7 @@ export function RehearsalScreen({
                       label: `${optionMultiplier.toFixed(1)}x`
                     }))}
                     onSelect={(next) => changePracticeTargetPaceMultiplier(Number(next))}
+                    disabled={syncSpeakAlongSpeed}
                   />
                 </label>
               </div>
@@ -1469,54 +1470,54 @@ export function RehearsalScreen({
                   </section>
                 </section>
 
-                <section className="stack" aria-label="Current cue and line">
-                  <div className="line-practice-controls">
-                    <section className="control-strip line-control-strip" aria-label="Line controls">
-                      <div className="transport">
-                        <div className="transport-group">
-                          <button
-                            type="button"
-                            className="transport-button secondary"
-                            aria-label="Play your line. Shortcut: L."
-                            data-tooltip="Play your line"
-                            onClick={() => void runCommand("hear-line")}
-                            disabled={!line}
-                          >
-                            <span aria-hidden="true" className="transport-icon">
-                              ▶
-                            </span>
-                          </button>
-                          {playbackSource === "line" && playbackState === "playing" ? (
-                            <button
-                              type="button"
-                              className="transport-button secondary"
-                              aria-label="Pause line playback. Shortcut: Space."
-                              data-tooltip="Pause line"
+                  <section className="stack" aria-label="Current cue and line">
+                    <div className="line-practice-controls">
+                      <section className="control-strip line-control-strip" aria-label="Line controls">
+                        <div className="transport">
+                          <div className="transport-group">
+                            {playbackSource === "line" && playbackState === "playing" ? (
+                              <button
+                                type="button"
+                                className="transport-button secondary"
+                                aria-label="Pause line playback. Shortcut: Space."
+                                data-tooltip="Pause line"
                               onClick={() => void runCommand("pause")}
                             >
-                              <span aria-hidden="true" className="transport-icon">
-                                ⏸
-                              </span>
-                            </button>
-                          ) : null}
-                          {playbackSource === "line" && playbackState === "paused" ? (
+                                <span aria-hidden="true" className="transport-icon">
+                                  ⏸
+                                </span>
+                              </button>
+                            ) : playbackSource === "line" && playbackState === "paused" ? (
+                              <button
+                                type="button"
+                                className="transport-button secondary"
+                                aria-label="Resume line playback. Shortcut: Space."
+                                data-tooltip="Resume line"
+                              onClick={() => void runCommand("resume")}
+                            >
+                                <span aria-hidden="true" className="transport-icon">
+                                  ▶
+                                </span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="transport-button secondary"
+                                aria-label="Play your line. Shortcut: L."
+                                data-tooltip="Play your line"
+                                onClick={() => void runCommand("hear-line")}
+                                disabled={!line}
+                              >
+                                <span aria-hidden="true" className="transport-icon">
+                                  ▶
+                                </span>
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="transport-button secondary"
-                              aria-label="Resume line playback. Shortcut: Space."
-                              data-tooltip="Resume line"
-                              onClick={() => void runCommand("resume")}
-                            >
-                              <span aria-hidden="true" className="transport-icon">
-                                ▶
-                              </span>
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="transport-button secondary"
-                            aria-label="Stop line playback. Shortcut: Escape."
-                            data-tooltip="Stop line"
+                              aria-label="Stop line playback. Shortcut: Escape."
+                              data-tooltip="Stop line"
                             onClick={() => void runCommand("stop")}
                           >
                             <span aria-hidden="true" className="transport-icon">
