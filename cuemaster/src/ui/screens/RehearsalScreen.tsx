@@ -2137,10 +2137,10 @@ function OutlinePanel({
                   <strong>{line.id}</strong>
                   <span className="outline-speaker">{outlineSpeaker(line, mode, includeDirections, playbook)}</span>
                   <span className="outline-text">{outlineText(line, mode, includeDirections, playbook)}</span>
-                  {includeDirections && line.directions.length > 0 ? (
+                  {mode === "lines" && includeDirections && line.directions.length > 0 ? (
                     <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
                   ) : null}
-                  {includeBlocking && visibleBlockingForLine(line, blockingScope).length > 0 ? (
+                  {mode === "lines" && includeBlocking && visibleBlockingForLine(line, blockingScope).length > 0 ? (
                     <small>
                       {visibleBlockingForLine(line, blockingScope)
                         .map((blocking) => `${blocking.targets.join(", ")}: ${blocking.text}`)
@@ -2173,27 +2173,30 @@ export function outlineSearchText(
   if (mode === "cues") {
     parts.push(line.speaker, line.responseText);
   }
-  if (includeDirections) {
+  if (mode === "lines" && includeDirections) {
     parts.push(...line.directions.map((direction) => direction.text));
   }
-  if (includeBlocking) {
+  if (mode === "lines" && includeBlocking) {
     parts.push(...visibleBlockingForLine(line, blockingScope).map((blocking) => `${blocking.targets.join(" ")} ${blocking.text}`));
   }
   return parts.join(" ");
 }
 
 function outlineSpeaker(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
+  if (mode === "cues") {
+    return visibleCuesForDisplay([line.cue], false, playbook.context, playbook, line)[0]?.speaker ?? line.cue.speaker;
+  }
   if (mode === "lines") {
     return line.speaker;
   }
-  return visibleCuesForDisplay([line.cue], includeDirections, playbook.context, playbook, line)[0]?.speaker ?? line.cue.speaker;
+  return "";
 }
 
 function outlineText(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
   if (mode === "lines") {
     return line.responseText;
   }
-  return visibleCuesForDisplay([line.cue], includeDirections, playbook.context, playbook, line)[0]?.text ?? line.cue.text;
+  return visibleCuesForDisplay([line.cue], false, playbook.context, playbook, line)[0]?.text ?? line.cue.text;
 }
 
 function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
