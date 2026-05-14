@@ -331,18 +331,27 @@ button:disabled {
 }
 
 .outline-open-button {
-  width: 2rem;
-  min-width: 0;
-  min-height: 2rem;
+  width: 1.8rem;
+  min-width: 1.8rem;
+  min-height: 1.8rem;
   padding: 0;
+  border-radius: 0.6rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.outline-open-button:hover,
+.outline-open-button:focus-visible {
+  background: transparent;
+  transform: none;
 }
 
 .rehearsal-line-metadata {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.2rem;
   justify-content: flex-end;
-  margin-inline-start: 0.25rem;
+  margin-inline-start: 0;
 }
 
 .breadcrumb,
