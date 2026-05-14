@@ -762,7 +762,7 @@ button:disabled {
   margin-top: 0.2rem;
   min-width: 0;
   overflow: visible;
-  overflow-x: auto;
+  overflow-x: hidden;
   padding-bottom: 0.05rem;
 }
 
@@ -2206,6 +2206,7 @@ button:disabled {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-start;
+    overflow-x: hidden;
   }
 
   .transport-button {
