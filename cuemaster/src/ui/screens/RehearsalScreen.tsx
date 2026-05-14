@@ -32,6 +32,7 @@ type RehearsalScreenProps = {
 };
 
 type PlaybackUiState = "idle" | "playing" | "paused";
+type PlaybackSource = "cue" | "line";
 type UtilityPanel = "bookmarks" | "timing" | "options";
 type OutlineMode = "cues" | "lines";
 
@@ -49,6 +50,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     cueWindowPresetForId(initialSession?.cueWindowPresetId).id
   );
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
+  const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [showLinesByDefault, setShowLinesByDefault] = useState(
     initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
@@ -313,6 +315,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   async function playCue() {
     const currentLine = engine.currentLine();
     setHasStarted(true);
+    setPlaybackSource("cue");
     setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
     try {
@@ -332,11 +335,13 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
         setPlaybackStatus("Cue complete.");
       }
       setPlaybackState("idle");
+      setPlaybackSource(null);
       if (!speakAlongEnabled) {
         beginTimedAttempt();
       }
     } catch (error) {
       setPlaybackState("idle");
+      setPlaybackSource(null);
       setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
@@ -345,14 +350,17 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     if (!line) {
       return;
     }
+    setPlaybackSource("line");
     setPlaybackStatus("Playing your line...");
     setPlaybackState("playing");
     try {
       await audioQueue.play(responsePlaybackItems(line, playbackRate));
       setPlaybackStatus("Line complete.");
       setPlaybackState("idle");
+      setPlaybackSource(null);
     } catch (error) {
       setPlaybackState("idle");
+      setPlaybackSource(null);
       setPlaybackStatus(userFacingErrorMessage(error));
     }
   }
@@ -378,6 +386,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   function stopPlayback() {
     audioQueue.cancel();
     setPlaybackState("idle");
+    setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
     setTempoStatus(tempoTimingEnabled ? "Tempo timing is idle." : tempoStatus);
   }
@@ -798,6 +807,122 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             {line ? (
               <div className="rehearsal-line-layout">
                 <section className="cue-strip" aria-label="Cue">
+                  <section className="control-strip cue-control-strip" aria-label="Cue controls">
+                    <div className="transport">
+                      <div className="control-group transport-group cue-play-group">
+                        {playbackSource === "cue" && playbackState === "playing" ? (
+                          <button
+                            type="button"
+                            className="transport-button secondary"
+                            aria-label="Pause cue playback. Shortcut: Space."
+                            data-tooltip="Pause cue"
+                            onClick={() => void runCommand("pause")}
+                          >
+                            <span aria-hidden="true" className="transport-icon">
+                              ⏸
+                            </span>
+                          </button>
+                        ) : null}
+                        {playbackSource === "cue" && playbackState === "paused" ? (
+                          <button
+                            type="button"
+                            className="transport-button secondary"
+                            aria-label="Resume cue playback. Shortcut: Space."
+                            data-tooltip="Resume cue"
+                            onClick={() => void runCommand("resume")}
+                          >
+                            <span aria-hidden="true" className="transport-icon">
+                              ▶
+                            </span>
+                          </button>
+                        ) : null}
+                        {playbackSource !== "cue" || playbackState === "idle" ? (
+                          <button
+                            type="button"
+                            className="transport-button secondary"
+                            aria-label={`${hasStarted ? "Replay cue" : "Play cue"}. Shortcut: R.`}
+                            data-tooltip={hasStarted ? "Replay cue" : "Play cue"}
+                            onClick={() => void runCommand("repeat-cue")}
+                          >
+                            <span aria-hidden="true" className="transport-icon">
+                              ▶
+                            </span>
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="transport-button secondary"
+                          aria-label="Stop cue playback. Shortcut: Escape."
+                          data-tooltip="Stop"
+                          onClick={() => void runCommand("stop")}
+                        >
+                          <span aria-hidden="true" className="transport-icon">
+                            ■
+                          </span>
+                        </button>
+                      </div>
+                      <div className="control-group transport-group cue-navigation-group">
+                        <button
+                          type="button"
+                          className="transport-button secondary"
+                          aria-label="Go to previous line. Shortcut: Left arrow."
+                          data-tooltip="Previous line"
+                          disabled={position.atBeginning}
+                          onClick={() => void runCommand("back")}
+                        >
+                          <span aria-hidden="true" className="transport-icon">
+                            ⏮
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          className="transport-button secondary"
+                          aria-label="Go to next line. Shortcut: Right arrow."
+                          data-tooltip="Next line"
+                          disabled={position.atEnd}
+                          onClick={() => void runCommand("next")}
+                        >
+                          <span aria-hidden="true" className="transport-icon">
+                            ⏭
+                          </span>
+                        </button>
+                      </div>
+                      <div className="control-group transport-group cue-bookmark-group">
+                        <button
+                          type="button"
+                          className="quick-toggle"
+                          aria-label="Go to previous bookmark."
+                          data-tooltip="Previous bookmark"
+                          onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
+                          disabled={!bookmarkNeighbors.previousLineId}
+                        >
+                          <span aria-hidden="true">↤</span>
+                        </button>
+                        <button
+                          type="button"
+                          className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
+                          aria-pressed={isCurrentLineBookmarked}
+                          aria-label={
+                            isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."
+                          }
+                          data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
+                          onClick={() => void runCommand("bookmark")}
+                        >
+                          <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="quick-toggle"
+                          aria-label="Go to next bookmark."
+                          data-tooltip="Next bookmark"
+                          onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
+                          disabled={!bookmarkNeighbors.nextLineId}
+                        >
+                          <span aria-hidden="true">↦</span>
+                        </button>
+                      </div>
+                    </div>
+                  </section>
                   <div className="cue-strip-cards">
                     {visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line).map((cue, index) => (
                       <CueCard cue={cue} key={`${line.id}-cue-${index}`} />
@@ -820,128 +945,61 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
                 <section className="stack" aria-label="Current cue and line">
                   <div className="line-practice-controls">
-                    <div className="transport inline-transport">
-                      <div className="transport-group" aria-label="Playback controls">
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Go to previous line. Shortcut: Left arrow."
-                          data-tooltip="Previous line"
-                          disabled={position.atBeginning}
-                          onClick={() => void runCommand("back")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ⏮
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label={`${hasStarted ? "Repeat cue" : "Start cue"}. Shortcut: Space or R.`}
-                          data-tooltip={`${hasStarted ? "Repeat cue" : "Start cue"}`}
-                          onClick={() => void runCommand("repeat-cue")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            {hasStarted ? "↻" : "▶"}
-                          </span>
-                        </button>
-                        {playbackState === "paused" ? (
+                    <section className="control-strip line-control-strip" aria-label="Line controls">
+                      <div className="transport">
+                        <div className="transport-group">
                           <button
                             type="button"
                             className="transport-button secondary"
-                            aria-label="Resume playback. Shortcut: Space."
-                            data-tooltip="Resume"
-                            onClick={() => void runCommand("resume")}
+                            aria-label="Play your line. Shortcut: L."
+                            data-tooltip="Play your line"
+                            onClick={() => void runCommand("hear-line")}
+                            disabled={!line}
                           >
                             <span aria-hidden="true" className="transport-icon">
                               ▶
                             </span>
                           </button>
-                        ) : (
+                          {playbackSource === "line" && playbackState === "playing" ? (
+                            <button
+                              type="button"
+                              className="transport-button secondary"
+                              aria-label="Pause line playback. Shortcut: Space."
+                              data-tooltip="Pause line"
+                              onClick={() => void runCommand("pause")}
+                            >
+                              <span aria-hidden="true" className="transport-icon">
+                                ⏸
+                              </span>
+                            </button>
+                          ) : null}
+                          {playbackSource === "line" && playbackState === "paused" ? (
+                            <button
+                              type="button"
+                              className="transport-button secondary"
+                              aria-label="Resume line playback. Shortcut: Space."
+                              data-tooltip="Resume line"
+                              onClick={() => void runCommand("resume")}
+                            >
+                              <span aria-hidden="true" className="transport-icon">
+                                ▶
+                              </span>
+                            </button>
+                          ) : null}
                           <button
                             type="button"
                             className="transport-button secondary"
-                            aria-label="Pause playback. Shortcut: Space."
-                            data-tooltip="Pause"
-                            disabled={playbackState !== "playing"}
-                            onClick={() => void runCommand("pause")}
+                            aria-label="Stop line playback. Shortcut: Escape."
+                            data-tooltip="Stop line"
+                            onClick={() => void runCommand("stop")}
                           >
                             <span aria-hidden="true" className="transport-icon">
-                              ⏸
+                              ■
                             </span>
                           </button>
-                        )}
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Stop playback. Shortcut: Escape."
-                          data-tooltip="Stop"
-                          onClick={() => void runCommand("stop")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ■
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Go to next line. Shortcut: Right arrow."
-                          data-tooltip="Next line"
-                          disabled={position.atEnd}
-                          onClick={() => void runCommand("next")}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ⏭
-                          </span>
-                        </button>
+                        </div>
                       </div>
-                      <div className="transport-group secondary-actions" aria-label="Line controls">
-                        <button
-                          type="button"
-                          className="transport-button secondary"
-                          aria-label="Hear your line. Shortcut: L."
-                          data-tooltip="Hear line"
-                          onClick={() => void runCommand("hear-line")}
-                          disabled={!line}
-                        >
-                          <span aria-hidden="true" className="transport-icon">
-                            ♫
-                          </span>
-                        </button>
-                        <button
-                          type="button"
-                          className="quick-toggle"
-                          aria-label="Go to previous bookmark."
-                          data-tooltip="Previous bookmark"
-                          onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
-                          disabled={!bookmarkNeighbors.previousLineId}
-                        >
-                          <span aria-hidden="true">↤</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
-                          aria-pressed={isCurrentLineBookmarked}
-                          aria-label={
-                          isCurrentLineBookmarked ? "Remove bookmark from current line." : "Bookmark current line."
-                        }
-                        data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
-                        onClick={() => void runCommand("bookmark")}
-                      >
-                          <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="quick-toggle"
-                          aria-label="Go to next bookmark."
-                          data-tooltip="Next bookmark"
-                          onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
-                          disabled={!bookmarkNeighbors.nextLineId}
-                        >
-                          <span aria-hidden="true">↦</span>
-                        </button>
-                      </div>
-                    </div>
+                    </section>
                   </div>
                   {isLineRevealed ? (
                     <LineCard
