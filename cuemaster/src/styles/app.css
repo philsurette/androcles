@@ -499,6 +499,13 @@ button:disabled {
   white-space: nowrap;
 }
 
+.cue-speaker-placeholder {
+  width: 0;
+  min-width: 0;
+  display: block;
+  visibility: hidden;
+}
+
 .cue-blocking-card {
   color: var(--quiet);
 }
