@@ -1078,6 +1078,14 @@ button:disabled {
   display: none;
 }
 
+@media (max-width: 520px) {
+  .quick-toggle::after {
+    left: 0;
+    transform: translateX(0);
+    text-align: left;
+  }
+}
+
 .practice-options-panel {
   display: flex;
   flex-wrap: wrap;
