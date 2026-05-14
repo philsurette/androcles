@@ -1536,8 +1536,8 @@ export function RehearsalScreen({
             />
           </label>
         </div>
-        <fieldset className="timing-options">
-          <legend>Tempo</legend>
+        <details className="timing-options timing-options-collapsible">
+          <summary className="timing-options-summary">Tempo</summary>
           <div className="timing-options-controls">
             <div className="timing-targets-row">
               <div className="timing-targets-controls">
@@ -1600,9 +1600,9 @@ export function RehearsalScreen({
               />
             </label>
           </div>
-        </fieldset>
-        <fieldset className="timing-options">
-          <legend>Cue Pickup</legend>
+        </details>
+        <details className="timing-options timing-options-collapsible">
+          <summary className="timing-options-summary">Cue Pickup</summary>
           <div className="timing-options-controls">
             <div className="timing-targets-row">
               <div className="timing-targets-controls">
@@ -1668,9 +1668,9 @@ export function RehearsalScreen({
               />
             </label>
             </div>
-          </fieldset>
-          <fieldset className="timing-options">
-            <legend>Autoadvance</legend>
+          </details>
+          <details className="timing-options timing-options-collapsible">
+            <summary className="timing-options-summary">Autoadvance</summary>
             <div className="timing-options-controls">
               <label className="timing-setting timing-setting-2x">
                 Advance
@@ -1686,9 +1686,9 @@ export function RehearsalScreen({
                 />
               </label>
               <label className="timing-setting timing-setting-2x">
-                Play line
+                Replay line
                 <PracticeSelect
-                  label="Play line"
+                  label="Replay line"
                   value={autoPlayLineMode}
                   options={[
                     { value: "disabled", label: "Disabled" },
@@ -1700,7 +1700,7 @@ export function RehearsalScreen({
                 />
               </label>
             </div>
-          </fieldset>
+          </details>
         </div>
       </div>
   );

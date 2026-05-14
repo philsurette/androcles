@@ -1395,17 +1395,48 @@ button:disabled {
   border: 1px solid rgba(30, 38, 31, 0.1);
   border-radius: 0.9rem;
   margin: 0;
-  padding: 0.85rem;
+  padding: 0;
 }
 
-.timing-options legend {
+.timing-options-summary {
+  list-style: none;
+  cursor: pointer;
   color: var(--accent);
   font-family: var(--display-font);
   font-size: 0.9rem;
   font-weight: 900;
   letter-spacing: 0.08em;
-  padding: 0 0.35rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0.35rem 0.35rem 0.35rem 0.5rem;
   text-transform: uppercase;
+}
+
+.timing-options-summary::marker,
+.timing-options-summary::-webkit-details-marker {
+  display: none;
+}
+
+.timing-options-summary::after {
+  content: "▾";
+  font-size: 0.85rem;
+  line-height: 1;
+  transition: transform 0.15s ease;
+}
+
+.timing-options:not([open]) .timing-options-summary::after {
+  transform: rotate(-90deg);
+}
+
+.timing-options:not([open]) .timing-options-controls {
+  display: none;
+}
+
+.timing-options .timing-options-controls {
+  padding: 0 0.5rem 0.55rem;
 }
 
 .timing-options-controls {
