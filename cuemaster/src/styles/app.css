@@ -215,16 +215,31 @@ button:disabled {
   cursor: pointer;
 }
 
+.rehearsal-bottom-strip .timing-status-pill {
+  padding: 0.02rem 0.4rem;
+  min-height: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.72rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .timing-status-pill:focus-visible {
   outline: 2px solid rgba(0, 0, 0, 0.25);
   outline-offset: 2px;
 }
 
 .timing-status-pill-details {
-  width: 100%;
+  width: auto;
   font-size: 0.78rem;
   color: var(--ink);
   margin-left: 0.1rem;
+  white-space: nowrap;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .timing-status-pill--good {
@@ -828,6 +843,23 @@ button:disabled {
 
 .rehearsal-bottom-strip > .status {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rehearsal-bottom-strip > .status-timing {
+  white-space: nowrap;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .line-control-strip .line-playback-group {
@@ -1027,7 +1059,7 @@ button:disabled {
   gap: 0.6rem;
   align-items: center;
   margin-top: 0;
-  padding-top: 0.5rem;
+  padding-top: 0.25rem;
   align-self: stretch;
   width: 100%;
 }
