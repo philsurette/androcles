@@ -63,6 +63,15 @@ export class RehearsalEngine {
     return this.currentLine();
   }
 
+  jumpToLine(lineId: string): Line | null {
+    const index = this.state.lines.findIndex((line) => line.id === lineId);
+    if (index < 0) {
+      return null;
+    }
+    this.state.index = index;
+    return this.currentLine();
+  }
+
   cuePayloads(cueWindowPresetId = "full"): Array<Line["cue"]> {
     const preset = cueWindowPresetForId(cueWindowPresetId);
     if (preset.windowMs === 0) {

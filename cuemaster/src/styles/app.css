@@ -781,6 +781,24 @@ button:disabled {
   align-items: center;
 }
 
+.line-duration-panel {
+  margin-top: 0.45rem;
+  border: 1px solid rgba(30, 38, 31, 0.14);
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.54);
+  padding: 0.45rem 0.6rem;
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+}
+
+.line-duration-panel p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.22;
+}
+
 .quick-toggle {
   position: relative;
   display: inline-flex;

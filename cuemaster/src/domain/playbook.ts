@@ -18,4 +18,5 @@ export type PlaybookImportMetadata = {
   filename: string;
   sizeBytes: number;
   importedAt: number;
+  buildId?: string;
 };

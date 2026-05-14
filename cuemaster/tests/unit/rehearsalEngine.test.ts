@@ -68,6 +68,22 @@ describe("RehearsalEngine", () => {
     expect(engine.cuePayloads("last_2s").map((cue) => cue.text)).toEqual(["You are always talking nonsense."]);
   });
 
+  it("can jump directly to any line by id", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES", { startLineId: "I-1" });
+
+    expect(engine.jumpToLine("I-3")?.id).toBe("I-3");
+    expect(engine.position()).toEqual({ index: 1, total: 2, atBeginning: false, atEnd: true });
+    expect(engine.currentLine()?.id).toBe("I-3");
+    expect(engine.jumpToLine("I-1")?.id).toBe("I-1");
+    expect(engine.position()).toEqual({ index: 0, total: 2, atBeginning: true, atEnd: false });
+  });
+
+  it("returns no line when target line id is missing", () => {
+    const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
+
+    expect(engine.jumpToLine("missing")).toBeNull();
+  });
+
   it("preserves line-specific target hesitation timing", () => {
     const engine = RehearsalEngine.forRole(playbook, "ANDROCLES");
 

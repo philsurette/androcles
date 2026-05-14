@@ -14,7 +14,7 @@ import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
-import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { tempoFeedbackFor, timingTargetsForLine, type TempoFeedback } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs } from "../../rehearsal/tempoTimingConfig";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
@@ -44,6 +44,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       includeDirections: initialSession?.includeDirections
     })
   );
+  const [activeLineId, setActiveLineId] = useState(() => {
+    const startLine = role.lines[engine.position().index];
+    return startLine ? startLine.id : null;
+  });
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
   const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
@@ -89,8 +93,15 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
-  const line = engine.currentLine();
+  const activeTimingLineIdRef = useRef<string | null>(null);
+  const timingLoadRequestRef = useRef(0);
+  const [showLineDurationInfo, setShowLineDurationInfo] = useState(false);
+  const line = useMemo(
+    () => role.lines.find((candidate) => candidate.id === activeLineId) ?? null,
+    [activeLineId, role.lines]
+  );
   const cues = engine.cuePayloads(cueWindowPresetId);
+  const lineTimingTargets = useMemo(() => (line ? timingTargetsForLine(line) : null), [line]);
   const visibleCues = useMemo(
     () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
     [cues, includeDirections, playbook, line]
@@ -119,6 +130,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   useEffect(() => {
     void loadLastTimingAttempt();
     void loadCurrentBookmark();
+    setShowLineDurationInfo(false);
   }, [line?.id]);
 
   useEffect(() => {
@@ -196,6 +208,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     return "repeat-cue";
   }
 
+  function currentLineFromEngine(): Line | null {
+    return role.lines[engine.position().index] ?? engine.currentLine() ?? null;
+  }
+
   async function runCommand(command: RehearsalCommand) {
     switch (command) {
       case "next":
@@ -233,6 +249,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function goNext() {
+    activeTimingLineIdRef.current = null;
     engine.next();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
@@ -242,15 +259,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function jumpToLine(lineId: string) {
-    const targetLine = role.lines.find((candidate) => candidate.id === lineId);
+    activeTimingLineIdRef.current = null;
+    const targetLine = engine.jumpToLine(lineId);
     if (!targetLine) {
       throw new Error(`Line not found for role ${role.id}: ${lineId}`);
-    }
-    while (engine.currentLine()?.id !== lineId && !engine.position().atEnd) {
-      engine.next();
-    }
-    while (engine.currentLine()?.id !== lineId && !engine.position().atBeginning) {
-      engine.previous();
     }
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
@@ -265,6 +277,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function goPrevious() {
+    activeTimingLineIdRef.current = null;
     engine.previous();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
@@ -277,6 +290,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     const nextPosition = engine.position();
     const nextRevealLine = options.revealLine ?? isLineRevealed;
     setPosition(nextPosition);
+    setActiveLineId(nextPosition.index >= 0 && nextPosition.index < role.lines.length ? role.lines[nextPosition.index].id : null);
     setTempoFeedback(null);
     void saveSession(
       nextPosition.index,
@@ -329,7 +343,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function playCue() {
-    const currentLine = engine.currentLine();
+    const currentLine = currentLineFromEngine();
     setHasStarted(true);
     setPlaybackSource("cue");
     setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
@@ -401,6 +415,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   function stopPlayback() {
     audioQueue.cancel();
+    activeTimingLineIdRef.current = null;
     setPlaybackState("idle");
     setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
@@ -565,6 +580,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
       await detector.start();
       voiceActivityDetector?.stop();
       setVoiceActivityDetector(detector);
+      activeTimingLineIdRef.current = null;
       setTempoTimingEnabled(true);
       setTempoTimingPreferred(true);
       setSpeakAlongEnabled(false);
@@ -579,6 +595,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function disableTempoTiming(message = "Tempo timing disabled."): Promise<void> {
     voiceActivityDetector?.stop();
+    activeTimingLineIdRef.current = null;
     setVoiceActivityDetector(null);
     setTempoTimingEnabled(false);
     setTempoTimingPreferred(false);
@@ -590,13 +607,25 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     if (!tempoTimingEnabled || !voiceActivityDetector) {
       return;
     }
+    const timingLine = currentLineFromEngine();
+    if (!timingLine) {
+      setTempoStatus("No line selected for timing.");
+      return;
+    }
+    activeTimingLineIdRef.current = timingLine.id;
     setTempoFeedback(null);
     setTempoStatus("Listening for your pickup...");
     voiceActivityDetector.beginAttempt();
   }
 
   function handleVoiceActivity(result: VoiceActivityResult) {
-    if (!line) {
+    const timingLineId = activeTimingLineIdRef.current;
+    if (!timingLineId) {
+      return;
+    }
+    const timingLine = role.lines.find((candidate) => candidate.id === timingLineId);
+    if (!timingLine) {
+      activeTimingLineIdRef.current = null;
       return;
     }
     if (result.event === "speech-started") {
@@ -605,9 +634,10 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     } else {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
       const deliveryMs = Math.round(result.deliveryMs ?? 0);
-      const feedback = tempoFeedbackFor(line, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
+      const feedback = tempoFeedbackFor(timingLine, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
       setTempoFeedback(feedback);
-      void saveTimingAttempt(line.id, feedback);
+      void saveTimingAttempt(timingLine.id, feedback);
+      activeTimingLineIdRef.current = null;
       setTempoStatus("Timed attempt complete.");
     }
   }
@@ -633,7 +663,9 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     try {
       await indexedDbStorage.timingAttempts.save(attempt);
       setStorageStatus("");
-      setLastTimingAttempt(attempt);
+      if (line?.id === lineId) {
+        setLastTimingAttempt(attempt);
+      }
       await loadRecentTimingAttempts();
       await loadReviewAttempts();
     } catch (error) {
@@ -642,13 +674,24 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function loadLastTimingAttempt() {
-    if (!line) {
+    const currentLine = line;
+    if (!currentLine) {
       setLastTimingAttempt(null);
+      setRecentTimingAttempts([]);
       return;
     }
+    const requestId = ++timingLoadRequestRef.current;
     try {
-      setLastTimingAttempt((await indexedDbStorage.timingAttempts.latestForLine(playbook.id, role.id, line.id)) ?? null);
-      await loadRecentTimingAttempts();
+      const latest = await indexedDbStorage.timingAttempts.latestForLine(playbook.id, role.id, currentLine.id);
+      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
+        return;
+      }
+      setLastTimingAttempt(latest ?? null);
+      const recent = await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, currentLine.id, 5);
+      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
+        return;
+      }
+      setRecentTimingAttempts(recent);
     } catch (error) {
       setLastTimingAttempt(null);
       setRecentTimingAttempts([]);
@@ -657,12 +700,18 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   }
 
   async function loadRecentTimingAttempts() {
-    if (!line) {
+    const currentLine = line;
+    if (!currentLine) {
       setRecentTimingAttempts([]);
       return;
     }
+    const requestId = ++timingLoadRequestRef.current;
     try {
-      setRecentTimingAttempts(await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, line.id, 5));
+      const recent = await indexedDbStorage.timingAttempts.recentForLine(playbook.id, role.id, currentLine.id, 5);
+      if (requestId !== timingLoadRequestRef.current || line?.id !== currentLine.id) {
+        return;
+      }
+      setRecentTimingAttempts(recent);
     } catch (error) {
       setRecentTimingAttempts([]);
       setStorageStatus(userFacingErrorMessage(error));
@@ -1109,7 +1158,32 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             >
               <span aria-hidden="true">⌞⌝</span>
             </button>
+            <button
+              type="button"
+              className={showLineDurationInfo ? "quick-toggle active" : "quick-toggle"}
+              aria-label={showLineDurationInfo ? "Hide line timing info." : "Show line timing info."}
+              aria-pressed={showLineDurationInfo}
+              disabled={!line}
+              data-tooltip={showLineDurationInfo ? "Hide line timing info" : "Show line timing info"}
+              onClick={() => setShowLineDurationInfo((current) => !current)}
+            >
+              <span aria-hidden="true">ⓘ</span>
+            </button>
           </div>
+          {showLineDurationInfo && line ? (
+            <div className="line-duration-panel">
+              <p>Build ID: {playbook.importMetadata?.buildId ?? "unknown"}</p>
+              <p>Artifact: {playbook.importMetadata?.filename ?? playbook.id}</p>
+              <p>Line ID: {line.id}</p>
+              <p>
+                Response: {formatDurationMs(lineTimingTargets?.targetDeliveryMs ?? 0)} target
+              </p>
+              <p>
+                Line total:{" "}
+                {formatDurationMs((lineTimingTargets ? lineTimingTargets.targetDeliveryMs : 0) + line.cue.durationMs)}
+              </p>
+            </div>
+          ) : null}
           {tempoStatus ? (
             <p className="status" aria-live="polite">
               {tempoStatus}
@@ -1670,6 +1744,14 @@ function isCompactRehearsalViewport() {
 
 function formatTimingOption(optionMs: number): string {
   return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;
+}
+
+function formatDurationMs(durationMs: number): string {
+  const safeDurationMs = Math.max(0, durationMs);
+  if (safeDurationMs < 1000) {
+    return `${safeDurationMs} ms`;
+  }
+  return `${(safeDurationMs / 1000).toFixed(2).replace(/\.?0+$/, "")}s`;
 }
 
 export function clampPlaybackRate(playbackRate: number): number {
