@@ -2138,16 +2138,6 @@ function OutlinePanel({
                   <strong>{line.id}</strong>
                   <span className="outline-speaker">{outlineSpeaker(line, mode, includeDirections, playbook)}</span>
                   <span className="outline-text">{outlineText(line, mode, includeDirections, playbook)}</span>
-                  {mode === "lines" && includeDirections && line.directions.length > 0 ? (
-                    <small>{line.directions.map((direction) => direction.text).join(" ")}</small>
-                  ) : null}
-                  {mode === "lines" && includeBlocking && visibleBlockingForLine(line, blockingScope).length > 0 ? (
-                    <small>
-                      {visibleBlockingForLine(line, blockingScope)
-                        .map((blocking) => `${blocking.targets.join(", ")}: ${blocking.text}`)
-                        .join(" ")}
-                    </small>
-                  ) : null}
                 </button>
               ))}
             </div>
