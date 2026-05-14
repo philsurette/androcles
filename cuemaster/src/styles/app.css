@@ -1382,6 +1382,9 @@ button:disabled {
   border-radius: 0.85rem;
   background: rgba(255, 255, 255, 0.34);
   padding: 0.65rem 0;
+  align-self: start;
+  max-height: fit-content;
+  height: auto;
 }
 
 .outline-browser {
