@@ -1367,12 +1367,11 @@ export function RehearsalScreen({
           <div className="breadcrumb-row">
             <button
               type="button"
-              className="icon-button secondary rehearsal-nav-icon"
+              className="icon-button secondary"
               aria-label="Back to library."
-              data-tooltip="Back to library."
               onClick={onBack}
             >
-              <span aria-hidden="true">📚</span>
+              <span aria-hidden="true">←</span>
             </button>
             <div className="rehearsal-title-stack">
               <p className="rehearsal-play-title">{playbook.title}</p>
