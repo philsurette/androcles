@@ -1,70 +1,73 @@
-import { useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
-import { sectionOptionsForRole } from "../../rehearsal/sectionOptions";
 
 type RoleSelectScreenProps = {
   playbook: Playbook;
   storageStatus?: string;
+  selectedRoleId?: string;
   onBack: () => void;
-  onSelectRole: (role: Role, startLineId?: string) => void;
+  onSelectRole: (role: Role) => void;
 };
 
-const resumeValue = "__resume";
-
-export function RoleSelectScreen({ playbook, storageStatus = "", onBack, onSelectRole }: RoleSelectScreenProps) {
-  const [selectedSectionIds, setSelectedSectionIds] = useState<Record<string, string>>({});
-
+export function RoleSelectScreen({
+  playbook,
+  storageStatus = "",
+  selectedRoleId,
+  onBack,
+  onSelectRole
+}: RoleSelectScreenProps) {
   return (
     <main className="shell">
       <section className="hero library">
-        <button type="button" className="secondary" onClick={onBack}>
-          Back to Library
-        </button>
-        <p className="eyebrow">Choose Role</p>
-        <h1>{playbook.title}</h1>
-        <p>Select the role you want Cuemaster to prompt.</p>
+        <header className="role-select-header rehearsal-header">
+          <div className="breadcrumb-row">
+            <button
+              type="button"
+              className="icon-button secondary"
+              aria-label="Back to library"
+              data-tooltip="Back to library"
+              onClick={onBack}
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+            <div className="rehearsal-title-stack">
+              <p className="rehearsal-play-title">{playbook.title}</p>
+              <p className="role-select-subtitle">Choose role</p>
+            </div>
+          </div>
+        </header>
         {storageStatus ? (
           <p className="error" role="alert">
             {storageStatus}
           </p>
         ) : null}
 
-        <ul className="role-list">
+        <div className="role-select-table-header">
+          <span className="role-select-table-header-label">Role</span>
+          <span className="role-select-table-header-label">Lines</span>
+        </div>
+        <ul className="role-select-list role-select-listbox" role="listbox" aria-label="Roles">
           {playbook.roles.map((role) => {
-            const sectionOptions = sectionOptionsForRole(playbook, role);
-            const selectedSectionId = selectedSectionIds[role.id] ?? resumeValue;
-            const selectedSection = sectionOptions.find((section) => section.id === selectedSectionId);
-
+            const isSelected = role.id === selectedRoleId;
             return (
-              <li className="playbook-row" key={role.id}>
-                <div>
-                  <h3>{role.displayName}</h3>
-                  <p>
-                    {role.lines.length} line{role.lines.length === 1 ? "" : "s"}
-                  </p>
-                  {sectionOptions.length > 0 ? (
-                    <label className="role-start-setting">
-                      Start at
-                      <select
-                        value={selectedSectionId}
-                        onChange={(event) =>
-                          setSelectedSectionIds({ ...selectedSectionIds, [role.id]: event.target.value })
-                        }
-                      >
-                        <option value={resumeValue}>Resume saved position / beginning</option>
-                        {sectionOptions.map((section) => (
-                          <option key={section.id} value={section.id}>
-                            {section.title} ({section.lineCount} line{section.lineCount === 1 ? "" : "s"})
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ) : null}
-                </div>
-                <button type="button" onClick={() => onSelectRole(role, selectedSection?.startLineId)}>
-                  Select
-                </button>
+              <li
+                key={role.id}
+                role="option"
+                aria-selected={isSelected}
+                tabIndex={isSelected ? 0 : -1}
+                className={`role-select-item role-select-row${isSelected ? " role-select-item-selected" : ""}`}
+                onClick={() => onSelectRole(role)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    onSelectRole(role);
+                  }
+                }}
+              >
+                <span className="role-select-item-name">{role.displayName}</span>
+                <span className="role-select-item-count">
+                  {role.lines.length} line{role.lines.length === 1 ? "" : "s"}
+                </span>
               </li>
             );
           })}

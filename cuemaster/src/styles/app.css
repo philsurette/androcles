@@ -213,6 +213,84 @@ button:disabled {
   margin-top: 2rem;
 }
 
+.role-select-list {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  width: 100%;
+}
+
+.role-select-list li {
+  min-width: 0;
+}
+
+.role-select-table-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.5rem;
+  color: var(--quiet);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  margin-top: 0.9rem;
+  margin-bottom: 0.1rem;
+  font-weight: 800;
+  padding: 0 0.3rem;
+}
+
+.role-select-table-header-label {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.role-select-item {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid rgba(30, 38, 31, 0.12);
+  background: transparent;
+  color: var(--ink);
+  padding: 0.38rem 0.25rem;
+  min-height: 2.1rem;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 0.45rem;
+  box-shadow: none;
+  cursor: pointer;
+}
+
+.role-select-item:hover,
+.role-select-item:focus-visible {
+  background: rgba(255, 255, 255, 0.25);
+  outline-color: rgba(185, 79, 47, 0.65);
+}
+
+.role-select-item-selected {
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.role-select-item-name {
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.98rem;
+}
+
+.role-select-item-count {
+  margin: 0;
+  color: var(--quiet);
+  font-size: 0.75rem;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
 .playbook-row {
   display: flex;
   gap: 1rem;
@@ -370,6 +448,14 @@ button:disabled {
   margin: 0;
   font-size: clamp(1.35rem, 4.4vw, 2rem);
   line-height: 1.02;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.role-select-subtitle {
+  margin: 0;
+  font-size: clamp(1.05rem, 3.7vw, 1.5rem);
+  line-height: 1.04;
   letter-spacing: 0.01em;
   text-transform: uppercase;
 }

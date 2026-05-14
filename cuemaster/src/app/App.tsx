@@ -2,7 +2,6 @@ import { useState } from "react";
 import type { Playbook } from "../domain/playbook";
 import type { Role } from "../domain/role";
 import type { RehearsalSession } from "../domain/session";
-import { defaultTargetHesitationMs } from "../rehearsal/tempoTimingConfig";
 import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { LibraryScreen } from "../ui/screens/LibraryScreen";
 import { RehearsalScreen } from "../ui/screens/RehearsalScreen";
@@ -35,8 +34,9 @@ export function App() {
       <RoleSelectScreen
         playbook={selectedPlaybook}
         storageStatus={storageStatus}
+        selectedRoleId={selectedRole?.id}
         onBack={() => setSelectedPlaybook(null)}
-        onSelectRole={(role, startLineId) => void selectRole(selectedPlaybook, role, startLineId)}
+        onSelectRole={(role) => void selectRole(selectedPlaybook, role)}
       />
     );
   }
@@ -65,41 +65,12 @@ export function App() {
     setSelectedSession(latestRole ? (latestSession ?? null) : null);
   }
 
-  async function selectRole(playbook: Playbook, role: Role, startLineId?: string) {
+  async function selectRole(playbook: Playbook, role: Role) {
     setStorageStatus("");
     try {
       const savedSession = (await indexedDbStorage.sessions.get(playbook.id, role.id)) ?? null;
-      if (!startLineId) {
-        setSelectedRole(role);
-        setSelectedSession(savedSession);
-        return;
-      }
-      const lineIndex = role.lines.findIndex((line) => line.id === startLineId);
-      if (lineIndex < 0) {
-        throw new Error(`Line not found for role ${role.id}: ${startLineId}`);
-      }
-      const nextSession = {
-        playbookId: playbook.id,
-        roleId: role.id,
-        lineIndex,
-        cueDepth: savedSession?.cueDepth ?? 1,
-        includeDirections: savedSession?.includeDirections ?? true,
-        includeBlocking: savedSession?.includeBlocking ?? true,
-        blockingScope: savedSession?.blockingScope ?? "role",
-        revealLine: savedSession?.showLinesByDefault ?? savedSession?.revealLine ?? false,
-        showLinesByDefault: savedSession?.showLinesByDefault ?? savedSession?.revealLine ?? false,
-        cueWindowPresetId: savedSession?.cueWindowPresetId ?? "full",
-        playbackRate: savedSession?.playbackRate ?? 1,
-        speakAlongEnabled: savedSession?.speakAlongEnabled ?? false,
-        speakAlongPauseMs: savedSession?.speakAlongPauseMs ?? defaultTargetHesitationMs,
-        tempoTargetHesitationMs:
-          savedSession?.tempoTargetHesitationMs ?? savedSession?.speakAlongPauseMs ?? defaultTargetHesitationMs,
-        syncPracticeTiming: savedSession?.syncPracticeTiming ?? true,
-        tempoTimingPreferred: savedSession?.tempoTimingPreferred ?? false,
-        updatedAt: savedSession?.updatedAt ?? Date.now()
-      };
-      setSelectedSession(nextSession);
       setSelectedRole(role);
+      setSelectedSession(savedSession);
     } catch (error) {
       setStorageStatus(userFacingErrorMessage(error));
       setSelectedSession(null);
