@@ -871,21 +871,12 @@ export function RehearsalScreen({
           <div className="breadcrumb-row">
             <button
               type="button"
-              className="icon-button secondary"
+              className="icon-button secondary rehearsal-nav-icon"
               aria-label="Back to library."
               data-tooltip="Back to library."
               onClick={onBack}
             >
-              <span aria-hidden="true">←</span>
-            </button>
-            <button
-              type="button"
-              className="icon-button secondary"
-              aria-label="Choose role."
-              data-tooltip="Choose role."
-              onClick={onSelectRole}
-            >
-              <span aria-hidden="true">🎭</span>
+              <span aria-hidden="true">📚</span>
             </button>
             <div className="rehearsal-title-stack">
               <p className="rehearsal-play-title">{playbook.title}</p>
@@ -1157,7 +1148,7 @@ export function RehearsalScreen({
           </div>
         </div>
 
-        <div className="session-settings">
+          <div className="session-settings">
           <div className="quick-practice-toggles rehearsal-quick-toggles" aria-label="Quick practice toggles">
             <div className="rehearsal-practice-toggles-inline">
               <button
@@ -1213,15 +1204,26 @@ export function RehearsalScreen({
                 <span aria-hidden="true">⌞⌝</span>
               </button>
             </div>
-            <button
-              type="button"
-              className="quick-toggle rehearsal-options-button"
-              aria-label="Open options"
-              data-tooltip="Options"
-              onClick={openOptionsPage}
-            >
-              <span aria-hidden="true">⚙</span>
-            </button>
+            <div className="rehearsal-quick-actions">
+              <button
+                type="button"
+                className="quick-toggle"
+                aria-label="Choose role."
+                data-tooltip="Choose role."
+                onClick={onSelectRole}
+              >
+                <span aria-hidden="true">🎭</span>
+              </button>
+              <button
+                type="button"
+                className="quick-toggle rehearsal-options-button"
+                aria-label="Open options"
+                data-tooltip="Options"
+                onClick={openOptionsPage}
+              >
+                <span aria-hidden="true">⚙</span>
+              </button>
+            </div>
           </div>
           {playbackStatus ? (
             <p className="status" aria-live="polite">
