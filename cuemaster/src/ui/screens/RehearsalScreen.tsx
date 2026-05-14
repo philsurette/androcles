@@ -52,6 +52,8 @@ type TimingStatusPill = {
   details: string;
 };
 
+type RehearsalTextSize = "small" | "medium" | "large" | "x-large";
+
 type PracticeSelectOption = {
   value: string;
   label: string;
@@ -199,6 +201,7 @@ export function RehearsalScreen({
   );
   const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
   const [syncSpeakAlongSpeed, setSyncSpeakAlongSpeed] = useState(initialSession?.syncSpeakAlongSpeed ?? true);
+  const [rehearsalTextSize, setRehearsalTextSize] = useState(normalizeRehearsalTextSize(initialSession?.rehearsalTextSize));
   const [absoluteTempoForgivenessMs, setAbsoluteTempoForgivenessMs] = useState(
     normalizeAbsoluteTempoForgivenessMs(initialSession?.absoluteTempoForgivenessMs)
   );
@@ -536,7 +539,8 @@ export function RehearsalScreen({
     nextSyncSpeakAlongSpeed = syncSpeakAlongSpeed,
     nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
     nextTempoTolerancePercent = tempoTolerancePercent,
-    nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs
+    nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs,
+    nextRehearsalTextSize = rehearsalTextSize
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -560,6 +564,7 @@ export function RehearsalScreen({
         absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
+        rehearsalTextSize: nextRehearsalTextSize,
         tempoTimingPreferred: nextTempoTimingPreferred,
         updatedAt: Date.now()
       });
@@ -833,6 +838,32 @@ export function RehearsalScreen({
       blockingScope,
       nextPracticeTargetPaceMultiplier,
       nextSyncSpeakAlongSpeed
+    );
+  }
+
+  function changeRehearsalTextSize(nextSize: string) {
+    const nextRehearsalTextSize = normalizeRehearsalTextSize(nextSize);
+    setRehearsalTextSize(nextRehearsalTextSize);
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent,
+      absolutePickupForgivenessMs,
+      nextRehearsalTextSize
     );
   }
 
@@ -1267,6 +1298,18 @@ export function RehearsalScreen({
             onSelect={(next) => changeBlockingScope(next as BlockingScope)}
           />
         </label>
+        <label className="timing-setting timing-setting-wide">
+          Text size
+          <PracticeSelect
+            label="Text size"
+            value={rehearsalTextSize}
+            options={rehearsalTextSizeOptions.map((option) => ({
+              value: option,
+              label: option
+            }))}
+            onSelect={changeRehearsalTextSize}
+          />
+        </label>
         <fieldset className="timing-options">
           <legend>Tempo</legend>
           <div className="timing-options-controls">
@@ -1494,7 +1537,7 @@ export function RehearsalScreen({
           />
           <div className="rehearsal-main">
             {line ? (
-              <div className="rehearsal-line-layout">
+              <div className={`rehearsal-line-layout rehearsal-text-size rehearsal-text-size-${rehearsalTextSize}`}>
                 <section className="cue-section-panel" aria-label={`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}>
                   <h2 className="cue-section-title">{`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}</h2>
                   <section className="cue-strip" aria-label="Cue">
@@ -2502,6 +2545,7 @@ const absoluteTempoForgivenessOptionsMs = [
 ];
 const absolutePickupForgivenessOptionsMs = [500, 450, 400, 350, 300, 250, 200, 150, 100, 50];
 const tempoToleranceOptionsPercent = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
+const rehearsalTextSizeOptions: RehearsalTextSize[] = ["small", "medium", "large", "x-large"];
 const practicePaceMultiplierOptions = [
   0.4,
   0.5,
@@ -2549,6 +2593,13 @@ export function normalizePracticeTargetPaceMultiplier(value: number | undefined)
     return 1;
   }
   return Math.min(maxPracticeTargetPaceMultiplier, Math.max(minPracticeTargetPaceMultiplier, parsedValue));
+}
+
+function normalizeRehearsalTextSize(value: string | undefined): RehearsalTextSize {
+  if (value === "small" || value === "large" || value === "x-large") {
+    return value;
+  }
+  return "medium";
 }
 
 export function normalizeAbsoluteTempoForgivenessMs(value: number | undefined): number {

@@ -737,6 +737,34 @@ button:disabled {
   margin: 0;
 }
 
+.rehearsal-text-size-small .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-small .cue-strip .cue-card .cue-blocking-text,
+.rehearsal-text-size-small .line-card p,
+.rehearsal-text-size-small .line-card p:last-child {
+  font-size: 0.88rem;
+}
+
+.rehearsal-text-size-medium .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-medium .cue-strip .cue-card .cue-blocking-text,
+.rehearsal-text-size-medium .line-card p,
+.rehearsal-text-size-medium .line-card p:last-child {
+  font-size: 1rem;
+}
+
+.rehearsal-text-size-large .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-large .cue-strip .cue-card .cue-blocking-text,
+.rehearsal-text-size-large .line-card p,
+.rehearsal-text-size-large .line-card p:last-child {
+  font-size: 1.18rem;
+}
+
+.rehearsal-text-size-x-large .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-x-large .cue-strip .cue-card .cue-blocking-text,
+.rehearsal-text-size-x-large .line-card p,
+.rehearsal-text-size-x-large .line-card p:last-child {
+  font-size: 1.35rem;
+}
+
 .line-card {
   max-height: 100%;
   min-width: 0;
@@ -963,6 +991,53 @@ button:disabled {
 .line-card p:last-child {
   font-size: 1.35rem;
   line-height: 1.32;
+}
+
+.rehearsal-text-size-small .line-card p:last-child {
+  font-size: 0.88rem;
+}
+
+.rehearsal-text-size-medium .line-card p:last-child {
+  font-size: 1rem;
+}
+
+.rehearsal-text-size-large .line-card p:last-child {
+  font-size: 1.18rem;
+}
+
+.rehearsal-text-size-x-large .line-card p:last-child {
+  font-size: 1.35rem;
+}
+
+.rehearsal-text-size-small .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-small .rehearsal-line-layout .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-medium .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-medium .rehearsal-line-layout .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-large .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-large .rehearsal-line-layout .cue-strip .cue-card .cue-text-clip,
+.rehearsal-text-size-x-large .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-x-large .rehearsal-line-layout .cue-strip .cue-card .cue-text-clip {
+  font-size: inherit;
+}
+
+.rehearsal-text-size-small .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-small .rehearsal-line-layout .line-card p:last-child {
+  font-size: 0.88rem;
+}
+
+.rehearsal-text-size-medium .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-medium .rehearsal-line-layout .line-card p:last-child {
+  font-size: 1rem;
+}
+
+.rehearsal-text-size-large .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-large .rehearsal-line-layout .line-card p:last-child {
+  font-size: 1.18rem;
+}
+
+.rehearsal-text-size-x-large .rehearsal-line-layout .line-card p,
+.rehearsal-text-size-x-large .rehearsal-line-layout .line-card p:last-child {
+  font-size: 1.35rem;
 }
 
 .blocking-note {

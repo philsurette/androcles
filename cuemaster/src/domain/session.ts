@@ -20,5 +20,6 @@ export type RehearsalSession = {
   tempoTolerancePercent?: number;
   syncPracticeTiming: boolean;
   tempoTimingPreferred: boolean;
+  rehearsalTextSize?: "small" | "medium" | "large" | "x-large";
   updatedAt: number;
 };
