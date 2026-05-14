@@ -753,6 +753,42 @@ button:disabled {
   width: 100%;
 }
 
+@media (min-width: 761px) {
+  .rehearsal-workspace {
+    align-items: stretch;
+  }
+
+.rehearsal-body .session-settings {
+    width: auto;
+    margin-top: 0.65rem;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+
+  .rehearsal > .session-settings {
+    width: auto;
+    margin-top: 0.65rem;
+    margin-left: auto;
+    justify-content: flex-end;
+  }
+
+  .rehearsal-workspace {
+    min-height: 0;
+    align-items: stretch;
+    max-height: calc(100dvh - 11rem);
+  }
+
+  .outline-sidecar.outline-browser {
+    align-self: stretch;
+    max-height: 100%;
+  }
+
+  .rehearsal-main {
+    min-height: 0;
+    max-height: 100%;
+  }
+}
+
 .session-settings label {
   display: grid;
   gap: 0.35rem;
@@ -1031,8 +1067,9 @@ button:disabled {
 .outline-browser {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  max-height: min(62vh, 42rem);
   min-height: 0;
+  max-height: none;
+  height: 100%;
   overflow: hidden;
   border: 1px solid rgba(30, 38, 31, 0.12);
   border-radius: 0.85rem;
