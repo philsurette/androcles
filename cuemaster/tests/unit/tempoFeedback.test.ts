@@ -58,14 +58,21 @@ describe("tempoFeedback", () => {
 
   it("labels pickup timing", () => {
     expect(hesitationLabel(200, 500)).toBe("sharp");
+    expect(hesitationLabel(300, 500)).toBe("close");
     expect(hesitationLabel(500, 500)).toBe("close");
-    expect(hesitationLabel(900, 500)).toBe("late");
+    expect(hesitationLabel(751, 500)).toBe("late");
+    expect(hesitationLabel(750, 500)).toBe("close");
   });
 
   it("labels delivery timing", () => {
-    expect(deliveryLabel(1500, 2200)).toBe("fast");
+    expect(deliveryLabel(1700, 2200)).toBe("fast");
     expect(deliveryLabel(2200, 2200)).toBe("close");
-    expect(deliveryLabel(2800, 2200)).toBe("slow");
+    expect(deliveryLabel(3000, 2200)).toBe("slow");
+  });
+
+  it("requires both percentage and 500ms thresholds for delivery extremes", () => {
+    expect(deliveryLabel(1750, 2200)).toBe("close");
+    expect(deliveryLabel(3000, 2800)).toBe("close");
   });
 
   it("builds nonjudgmental feedback for measured attempts", () => {

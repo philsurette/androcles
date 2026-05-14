@@ -27,23 +27,30 @@ export function timingTargetsForLine(line: Line, targetHesitationMs = line.timin
 }
 
 export function hesitationLabel(measuredMs: number, targetMs: number): TempoFeedback["hesitation"]["label"] {
-  if (measuredMs < targetMs * 0.6) {
+  const fastPickupMs = 200;
+  const slowPickupMs = 250;
+
+  if (targetMs <= 0) {
+    return "close";
+  }
+  if (targetMs - measuredMs > fastPickupMs) {
     return "sharp";
   }
-  if (measuredMs > targetMs * 1.4) {
+  if (measuredMs - targetMs > slowPickupMs) {
     return "late";
   }
   return "close";
 }
 
 export function deliveryLabel(measuredMs: number, targetMs: number): NonNullable<TempoFeedback["delivery"]>["label"] {
+  const slowThresholdMs = 500;
   if (targetMs <= 0) {
     return "close";
   }
-  if (measuredMs < targetMs * 0.8) {
+  if (measuredMs < targetMs * 0.8 && targetMs - measuredMs >= slowThresholdMs) {
     return "fast";
   }
-  if (measuredMs > targetMs * 1.2) {
+  if (measuredMs > targetMs * 1.25 && measuredMs - targetMs >= slowThresholdMs) {
     return "slow";
   }
   return "close";

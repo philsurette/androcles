@@ -36,6 +36,21 @@ type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
 type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "timed";
+type TimingLabel = "fast" | "slow" | "good";
+type TimingPill = "delivery" | "pickup";
+type TimingStatusPill = {
+  delivery: {
+    label: TimingLabel;
+    measuredMs: number;
+    targetMs: number;
+  };
+  pickup: {
+    label: TimingLabel;
+    measuredMs: number;
+    targetMs: number;
+  };
+  details: string;
+};
 
 export function RehearsalScreen({
   playbook,
@@ -64,7 +79,8 @@ export function RehearsalScreen({
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
-  const [timingStatusMessage, setTimingStatusMessage] = useState<string>("");
+  const [timingStatusMessage, setTimingStatusMessage] = useState<TimingStatusPill | null>(null);
+  const [expandedTimingPill, setExpandedTimingPill] = useState<TimingPill | null>(null);
   const [showLinesByDefault, setShowLinesByDefault] = useState(
     initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
   );
@@ -123,7 +139,7 @@ export function RehearsalScreen({
       return timingStatusMessage;
     }
     if (!playbackStatus) {
-      return "";
+      return null;
     }
     if (/^Line Timed\.?$/i.test(playbackStatus) && latestLineTimingAttempt) {
       return formatTimingAttempt(latestLineTimingAttempt);
@@ -364,7 +380,7 @@ export function RehearsalScreen({
     const currentLine = currentLineFromEngine();
     setHasStarted(true);
     setPlaybackSource("cue");
-    setTimingStatusMessage("");
+    setTimingStatusMessage(null);
     setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
     try {
@@ -400,7 +416,7 @@ export function RehearsalScreen({
       return;
     }
     setPlaybackSource("line");
-    setTimingStatusMessage("");
+    setTimingStatusMessage(null);
     setPlaybackStatus("Playing your line...");
     setPlaybackState("playing");
     try {
@@ -436,7 +452,7 @@ export function RehearsalScreen({
   function stopPlayback() {
     audioQueue.cancel();
     activeTimingLineIdRef.current = null;
-    setTimingStatusMessage("");
+    setTimingStatusMessage(null);
     setPlaybackState("idle");
     setPlaybackSource(null);
     setPlaybackStatus("Playback stopped.");
@@ -627,7 +643,7 @@ export function RehearsalScreen({
     }
     if (!tempoTimingEnabled) {
       setPlaybackStatus("Enable Tempo timing to start timing capture.");
-      setTimingStatusMessage("");
+      setTimingStatusMessage(null);
       return;
     }
     let detector = voiceActivityDetector;
@@ -644,7 +660,7 @@ export function RehearsalScreen({
       void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
     }
     activeTimingLineIdRef.current = timingLine.id;
-    setTimingStatusMessage("");
+    setTimingStatusMessage(null);
     setPlaybackStatus("Waiting for your line...");
     detector.beginAttempt();
   }
@@ -661,7 +677,7 @@ export function RehearsalScreen({
     }
     if (result.event === "speech-started") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
-      setTimingStatusMessage("");
+      setTimingStatusMessage(null);
       setPlaybackStatus(`Speech detected${hesitationMs > 0 ? ` (${hesitationMs}ms pause)` : ""}.`);
     } else if (result.event === "delivery-ended") {
       const hesitationMs = Math.round(result.hesitationMs ?? 0);
@@ -669,7 +685,7 @@ export function RehearsalScreen({
       const feedback = tempoFeedbackFor(timingLine, { hesitationMs, deliveryMs }, tempoTargetHesitationMs);
       const timingResult = formatTimingResult(feedback);
       setTimingStatusMessage(timingResult);
-      setPlaybackStatus(timingResult);
+      setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
       activeTimingLineIdRef.current = null;
     } else {
@@ -1279,8 +1295,45 @@ export function RehearsalScreen({
             </div>
           </div>
           {displayedPlaybackStatus ? (
-            <p className="status" aria-live="polite">
-              {displayedPlaybackStatus}
+            <p className={typeof displayedPlaybackStatus === "string" ? "status" : "status status-timing"} aria-live="polite">
+              {typeof displayedPlaybackStatus === "string" ? (
+                displayedPlaybackStatus
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    className={`timing-status-pill timing-status-pill--${displayedPlaybackStatus.delivery.label}`}
+                    aria-label={`Delivery: ${displayedPlaybackStatus.delivery.label}`}
+                    aria-expanded={expandedTimingPill === "delivery"}
+                    onClick={() =>
+                      setExpandedTimingPill((current) => (current === "delivery" ? null : "delivery"))
+                    }
+                  >
+                    <span aria-hidden="true">{deliveryPillForLabel(displayedPlaybackStatus.delivery.label)}</span>
+                    <span>delivery</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`timing-status-pill timing-status-pill--${displayedPlaybackStatus.pickup.label}`}
+                    aria-label={`Pickup: ${displayedPlaybackStatus.pickup.label}`}
+                    aria-expanded={expandedTimingPill === "pickup"}
+                    onClick={() => setExpandedTimingPill((current) => (current === "pickup" ? null : "pickup"))}
+                  >
+                    <span aria-hidden="true">{pickupPillForLabel(displayedPlaybackStatus.pickup.label)}</span>
+                    <span>pickup</span>
+                  </button>
+                  {expandedTimingPill === "delivery" ? (
+                    <span className="timing-status-details">
+                      Delivery: {timingDeltaText(displayedPlaybackStatus.delivery.measuredMs, displayedPlaybackStatus.delivery.targetMs)}.
+                    </span>
+                  ) : null}
+                  {expandedTimingPill === "pickup" ? (
+                    <span className="timing-status-details">
+                      Pickup: {timingDeltaText(displayedPlaybackStatus.pickup.measuredMs, displayedPlaybackStatus.pickup.targetMs)}.
+                    </span>
+                  ) : null}
+                </>
+              )}
             </p>
           ) : null}
         </div>
@@ -1596,26 +1649,85 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
   return "Untimed";
 }
 
-function formatTimingResult(feedback: ReturnType<typeof tempoFeedbackFor>): string {
+function formatTimingResult(feedback: ReturnType<typeof tempoFeedbackFor>): TimingStatusPill {
   const deliveryLabel = feedback.delivery?.label === "fast" ? "fast" : feedback.delivery?.label === "slow" ? "slow" : "good";
-  const pickupLabel =
-    feedback.hesitation.label === "sharp" ? "fast pickup" : feedback.hesitation.label === "late" ? "late pickup" : "good pickup";
+  const pickupLabel = feedback.hesitation.label === "sharp" ? "fast" : feedback.hesitation.label === "late" ? "slow" : "good";
   const measuredDeliveryMs = feedback.delivery?.measuredMs ?? 0;
   const targetDeliveryMs = feedback.delivery?.targetMs ?? 0;
   const measuredPickupMs = feedback.hesitation.measuredMs;
   const targetPickupMs = feedback.hesitation.targetMs;
-  return `${deliveryLabel} delivery: ${(measuredDeliveryMs / 1000).toFixed(1)}s←${(targetDeliveryMs / 1000).toFixed(1)}s, ${pickupLabel} ${(measuredPickupMs / 1000).toFixed(2)}s←${(
-    targetPickupMs / 1000
-  ).toFixed(2)}s`;
+  return {
+    delivery: {
+      label: deliveryLabel,
+      measuredMs: measuredDeliveryMs,
+      targetMs: targetDeliveryMs
+    },
+    pickup: {
+      label: pickupLabel,
+      measuredMs: measuredPickupMs,
+      targetMs: targetPickupMs
+    },
+    details: `${deliveryLabel} ${(measuredDeliveryMs / 1000).toFixed(1)}s←${(targetDeliveryMs / 1000).toFixed(1)}s, pickup ${pickupLabel} ${(
+      measuredPickupMs / 1000
+    ).toFixed(2)}s←${(targetPickupMs / 1000).toFixed(2)}s`
+  };
 }
 
-function formatTimingAttempt(attempt: TimingAttempt): string {
+function formatTimingAttempt(attempt: TimingAttempt): TimingStatusPill {
   const deliveryLabel = attempt.deliveryLabel === "fast" ? "fast" : attempt.deliveryLabel === "slow" ? "slow" : "good";
   const pickupLabel =
-    attempt.hesitationLabel === "sharp" ? "fast pickup" : attempt.hesitationLabel === "late" ? "late pickup" : "good pickup";
-  return `${deliveryLabel} delivery: ${(attempt.deliveryMs / 1000).toFixed(1)}s←${(attempt.targetDeliveryMs / 1000).toFixed(
-    1
-  )}s, ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(2)}s`;
+    attempt.hesitationLabel === "sharp" ? "fast" : attempt.hesitationLabel === "late" ? "slow" : "good";
+  return {
+    delivery: {
+      label: deliveryLabel,
+      measuredMs: attempt.deliveryMs,
+      targetMs: attempt.targetDeliveryMs
+    },
+    pickup: {
+      label: pickupLabel,
+      measuredMs: attempt.hesitationMs,
+      targetMs: attempt.targetHesitationMs
+    },
+    details: `${deliveryLabel} ${(attempt.deliveryMs / 1000).toFixed(1)}s←${(attempt.targetDeliveryMs / 1000).toFixed(
+      1
+    )}s, pickup ${pickupLabel} ${(attempt.hesitationMs / 1000).toFixed(2)}s←${(attempt.targetHesitationMs / 1000).toFixed(2)}s`
+  };
+}
+
+function deliveryPillForLabel(label: TimingLabel): string {
+  if (label === "fast") {
+    return "🐇";
+  }
+  if (label === "slow") {
+    return "🐢";
+  }
+  return "🎯";
+}
+
+function pickupPillForLabel(label: TimingLabel): string {
+  if (label === "fast") {
+    return "🐇";
+  }
+  if (label === "slow") {
+    return "🐢";
+  }
+  return "🎯";
+}
+
+function timingDeltaText(measuredMs: number, targetMs: number): string {
+  if (targetMs <= 0) {
+    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
+  }
+  const deltaMs = measuredMs - targetMs;
+  const deltaSec = Math.abs(deltaMs) / 1000;
+  const percent = ((Math.abs(deltaMs) / targetMs) * 100).toFixed(2);
+  if (deltaMs === 0) {
+    return `on target at ${(measuredMs / 1000).toFixed(2)}s`;
+  }
+  if (deltaMs > 0) {
+    return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (+${deltaSec.toFixed(2)}s, +${percent}% over)`;
+  }
+  return `${(measuredMs / 1000).toFixed(2)}s vs ${(targetMs / 1000).toFixed(2)}s (${deltaSec.toFixed(2)}s under, -${percent}%)`;
 }
 
 const minPlaybackRate = 0.4;
