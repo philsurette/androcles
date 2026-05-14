@@ -46,22 +46,28 @@ export function deliveryLabel(
   measuredMs: number,
   targetMs: number,
   targetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 0
+  absoluteTempoForgivenessMs = 0,
+  tempoTolerancePercent = 0.2
 ): NonNullable<TempoFeedback["delivery"]>["label"] {
   const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
   const adjustedTargetMs = targetMs / normalizedMultiplier;
   const normalizedAbsoluteForgivenessMs = Math.max(0, Number.isFinite(absoluteTempoForgivenessMs) ? absoluteTempoForgivenessMs : 0);
+  const normalizedTolerancePercent = Number.isFinite(tempoTolerancePercent) ? Math.min(0.3, Math.max(0.05, tempoTolerancePercent)) : 0.2;
   const slowThresholdMs = 500;
+  const toleranceMs = adjustedTargetMs * normalizedTolerancePercent;
+  const forgivenessThresholdMs = Math.max(normalizedAbsoluteForgivenessMs, toleranceMs);
   if (adjustedTargetMs <= 0) {
     return "close";
   }
-  if (Math.abs(adjustedTargetMs - measuredMs) <= normalizedAbsoluteForgivenessMs) {
+  if (Math.abs(adjustedTargetMs - measuredMs) <= forgivenessThresholdMs) {
     return "close";
   }
-  if (measuredMs < adjustedTargetMs * 0.8 && adjustedTargetMs - measuredMs >= slowThresholdMs) {
+  const fastBoundaryMs = adjustedTargetMs * (1 - normalizedTolerancePercent);
+  const slowBoundaryMs = adjustedTargetMs * (1 + normalizedTolerancePercent);
+  if (measuredMs < fastBoundaryMs && adjustedTargetMs - measuredMs >= slowThresholdMs) {
     return "fast";
   }
-  if (measuredMs > adjustedTargetMs * 1.25 && measuredMs - adjustedTargetMs >= slowThresholdMs) {
+  if (measuredMs > slowBoundaryMs && measuredMs - adjustedTargetMs >= slowThresholdMs) {
     return "slow";
   }
   return "close";
@@ -72,7 +78,8 @@ export function tempoFeedbackFor(
   measured: { hesitationMs: number; deliveryMs?: number },
   targetHesitationMs?: number,
   targetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 0
+  absoluteTempoForgivenessMs = 0,
+  tempoTolerancePercent = 0.2
 ): TempoFeedback {
   const targets = timingTargetsForLine(line, targetHesitationMs);
   const normalizedMultiplier = Number.isFinite(targetPaceMultiplier) && targetPaceMultiplier > 0 ? targetPaceMultiplier : 1;
@@ -92,7 +99,8 @@ export function tempoFeedbackFor(
             measured.deliveryMs,
             targets.targetDeliveryMs,
             normalizedMultiplier,
-            absoluteTempoForgivenessMs
+            absoluteTempoForgivenessMs,
+            tempoTolerancePercent
           )
         }
   };

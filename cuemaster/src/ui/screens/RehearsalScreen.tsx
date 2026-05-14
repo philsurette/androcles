@@ -201,6 +201,9 @@ export function RehearsalScreen({
   const [absoluteTempoForgivenessMs, setAbsoluteTempoForgivenessMs] = useState(
     normalizeAbsoluteTempoForgivenessMs(initialSession?.absoluteTempoForgivenessMs)
   );
+  const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
+    normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
+  );
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
@@ -243,7 +246,8 @@ export function RehearsalScreen({
         attempt.deliveryMs,
         attempt.targetDeliveryMs,
         practiceTargetPaceMultiplier,
-        absoluteTempoForgivenessMs
+        absoluteTempoForgivenessMs,
+        tempoTolerancePercent
       );
       if (attemptDeliveryLabel === "slow") {
         statusByLine.set(attempt.lineId, "slow");
@@ -256,7 +260,7 @@ export function RehearsalScreen({
       statusByLine.set(attempt.lineId, "good");
     }
     return statusByLine;
-  }, [practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, reviewAttempts, role.lines]);
+  }, [practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, tempoTolerancePercent, reviewAttempts, role.lines]);
   const displayedPlaybackStatus = useMemo(() => {
     if (timingStatusMessage) {
       return timingStatusMessage;
@@ -265,10 +269,22 @@ export function RehearsalScreen({
       return null;
     }
     if (/^Line Timed\.?$/i.test(playbackStatus) && latestLineTimingAttempt) {
-      return formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs);
+      return formatTimingAttempt(
+        latestLineTimingAttempt,
+        practiceTargetPaceMultiplier,
+        absoluteTempoForgivenessMs,
+        tempoTolerancePercent
+      );
     }
     return playbackStatus;
-  }, [playbackStatus, latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, timingStatusMessage]);
+  }, [
+    playbackStatus,
+    latestLineTimingAttempt,
+    practiceTargetPaceMultiplier,
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent,
+    timingStatusMessage
+  ]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -298,7 +314,8 @@ export function RehearsalScreen({
     const nextTimingStatusMessage = formatTimingAttempt(
       latestLineTimingAttempt,
       practiceTargetPaceMultiplier,
-      absoluteTempoForgivenessMs
+      absoluteTempoForgivenessMs,
+      tempoTolerancePercent
     );
     setTimingStatusMessage((current) => {
       if (current && current.details === nextTimingStatusMessage.details) {
@@ -306,7 +323,14 @@ export function RehearsalScreen({
       }
       return nextTimingStatusMessage;
     });
-  }, [line?.id, latestLineTimingAttempt, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs, timingStatusMessage]);
+  }, [
+    line?.id,
+    latestLineTimingAttempt,
+    practiceTargetPaceMultiplier,
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent,
+    timingStatusMessage
+  ]);
 
   useEffect(() => {
     void loadCurrentBookmark();
@@ -501,7 +525,8 @@ export function RehearsalScreen({
     nextBlockingScope = blockingScope,
     nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier,
     nextSyncSpeakAlongSpeed = syncSpeakAlongSpeed,
-    nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs
+    nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
+    nextTempoTolerancePercent = tempoTolerancePercent
   ) {
     try {
       await indexedDbStorage.sessions.save({
@@ -521,6 +546,7 @@ export function RehearsalScreen({
         tempoTargetHesitationMs: nextTempoTargetHesitationMs,
         practiceTargetPaceMultiplier: nextPracticeTargetPaceMultiplier,
         absoluteTempoForgivenessMs: nextAbsoluteTempoForgivenessMs,
+        tempoTolerancePercent: nextTempoTolerancePercent,
         syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
         syncPracticeTiming: nextSyncPracticeTiming,
         tempoTimingPreferred: nextTempoTimingPreferred,
@@ -623,7 +649,9 @@ export function RehearsalScreen({
     if (syncSpeakAlongSpeed) {
       setPracticeTargetPaceMultiplier(nextPracticeTarget);
       if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
-        setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, nextPracticeTarget, absoluteTempoForgivenessMs));
+        setTimingStatusMessage(
+          formatTimingAttempt(latestLineTimingAttempt, nextPracticeTarget, absoluteTempoForgivenessMs, tempoTolerancePercent)
+        );
       }
     }
     void saveSession(
@@ -697,7 +725,14 @@ export function RehearsalScreen({
     setPlaybackRate(nextPlaybackRate);
     setPracticeTargetPaceMultiplier(normalizedMultiplier);
     if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
-      setTimingStatusMessage(formatTimingAttempt(latestLineTimingAttempt, normalizedMultiplier, absoluteTempoForgivenessMs));
+      setTimingStatusMessage(
+        formatTimingAttempt(
+          latestLineTimingAttempt,
+          normalizedMultiplier,
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent
+        )
+      );
     }
     void saveSession(
       position.index,
@@ -754,7 +789,12 @@ export function RehearsalScreen({
       setPracticeTargetPaceMultiplier(nextPracticeTargetPaceMultiplier);
       if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
         setTimingStatusMessage(
-          formatTimingAttempt(latestLineTimingAttempt, nextPracticeTargetPaceMultiplier, absoluteTempoForgivenessMs)
+          formatTimingAttempt(
+            latestLineTimingAttempt,
+            nextPracticeTargetPaceMultiplier,
+            absoluteTempoForgivenessMs,
+            tempoTolerancePercent
+          )
         );
       }
     }
@@ -778,10 +818,16 @@ export function RehearsalScreen({
   }
 
   function changeAbsoluteTempoForgiveness(nextToleranceMs: number) {
-    setAbsoluteTempoForgivenessMs(nextToleranceMs);
+    const normalizedToleranceMs = normalizeAbsoluteTempoForgivenessMs(nextToleranceMs);
+    setAbsoluteTempoForgivenessMs(normalizedToleranceMs);
     if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
       setTimingStatusMessage(
-        formatTimingAttempt(latestLineTimingAttempt, practiceTargetPaceMultiplier, nextToleranceMs)
+        formatTimingAttempt(
+          latestLineTimingAttempt,
+          practiceTargetPaceMultiplier,
+          normalizedToleranceMs,
+          tempoTolerancePercent
+        )
       );
     }
     void saveSession(
@@ -800,7 +846,41 @@ export function RehearsalScreen({
       blockingScope,
       practiceTargetPaceMultiplier,
       syncSpeakAlongSpeed,
-      nextToleranceMs
+      normalizedToleranceMs
+    );
+  }
+
+  function changeTempoTolerancePercent(nextTempoTolerancePercent: number) {
+    const normalizedTolerancePercent = normalizeTempoTolerancePercent(nextTempoTolerancePercent);
+    setTempoTolerancePercent(normalizedTolerancePercent);
+    if (line && latestLineTimingAttempt && latestLineTimingAttempt.lineId === line.id) {
+      setTimingStatusMessage(
+        formatTimingAttempt(
+          latestLineTimingAttempt,
+          practiceTargetPaceMultiplier,
+          absoluteTempoForgivenessMs,
+          normalizedTolerancePercent
+        )
+      );
+    }
+    void saveSession(
+      position.index,
+      playbackRate,
+      speakAlongEnabled,
+      tempoTimingPreferred,
+      isLineRevealed,
+      cueWindowPresetId,
+      includeDirections,
+      showLinesByDefault,
+      speakAlongPauseMs,
+      tempoTargetHesitationMs,
+      syncPracticeTiming,
+      includeBlocking,
+      blockingScope,
+      practiceTargetPaceMultiplier,
+      syncSpeakAlongSpeed,
+      absoluteTempoForgivenessMs,
+      normalizedTolerancePercent
     );
   }
 
@@ -960,9 +1040,15 @@ export function RehearsalScreen({
         { hesitationMs, deliveryMs },
         tempoTargetHesitationMs,
         practiceTargetPaceMultiplier,
-        absoluteTempoForgivenessMs
+        absoluteTempoForgivenessMs,
+        tempoTolerancePercent
       );
-      const timingResult = formatTimingResult(feedback, practiceTargetPaceMultiplier, absoluteTempoForgivenessMs);
+      const timingResult = formatTimingResult(
+        feedback,
+        practiceTargetPaceMultiplier,
+        absoluteTempoForgivenessMs,
+        tempoTolerancePercent
+      );
       setTimingStatusMessage(timingResult);
       setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
@@ -1207,20 +1293,32 @@ export function RehearsalScreen({
                 <span aria-hidden="true">{syncSpeakAlongSpeed ? "🔒" : "🔓"}</span>
               </button>
             </div>
-            <label className="timing-setting">
-              Absolute tempo forgiveness
-              <PracticeSelect
-                label="Absolute tempo forgiveness"
-                value={String(absoluteTempoForgivenessMs)}
+              <label className="timing-setting">
+                Absolute tempo forgiveness
+                <PracticeSelect
+                  label="Absolute tempo forgiveness"
+                  value={String(absoluteTempoForgivenessMs)}
                 options={absoluteTempoForgivenessOptionsMs.map((optionMs) => ({
                   value: String(optionMs),
                   label: formatAbsoluteTempoForgiveness(optionMs)
                 }))}
-                onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
-              />
-            </label>
-          </div>
-        </fieldset>
+                  onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
+                />
+              </label>
+              <label className="timing-setting">
+                Tempo forgiveness
+                <PracticeSelect
+                  label="Tempo forgiveness"
+                  value={String(tempoTolerancePercent)}
+                  options={tempoToleranceOptionsPercent.map((optionPercent) => ({
+                    value: String(optionPercent),
+                    label: formatTempoTolerancePercent(optionPercent)
+                  }))}
+                  onSelect={(next) => changeTempoTolerancePercent(Number(next))}
+                />
+              </label>
+            </div>
+          </fieldset>
         <p className="status">
           Tempo timing uses microphone energy only: no recording, no transcription, no upload.
         </p>
@@ -2114,7 +2212,8 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
 function formatTimingResult(
   feedback: ReturnType<typeof tempoFeedbackFor>,
   practiceTargetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 500
+  absoluteTempoForgivenessMs = 500,
+  tempoTolerancePercent = 0.2
 ): TimingStatusPill {
   const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const displayedDeliveryLabel =
@@ -2124,7 +2223,8 @@ function formatTimingResult(
           feedback.delivery.measuredMs,
           feedback.delivery.targetMs,
           normalizedPracticeTargetPaceMultiplier,
-          absoluteTempoForgivenessMs
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent
         ) === "fast"
         ? "fast"
         : feedback.delivery.label === "slow"
@@ -2156,7 +2256,8 @@ function formatTimingResult(
 function formatTimingAttempt(
   attempt: TimingAttempt,
   practiceTargetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 500
+  absoluteTempoForgivenessMs = 500,
+  tempoTolerancePercent = 0.2
 ): TimingStatusPill {
   const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
   const targetDeliveryMs = attempt.targetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
@@ -2164,7 +2265,8 @@ function formatTimingAttempt(
     attempt.deliveryMs,
     attempt.targetDeliveryMs,
     normalizedPracticeTargetPaceMultiplier,
-    absoluteTempoForgivenessMs
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent
   );
   const displayDeliveryLabel = lineDeliveryLabel === "fast" ? "fast" : lineDeliveryLabel === "slow" ? "slow" : "good";
   const pickupLabel =
@@ -2234,6 +2336,8 @@ const minPracticeTargetPaceMultiplier = 0.4;
 const maxPracticeTargetPaceMultiplier = 1.3;
 const minAbsoluteTempoForgivenessMs = 100;
 const maxAbsoluteTempoForgivenessMs = 1000;
+const minTempoTolerancePercent = 0.05;
+const maxTempoTolerancePercent = 0.3;
 const absoluteTempoForgivenessOptionsMs = [
   100,
   200,
@@ -2246,6 +2350,7 @@ const absoluteTempoForgivenessOptionsMs = [
   900,
   1000
 ];
+const tempoToleranceOptionsPercent = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
 const practicePaceMultiplierOptions = [
   0.4,
   0.5,
@@ -2277,6 +2382,10 @@ function formatAbsoluteTempoForgiveness(optionMs: number): string {
   return `±${(optionMs / 1000).toFixed(1)}s`;
 }
 
+function formatTempoTolerancePercent(optionPercent: number): string {
+  return `±${(optionPercent * 100).toFixed(0)}%`;
+}
+
 export function clampPlaybackRate(playbackRate: number): number {
   const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
   return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
@@ -2296,6 +2405,14 @@ export function normalizeAbsoluteTempoForgivenessMs(value: number | undefined): 
     return 500;
   }
   return Math.min(maxAbsoluteTempoForgivenessMs, Math.max(minAbsoluteTempoForgivenessMs, parsedValue));
+}
+
+export function normalizeTempoTolerancePercent(value: number | undefined): number {
+  const parsedValue = value ?? 0.2;
+  if (!Number.isFinite(parsedValue)) {
+    return 0.2;
+  }
+  return Math.min(maxTempoTolerancePercent, Math.max(minTempoTolerancePercent, parsedValue));
 }
 
 export function visibleCuesForDisplay(

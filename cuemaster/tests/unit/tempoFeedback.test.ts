@@ -81,6 +81,21 @@ describe("tempoFeedback", () => {
     expect(deliveryLabel(700, 1200, 1, 150)).toBe("fast");
   });
 
+  it("uses percentage tempo forgiveness as good", () => {
+    expect(deliveryLabel(2500, 2200, 1, 0, 0.2)).toBe("close");
+    expect(deliveryLabel(3000, 2200, 1, 0, 0.2)).toBe("slow");
+  });
+
+  it("lets absolute forgiveness dominate percentage forgiveness", () => {
+    expect(deliveryLabel(1500, 2200, 1, 800, 0.05)).toBe("close");
+    expect(deliveryLabel(2850, 2200, 1, 700, 0.05)).toBe("close");
+  });
+
+  it("uses the configured percent range for fast/slow extremes", () => {
+    expect(deliveryLabel(1500, 2200, 1, 0, 0.3)).toBe("fast");
+    expect(deliveryLabel(1800, 2200, 1, 0, 0.05)).toBe("close");
+  });
+
   it("keeps percentage-based fast/slow outside forgiveness window", () => {
     expect(deliveryLabel(2900, 2200, 1, 500)).toBe("slow");
     expect(deliveryLabel(700, 1200, 1, 500)).toBe("fast");
