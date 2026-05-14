@@ -28,7 +28,7 @@ describe("recordingItemSearchText", () => {
           id: "2-3:b1",
           targets: ["LILLIAN"],
           text: "settles beside the recorder",
-          placement: "standalone"
+          placement: "before"
         }
       ]
     });

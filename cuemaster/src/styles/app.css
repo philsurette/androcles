@@ -1,5 +1,5 @@
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 * {
@@ -7,15 +7,20 @@
 }
 
 .shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
-  place-items: center;
-  padding: clamp(1rem, 2vw, 2rem);
+  justify-items: stretch;
+  align-items: start;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  padding: clamp(0.75rem, 2vw, 1.5rem);
 }
 
 .hero {
   max-width: 48rem;
   padding: clamp(2rem, 6vw, 5rem);
+  width: 100%;
   border: 1px solid rgba(30, 38, 31, 0.16);
   border-radius: 2rem;
   background: var(--panel);
@@ -23,11 +28,12 @@
 }
 
 .library {
-  width: min(100%, 58rem);
+  width: 100%;
+  max-width: none;
 }
 
 .rehearsal {
-  width: min(100%, 112rem);
+  width: 100%;
   max-width: none;
   padding: clamp(1.25rem, 4vw, 2.5rem);
 }
@@ -153,6 +159,10 @@ button:disabled {
   padding: 1rem;
 }
 
+.playbook-row > div {
+  min-width: 0;
+}
+
 .row-actions {
   display: flex;
   flex-wrap: wrap;
@@ -219,7 +229,7 @@ button:disabled {
 
 .rehearsal-workspace {
   display: grid;
-  grid-template-columns: minmax(19rem, 25rem) minmax(48rem, 1fr);
+  grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
   margin-top: 1.25rem;
@@ -253,6 +263,13 @@ button:disabled {
   min-width: 0;
   gap: 0.75rem;
   align-items: center;
+}
+
+.outline-open-button {
+  align-self: stretch;
+  min-height: 2.35rem;
+  margin-inline-start: auto;
+  padding-inline: 0.95rem;
 }
 
 .breadcrumb,
@@ -992,6 +1009,60 @@ button:disabled {
 }
 
 @media (max-width: 760px) {
+  .shell {
+    padding: 0.5rem;
+  }
+
+  .hero {
+    padding: 1.25rem 1rem;
+    width: 100%;
+    max-width: none;
+    border-radius: 1.25rem;
+  }
+
+  h1 {
+    font-size: clamp(2rem, 10vw, 3.5rem);
+    line-height: 1;
+  }
+
+  .hero > p {
+    font-size: 1rem;
+    max-width: none;
+  }
+
+  .library {
+    width: 100%;
+  }
+
+  .import-panel {
+    margin-top: 1.25rem;
+  }
+
+  .playbook-row {
+    gap: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .row-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .row-actions button {
+    flex: 1;
+    width: 100%;
+  }
+
+  .role-start-setting {
+    margin-top: 0.5rem;
+  }
+
+  .role-start-setting select,
+  .session-settings select,
+  .timing-setting select {
+    width: 100%;
+  }
+
   .rehearsal-workspace,
   .rehearsal-workspace.outline-collapsed {
     grid-template-columns: 1fr;
@@ -1004,12 +1075,14 @@ button:disabled {
   .outline-sidecar.outline-browser {
     position: fixed;
     inset: 0;
+    height: 100dvh;
     z-index: 20;
     max-height: none;
     border: 0;
     border-radius: 0;
     background: var(--paper);
     box-shadow: none;
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 
   .outline-sidecar.outline-browser .outline-list {
@@ -1017,9 +1090,13 @@ button:disabled {
   }
 
   .outline-sidecar.collapsed {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.65rem;
+    display: none;
+  }
+
+  .outline-open-button {
+    width: 100%;
+    margin: 0;
+    order: 1;
   }
 
   .outline-progress {

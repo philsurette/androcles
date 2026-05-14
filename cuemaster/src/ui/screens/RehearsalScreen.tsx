@@ -84,7 +84,8 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [activeUtilityPanel, setActiveUtilityPanel] = useState<UtilityPanel | null>(null);
-  const [isOutlineOpen, setIsOutlineOpen] = useState(true);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
+  const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const line = engine.currentLine();
   const cues = engine.cuePayloads(cueWindowPresetId);
@@ -109,6 +110,48 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
   useEffect(() => {
     void loadBookmarks();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const layoutQuery = window.matchMedia(REHEARSAL_COMPACT_MEDIA_QUERY);
+
+    const handleViewportChange = () => {
+      const compactViewport = layoutQuery.matches;
+      setIsCompactViewport(compactViewport);
+      if (compactViewport) {
+        setIsOutlineOpen(false);
+      } else {
+        setIsOutlineOpen(true);
+      }
+    };
+
+    handleViewportChange();
+    if (typeof layoutQuery.addEventListener === "function") {
+      layoutQuery.addEventListener("change", handleViewportChange);
+      return () => layoutQuery.removeEventListener("change", handleViewportChange);
+    }
+    // Safari 13 and earlier support only addListener/removeListener.
+    // @ts-expect-error - Safari fallback support for deprecated listener API.
+    layoutQuery.addListener(handleViewportChange);
+    return () => {
+      // @ts-expect-error - Safari fallback support for deprecated listener API.
+      layoutQuery.removeListener(handleViewportChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isCompactViewport || !isOutlineOpen) {
+      return;
+    }
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isCompactViewport, isOutlineOpen]);
 
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent) {
@@ -209,7 +252,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
 
   async function jumpFromOutline(lineId: string) {
     await jumpToLine(lineId);
-    if (window.matchMedia("(max-width: 760px)").matches) {
+    if (isCompactViewport) {
       setIsOutlineOpen(false);
     }
   }
@@ -694,6 +737,11 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
               {playbook.title} / {role.displayName}
             </p>
           </div>
+          {isCompactViewport && !isOutlineOpen ? (
+            <button type="button" className="outline-open-button secondary" onClick={() => setIsOutlineOpen(true)}>
+              Browse cues
+            </button>
+          ) : null}
           <p className="line-position">{line ? line.id : "No lines"}</p>
         </header>
         {storageStatus ? (
@@ -709,6 +757,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             blockingScope={blockingScope}
             includeDirections={includeDirections}
             isOpen={isOutlineOpen}
+            isCompactViewport={isCompactViewport}
             lines={role.lines}
             playbook={playbook}
             sections={playbook.sections}
@@ -1094,6 +1143,7 @@ function OutlineSidecar({
   blockingScope,
   includeDirections,
   isOpen,
+  isCompactViewport,
   playbook,
   lines,
   sections,
@@ -1105,12 +1155,16 @@ function OutlineSidecar({
   blockingScope: BlockingScope;
   includeDirections: boolean;
   isOpen: boolean;
+  isCompactViewport: boolean;
   playbook: Playbook;
   lines: Line[];
   sections: Playbook["sections"];
   onSelectLine: (lineId: string) => void;
   onToggleOpen: () => void;
 }) {
+  if (isCompactViewport && !isOpen) {
+    return null;
+  }
   if (!isOpen) {
     return (
       <aside className="outline-sidecar collapsed" aria-label="Rehearsal outline">
@@ -1488,8 +1542,16 @@ function currentRoleSectionId(
 
 const minPlaybackRate = 0.4;
 const maxPlaybackRate = 1.3;
+const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px)";
 const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
 const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
+
+function isCompactRehearsalViewport() {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return false;
+  }
+  return window.matchMedia(REHEARSAL_COMPACT_MEDIA_QUERY).matches;
+}
 
 function formatTimingOption(optionMs: number): string {
   return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;

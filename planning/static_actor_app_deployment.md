@@ -1,0 +1,265 @@
+# Static Actor App Deployment
+
+This document describes how to create deployable static builds of Cuemaster and LineRecorder for a normal webserver.
+
+Both apps are browser-only React/Vite applications. A deployment is just the app's built `dist/` directory copied to a webserver. There is no server-side runtime.
+
+## Requirements
+
+- Node dependencies installed in each app directory.
+- A static webserver that serves HTML, JavaScript, CSS, and asset files.
+- HTTPS for production use.
+
+LineRecorder uses browser microphone APIs, so it must be served from a secure context. `https://` is the normal production answer. `http://localhost` works for local testing, but plain `http://` on a remote server should not be used.
+
+Cuemaster and LineRecorder store imported packages and local app state in browser storage. The webserver does not store actor data.
+
+## Output Directories
+
+The build output directory for both apps is:
+
+```text
+dist/
+```
+
+For example:
+
+```text
+cuemaster/dist/
+linerecorder/dist/
+```
+
+Deploy the full contents of each `dist/` directory, not the directory name itself unless that matches your intended URL layout.
+
+## Recommended Build Command
+
+Use the static build script for webserver deployment:
+
+```sh
+npm run build:static
+```
+
+This runs Vite with `--base=./`, which makes generated asset URLs relative. Relative asset URLs are the safest default because the app can be deployed at either a domain root or a subdirectory.
+
+Examples:
+
+```text
+https://example.org/cuemaster/
+https://example.org/linerecorder/
+```
+
+or:
+
+```text
+https://cuemaster.example.org/
+https://linerecorder.example.org/
+```
+
+## Build Cuemaster
+
+From the repository root:
+
+```sh
+cd cuemaster
+npm install
+npm run test
+npm run build:static
+```
+
+Deploy:
+
+```text
+cuemaster/dist/index.html
+cuemaster/dist/assets/
+```
+
+If deploying under `/cuemaster/`, copy the contents of `cuemaster/dist/` to the server's `cuemaster/` directory.
+
+Example final layout:
+
+```text
+webroot/
+  cuemaster/
+    index.html
+    assets/
+```
+
+## Build LineRecorder
+
+From the repository root:
+
+```sh
+cd linerecorder
+npm install
+npm run test
+npm run build:static
+```
+
+Deploy:
+
+```text
+linerecorder/dist/index.html
+linerecorder/dist/assets/
+```
+
+If deploying under `/linerecorder/`, copy the contents of `linerecorder/dist/` to the server's `linerecorder/` directory.
+
+Example final layout:
+
+```text
+webroot/
+  linerecorder/
+    index.html
+    assets/
+```
+
+## Combined Webroot Example
+
+One server can host both apps side by side:
+
+```text
+webroot/
+  cuemaster/
+    index.html
+    assets/
+  linerecorder/
+    index.html
+    assets/
+```
+
+Build and stage both apps:
+
+```sh
+cd cuemaster
+npm install
+npm run test
+npm run build:static
+cd ../linerecorder
+npm install
+npm run test
+npm run build:static
+```
+
+Then copy:
+
+```text
+cuemaster/dist/*     -> webroot/cuemaster/
+linerecorder/dist/*  -> webroot/linerecorder/
+```
+
+Use your host's normal upload mechanism: `rsync`, `scp`, SFTP, GitHub Pages, Netlify, Cloudflare Pages, or a manual file upload.
+
+If dependencies are already installed, `npm install` can be skipped. The important deploy artifact is the result of `npm run build:static`.
+
+## GitHub Pages Example
+
+If using the sibling `philsurette.github.io` repository, the target layout should be:
+
+```text
+../philsurette.github.io/
+  cuemaster/
+    index.html
+    assets/
+  linerecorder/
+    index.html
+    assets/
+```
+
+Copy the contents of each `dist/` directory into the matching app directory:
+
+```text
+cuemaster/dist/*     -> ../philsurette.github.io/cuemaster/
+linerecorder/dist/*  -> ../philsurette.github.io/linerecorder/
+```
+
+Then commit and push the GitHub Pages repository using its normal publishing workflow.
+
+## Local Preview
+
+Preview the production build before uploading it:
+
+```sh
+cd cuemaster
+npm run build:static
+npm run preview
+```
+
+Cuemaster previews on the configured Vite preview port, normally `http://127.0.0.1:4173/`.
+
+```sh
+cd linerecorder
+npm run build:static
+npm run preview
+```
+
+LineRecorder's preview script uses port `5174`, so the local preview URL is normally `http://127.0.0.1:5174/`.
+
+## Webserver Configuration
+
+These apps currently use hash-free single-page-app routing lightly enough that static file serving is usually sufficient. If a future route is added and direct deep links must work, configure the server to serve `index.html` as the fallback for unknown paths under each app directory.
+
+Recommended headers:
+
+```text
+Content-Type: correct MIME type for .html, .js, .css, .wasm if present
+Cache-Control for index.html: no-cache
+Cache-Control for assets/: public, max-age=31536000, immutable
+```
+
+The built asset filenames include hashes, so long caching is fine for files under `assets/`. Keep `index.html` fresh so users get new asset references after a deployment.
+
+## Smoke Test After Deployment
+
+Cuemaster:
+
+1. Open the deployed Cuemaster URL.
+2. Import a Playbook zip.
+3. Confirm the role list appears.
+4. Start a rehearsal line.
+5. Toggle stage directions and blocking if the Playbook contains them.
+6. Refresh the page and confirm the imported Playbook remains available.
+
+LineRecorder:
+
+1. Open the deployed LineRecorder URL over HTTPS.
+2. Import a Recording Request zip.
+3. Confirm the requested lines appear.
+4. Start the microphone.
+5. Record and play a short take.
+6. Accept the take.
+7. Export recordings and confirm a zip downloads.
+
+## Package Files For Actors
+
+The hosted apps do not fetch production data automatically. Actors still need package files:
+
+- Cuemaster consumes a Playbook zip from Stager.
+- LineRecorder consumes a Recording Request zip from Stager.
+- LineRecorder exports a role recordings zip for Stager import.
+
+Typical Stager commands:
+
+```sh
+./main playbook --play fairies --audio-format mp3
+./main recording-request --play fairies --role LILLIAN
+```
+
+Upload the resulting zip files to email, Google Drive, Dropbox, or another shared folder.
+
+## Notes
+
+- Use `npm run build` instead of `npm run build:static` only when the app will be served from the webserver root and absolute asset paths are desired.
+- Do not deploy the Vite dev server for actors.
+- Do not put Recording Request zips, Playbook zips, or exported recordings inside the app `dist/` directory unless intentionally publishing those files.
+- LineRecorder microphone access may fail if the deployed page is inside an iframe or served without HTTPS.
+
+## Deploying to Cloudflare Pages
+The first time you start cloudflare you are presented with the option to upload a folder. Shoose linerecorder or cuemaster's dist folder. Don't accept the autogenerated name (it will suggest a nonsense name line 'hidden-bread-d2e6') but name it 'cuemaster' or 'linerecorder' as appropriate.
+
+To add an app later, got to `Build/Workers & Pages` and select `Create Application`, `Upload your static files`, select the app's `dist` folder, set the worker name to the app name (linerecorder or cuemaster as appropriate), and click deploy.
+
+The apps will then be available on cloudflare as (e.g.):
+- https://linerecorder.phil-surette.workers.dev/
+- https://cuemaster.phil-surette.workers.dev/
+
+Then you'll need to share playbook/linerecording zips with actors.
