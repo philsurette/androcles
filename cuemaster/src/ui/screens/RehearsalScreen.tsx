@@ -1859,6 +1859,7 @@ function OutlineSidecar({
       playbook={playbook}
       lines={lines}
       sections={sections}
+      isCompactViewport={isCompactViewport}
       bookmarkedLineIds={bookmarkedLineIds}
       lineTimingStatusByLineId={lineTimingStatusByLineId}
       onSelectLine={onSelectLine}
@@ -1877,20 +1878,22 @@ function OutlinePanel({
   playbook,
   lines,
   sections,
+  isCompactViewport,
   onSelectLine,
-  onToggleOpen
-}: {
-  currentLineId: string | null;
-  includeBlocking: boolean;
-  blockingScope: BlockingScope;
-  includeDirections: boolean;
-  bookmarkedLineIds: Set<string>;
-  lineTimingStatusByLineId: Map<string, TimingLineStatus>;
-  playbook: Playbook;
-  lines: Line[];
-  sections: Playbook["sections"];
-  onSelectLine: (lineId: string) => void;
-  onToggleOpen: () => void;
+  onToggleOpen,
+  }: {
+    currentLineId: string | null;
+    includeBlocking: boolean;
+    blockingScope: BlockingScope;
+    includeDirections: boolean;
+    isCompactViewport: boolean;
+    bookmarkedLineIds: Set<string>;
+    lineTimingStatusByLineId: Map<string, TimingLineStatus>;
+    playbook: Playbook;
+    lines: Line[];
+    sections: Playbook["sections"];
+    onSelectLine: (lineId: string) => void;
+    onToggleOpen: () => void;
 }) {
   const [mode, setMode] = useState<OutlineMode>("cues");
   const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
@@ -1985,6 +1988,16 @@ function OutlinePanel({
     <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
       <div className="outline-header">
         <div className="outline-header-actions">
+          {isCompactViewport ? (
+            <button
+              type="button"
+              className="icon-button secondary"
+              aria-label="Back to rehearsal."
+              onClick={onToggleOpen}
+            >
+              <span aria-hidden="true">←</span>
+            </button>
+          ) : null}
           <div className="outline-timing-filter-group" aria-label="Timing filters">
             {(["slow", "good", "fast", "untimed"] as TimingLineStatus[]).map((status) => {
               const isActive = activeTimingFilters.includes(status);
@@ -2059,15 +2072,17 @@ function OutlinePanel({
               </button>
             </div>
           </div>
-          <button
-            type="button"
-            className="outline-disclosure-button expanded"
-            aria-label="Hide outline."
-            title="Hide outline"
-            onClick={onToggleOpen}
-          >
-            <span className="context-disclosure" aria-hidden="true" />
-          </button>
+          {!isCompactViewport ? (
+            <button
+              type="button"
+              className="outline-disclosure-button expanded"
+              aria-label="Hide outline."
+              title="Hide outline"
+              onClick={onToggleOpen}
+            >
+              <span className="context-disclosure" aria-hidden="true" />
+            </button>
+          ) : null}
         </div>
       </div>
       <label className="outline-search">
