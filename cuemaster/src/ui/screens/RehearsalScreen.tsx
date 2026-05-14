@@ -1515,7 +1515,6 @@ export function RehearsalScreen({
             <PracticeSelect
               label="Blocking scope"
               value={blockingScope}
-              disabled={!includeBlocking}
               options={[
                 { value: "role", label: "My role" },
                 { value: "all", label: "All roles" }
