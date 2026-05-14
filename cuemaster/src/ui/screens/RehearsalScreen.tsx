@@ -1245,9 +1245,8 @@ export function RehearsalScreen({
                 className={`timing-sync-toggle ${syncPracticeTiming ? "linked" : ""}`}
                 aria-label={syncPracticeTiming ? "Disable sync for timing targets." : "Keep timing targets in sync."}
                 aria-pressed={syncPracticeTiming}
-                data-tooltip={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
+                title={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
                 onClick={() => changeSyncPracticeTiming(!syncPracticeTiming)}
-                title={syncPracticeTiming ? "Timing targets linked" : "Timing targets unlinked"}
               >
                 <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
               </button>
@@ -1287,9 +1286,8 @@ export function RehearsalScreen({
                 className={`timing-sync-toggle ${syncSpeakAlongSpeed ? "linked" : ""}`}
                 aria-label={syncSpeakAlongSpeed ? "Disable speed control sync." : "Keep speed controls in sync."}
                 aria-pressed={syncSpeakAlongSpeed}
-                data-tooltip={syncSpeakAlongSpeed ? "Unlock speed controls" : "Lock speed controls"}
+                title={syncSpeakAlongSpeed ? "Unlock speed controls" : "Lock speed controls"}
                 onClick={() => changeSyncSpeakAlongSpeed(!syncSpeakAlongSpeed)}
-                title={syncSpeakAlongSpeed ? "Speed controls linked" : "Speed controls unlinked"}
               >
                 <span aria-hidden="true">{syncSpeakAlongSpeed ? "🔒" : "🔓"}</span>
               </button>
@@ -1337,7 +1335,7 @@ export function RehearsalScreen({
                 type="button"
                 className="icon-button secondary"
                 aria-label="Back to rehearsal."
-                data-tooltip="Back to rehearsal"
+                title="Back to rehearsal"
                 onClick={closeOptionsPage}
               >
                 <span aria-hidden="true">←</span>
@@ -1380,13 +1378,13 @@ export function RehearsalScreen({
             </div>
           </div>
           <div className="rehearsal-line-metadata">
-            <button
-              type="button"
-              className="outline-open-button icon-button secondary"
-              aria-label={isOutlineOpen ? "Browse cues" : "Open cues"}
-              data-tooltip={isOutlineOpen ? "Browse cues" : "Open cues"}
-              onClick={() => setIsOutlineOpen(true)}
-            >
+              <button
+                type="button"
+                className="outline-open-button icon-button secondary"
+                aria-label={isOutlineOpen ? "Browse cues" : "Open cues"}
+                title={isOutlineOpen ? "Browse cues" : "Open cues"}
+                onClick={() => setIsOutlineOpen(true)}
+              >
               <span aria-hidden="true">📋</span>
             </button>
             <p className="line-position">{line ? line.id : "No lines"}</p>
@@ -1437,7 +1435,7 @@ export function RehearsalScreen({
                               type="button"
                               className="transport-button secondary"
                               aria-label="Pause cue playback. Shortcut: Space."
-                              data-tooltip="Pause cue"
+                              title="Pause cue"
                               onClick={() => void runCommand("pause")}
                             >
                               <span aria-hidden="true" className="transport-icon">
@@ -1450,7 +1448,7 @@ export function RehearsalScreen({
                               type="button"
                               className="transport-button secondary"
                               aria-label="Resume cue playback. Shortcut: Space."
-                              data-tooltip="Resume cue"
+                              title="Resume cue"
                               onClick={() => void runCommand("resume")}
                             >
                               <span aria-hidden="true" className="transport-icon">
@@ -1463,7 +1461,7 @@ export function RehearsalScreen({
                               type="button"
                               className="transport-button secondary"
                               aria-label={`${hasStarted ? "Replay cue" : "Play cue"}. Shortcut: R.`}
-                              data-tooltip={hasStarted ? "Replay cue" : "Play cue"}
+                              title={hasStarted ? "Replay cue" : "Play cue"}
                               onClick={() => void runCommand("repeat-cue")}
                             >
                               <span aria-hidden="true" className="transport-icon">
@@ -1475,7 +1473,7 @@ export function RehearsalScreen({
                             type="button"
                             className="transport-button secondary"
                             aria-label="Stop cue playback. Shortcut: Escape."
-                            data-tooltip="Stop"
+                            title="Stop"
                             onClick={() => void runCommand("stop")}
                           >
                             <span aria-hidden="true" className="transport-icon">
@@ -1488,7 +1486,7 @@ export function RehearsalScreen({
                             type="button"
                             className="transport-button secondary"
                             aria-label="Go to previous line. Shortcut: Left arrow."
-                            data-tooltip="Previous line"
+                            title="Previous line"
                             disabled={position.atBeginning}
                             onClick={() => void runCommand("back")}
                           >
@@ -1500,7 +1498,7 @@ export function RehearsalScreen({
                             type="button"
                             className="transport-button secondary"
                             aria-label="Go to next line. Shortcut: Right arrow."
-                            data-tooltip="Next line"
+                            title="Next line"
                             disabled={position.atEnd}
                             onClick={() => void runCommand("next")}
                           >
@@ -1514,7 +1512,7 @@ export function RehearsalScreen({
                             type="button"
                             className="quick-toggle"
                             aria-label="Go to previous bookmark."
-                            data-tooltip="Previous bookmark"
+                            title="Previous bookmark"
                             onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
                             disabled={!bookmarkNeighbors.previousLineId}
                           >
@@ -1529,7 +1527,7 @@ export function RehearsalScreen({
                                 ? "Remove bookmark from current line."
                                 : "Bookmark current line."
                             }
-                            data-tooltip={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
+                            title={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
                             onClick={() => void runCommand("bookmark")}
                           >
                             <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
@@ -1538,7 +1536,7 @@ export function RehearsalScreen({
                             type="button"
                             className="quick-toggle"
                             aria-label="Go to next bookmark."
-                            data-tooltip="Next bookmark"
+                            title="Next bookmark"
                             onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
                             disabled={!bookmarkNeighbors.nextLineId}
                           >
@@ -1598,7 +1596,7 @@ export function RehearsalScreen({
                     type="button"
                     className="transport-button secondary"
                     aria-label="Pause line playback. Shortcut: Space."
-                    data-tooltip="Pause line"
+                    title="Pause line"
                     onClick={() => void runCommand("pause")}
                   >
                     <span aria-hidden="true" className="transport-icon">
@@ -1610,7 +1608,7 @@ export function RehearsalScreen({
                     type="button"
                     className="transport-button secondary"
                     aria-label="Resume line playback. Shortcut: Space."
-                    data-tooltip="Resume line"
+                    title="Resume line"
                     onClick={() => void runCommand("resume")}
                   >
                     <span aria-hidden="true" className="transport-icon">
@@ -1622,7 +1620,7 @@ export function RehearsalScreen({
                     type="button"
                     className="transport-button secondary"
                     aria-label="Play your line. Shortcut: L."
-                    data-tooltip="Play your line"
+                    title="Play your line"
                     onClick={() => void runCommand("hear-line")}
                     disabled={!line}
                   >
@@ -1635,7 +1633,7 @@ export function RehearsalScreen({
                   type="button"
                   className="transport-button secondary"
                   aria-label="Stop line playback. Shortcut: Escape."
-                  data-tooltip="Stop line"
+                  title="Stop line"
                   onClick={() => void runCommand("stop")}
                 >
                   <span aria-hidden="true" className="transport-icon">
@@ -1646,86 +1644,86 @@ export function RehearsalScreen({
             </div>
           </section>
           <div className="rehearsal-practice-toggles-inline" aria-label="Quick practice toggles">
-            <button
-              type="button"
-              className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={tempoTimingEnabled}
-              aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
-              data-tooltip={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
-              disabled={speakAlongEnabled}
-              onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
-            >
+              <button
+                type="button"
+                className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={tempoTimingEnabled}
+                aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
+                title={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
+                disabled={speakAlongEnabled}
+                onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
+              >
               <span aria-hidden="true">⏱</span>
             </button>
-            <button
-              type="button"
-              className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={speakAlongEnabled}
-              aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
-              data-tooltip={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
-              disabled={tempoTimingEnabled}
-              onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
-            >
+              <button
+                type="button"
+                className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={speakAlongEnabled}
+                aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
+                title={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
+                disabled={tempoTimingEnabled}
+                onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
+              >
               <span aria-hidden="true">👄</span>
             </button>
-            <button
-              type="button"
-              className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={showLinesByDefault}
-              aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
-              data-tooltip={showLinesByDefault ? "Show lines on" : "Show lines off"}
-              onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
-            >
+              <button
+                type="button"
+                className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={showLinesByDefault}
+                aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
+                title={showLinesByDefault ? "Show lines on" : "Show lines off"}
+                onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
+              >
               <span aria-hidden="true">👁</span>
             </button>
-            <button
-              type="button"
-              className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={includeBlocking}
-              aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
-              data-tooltip={includeBlocking ? "Blocking on" : "Blocking off"}
-              onClick={() => changeIncludeBlocking(!includeBlocking)}
-            >
+              <button
+                type="button"
+                className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={includeBlocking}
+                aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
+                title={includeBlocking ? "Blocking on" : "Blocking off"}
+                onClick={() => changeIncludeBlocking(!includeBlocking)}
+              >
               <span aria-hidden="true">♿</span>
             </button>
-            <button
-              type="button"
-              className={includeDirections ? "quick-toggle active" : "quick-toggle"}
-              aria-pressed={includeDirections}
-              aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
-              data-tooltip={includeDirections ? "Directions on" : "Directions off"}
-              onClick={() => changeIncludeDirections(!includeDirections)}
-            >
+              <button
+                type="button"
+                className={includeDirections ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={includeDirections}
+                aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
+                title={includeDirections ? "Directions on" : "Directions off"}
+                onClick={() => changeIncludeDirections(!includeDirections)}
+              >
               <span aria-hidden="true">⌞⌝</span>
             </button>
           </div>
           <div className="rehearsal-quick-actions">
-            <button
-              type="button"
-              className="quick-toggle"
-              aria-label={showLineInfo ? "Hide line info." : "Show line info."}
-              aria-pressed={showLineInfo}
-              data-tooltip="Line info"
-              onClick={() => setShowLineInfo((current) => !current)}
-            >
+              <button
+                type="button"
+                className="quick-toggle"
+                aria-label={showLineInfo ? "Hide line info." : "Show line info."}
+                aria-pressed={showLineInfo}
+                title="Line info"
+                onClick={() => setShowLineInfo((current) => !current)}
+              >
               <span aria-hidden="true">ⓘ</span>
             </button>
-            <button
-              type="button"
-              className="quick-toggle"
-              aria-label="Choose role."
-              data-tooltip="Choose role."
-              onClick={onSelectRole}
-            >
+              <button
+                type="button"
+                className="quick-toggle"
+                aria-label="Choose role."
+                title="Choose role."
+                onClick={onSelectRole}
+              >
               <span aria-hidden="true">🎭</span>
             </button>
-            <button
-              type="button"
-              className="quick-toggle rehearsal-options-button"
-              aria-label="Open options"
-              data-tooltip="Options"
-              onClick={openOptionsPage}
-            >
+              <button
+                type="button"
+                className="quick-toggle rehearsal-options-button"
+                aria-label="Open options"
+                title="Options"
+                onClick={openOptionsPage}
+              >
               <span aria-hidden="true">⚙</span>
             </button>
           </div>

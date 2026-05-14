@@ -438,31 +438,6 @@ button:disabled {
   padding: 0;
 }
 
-.icon-button::after {
-  position: absolute;
-  z-index: 2;
-  bottom: calc(100% + 0.45rem);
-  left: 50%;
-  width: max-content;
-  max-width: 12rem;
-  transform: translateX(-50%);
-  border-radius: 0.55rem;
-  background: var(--ink);
-  color: var(--paper);
-  content: attr(data-tooltip);
-  font-size: 0.8rem;
-  font-weight: 800;
-  opacity: 0;
-  padding: 0.35rem 0.55rem;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.icon-button:hover::after,
-.icon-button:focus-visible::after {
-  opacity: 1;
-}
-
 .rehearsal-workspace {
   display: grid;
   grid-template-columns: minmax(16rem, 24rem) minmax(0, 1fr);
@@ -1037,35 +1012,6 @@ button:disabled {
   text-align: center;
 }
 
-.transport-button::after {
-  position: absolute;
-  z-index: 2;
-  bottom: calc(100% + 0.45rem);
-  left: 50%;
-  width: max-content;
-  max-width: 12rem;
-  transform: translateX(-50%);
-  border-radius: 0.55rem;
-  background: var(--ink);
-  color: var(--paper);
-  content: attr(data-tooltip);
-  font-size: 0.8rem;
-  font-weight: 800;
-  opacity: 0;
-  padding: 0.35rem 0.55rem;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.transport-button:hover::after,
-.transport-button:focus-visible::after {
-  opacity: 1;
-}
-
-.transport-button:disabled::after {
-  display: none;
-}
-
 .transport-toggle.active {
   background: rgba(30, 38, 31, 0.12);
   color: var(--ink);
@@ -1236,43 +1182,6 @@ button:disabled {
 
 .quick-toggle:disabled {
   opacity: 0.45;
-}
-
-.quick-toggle::after {
-  position: absolute;
-  z-index: 2;
-  bottom: calc(100% + 0.4rem);
-  left: 50%;
-  width: max-content;
-  max-width: 12rem;
-  transform: translateX(-50%);
-  border-radius: 0.55rem;
-  background: var(--ink);
-  color: var(--paper);
-  content: attr(data-tooltip);
-  font-size: 0.8rem;
-  font-weight: 800;
-  opacity: 0;
-  padding: 0.35rem 0.55rem;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.quick-toggle:hover::after,
-.quick-toggle:focus-visible::after {
-  opacity: 1;
-}
-
-.quick-toggle:disabled::after {
-  display: none;
-}
-
-@media (max-width: 520px) {
-  .quick-toggle::after {
-    left: 0;
-    transform: translateX(0);
-    text-align: left;
-  }
 }
 
 .practice-options-panel {

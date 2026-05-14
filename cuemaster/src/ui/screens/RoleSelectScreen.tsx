@@ -25,7 +25,7 @@ export function RoleSelectScreen({
               type="button"
               className="icon-button secondary"
               aria-label="Back to library"
-              data-tooltip="Back to library"
+              title="Back to library"
               onClick={onBack}
             >
               <span aria-hidden="true">←</span>
