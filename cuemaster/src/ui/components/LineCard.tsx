@@ -31,7 +31,6 @@ export function LineCard({
         </p>
       ))}
       <p>
-        <span className="speaker inline-speaker">{line.speaker}</span>
         {includeDirections
           ? line.directions.map((direction) => (
               <span className="inline-stage-direction" key={`${direction.segmentId}-${direction.placement}`}>
