@@ -1433,9 +1433,6 @@ export function RehearsalScreen({
             </label>
           </div>
         </fieldset>
-        <p className="status">
-          Tempo timing uses microphone energy only: no recording, no transcription, no upload.
-        </p>
       </div>
     </div>
   );
