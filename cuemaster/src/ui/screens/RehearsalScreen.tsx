@@ -1446,10 +1446,12 @@ function OutlinePanel({
   onToggleOpen: () => void;
 }) {
   const [mode, setMode] = useState<OutlineMode>("cues");
+  const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showBookmarksOnly, setShowBookmarksOnly] = useState(false);
   const [activeTimingFilters, setActiveTimingFilters] = useState<TimingLineStatus[]>([]);
   const currentLineRef = useRef<HTMLButtonElement | null>(null);
+  const modeMenuRef = useRef<HTMLDivElement | null>(null);
   const showAllTimings = activeTimingFilters.length === 0;
   const normalizedSearchQuery = searchQuery.trim();
   const sectionGroups = scriptBrowserSections(lines, sections)
@@ -1508,6 +1510,30 @@ function OutlinePanel({
     currentLineRef.current?.scrollIntoView({ block: "nearest" });
   }, [currentLineId, mode]);
 
+  useEffect(() => {
+    if (!isModeMenuOpen) {
+      return;
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!modeMenuRef.current?.contains(event.target as Node)) {
+        setIsModeMenuOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsModeMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isModeMenuOpen]);
+
   return (
     <aside className="outline-sidecar outline-browser" aria-label="Rehearsal outline">
       <div className="outline-header">
@@ -1540,17 +1566,52 @@ function OutlinePanel({
           >
             {showBookmarksOnly ? "★" : "☆"}
           </button>
-          <label className="outline-mode-select-wrap">
-            <select
-              aria-label="Outline mode"
-              value={mode}
-              onChange={(event) => setMode(event.currentTarget.value as "cues" | "lines")}
+          <div className="outline-mode-select-wrap" ref={modeMenuRef}>
+            <button
+              type="button"
               className="outline-mode-select"
+              aria-label="Outline mode"
+              aria-expanded={isModeMenuOpen}
+              aria-controls="outline-mode-options"
+              onClick={() => setIsModeMenuOpen((current) => !current)}
             >
-              <option value="cues">Cues</option>
-              <option value="lines">Lines</option>
-            </select>
-          </label>
+              <span>{mode === "cues" ? "Cues" : "Lines"}</span>
+              <span className="outline-mode-select-caret" aria-hidden="true">
+                ▾
+              </span>
+            </button>
+            <div
+              id="outline-mode-options"
+              className={`outline-mode-select-options ${isModeMenuOpen ? "open" : ""}`}
+              role="listbox"
+              aria-label="Outline mode"
+            >
+              <button
+                type="button"
+                role="option"
+                className={mode === "cues" ? "outline-mode-select-option active" : "outline-mode-select-option"}
+                aria-selected={mode === "cues"}
+                onClick={() => {
+                  setMode("cues");
+                  setIsModeMenuOpen(false);
+                }}
+              >
+                Cues
+              </button>
+              <button
+                type="button"
+                role="option"
+                className={mode === "lines" ? "outline-mode-select-option active" : "outline-mode-select-option"}
+                aria-selected={mode === "lines"}
+                onClick={() => {
+                  setMode("lines");
+                  setIsModeMenuOpen(false);
+                }}
+              >
+                Lines
+              </button>
+            </div>
+          </div>
           <button
             type="button"
             className="outline-disclosure-button expanded"
