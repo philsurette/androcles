@@ -12,6 +12,8 @@ export function App() {
   const [selectedPlaybook, setSelectedPlaybook] = useState<Playbook | null>(null);
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [highlightedRoleId, setHighlightedRoleId] = useState<string | null>(null);
+  const [returnRoleId, setReturnRoleId] = useState<string | null>(null);
+  const [isRoleSelectFromRehearsal, setIsRoleSelectFromRehearsal] = useState(false);
   const [selectedSession, setSelectedSession] = useState<RehearsalSession | null>(null);
   const [storageStatus, setStorageStatus] = useState<string>("");
 
@@ -23,9 +25,14 @@ export function App() {
         initialSession={selectedSession}
         initialStorageStatus={storageStatus}
         onBack={() => {
+          setSelectedPlaybook(null);
           setSelectedRole(null);
           setSelectedSession(null);
+          setReturnRoleId(null);
+          setIsRoleSelectFromRehearsal(false);
+          setHighlightedRoleId(selectedRole.id);
         }}
+        onSelectRole={() => void openRoleSelectFromRehearsal(selectedRole)}
       />
     );
   }
@@ -36,7 +43,22 @@ export function App() {
         playbook={selectedPlaybook}
         storageStatus={storageStatus}
         selectedRoleId={highlightedRoleId ?? selectedRole?.id}
-        onBack={() => setSelectedPlaybook(null)}
+        onBack={() => {
+          if (isRoleSelectFromRehearsal && returnRoleId) {
+            const returnRole = selectedPlaybook.roles.find((candidate) => candidate.id === returnRoleId) ?? null;
+            if (returnRole) {
+              setSelectedRole(returnRole);
+              setReturnRoleId(null);
+              setIsRoleSelectFromRehearsal(false);
+              return;
+            }
+          }
+          setSelectedPlaybook(null);
+          setSelectedRole(null);
+          setSelectedSession(null);
+          setReturnRoleId(null);
+          setIsRoleSelectFromRehearsal(false);
+        }}
         onSelectRole={(role) => void selectRole(selectedPlaybook, role)}
       />
     );
@@ -63,8 +85,21 @@ export function App() {
 
     setSelectedPlaybook(playbook);
     setHighlightedRoleId(latestRole?.id ?? null);
+    setIsRoleSelectFromRehearsal(false);
+    setReturnRoleId(null);
     setSelectedRole(latestRole ?? null);
     setSelectedSession(latestRole ? (latestSession ?? null) : null);
+  }
+
+  async function openRoleSelectFromRehearsal(role: Role | null) {
+    if (!role) {
+      return;
+    }
+
+    setStorageStatus("");
+    setReturnRoleId(role.id);
+    setIsRoleSelectFromRehearsal(true);
+    setSelectedRole(null);
   }
 
   async function selectRole(playbook: Playbook, role: Role) {
@@ -74,6 +109,8 @@ export function App() {
       setSelectedRole(role);
       setHighlightedRoleId(role.id);
       setSelectedSession(savedSession);
+      setReturnRoleId(null);
+      setIsRoleSelectFromRehearsal(false);
     } catch (error) {
       setStorageStatus(userFacingErrorMessage(error));
       setSelectedSession(null);

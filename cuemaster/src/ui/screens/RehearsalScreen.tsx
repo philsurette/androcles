@@ -29,6 +29,7 @@ type RehearsalScreenProps = {
   initialSession: RehearsalSession | null;
   initialStorageStatus?: string;
   onBack: () => void;
+  onSelectRole: () => void;
 };
 
 type PlaybackUiState = "idle" | "playing" | "paused";
@@ -36,7 +37,14 @@ type PlaybackSource = "cue" | "line";
 type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "timed";
 
-export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
+export function RehearsalScreen({
+  playbook,
+  role,
+  initialSession,
+  initialStorageStatus = "",
+  onBack,
+  onSelectRole
+}: RehearsalScreenProps) {
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
@@ -864,11 +872,20 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             <button
               type="button"
               className="icon-button secondary"
-              aria-label="Back to roles."
-              data-tooltip="Back to roles"
+              aria-label="Back to library."
+              data-tooltip="Back to library."
               onClick={onBack}
             >
               <span aria-hidden="true">←</span>
+            </button>
+            <button
+              type="button"
+              className="icon-button secondary"
+              aria-label="Choose role."
+              data-tooltip="Choose role."
+              onClick={onSelectRole}
+            >
+              <span aria-hidden="true">🎭</span>
             </button>
             <div className="rehearsal-title-stack">
               <p className="rehearsal-play-title">{playbook.title}</p>
