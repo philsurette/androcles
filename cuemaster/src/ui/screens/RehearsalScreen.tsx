@@ -33,7 +33,7 @@ type RehearsalScreenProps = {
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
-type UtilityPanel = "bookmarks" | "timing" | "options";
+type UtilityPanel = "timing" | "options";
 type OutlineMode = "cues" | "lines";
 
 export function RehearsalScreen({ playbook, role, initialSession, initialStorageStatus = "", onBack }: RehearsalScreenProps) {
@@ -1115,15 +1115,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             <div className="utility-tabs" aria-label="Rehearsal utilities">
               <button
                 type="button"
-                className={activeUtilityPanel === "bookmarks" ? "utility-tab active" : "utility-tab"}
-                aria-pressed={activeUtilityPanel === "bookmarks"}
-                onClick={() => void showUtilityPanel("bookmarks")}
-              >
-                <span aria-hidden="true">★</span>
-                Bookmarks
-              </button>
-              <button
-                type="button"
                 className={activeUtilityPanel === "timing" ? "utility-tab active" : "utility-tab"}
                 aria-pressed={activeUtilityPanel === "timing"}
                 onClick={() => void showUtilityPanel("timing")}
@@ -1223,9 +1214,6 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
                       Tempo timing uses microphone energy only: no recording, no transcription, no upload.
                     </p>
                   </div>
-                ) : null}
-                {activeUtilityPanel === "bookmarks" ? (
-                  <BookmarksPanel bookmarks={bookmarks} role={role} onSelectLine={(lineId) => void jumpToLine(lineId)} />
                 ) : null}
                 {activeUtilityPanel === "timing" ? (
                   <TimingIssuesPanel
@@ -1560,25 +1548,6 @@ function RecentAttemptsPanel({ attempts }: { attempts: TimingAttempt[] }) {
   );
 }
 
-function BookmarksPanel({
-  bookmarks,
-  role,
-  onSelectLine
-}: {
-  bookmarks: Bookmark[];
-  role: Role;
-  onSelectLine: (lineId: string) => void;
-}) {
-  const linesById = new Map(role.lines.map((line) => [line.id, line]));
-
-  return (
-    <div className="review-panel">
-      <h2>Bookmarks</h2>
-      <BookmarkReviewSection bookmarks={bookmarks} linesById={linesById} onSelectLine={onSelectLine} />
-    </div>
-  );
-}
-
 function TimingIssuesPanel({
   attempts,
   role,
@@ -1634,34 +1603,6 @@ function TimingReviewSection({
         </ul>
       )}
     </section>
-  );
-}
-
-function BookmarkReviewSection({
-  bookmarks,
-  linesById,
-  onSelectLine
-}: {
-  bookmarks: Bookmark[];
-  linesById: Map<string, Line>;
-  onSelectLine: (lineId: string) => void;
-}) {
-  return (
-    <>
-      {bookmarks.length === 0 ? (
-        <p className="empty">None.</p>
-      ) : (
-        <ul>
-          {bookmarks.map((bookmark) => (
-            <li key={bookmark.id}>
-              <button type="button" className="secondary" onClick={() => onSelectLine(bookmark.lineId)}>
-                {bookmark.lineId} {linesById.get(bookmark.lineId)?.responseText.slice(0, 80) ?? ""}
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-    </>
   );
 }
 
