@@ -94,6 +94,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
     () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
     [cues, includeDirections, playbook, line]
   );
+  const bookmarkedLineIds = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.lineId)), [bookmarks]);
 
   useEffect(() => {
     void saveSession(engine.position().index);
@@ -807,6 +808,7 @@ export function RehearsalScreen({ playbook, role, initialSession, initialStorage
             includeBlocking={includeBlocking}
             blockingScope={blockingScope}
             includeDirections={includeDirections}
+            bookmarkedLineIds={bookmarkedLineIds}
             isOpen={isOutlineOpen}
             isCompactViewport={isCompactViewport}
             lines={role.lines}
@@ -1247,6 +1249,7 @@ function OutlineSidecar({
   includeBlocking,
   blockingScope,
   includeDirections,
+  bookmarkedLineIds,
   isOpen,
   isCompactViewport,
   playbook,
@@ -1259,6 +1262,7 @@ function OutlineSidecar({
   includeBlocking: boolean;
   blockingScope: BlockingScope;
   includeDirections: boolean;
+  bookmarkedLineIds: Set<string>;
   isOpen: boolean;
   isCompactViewport: boolean;
   playbook: Playbook;
@@ -1299,6 +1303,7 @@ function OutlineSidecar({
       playbook={playbook}
       lines={lines}
       sections={sections}
+      bookmarkedLineIds={bookmarkedLineIds}
       onSelectLine={onSelectLine}
       onToggleOpen={onToggleOpen}
     />
@@ -1310,6 +1315,7 @@ function OutlinePanel({
   includeBlocking,
   blockingScope,
   includeDirections,
+  bookmarkedLineIds,
   playbook,
   lines,
   sections,
@@ -1320,6 +1326,7 @@ function OutlinePanel({
   includeBlocking: boolean;
   blockingScope: BlockingScope;
   includeDirections: boolean;
+  bookmarkedLineIds: Set<string>;
   playbook: Playbook;
   lines: Line[];
   sections: Playbook["sections"];
@@ -1414,7 +1421,14 @@ function OutlinePanel({
                   ref={line.id === currentLineId ? currentLineRef : undefined}
                   onClick={() => onSelectLine(line.id)}
                 >
-                  <span className={line.id === currentLineId ? "status-dot accepted" : "status-dot"} aria-hidden="true" />
+                  <span
+                    className={`status-dot${line.id === currentLineId ? " accepted" : ""} ${
+                      bookmarkedLineIds.has(line.id) ? "bookmark" : ""
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {bookmarkedLineIds.has(line.id) ? "★" : null}
+                  </span>
                   <strong>{line.id}</strong>
                   <span className="outline-speaker">{outlineSpeaker(line, mode, includeDirections, playbook)}</span>
                   <span className="outline-text">{outlineText(line, mode, includeDirections, playbook)}</span>

@@ -1179,6 +1179,18 @@ button:disabled {
   background: var(--accent);
 }
 
+.outline-row .status-dot.bookmark {
+  width: auto;
+  height: auto;
+  min-width: 0.78rem;
+  min-height: 0.78rem;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.78rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
 .outline-row strong {
   color: var(--ink);
 }
