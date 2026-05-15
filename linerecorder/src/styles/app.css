@@ -464,14 +464,19 @@ select {
 
 .recording-workspace {
   display: grid;
-  grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.28fr) minmax(0, 1fr);
   gap: 0.85rem;
   align-items: start;
   min-height: 0;
+  min-width: 0;
 }
 
 .recording-workspace.explorer-collapsed {
-  grid-template-columns: clamp(48px, 8vw, 60px) minmax(0, 1fr);
+  grid-template-columns: 1fr;
+}
+
+.recording-workspace.explorer-collapsed .item-explorer {
+  display: none;
 }
 
 .item-explorer {
@@ -481,6 +486,7 @@ select {
   min-height: 0;
   overflow: hidden;
   min-width: 0;
+  width: 100%;
   border: 1px solid var(--border);
   border-radius: 1rem;
   background: var(--surface);
@@ -677,6 +683,9 @@ select {
 .item-detail {
   display: grid;
   gap: 14px;
+  min-width: 0;
+  width: 100%;
+  overflow: hidden;
 }
 
 .item-detail-header {
@@ -732,6 +741,8 @@ select {
   padding: 0.75rem;
   position: relative;
   border-radius: 0.95rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .context-toggle {
@@ -768,6 +779,7 @@ select {
   min-width: 0;
   width: 100%;
   overflow: hidden;
+  box-sizing: border-box;
 }
 
 .context-overflow-prefix {
@@ -828,6 +840,7 @@ select {
 
 .context-panel p {
   margin: 0;
+  min-width: 0;
 }
 
 .context-panel--border-label {
@@ -864,6 +877,9 @@ select {
   gap: 0.9rem;
   min-height: 0;
   background: #fffdf6;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .line-text {
@@ -873,6 +889,10 @@ select {
   font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.35;
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  box-sizing: border-box;
 }
 
 .stage-directions-panel ul {
@@ -1256,8 +1276,17 @@ button:disabled {
   }
 
   .recording-workspace {
-    grid-template-columns: minmax(190px, 280px) minmax(0, 1fr);
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
     gap: 0.7rem;
+  }
+
+  .recording-workspace:not(.explorer-collapsed) .item-explorer {
+    max-height: min(34dvh, 340px);
+  }
+
+  .recording-workspace.explorer-collapsed .item-explorer {
+    display: none;
   }
 
   .microphone-controls {
