@@ -424,7 +424,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                         <span>{entry.speaker}</span>
                         <span className="play-page-line-id-tag">{entry.id}</span>
                       </legend>
-                      <p className="play-page-caption">{entry.text}</p>
+                      <p className="play-page-caption">{renderLineText(entry, readNarration)}</p>
                     </fieldset>
                   );
                 })}
@@ -645,6 +645,22 @@ function buildPlayEntries(playbook: Playbook, includeNarration: boolean): PlayPa
       }
       return left.sourceOrder - right.sourceOrder;
     });
+}
+
+function renderLineText(entry: PlayPageEntry, includeDirections: boolean) {
+  if (entry.type !== "line" || !includeDirections || entry.line.directions.length === 0) {
+    return entry.text;
+  }
+  return (
+    <>
+      {entry.line.directions.map((direction) => (
+        <span className="inline-stage-direction" key={`${entry.id}-direction-${direction.segmentId}-${direction.placement}`}>
+          {direction.text}
+        </span>
+      ))}
+      {entry.text}
+    </>
+  );
 }
 
 function blockOrderForBlockId(blockId: string): number {
