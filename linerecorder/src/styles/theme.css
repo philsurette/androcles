@@ -5,11 +5,14 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --surface: #fffaf0;
-  --surface-muted: #e7e2d1;
+  --paper: #f6f0df;
+  --panel: rgba(255, 250, 235, 0.92);
   --ink: #182019;
   --muted: #6e7562;
   --accent: #b94f37;
+  --quiet: #6e7562;
+  --surface: var(--paper);
+  --surface-muted: #e7e2d1;
   --border: #d8d0bc;
 }
 
@@ -18,9 +21,20 @@
 }
 
 body {
+  min-height: 100%;
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+html,
+#root {
+  min-height: 100%;
+  min-height: 100dvh;
+  width: 100%;
 }
 
 button,

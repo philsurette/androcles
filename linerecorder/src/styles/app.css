@@ -1,16 +1,27 @@
 .app-shell {
-  width: min(1120px, calc(100vw - 48px));
+  width: min(1120px, 100vw);
+  min-height: 100dvh;
   margin: 0 auto;
-  padding: 48px 0;
+  padding: clamp(0.45rem, 1vw, 0.9rem);
+  display: grid;
+  gap: 0.9rem;
+  grid-template-columns: 1fr;
+}
+
+.hero {
+  border-radius: 0;
+  width: 100%;
+  background: transparent;
 }
 
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 24px;
-  padding-bottom: 24px;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
+  min-width: 0;
 }
 
 .toolbar-actions {
@@ -36,7 +47,7 @@ p {
 }
 
 h1 {
-  font-size: clamp(2.4rem, 6vw, 4.4rem);
+  font-size: clamp(2.2rem, 5.5vw, 3.5rem);
   line-height: 1;
 }
 
@@ -58,14 +69,15 @@ button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 48px;
-  padding: 0 22px;
+  min-height: 2.6rem;
+  padding: 0.25rem 1.15rem;
   border: 0;
-  border-radius: 8px;
+  border-radius: 999px;
   color: #fff;
   background: var(--ink);
   font-weight: 800;
   cursor: pointer;
+  font-size: 1rem;
 }
 
 button.secondary {
@@ -92,15 +104,21 @@ button:focus-visible,
 }
 
 .status {
-  margin: 24px 0;
+  margin: 0.45rem 0 0.75rem;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: 0.96rem;
+  line-height: 1.35;
+  max-width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .project-list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.8rem;
+  width: 100%;
 }
 
 .empty-state,
@@ -111,10 +129,10 @@ button:focus-visible,
 .context-panel,
 .stage-directions-panel,
 .line-panel {
-  padding: 24px;
+  padding: 1rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
+  border-radius: 1rem;
+  background: var(--panel);
 }
 
 .empty-state p {
@@ -124,13 +142,13 @@ button:focus-visible,
 
 .project-card {
   display: grid;
-  gap: 24px;
+  gap: 0.85rem;
 }
 
 .project-card-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0.55rem;
 }
 
 .project-card dl,
@@ -138,7 +156,7 @@ button:focus-visible,
 .item-metadata {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 0.65rem;
   margin: 0;
 }
 
@@ -154,33 +172,34 @@ button:focus-visible,
 .summary-panel dd,
 .item-metadata dd {
   margin: 4px 0 0;
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   font-weight: 800;
 }
 
 .project-detail {
   display: grid;
-  gap: 16px;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .summary-panel {
   display: grid;
-  grid-template-columns: minmax(320px, 1.3fr) minmax(320px, 1.7fr) auto;
-  gap: 16px 24px;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.7fr) auto;
+  gap: 0.65rem 1rem;
   align-items: center;
-  padding: 16px 20px;
+  padding: 1rem;
 }
 
 .summary-title {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 0.7rem;
   min-width: 0;
 }
 
 .summary-title button {
   flex: 0 0 auto;
-  min-height: 42px;
+  min-height: 2.4rem;
 }
 
 .summary-title > div {
@@ -199,13 +218,13 @@ button:focus-visible,
 .summary-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 0.55rem;
   grid-column: auto;
   justify-content: flex-end;
 }
 
 .summary-actions button {
-  min-height: 42px;
+  min-height: 2.35rem;
 }
 
 .notes {
@@ -216,9 +235,9 @@ button:focus-visible,
 .microphone-panel {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) minmax(220px, 0.8fr);
-  gap: 10px 16px;
+  gap: 0.6rem;
   align-items: center;
-  padding: 10px 16px;
+  padding: 0.75rem;
 }
 
 .microphone-heading {
@@ -235,12 +254,12 @@ button:focus-visible,
 .microphone-glyph {
   display: inline-grid;
   place-items: center;
-  width: 42px;
-  height: 42px;
+  width: 2.1rem;
+  height: 2.1rem;
   border-radius: 999px;
   color: var(--muted);
   background: var(--surface-muted);
-  font-size: 1.4rem;
+  font-size: 1.05rem;
   font-weight: 900;
 }
 
@@ -251,20 +270,20 @@ button:focus-visible,
 
 .microphone-compact-actions {
   display: flex;
-  gap: 10px;
+  gap: 0.55rem;
   justify-content: flex-end;
 }
 
 .microphone-panel button {
-  min-height: 40px;
-  padding: 0 16px;
+  min-height: 2.3rem;
+  padding: 0 0.85rem;
   white-space: nowrap;
 }
 
 .microphone-controls {
   display: grid;
   grid-template-columns: minmax(0, 420px) minmax(140px, 220px) auto;
-  gap: 18px;
+  gap: 0.65rem;
   align-items: center;
 }
 
@@ -282,8 +301,8 @@ label {
 select {
   width: 100%;
   min-width: 0;
-  min-height: 40px;
-  padding: 0 14px;
+  min-height: 2.25rem;
+  padding: 0 0.85rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--ink);
@@ -295,8 +314,9 @@ select {
 .meter-row {
   display: grid;
   grid-template-columns: minmax(160px, 1fr) auto;
-  gap: 12px;
+  gap: 0.5rem;
   align-items: center;
+  min-width: 0;
 }
 
 .meter {
@@ -343,8 +363,9 @@ select {
 .recording-workspace {
   display: grid;
   grid-template-columns: minmax(260px, 360px) minmax(0, 1fr);
-  gap: 16px;
+  gap: 0.85rem;
   align-items: start;
+  min-height: 0;
 }
 
 .recording-workspace.explorer-collapsed {
@@ -354,7 +375,7 @@ select {
 .item-explorer {
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr);
-  max-height: min(62vh, 680px);
+  max-height: min(62dvh, 680px);
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -366,9 +387,9 @@ select {
   position: sticky;
   top: 16px;
   justify-items: center;
-  padding: 10px 0;
+  padding: 0.6rem 0;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 1rem;
   background: var(--surface);
 }
 
@@ -421,8 +442,8 @@ select {
 
 .item-search {
   display: grid;
-  gap: 7px;
-  padding: 10px 12px;
+  gap: 0.45rem;
+  padding: 0.6rem 0.75rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -435,15 +456,15 @@ select {
 
 .item-search div {
   display: flex;
-  gap: 6px;
+  gap: 0.35rem;
   min-width: 0;
 }
 
 .item-search input {
   min-width: 0;
   width: 100%;
-  min-height: 42px;
-  padding: 8px 10px;
+  min-height: 2.05rem;
+  padding: 0.45rem 0.65rem;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: #fffaf0;
@@ -453,8 +474,8 @@ select {
 }
 
 .item-search button {
-  min-height: 42px;
-  padding: 0 12px;
+  min-height: 2.2rem;
+  padding: 0 0.7rem;
   border-radius: 8px;
   color: var(--accent);
   background: var(--surface-muted);
@@ -471,15 +492,15 @@ select {
 
 .item-empty {
   margin: 0;
-  padding: 14px 12px;
+  padding: 0.65rem 0.75rem;
   color: var(--muted);
   font-weight: 800;
 }
 
 .item-row {
   display: grid;
-  grid-template-columns: 18px minmax(4.5rem, max-content) minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 1.1rem minmax(4.5rem, max-content) minmax(0, 1fr);
+  gap: 0.55rem;
   align-items: center;
   justify-content: stretch;
   width: 100%;
@@ -499,6 +520,7 @@ select {
 .item-row.selected {
   border-bottom-color: var(--border);
   box-shadow: inset 4px 0 0 var(--accent);
+  font-weight: 700;
 }
 
 .item-row > span:last-child {
@@ -522,12 +544,12 @@ select {
 
 .status-pill {
   align-self: center;
-  min-width: 74px;
-  padding: 4px 8px;
+  min-width: 66px;
+  padding: 3px 8px;
   border-radius: 999px;
   color: var(--accent);
   background: #f5dfd8;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-align: center;
   text-transform: uppercase;
@@ -539,11 +561,11 @@ select {
 }
 
 .reason-pill {
-  padding: 4px 8px;
+  padding: 3px 8px;
   border-radius: 999px;
   color: var(--muted);
   background: var(--surface-muted);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 800;
   text-transform: uppercase;
 }
@@ -560,14 +582,14 @@ select {
 .item-heading {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0.65rem;
   min-width: 0;
 }
 
 .item-section {
   overflow: hidden;
   color: var(--accent);
-  font-size: 0.9rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-overflow: ellipsis;
@@ -582,7 +604,7 @@ select {
 .line-position {
   align-self: center;
   color: var(--muted);
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 800;
   white-space: nowrap;
 }
@@ -592,23 +614,23 @@ select {
 }
 
 .icon-button {
-  width: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
   padding: 0;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   line-height: 1;
 }
 
 .context-panel {
   display: grid;
-  gap: 0.75rem;
-  padding: 14px 18px;
+  gap: 0.65rem;
+  padding: 0.75rem;
 }
 
 .context-toggle {
   display: grid;
-  grid-template-columns: max-content max-content minmax(0, 1fr) max-content;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
   gap: 0.75rem;
   align-items: baseline;
   width: 100%;
@@ -623,7 +645,7 @@ select {
 .context-label,
 .context-speaker {
   color: var(--accent);
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -693,9 +715,9 @@ select {
 
 .context-expanded-text {
   margin: 0;
-  padding-left: calc(0.75rem + 4.5rem);
-  font-size: 1.1rem;
-  line-height: 1.45;
+  padding-left: calc(0.7rem + 4.1rem);
+  font-size: 1rem;
+  line-height: 1.4;
 }
 
 .context-panel p {
@@ -707,13 +729,13 @@ select {
 }
 
 .line-panel p {
-  font-size: 1.2rem;
+  font-size: 1.05rem;
   line-height: 1.4;
 }
 
 .line-panel {
   display: grid;
-  gap: 18px;
+  gap: 0.9rem;
   min-height: 0;
   background: #fffdf6;
 }
@@ -722,7 +744,7 @@ select {
   max-height: min(24vh, 14rem);
   overflow: auto;
   padding-right: 6px;
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 800;
   line-height: 1.35;
 }
@@ -772,7 +794,7 @@ select {
 
 .take-panel {
   display: grid;
-  gap: 12px;
+  gap: 0.75rem;
   padding-top: 6px;
 }
 
@@ -786,7 +808,7 @@ select {
 
 .take-status.warning {
   display: inline-block;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #d8a095;
   border-radius: 8px;
   color: #9f3523;
@@ -797,7 +819,7 @@ select {
 .take-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .take-controls.recording-active {
@@ -813,12 +835,12 @@ select {
 .record-control,
 .recorder-icon-button {
   position: relative;
-  width: 56px;
-  min-width: 56px;
-  min-height: 56px;
+  width: 50px;
+  min-width: 50px;
+  min-height: 50px;
   padding: 0;
   border-radius: 999px;
-  font-size: 1.45rem;
+  font-size: 1.2rem;
   line-height: 1;
 }
 
@@ -850,13 +872,26 @@ button:disabled {
 
 @media (max-width: 720px) {
   .app-shell {
-    width: min(100vw - 32px, 1120px);
-    padding: 32px 0;
+    width: 100%;
+    padding: 0.6rem 0.65rem;
+    gap: 0.75rem;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 8.5vw, 2.4rem);
+  }
+
+  h2 {
+    font-size: 1.15rem;
   }
 
   .toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .toolbar-actions {
+    width: 100%;
   }
 
   .summary-panel,
@@ -865,9 +900,64 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .project-list {
+    grid-template-columns: 1fr;
+  }
+
+  .project-card-actions {
+    justify-content: flex-start;
+  }
+
+  .microphone-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .microphone-panel .microphone-heading {
+    min-width: auto;
+  }
+
+  .microphone-compact-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .microphone-controls,
   .meter-row {
     grid-template-columns: 1fr;
+  }
+
+  .item-search {
+    padding-inline: 0.65rem;
+  }
+
+  .item-search div {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .item-list {
+    max-height: min(45dvh, 360px);
+  }
+
+  .item-row {
+    grid-template-columns: 12px minmax(4rem, 5rem) minmax(0, 1fr);
+    padding-inline: 0.65rem;
+    gap: 0.45rem;
+  }
+
+  .status-pill,
+  .reason-pill {
+    font-size: 0.68rem;
+  }
+
+  .item-detail {
+    gap: 0.75rem;
+  }
+
+  .context-panel,
+  .line-panel,
+  .take-panel {
+    padding: 0.7rem;
   }
 
   .recording-workspace.explorer-collapsed {
@@ -875,12 +965,18 @@ button:disabled {
   }
 
   .meter-label {
+    min-width: auto;
     text-align: left;
   }
 
   .summary-panel dl,
   .item-metadata {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45rem 0.8rem;
+  }
+
+  .project-card dd {
+    font-size: 1rem;
   }
 
   .summary-title {
@@ -893,7 +989,9 @@ button:disabled {
   }
 
   .context-toggle {
-    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    grid-template-columns: max-content minmax(0, 1fr);
+    align-items: center;
+    gap: 0.5rem;
   }
 
   .context-speaker {
@@ -902,5 +1000,79 @@ button:disabled {
 
   .context-expanded-text {
     padding-left: 0;
+  }
+
+  .line-text {
+    max-height: min(34dvh, 12.5rem);
+    font-size: 1.35rem;
+  }
+
+  .context-expanded-text {
+    font-size: 0.95rem;
+  }
+
+  .take-status {
+    font-size: 0.95rem;
+  }
+
+  .take-controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(0, auto));
+    align-items: center;
+  }
+
+  .take-controls.recording-active {
+    grid-template-columns: 1fr;
+    gap: 0.5rem 0;
+  }
+
+  .record-control,
+  .recorder-icon-button {
+    width: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    font-size: 1.05rem;
+  }
+}
+
+@media (max-width: 1100px) and (orientation: landscape) {
+  .app-shell {
+    width: min(100dvw - 1rem, 1120px);
+    gap: 0.8rem;
+  }
+
+  .project-list {
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  }
+
+  .recording-workspace {
+    grid-template-columns: minmax(190px, 280px) minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .microphone-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, 180px) auto;
+    gap: 0.45rem;
+  }
+
+  .meter-row {
+    grid-template-columns: minmax(120px, 1fr) auto;
+  }
+
+  .summary-panel {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+    row-gap: 0.6rem;
+  }
+
+  .summary-actions {
+    justify-content: flex-end;
+  }
+
+  .line-text {
+    max-height: min(22dvh, 13.5rem);
+  }
+
+  .context-expanded-text {
+    padding-left: calc(0.65rem + 4.2rem);
   }
 }
