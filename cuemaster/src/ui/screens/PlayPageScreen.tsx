@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Line } from "../../domain/line";
 import { AudioQueue } from "../../rehearsal/audioQueue";
+import { buildCalloutResolver } from "../../rehearsal/calloutLookup";
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 
@@ -50,7 +51,9 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [playbackRate, setPlaybackRate] = useState<PlaySpeed>(1);
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [readNarration, setReadNarration] = useState(true);
+  const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
   const playbackSeq = useRef(0);
+  const calloutPlaybackSeq = useRef(0);
   const isRunthrough = useRef(false);
   const currentIndexRef = useRef(0);
   const advanceTimeout = useRef<number | null>(null);
@@ -63,6 +66,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     () => [...playbook.sections].sort((left, right) => left.ordinal - right.ordinal),
     [playbook.sections]
   );
+  const resolveCallout = useMemo(() => buildCalloutResolver(playbook), [playbook]);
   const sectionIndexByPartId = useMemo(() => {
     const mapping = new Map<number | null, number>();
     for (let index = 0; index < orderedSections.length; index += 1) {
@@ -71,6 +75,11 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return mapping;
   }, [orderedSections]);
   const currentEntry: PlayPageEntry | null = entries[currentIndex] ?? null;
+  const currentLine = currentEntry?.type === "line" ? currentEntry.line : null;
+  const currentLineCallout = useMemo(() => {
+    return resolveCallout(currentLine);
+  }, [currentLine, resolveCallout]);
+  const hasCurrentLineCallout = currentLineCallout !== null;
   const clampedIndex = entries.length === 0
     ? -1
     : Math.max(0, Math.min(currentIndex, entries.length - 1));
@@ -89,6 +98,20 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
 
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
+
+  function calloutPlaybackItemsForEntry(entry: PlayPageEntry): Array<{ kind: "audio" | "delay"; path?: string; playbackRate?: number; durationMs?: number }> {
+    if (!isCalloutEnabled || entry.type !== "line") {
+      return [];
+    }
+    const callout = resolveCallout(entry.line);
+    if (!callout) {
+      return [];
+    }
+    return [
+      { kind: "audio", path: callout.audioPath, playbackRate: 1 },
+      { kind: "delay", durationMs: 250 }
+    ];
+  }
 
   useEffect(() => {
     currentIndexRef.current = currentIndex;
@@ -171,6 +194,18 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     setPlaybackState("idle");
   }
 
+  async function playCurrentCallout() {
+    if (!currentLineCallout) {
+      return;
+    }
+    stopPlayback();
+    const thisCalloutPlaybackSeq = ++calloutPlaybackSeq.current;
+    await audioQueue.play([{ kind: "audio", path: currentLineCallout.audioPath, playbackRate: 1 }]);
+    if (thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
+      return;
+    }
+  }
+
   function changeLine(nextIndex: number) {
     stopPlayback();
     setCurrentIndex(nextIndex);
@@ -243,6 +278,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   }
 
   function playbackItemsForEntry(entry: PlayPageEntry, speed: number) {
+    const calloutItems = calloutPlaybackItemsForEntry(entry);
     if (entry.type === "line") {
       const inlineDirectionItems = entry.inlineDirectionAudioPaths.map((direction, index) => ({
         kind: "direction" as const,
@@ -258,8 +294,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
         playbackRate: speed,
         sortOrder: index * 2,
       }));
-
-      return [...inlineDirectionItems, ...responseItems]
+      const lineItems = [...inlineDirectionItems, ...responseItems]
         .sort((left, right) => {
           const segmentCompare = compareSegmentIds(left.segmentId, right.segmentId);
           if (segmentCompare !== 0) {
@@ -272,6 +307,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
           path: item.path,
           playbackRate: item.playbackRate,
         }));
+      return [
+        ...calloutItems,
+        ...lineItems
+      ];
     }
     return [{ kind: "audio", path: entry.audioPath, playbackRate: 1 }];
   }
@@ -621,6 +660,18 @@ function canonicalRoleKey(rawSpeaker?: string) {
                 onClick={toggleNarrationAndDirections}
               >
                 <span aria-hidden="true">⌞⌝</span>
+              </button>
+              <button
+                type="button"
+                className={isCalloutEnabled ? "quick-toggle active" : "quick-toggle"}
+                aria-pressed={isCalloutEnabled}
+                aria-label={isCalloutEnabled ? "Disable line callouts." : "Enable line callouts."}
+                title={hasCurrentLineCallout ? `Callouts ${isCalloutEnabled ? "enabled" : "disabled"}` : "No callout for this line"}
+                onClick={() => {
+                  setIsCalloutEnabled((current) => !current);
+                }}
+              >
+                <span aria-hidden="true">📢</span>
               </button>
               <div className="play-page-speed-wrap" ref={playbackSpeedSelectRef}>
                 <button

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from datetime import timezone
 from dataclasses import dataclass, field
+import itertools
 import logging
 from pathlib import Path
 from uuid import uuid4
@@ -49,6 +50,7 @@ class PlaybookBuilder:
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
+    _audio_asset_cache: dict[Path, AppAudioAsset] = field(default_factory=dict, init=False, repr=False)
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -174,6 +176,16 @@ class PlaybookBuilder:
                         category="cue",
                     )
                 )
+                callout_source = self._callout_source_for(block)
+                if callout_source is not None:
+                    work_items.append(
+                        PlaybookAudioWorkItem(
+                            source_path=callout_source,
+                            role=block.callout or "_CALLER",
+                            segment_id=callout_source.stem,
+                            category="callout",
+                        )
+                    )
                 for segment in response_segments:
                     segment_id = str(segment.segment_id)
                     work_items.append(
@@ -233,6 +245,7 @@ class PlaybookBuilder:
             if not response_segments:
                 continue
             cue_selection = self.selector.select_for_block(block)
+            self._build_callout(block)
             for segment in self._inline_direction_segments_for(block):
                 self._copy_required_audio(
                     source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment.segment_id}.wav",
@@ -335,17 +348,94 @@ class PlaybookBuilder:
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
 
+    def _build_callout(self, block: RoleBlock) -> None:
+        source_path = self._callout_source_for(block)
+        if source_path is None:
+            return
+        self._copy_required_audio(
+            source_path=source_path,
+            role=block.callout or "_CALLER",
+            segment_id=source_path.stem,
+            category="callout",
+            destination_dir="callouts",
+        )
+
+
+    def _callout_source_for(self, block: RoleBlock) -> Path | None:
+        if block.callout is None:
+            return None
+        return self._resolve_callout_source(block.callout)
+
+    def _resolve_callout_source(self, callout: str) -> Path | None:
+        base_dir = self.paths.build_dir / "audio" / "callouts"
+        if not base_dir.exists():
+            return None
+
+        candidate_names = self._callout_candidate_names(callout)
+        for candidate_name, ext in itertools.product(candidate_names, (".wav", ".mp3")):
+            direct = base_dir / f"{candidate_name}{ext}"
+            if direct.exists():
+                return direct
+            nested = base_dir / candidate_name / f"{candidate_name}{ext}"
+            if nested.exists():
+                return nested
+
+        target_keys = {self._normalize_callout_name(name) for name in candidate_names}
+        for candidate_file in sorted(base_dir.rglob("*")):
+            if not candidate_file.is_file() or candidate_file.suffix.lower() not in {".wav", ".mp3"}:
+                continue
+            if self._normalize_callout_name(candidate_file.stem) in target_keys:
+                self._logger.warning(
+                    "Resolved callout '%s' using fallback source %s",
+                    callout,
+                    paths.display_path(candidate_file),
+                )
+                return candidate_file
+        return None
+
+    def _callout_candidate_names(self, callout: str) -> list[str]:
+        candidates: list[str] = []
+
+        def append(name: str) -> None:
+            if name and name not in candidates:
+                candidates.append(name)
+
+        append(callout)
+        append(callout.replace("-", " "))
+        append(callout.replace(" ", "-"))
+
+        if "-" in callout:
+            base = callout.split("-", 1)[0]
+            append(base)
+            append(base.replace(" ", "-"))
+            append(base.replace("-", " "))
+
+        return candidates
+
+    def _normalize_callout_name(self, value: str) -> str:
+        return value.replace("-", " ").strip().lower()
+
     def _required_production_id(self, production_id: str | None, description: str) -> str:
         if production_id is None:
             raise RuntimeError(f"Missing production id for {description}")
         return production_id
 
-    def _copy_required_audio(self, source_path: Path, role: str, segment_id: str, category: str) -> AppAudioAsset:
+    def _copy_required_audio(
+        self,
+        source_path: Path,
+        role: str,
+        segment_id: str,
+        category: str,
+        destination_dir: str = "segments",
+    ) -> AppAudioAsset:
         if not source_path.exists():
             raise RuntimeError(
                 f"Missing required {category} audio for role {role} segment {segment_id} "
                 f"while building Playbook: {paths.display_path(source_path)}"
             )
+        cached = self._audio_asset_cache.get(source_path)
+        if cached is not None:
+            return cached
         duration_ms = self.paths.get_audio_length_ms(source_path)
         cue_start_offsets: list[AppCueStartOffset] = []
         if category == "cue":
@@ -354,7 +444,7 @@ class PlaybookBuilder:
         assert self.audio_packager is not None
         packaged_audio = self.audio_packager.package(
             source_path,
-            self.app_dir / "audio" / "segments" / role,
+            self.app_dir / "audio" / destination_dir / role,
         )
         asset = AppAudioAsset(
             path=packaged_audio.manifest_path,
@@ -363,6 +453,7 @@ class PlaybookBuilder:
             cue_start_offsets=cue_start_offsets,
         )
         self._manifest_assets.append(asset)
+        self._audio_asset_cache[source_path] = asset
         if self.progress_reporter is not None:
             self.progress_reporter.audio_packaged(role, segment_id, category)
         return asset

@@ -10,6 +10,7 @@ import type { TimingAttempt } from "../../domain/timingAttempt";
 import { AudioQueue } from "../../rehearsal/audioQueue";
 import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
+import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
@@ -228,6 +229,7 @@ export function RehearsalScreen({
   const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
+  const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
@@ -237,6 +239,7 @@ export function RehearsalScreen({
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
   const timingToneAudioContextRef = useRef<AudioContext | null>(null);
+  const calloutPlaybackSeq = useRef(0);
   const rehearsalLayoutClass = isCompactViewport ? "rehearsal-no-outline" : isOutlineOpen ? "rehearsal-outline-open" : "rehearsal-outline-collapsed";
   const activeTimingLineIdRef = useRef<string | null>(null);
   const tempoTimingRestoreStartedRef = useRef(false);
@@ -244,6 +247,8 @@ export function RehearsalScreen({
     () => role.lines.find((candidate) => candidate.id === activeLineId) ?? null,
     [activeLineId, role.lines]
   );
+  const resolveCallout = useMemo(() => buildCalloutResolverForSpeaker(playbook), [playbook]);
+
   const lineLengthMs = useMemo(() => {
     if (!line) {
       return 0;
@@ -255,6 +260,23 @@ export function RehearsalScreen({
     [reviewAttempts, line?.id]
   );
   const cues = engine.cuePayloads(cueWindowPresetId);
+  const currentCueCallout = useMemo(() => {
+    const currentCue = cues.length > 0 ? cues[cues.length - 1] : null;
+    return resolveCallout(currentCue?.speaker ?? null);
+  }, [cues, resolveCallout]);
+  const hasCurrentLineCallout = currentCueCallout !== null;
+  function buildCalloutPlaybackItemsForCues(targetCues: Cue[]): Array<{ kind: "audio" | "delay"; path?: string; playbackRate: number; durationMs?: number }> {
+    const calloutItems: Array<{ kind: "audio" | "delay"; path?: string; playbackRate: number; durationMs?: number }> = [];
+    for (const cue of targetCues) {
+      const cueCallout = isCalloutEnabled ? resolveCallout(cue.speaker) : null;
+      if (!cueCallout) {
+        continue;
+      }
+      calloutItems.push({ kind: "audio", path: cueCallout.audioPath, playbackRate: 1 });
+      calloutItems.push({ kind: "delay", durationMs: 250 });
+    }
+    return calloutItems;
+  }
   const visibleCues = useMemo(
     () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
     [cues, includeDirections, playbook, line]
@@ -617,20 +639,22 @@ export function RehearsalScreen({
     setTimingStatusMessage(null);
     setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
+    const calloutLineItems = buildCalloutPlaybackItemsForCues(cues);
     try {
       if (speakAlongEnabled && currentLine) {
-        await audioQueue.play(
-          speakAlongPlaybackItems(
+        await audioQueue.play([
+          ...calloutLineItems,
+          ...speakAlongPlaybackItems(
             engine.cuePayloads(cueWindowPresetId),
             currentLine,
             playbackRate,
             cueWindowPresetId,
             speakAlongPauseMs
           )
-        );
+        ]);
         setPlaybackStatus("Speak-along complete.");
       } else {
-        await audioQueue.play(cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId));
+        await audioQueue.play([...calloutLineItems, ...cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId)]);
         setPlaybackStatus("Cue complete.");
       }
       setPlaybackState("idle");
@@ -730,6 +754,39 @@ export function RehearsalScreen({
       setPlaybackState("idle");
       setPlaybackSource(null);
     } catch (error) {
+      setPlaybackState("idle");
+      setPlaybackSource(null);
+      setPlaybackStatus(userFacingErrorMessage(error));
+    }
+  }
+
+  async function playCurrentCallout() {
+    if (!currentCueCallout) {
+      return;
+    }
+    stopPlayback();
+    const callout = currentCueCallout;
+    const calloutLineId = line?.id;
+    const thisCalloutPlaybackSeq = ++calloutPlaybackSeq.current;
+    setTimingStatusMessage(null);
+    setPlaybackStatus(`Playing callout (${callout.speaker})...`);
+    setPlaybackState("playing");
+    try {
+      await audioQueue.play([{ kind: "audio", path: callout.audioPath, playbackRate: 1 }]);
+      if (thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
+        return;
+      }
+      if (line?.id === calloutLineId) {
+        setPlaybackStatus("Callout complete.");
+      } else {
+        setPlaybackStatus("Playback complete.");
+      }
+      setPlaybackState("idle");
+      setPlaybackSource(null);
+    } catch (error) {
+      if (thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
+        return;
+      }
       setPlaybackState("idle");
       setPlaybackSource(null);
       setPlaybackStatus(userFacingErrorMessage(error));
@@ -2078,6 +2135,20 @@ export function RehearsalScreen({
               >
               <span aria-hidden="true">⌞⌝</span>
             </button>
+              <button
+                type="button"
+                className={`quick-toggle${isCalloutEnabled ? " active" : ""}`}
+                aria-pressed={isCalloutEnabled}
+                aria-label={isCalloutEnabled ? "Disable cue callouts." : "Enable cue callouts."}
+                title={hasCurrentLineCallout
+                  ? (isCalloutEnabled ? `Callouts enabled (${currentCueCallout?.speaker})` : `Callouts disabled (${currentCueCallout?.speaker})`)
+                  : "No callout for this cue"}
+                onClick={() => {
+                  setIsCalloutEnabled((current) => !current);
+                }}
+              >
+                <span aria-hidden="true">📢</span>
+              </button>
           </div>
           <div className="rehearsal-quick-actions">
               <button

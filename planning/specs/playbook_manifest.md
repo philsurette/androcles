@@ -40,7 +40,8 @@ build/<play_id>/app/
       <ROLE>/
         <segment_id>.wav
     callouts/
-      <ROLE>_callout.wav
+      <ROLE>/
+        <ROLE>.wav
 ```
 
 All paths inside `manifest.json` are relative to the directory containing `manifest.json`.
@@ -257,12 +258,22 @@ Line fields:
 - `part_id`: Numeric play part id, or `null` for no-part preamble material.
 - `block_id`: Human-readable block id using dot format, e.g. `0.2`.
 - `role`: Role being rehearsed.
-- `speaker`: Speaker label for this block. This may differ from `role` if callout/group behavior is involved.
+- `speaker`: Character who cues this line. This may differ from `role` if callout/group behavior is involved.
+  - If this differs from `role`, Cuemaster resolves optional callout audio from the playbook callout index by speaker (usually `audio/callouts/<speaker>/<speaker>.<ext>`).
+- Callout playback is speaker-driven; Playbook line entries do not carry a `callout` field.
 - `cue`: Prompt shown or played before the response.
 - `response`: Expected actor response for this role.
 - `directions`: Stage directions associated with the response block.
 - `blocking`: Blocking notes associated with the response block.
 - `previous_roles`: Useful display/context hint, matching the play model's preceding-role concept.
+
+## Callout Assets
+
+Callout playback assets are optional and are represented only in the top-level `assets` list.
+
+- The playbook uses path-based lookup from line speaker IDs.
+- `audio/callouts/<speaker>/<speaker>.<ext>` is the canonical layout for a callout owned by `<speaker>`.
+- If there is no matching callout asset for the line `speaker`, Cuemaster should skip callout playback for that line.
 
 Line-level `blocking` items are structured like directions with an additional `targets` list:
 
@@ -455,7 +466,7 @@ Default policy:
 - Missing required response audio fails Playbook generation.
 - Missing required cue audio fails Playbook generation.
 - Narrator audio for direction-only cues is required when the direction is used as a cue.
-- Missing callout audio fails only if the Playbook manifest references that callout asset.
+- Missing callout audio is non-fatal unless required by the Playbook generation flow.
 
 The manifest should not silently include paths to missing required files.
 

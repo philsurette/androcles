@@ -275,7 +275,8 @@ A Playbook is a `.zip` file distributed by the production. The actor downloads i
     │       ├── 0_1_1.wav
     │       └── ...
     └── callouts/
-        ├── MEGAERA_callout.wav
+        ├── MEGAERA/
+        │   ├── MEGAERA.wav
         └── ...
 ```
 

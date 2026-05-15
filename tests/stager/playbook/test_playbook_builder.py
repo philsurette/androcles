@@ -61,12 +61,12 @@ def _title_block() -> TitleBlock:
     )
 
 
-def _speech_block(part_id: int, block_no: int, role: str, text: str) -> RoleBlock:
+def _speech_block(part_id: int, block_no: int, role: str, text: str, callout: str | None = None) -> RoleBlock:
     block_id = BlockId(part_id, block_no)
     return RoleBlock(
         block_id=block_id,
         role_names=[role],
-        callout=role,
+        callout=callout,
         text=text,
         segments=[
             SpeechSegment(
@@ -204,6 +204,50 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
         assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
 
 
+def test_playbook_builder_includes_callout_audio_when_present(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.", callout="ANDROCLES")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    _write_wav(cfg.build_dir / "audio" / "callouts" / "ANDROCLES.wav")
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    megaera = next(role for role in data["roles"] if role["id"] == "MEGAERA")
+    line = megaera["lines"][0]
+    assert line["speaker"] == "ANDROCLES"
+    assert not line.get("callout")
+    assert any(asset["path"] == "audio/callouts/ANDROCLES/ANDROCLES.wav" for asset in data["assets"])
+
+    with zipfile.ZipFile(cfg.build_dir / "test-play.playbook.zip") as archive:
+        assert "audio/callouts/ANDROCLES/ANDROCLES.wav" in archive.namelist()
+
+
+def test_playbook_builder_uses_alternate_callout_audio_location(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.", callout="CHRISTIAN-1")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    _write_wav(cfg.build_dir / "audio" / "callouts" / "CHRISTIAN.wav")
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert any(asset["path"] == "audio/callouts/CHRISTIAN-1/CHRISTIAN.wav" for asset in data["assets"])
+
+    with zipfile.ZipFile(cfg.build_dir / "test-play.playbook.zip") as archive:
+        assert "audio/callouts/CHRISTIAN-1/CHRISTIAN.wav" in archive.namelist()
+
+
 def test_playbook_builder_plans_context_cue_and_response_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     title_block = _title_block()
@@ -300,6 +344,7 @@ def test_playbook_builder_plans_inline_directions(tmp_path: Path) -> None:
     for segment_id in ("0_0_1", "0_1_1", "0_2_1", "0_2_2"):
         _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_2.wav")
+    _write_wav(cfg.build_dir / "audio" / "callouts" / "MEGAERA.wav")
 
     work_items = PlaybookBuilder(play=play, paths=cfg).plan_audio_work()
     assert ("_NARRATOR", "0_2_1", "direction") in [(item.role, item.segment_id, item.category) for item in work_items]
