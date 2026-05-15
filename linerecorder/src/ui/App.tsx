@@ -119,7 +119,11 @@ export function App() {
     <main className="app-shell">
       {selectedProject ? (
         isProjectInfoMode ? (
-          <ProjectInfoPanel project={selectedProject} onBack={() => setIsProjectInfoMode(false)} />
+          <ProjectInfoPanel
+            project={selectedProject}
+            onBack={() => setIsProjectInfoMode(false)}
+            currentItem={selectedProject.request.items.find((item) => item.id === selectedProject.currentItemId)}
+          />
         ) : (
           <ProjectDetail
             project={selectedProject}
@@ -129,7 +133,12 @@ export function App() {
             onAccepted={() => loadAcceptedSegments(selectedProject.id)}
             onExport={() => void exportProject(selectedProject)}
             onBack={() => setSelectedProject(null)}
-            onViewInfo={() => setIsProjectInfoMode(true)}
+            onViewInfo={(item) => {
+              setSelectedProject((current) =>
+                current === null ? current : { ...current, currentItemId: item?.id ?? current.currentItemId }
+              );
+              setIsProjectInfoMode(true);
+            }}
             isExporting={isExporting}
           />
         )
@@ -626,9 +635,10 @@ function ProjectSummary({
 type ProjectInfoPanelProps = {
   project: RecordingProjectRecord;
   onBack: () => void;
+  currentItem?: RecordingItem;
 };
 
-function ProjectInfoPanel({ project, onBack }: ProjectInfoPanelProps) {
+function ProjectInfoPanel({ project, onBack, currentItem }: ProjectInfoPanelProps) {
   const requestCreatedAt = new Date(project.request.request.createdAt).toLocaleString();
   const importedAt = new Date(project.importedAt).toLocaleString();
 
@@ -688,6 +698,29 @@ function ProjectInfoPanel({ project, onBack }: ProjectInfoPanelProps) {
           <dd>{project.request.items.length}</dd>
         </div>
       </dl>
+      {currentItem ? (
+        <div>
+          <p className="eyebrow">Current line</p>
+          <dl className="project-info-details">
+            <div>
+              <dt>Segment</dt>
+              <dd>{currentItem.segmentId}</dd>
+            </div>
+            <div>
+              <dt>Output</dt>
+              <dd>{currentItem.outputPath}</dd>
+            </div>
+            <div>
+              <dt>Reason</dt>
+              <dd>{currentItem.reason ?? "recording"}</dd>
+            </div>
+            <div>
+              <dt>Line id</dt>
+              <dd>{currentItem.id}</dd>
+            </div>
+          </dl>
+        </div>
+      ) : null}
       {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
     </section>
   );
@@ -814,7 +847,6 @@ function ItemDetail({
   onAccepted
 }: ItemDetailProps) {
   const { item, status } = progress;
-  const [showDetails, setShowDetails] = useState(false);
   const showPrevious = !sameContext(item.previousSpeaker, item.previousText, item.cueSpeaker, item.cueText);
   return (
     <article className="item-detail">
@@ -852,7 +884,6 @@ function ItemDetail({
       {showPrevious ? <ContextBlock label="Previous" speaker={item.previousSpeaker} text={item.previousText} /> : null}
 
       <section className="line-panel" aria-label="Line to record">
-        <p className="eyebrow">Your Line</p>
         <p className="line-text">{item.displayText}</p>
         <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
       </section>
@@ -883,33 +914,6 @@ function ItemDetail({
 
       <ContextBlock label="Next" speaker={item.nextSpeaker} text={item.nextText} labelPosition="border" />
 
-      <section className={showDetails ? "item-details expanded" : "item-details"}>
-        <button
-          type="button"
-          className={showDetails ? "details-toggle expanded" : "details-toggle"}
-          aria-expanded={showDetails}
-          onClick={() => setShowDetails((current) => !current)}
-        >
-          <span>Details</span>
-          <span className="context-disclosure" aria-hidden="true" />
-        </button>
-        {showDetails ? (
-          <dl className="item-metadata">
-            <div>
-              <dt>Segment</dt>
-              <dd>{item.segmentId}</dd>
-            </div>
-            <div>
-              <dt>Output</dt>
-              <dd>{item.outputPath}</dd>
-            </div>
-            <div>
-              <dt>Reason</dt>
-              <dd>{item.reason ?? "recording"}</dd>
-            </div>
-          </dl>
-        ) : null}
-      </section>
     </article>
   );
 }

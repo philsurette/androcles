@@ -288,19 +288,32 @@ button:focus-visible,
 }
 
 .summary-action-icon {
-  width: 2.15rem;
-  min-width: 2.15rem;
-  min-height: 2.15rem;
+  width: 1.7rem;
+  min-width: 1.7rem;
+  min-height: 1.7rem;
   padding: 0;
-  border-radius: 999px;
+  border-radius: 0.55rem;
   font-size: 1rem;
   line-height: 1;
 }
 
 .summary-lines-toggle {
-  border-radius: 999px;
+  border-radius: 0.55rem;
   font-weight: 800;
   font-size: 1rem;
+}
+
+.project-detail.recording-page > .summary-panel .summary-action-icon {
+  width: 1.55rem;
+  min-width: 1.55rem;
+  min-height: 1.55rem;
+}
+
+.project-detail.recording-page > .summary-panel .summary-back-button,
+.project-detail.recording-page > .summary-panel .summary-title button.summary-back-button {
+  width: 1.8rem;
+  min-width: 1.8rem;
+  min-height: 1.8rem;
 }
 
 .summary-compact-meta {
