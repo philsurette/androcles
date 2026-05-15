@@ -7,9 +7,10 @@ import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 type LibraryScreenProps = {
   onSelectPlaybook: (playbook: Playbook) => void;
+  onPlayPlaybook: (playbook: Playbook) => void;
 };
 
-export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
+export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook }: LibraryScreenProps) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [selectedFilename, setSelectedFilename] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false);
@@ -92,6 +93,10 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
     }
   }
 
+  function handlePlayClick(playbook: Playbook) {
+    onPlayPlaybook(playbook);
+  }
+
   return (
     <main className="shell">
       <section className="hero library">
@@ -167,8 +172,31 @@ export function LibraryScreen({ onSelectPlaybook }: LibraryScreenProps) {
                     <button type="button" onClick={() => onSelectPlaybook(playbook)}>
                       Rehearse!
                     </button>
-                    <button type="button" className="secondary" onClick={() => void deletePlaybook(playbook.id)}>
-                      Remove
+                    <button
+                      type="button"
+                      className="row-action-icon-button secondary"
+                      aria-label={`Play ${playbook.title}`}
+                      title="Play entire play"
+                      onClick={() => handlePlayClick(playbook)}
+                      onTouchEnd={() => handlePlayClick(playbook)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handlePlayClick(playbook);
+                        }
+                      }}
+                    >
+                      ▶
+                      <span className="visually-hidden"> Listen</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="row-action-icon-button secondary"
+                      aria-label={`Remove ${playbook.title}`}
+                      title="Remove playbook"
+                      onClick={() => void deletePlaybook(playbook.id)}
+                    >
+                      🗑
                     </button>
                   </div>
                 </li>
