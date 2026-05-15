@@ -16,6 +16,8 @@ class PublishedRecordingRequestBuilder:
     paths_config: paths.PathConfig
     line_reasons: dict[str, str]
     version_label: str
+    build_id: str | None = None
+    build_timestamp: str | None = None
 
     def build(self) -> list[Path]:
         selected_by_role: dict[str, set[str]] = {}
@@ -44,6 +46,8 @@ class PublishedRecordingRequestBuilder:
                     play=self.play,
                     paths=self.paths_config,
                     role=role,
+                    build_id=self.build_id,
+                    build_timestamp=self.build_timestamp,
                     request_kind=f"production_update_{self.version_label}",
                     selected_segment_ids=item_ids,
                     selected_item_reasons=reasons_by_item,

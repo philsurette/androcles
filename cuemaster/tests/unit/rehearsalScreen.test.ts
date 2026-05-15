@@ -200,7 +200,7 @@ describe("outlineSearchText", () => {
     const text = outlineSearchText(line, "cues", true, true, "role", playbook).toLocaleLowerCase();
 
     expect(text).toContain("do you mind");
-    expect(text).toContain("please do");
+    expect(text).toContain("2-3:s1");
   });
 
   it("does not include cue text in line mode", () => {

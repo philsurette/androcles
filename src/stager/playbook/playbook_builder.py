@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from datetime import datetime
+from datetime import timezone
 from dataclasses import dataclass, field
 import logging
 from pathlib import Path
+from uuid import uuid4
 import shutil
 import zipfile
 
@@ -16,7 +19,7 @@ from stager.playbook.app_cue import AppCue
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
-from stager.playbook.app_manifest import AppManifest
+from stager.playbook.app_manifest import AppManifest, AppManifestBuild
 from stager.playbook.app_play import AppPlay
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
@@ -43,6 +46,8 @@ class PlaybookBuilder:
     cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
     audio_packager: PlaybookAudioPackager | None = None
     progress_reporter: PlaybookProgressReporter | None = None
+    build_id: str | None = None
+    build_timestamp: str | None = None
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -86,10 +91,20 @@ class PlaybookBuilder:
         return AppManifest(
             play=AppPlay.from_play(self.play_id or self.paths.play_name, self.play),
             reading=AppReading.from_play(self.play, build_type=self.build_type),
+            build=self._build_metadata(),
             sections=self._build_sections(),
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
         )
+
+    def _build_metadata(self) -> AppManifestBuild:
+        return AppManifestBuild(buildId=self._manifest_build_id(), buildTimestamp=self._manifest_build_timestamp())
+
+    def _manifest_build_id(self) -> str:
+        return self.build_id or uuid4().hex
+
+    def _manifest_build_timestamp(self) -> str:
+        return self.build_timestamp or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     def plan_audio_work(self) -> list[PlaybookAudioWorkItem]:
         work_items: list[PlaybookAudioWorkItem] = []

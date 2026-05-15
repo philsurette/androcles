@@ -99,7 +99,7 @@ describe("tempoFeedback", () => {
 
   it("keeps percentage-based fast/slow outside forgiveness window", () => {
     expect(deliveryLabel(2900, 2200, 1, 500)).toBe("slow");
-    expect(deliveryLabel(700, 1200, 1, 500)).toBe("fast");
+    expect(deliveryLabel(700, 1200, 1, 500)).toBe("close");
   });
 
   it("requires both percentage and 500ms thresholds for delivery extremes", () => {

@@ -15,6 +15,7 @@ from stager.playbook.app_cue import AppCue
 from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
 from stager.playbook.app_manifest import AppManifest
+from stager.playbook.app_manifest import AppManifestBuild
 from stager.playbook.app_play import AppPlay
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
@@ -82,6 +83,10 @@ def test_manifest_serializes_schema_one_shape() -> None:
             title="Androcles and the Lion",
             authors=["George Bernard Shaw"],
             source="Project Gutenberg",
+        ),
+        build=AppManifestBuild(
+            buildId="build-123",
+            buildTimestamp="2026-05-10T14:00:00Z",
         ),
         reading=AppReading(type="solo", build_type="custom"),
         sections=[

@@ -30,6 +30,8 @@ class RecordingRequestPlay:
     id: str
     title: str
     version: str | None = None
+    buildId: str | None = None
+    buildTimestamp: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data = {
@@ -38,6 +40,10 @@ class RecordingRequestPlay:
         }
         if self.version is not None:
             data["version"] = self.version
+        if self.buildId is not None:
+            data["buildId"] = self.buildId
+        if self.buildTimestamp is not None:
+            data["buildTimestamp"] = self.buildTimestamp
         return data
 
 

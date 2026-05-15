@@ -1,5 +1,9 @@
 {
   "schema_version": 1,
+  "build": {
+    "buildId": "ffdeeb60-7927-413d-94c4-71de01119e3a",
+    "buildTimestamp": "2026-05-14T10:00:00Z"
+  },
   "play": {
     "id": "androcles-minimal",
     "title": "Androcles and the Lion",

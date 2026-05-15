@@ -35,6 +35,8 @@ class RecordingRequestBuilder:
     request_id: str | None = None
     created_at: str | None = None
     notes: str | None = None
+    build_id: str | None = None
+    build_timestamp: str | None = None
     item_reason: str | None = None
     selected_segment_ids: set[str] | None = None
     selected_item_reasons: dict[str, str] | None = None
@@ -82,6 +84,8 @@ class RecordingRequestBuilder:
             play=RecordingRequestPlay(
                 id=self.play_id or self.paths.play_name,
                 title=self.play.title,
+                buildId=self.build_id,
+                buildTimestamp=self.build_timestamp,
             ),
             role=RecordingRequestRole(
                 id=role.name,

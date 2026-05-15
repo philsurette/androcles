@@ -1,5 +1,9 @@
 export type PlaybookManifest = {
   schema_version: 1;
+  build: {
+    buildId: string;
+    buildTimestamp: string;
+  };
   play: {
     id: string;
     title: string;

@@ -12,6 +12,7 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
   return {
     id: manifest.play.id,
     title: manifest.play.title,
+    build: manifest.build,
     authors: manifest.play.authors,
     source: manifest.play.source,
     schemaVersion: manifest.schema_version,

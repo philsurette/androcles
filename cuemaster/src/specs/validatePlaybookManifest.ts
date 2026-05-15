@@ -92,6 +92,10 @@ const roleSchema = z.object({
 
 const manifestSchema = z.object({
   schema_version: z.literal(1),
+  build: z.object({
+    buildId: z.string().min(1),
+    buildTimestamp: z.string().min(1),
+  }),
   play: z.object({
     id: z.string().min(1),
     title: z.string().min(1),

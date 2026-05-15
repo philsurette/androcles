@@ -6,6 +6,10 @@ describe("normalizePlaybook", () => {
   it("keeps narrator context separate from selectable roles", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      build: {
+        buildId: "build-1",
+        buildTimestamp: "2026-05-10T10:00:00Z"
+      },
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
@@ -35,6 +39,10 @@ describe("normalizePlaybook", () => {
   it("preserves line stage directions", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      build: {
+        buildId: "build-1",
+        buildTimestamp: "2026-05-10T10:00:00Z"
+      },
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],
@@ -115,6 +123,10 @@ describe("normalizePlaybook", () => {
   it("preserves blocking context and line blocking", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      build: {
+        buildId: "build-1",
+        buildTimestamp: "2026-05-10T10:00:00Z"
+      },
       play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
       reading: { type: "solo", build_type: "custom" },
       sections: [{ id: "part-0", part_id: 0, block_id: "0.0", title: "Prologue", ordinal: 0 }],

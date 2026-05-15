@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
+import json
 
 from stager.production_publication.published_recording_request_builder import PublishedRecordingRequestBuilder
 from stager.production_publication.published_version import PublishedVersion
@@ -69,12 +70,15 @@ class ProductionPublisher:
         if recording_requests:
             line_reasons = self._line_reasons(report, changed_reasons)
             if line_reasons:
+                build_id, build_timestamp = _read_playbook_build_metadata(self.paths_config)
                 request_paths = tuple(
                     PublishedRecordingRequestBuilder(
                         play=ProductionPlayLoader(paths_config=self.paths_config).load(),
                         paths_config=self.paths_config,
                         line_reasons=line_reasons,
                         version_label=version.label,
+                        build_id=build_id,
+                        build_timestamp=build_timestamp,
                     ).build()
                 )
 
@@ -138,3 +142,22 @@ class ProductionPublisher:
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str | None, str | None]:
+    manifest_path = paths_config.build_dir / "app" / "manifest.json"
+    if not manifest_path.exists():
+        return None, None
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None, None
+    build = raw_manifest.get("build") if isinstance(raw_manifest, dict) else None
+    if not isinstance(build, dict):
+        return None, None
+    build_id = build.get("buildId")
+    build_timestamp = build.get("buildTimestamp")
+    return (
+        build_id if isinstance(build_id, str) and build_id else None,
+        build_timestamp if isinstance(build_timestamp, str) and build_timestamp else None,
+    )

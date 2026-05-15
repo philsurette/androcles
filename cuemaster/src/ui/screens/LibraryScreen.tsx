@@ -8,9 +8,10 @@ import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 type LibraryScreenProps = {
   onSelectPlaybook: (playbook: Playbook) => void;
   onPlayPlaybook: (playbook: Playbook) => void;
+  onViewPlaybookInfo: (playbook: Playbook) => void;
 };
 
-export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook }: LibraryScreenProps) {
+export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybookInfo }: LibraryScreenProps) {
   const [playbooks, setPlaybooks] = useState<Playbook[]>([]);
   const [selectedFilename, setSelectedFilename] = useState<string>("");
   const [isImporting, setIsImporting] = useState(false);
@@ -169,8 +170,8 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook }: LibraryScree
                     </p>
                   </div>
                   <div className="row-actions">
-                    <button type="button" onClick={() => onSelectPlaybook(playbook)}>
-                      Rehearse!
+                    <button type="button" className="row-action-rehearse" onClick={() => onSelectPlaybook(playbook)}>
+                      Rehearse
                     </button>
                     <button
                       type="button"
@@ -188,6 +189,23 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook }: LibraryScree
                     >
                       ▶
                       <span className="visually-hidden"> Listen</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="row-action-icon-button secondary"
+                      aria-label={`Playbook info for ${playbook.title}`}
+                      title="Playbook info"
+                      onClick={() => onViewPlaybookInfo(playbook)}
+                      onTouchEnd={() => onViewPlaybookInfo(playbook)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          onViewPlaybookInfo(playbook);
+                        }
+                      }}
+                    >
+                      ⓘ
+                      <span className="visually-hidden"> Info</span>
                     </button>
                     <button
                       type="button"

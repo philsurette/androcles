@@ -5,6 +5,7 @@ import logging
 import sys
 import shlex
 import warnings
+import json
 from datetime import datetime
 import time
 
@@ -1344,16 +1345,39 @@ def run_recording_request(
     valid_roles = {candidate.name for candidate in play.roles if not candidate.meta and not candidate.name.startswith("_")}
     if role not in valid_roles:
         raise typer.BadParameter(f"Unknown rehearsable role: {role}")
+    build_id, build_timestamp = _read_playbook_build_metadata(cfg)
     builder = RecordingRequestBuilder(
         play=play,
         paths=cfg,
         role=role,
+        build_id=build_id,
+        build_timestamp=build_timestamp,
         request_kind="selected_segments" if item_ids else "full_role",
         selected_segment_ids=item_ids,
         item_reason=item_reason,
         notes=notes,
     )
     return builder.build()
+
+
+def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str | None, str | None]:
+    manifest_path = paths_config.build_dir / "app" / "manifest.json"
+    if not manifest_path.exists():
+        return None, None
+    try:
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return None, None
+
+    build = raw_manifest.get("build") if isinstance(raw_manifest, dict) else None
+    if not isinstance(build, dict):
+        return None, None
+    build_id = build.get("buildId")
+    build_timestamp = build.get("buildTimestamp")
+    return (
+        build_id if isinstance(build_id, str) and build_id else None,
+        build_timestamp if isinstance(build_timestamp, str) and build_timestamp else None,
+    )
 
 
 def selected_recording_item_ids(item_ids: list[str] | None, segment_ids: list[str] | None) -> set[str] | None:

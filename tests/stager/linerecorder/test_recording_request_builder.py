@@ -177,6 +177,8 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
         play=play,
         paths=cfg,
         role="MEGAERA",
+        build_id="build-123",
+        build_timestamp="2026-05-10T14:00:00Z",
         created_at="2026-05-10T14:00:00Z",
     ).build()
     data = json.loads((cfg.build_dir / "linerecorder" / "MEGAERA" / "manifest.json").read_text(encoding="utf-8"))
@@ -190,6 +192,8 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
         "created_by": "stager",
     }
     assert data["play"]["title"] == "Androcles and the Lion"
+    assert data["play"]["buildId"] == "build-123"
+    assert data["play"]["buildTimestamp"] == "2026-05-10T14:00:00Z"
     assert data["role"] == {
         "id": "MEGAERA",
         "display_name": "MEGAERA",

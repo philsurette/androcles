@@ -3,13 +3,6 @@ import type { ExtractedAudioAsset } from "./extractedPlaybookZip";
 import { extractPlaybookZip } from "./extractPlaybookZip";
 import { normalizePlaybook } from "./normalizePlaybook";
 
-function newBuildId(): string {
-  const randomPart = (globalThis.crypto as Crypto | undefined)?.randomUUID
-    ? globalThis.crypto.randomUUID()
-    : `${Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)}-${Date.now()}`;
-  return randomPart;
-}
-
 export type PlaybookImportProgress =
   | { phase: "extracting" }
   | { phase: "storing-audio"; completed: number; total: number }
@@ -27,7 +20,6 @@ export async function installPlaybook(file: File, options: PlaybookImportOptions
     filename: file.name,
     sizeBytes: file.size,
     importedAt: Date.now(),
-    buildId: newBuildId()
   };
   await indexedDbStorage.playbooks.delete(playbook.id);
   await storeRequiredAudioAssets(playbook.id, extracted.audioAssets, options);

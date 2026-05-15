@@ -7,6 +7,7 @@ import { LibraryScreen } from "../ui/screens/LibraryScreen";
 import { RehearsalScreen } from "../ui/screens/RehearsalScreen";
 import { RoleSelectScreen } from "../ui/screens/RoleSelectScreen";
 import { PlayPageScreen } from "../ui/screens/PlayPageScreen";
+import { PlaybookInfoScreen } from "../ui/screens/PlaybookInfoScreen";
 import { userFacingErrorMessage } from "../ui/errors/userFacingErrorMessage";
 
 export function App() {
@@ -18,6 +19,16 @@ export function App() {
   const [selectedSession, setSelectedSession] = useState<RehearsalSession | null>(null);
   const [storageStatus, setStorageStatus] = useState<string>("");
   const [isPlayPageMode, setIsPlayPageMode] = useState(false);
+  const [infoPlaybook, setInfoPlaybook] = useState<Playbook | null>(null);
+
+  if (infoPlaybook) {
+    return (
+      <PlaybookInfoScreen
+        playbook={infoPlaybook}
+        onBack={() => setInfoPlaybook(null)}
+      />
+    );
+  }
 
   if (selectedPlaybook && isPlayPageMode) {
     return (
@@ -90,6 +101,7 @@ export function App() {
     <LibraryScreen
       onSelectPlaybook={(playbook) => void openPlaybook(playbook)}
       onPlayPlaybook={(playbook) => void openPlayPage(playbook)}
+      onViewPlaybookInfo={(playbook) => void openPlaybookInfo(playbook)}
     />
   );
 
@@ -124,6 +136,18 @@ export function App() {
     setSelectedRole(null);
     setSelectedSession(null);
     setIsPlayPageMode(true);
+  }
+
+  function openPlaybookInfo(playbook: Playbook) {
+    setStorageStatus("");
+    setSelectedPlaybook(null);
+    setSelectedRole(null);
+    setSelectedSession(null);
+    setIsRoleSelectFromRehearsal(false);
+    setReturnRoleId(null);
+    setHighlightedRoleId(null);
+    setIsPlayPageMode(false);
+    setInfoPlaybook(playbook);
   }
 
   async function openRoleSelectFromRehearsal(role: Role | null) {

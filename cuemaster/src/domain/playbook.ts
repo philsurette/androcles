@@ -6,6 +6,7 @@ export type Playbook = {
   id: string;
   title: string;
   authors: string[];
+  build?: PlaybookBuild;
   source?: string;
   schemaVersion: number;
   importMetadata?: PlaybookImportMetadata;
@@ -14,9 +15,13 @@ export type Playbook = {
   roles: Role[];
 };
 
+export type PlaybookBuild = {
+  buildId: string;
+  buildTimestamp: string;
+};
+
 export type PlaybookImportMetadata = {
   filename: string;
   sizeBytes: number;
   importedAt: number;
-  buildId?: string;
 };
