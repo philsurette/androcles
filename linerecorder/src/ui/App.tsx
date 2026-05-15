@@ -291,7 +291,7 @@ function ProjectDetail({
   }
 
   return (
-    <section className="project-detail" aria-label="Recording Request detail">
+    <section className="project-detail recording-page" aria-label="Recording Request detail">
       <ProjectSummary
         project={project}
         progress={progress}
