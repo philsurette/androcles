@@ -926,6 +926,7 @@ button:disabled {
   flex-direction: column;
   min-height: 0;
   overflow: visible;
+  height: 100%;
 }
 
 .options-workspace-shell {
@@ -936,6 +937,7 @@ button:disabled {
   overflow: visible;
   width: 100%;
   position: relative;
+  height: 100%;
 }
 
 .rehearsal-workspace.outline-collapsed {
@@ -974,12 +976,13 @@ button:disabled {
 
 .rehearsal-header {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem 0.9rem;
   align-items: flex-start;
   justify-content: space-between;
   border-bottom: 1px solid rgba(30, 38, 31, 0.12);
   padding-bottom: 0.45rem;
+  min-width: 0;
 }
 
 .breadcrumb-row {
@@ -988,12 +991,15 @@ button:disabled {
   gap: 0.75rem;
   align-items: center;
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .rehearsal-title-stack {
   min-width: 0;
   display: grid;
   gap: 0.08rem;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .rehearsal-play-title {
@@ -1012,6 +1018,9 @@ button:disabled {
   line-height: 1.02;
   letter-spacing: 0.01em;
   text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .role-select-subtitle {
@@ -1045,6 +1054,7 @@ button:disabled {
   justify-content: flex-end;
   margin-inline-start: 0;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .breadcrumb,
@@ -1716,9 +1726,11 @@ button:disabled {
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: 100%;
   overflow: visible;
   overflow-x: hidden;
+  padding-top: 0.1rem;
+  padding-right: 0.15rem;
   width: 100%;
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
@@ -1726,7 +1738,7 @@ button:disabled {
 .practice-options-scroll {
   flex: 1 1 auto;
   min-height: 0;
-  overflow-y: auto;
+  overflow: visible;
   overflow-x: visible;
   padding-right: 0.15rem;
   position: relative;
@@ -2878,7 +2890,7 @@ button:disabled {
   }
 
   .practice-options-page {
-    min-height: 0;
+    min-height: 100%;
     overflow: visible;
   }
 
