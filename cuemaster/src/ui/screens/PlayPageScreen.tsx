@@ -52,6 +52,8 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [readNarration, setReadNarration] = useState(true);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchMatchIndex, setSearchMatchIndex] = useState(-1);
   const playbackSeq = useRef(0);
   const calloutPlaybackSeq = useRef(0);
   const isRunthrough = useRef(false);
@@ -80,6 +82,31 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return resolveCallout(currentLine);
   }, [currentLine, resolveCallout]);
   const hasCurrentLineCallout = currentLineCallout !== null;
+  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const searchMatches = useMemo(() => {
+    if (normalizedSearchQuery.length === 0 || entries.length === 0) {
+      return [];
+    }
+    const matches: number[] = [];
+    for (let index = 0; index < entries.length; index += 1) {
+      const entry = entries[index];
+      if (entryMatchesSearchQuery(entry, normalizedSearchQuery, playbook.title)) {
+        matches.push(index);
+      }
+    }
+    return matches;
+  }, [entries, normalizedSearchQuery, playbook.title]);
+  const searchMatchDisplay = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return "0/0";
+    }
+    const total = searchMatches.length;
+    if (total === 0 || searchMatchIndex < 0) {
+      return `0/${total}`;
+    }
+    return `${Math.min(searchMatchIndex + 1, total)}/${total}`;
+  }, [normalizedSearchQuery, searchMatches.length, searchMatchIndex]);
+
   const clampedIndex = entries.length === 0
     ? -1
     : Math.max(0, Math.min(currentIndex, entries.length - 1));
@@ -159,6 +186,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   useEffect(() => {
     if (entries.length === 0) {
       setCurrentIndex(0);
+      setSearchMatchIndex(-1);
       return;
     }
     if (currentIndex >= entries.length) {
@@ -167,6 +195,14 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
       setCurrentIndex(0);
     }
   }, [entries, currentIndex]);
+
+  useEffect(() => {
+    setSearchMatchIndex(-1);
+  }, [normalizedSearchQuery]);
+
+  useEffect(() => {
+    setSearchMatchIndex((current) => (current >= searchMatches.length ? -1 : current));
+  }, [searchMatches.length]);
 
   async function playCurrentLine() {
     if (!currentEntry) {
@@ -219,6 +255,44 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     isRunthrough.current = true;
     setCurrentIndex(nextIndex);
     void playLineAtIndex(nextIndex);
+  }
+
+  function runSearch(direction: "previous" | "next") {
+    if (searchMatches.length === 0) {
+      setSearchMatchIndex(-1);
+      return;
+    }
+    const currentMatchPosition = currentIndex >= 0 ? searchMatches.indexOf(currentIndex) : -1;
+    let targetMatchPosition: number;
+
+    if (currentMatchPosition >= 0) {
+      targetMatchPosition =
+        direction === "next"
+          ? (currentMatchPosition + 1) % searchMatches.length
+          : (currentMatchPosition - 1 + searchMatches.length) % searchMatches.length;
+      if (targetMatchPosition < 0) {
+        targetMatchPosition = searchMatches.length - 1;
+      }
+    } else if (searchMatchIndex >= 0 && searchMatchIndex < searchMatches.length) {
+      targetMatchPosition =
+        direction === "next"
+          ? searchMatchIndex + 1 < searchMatches.length
+            ? searchMatchIndex + 1
+            : 0
+          : searchMatchIndex - 1 >= 0
+            ? searchMatchIndex - 1
+            : searchMatches.length - 1;
+    } else {
+      targetMatchPosition = direction === "next" ? 0 : searchMatches.length - 1;
+    }
+
+    const targetIndex = searchMatches[targetMatchPosition] ?? -1;
+    if (targetIndex >= 0) {
+      setSearchMatchIndex(targetMatchPosition);
+      setCurrentIndex(targetIndex);
+    } else {
+      setSearchMatchIndex(-1);
+    }
   }
 
   function changeRate(nextRate: PlaySpeed) {
@@ -360,6 +434,47 @@ function nextRoleLineIndex(entriesToSearch: PlayPageEntry[], index: number, role
 
 function canonicalRoleKey(rawSpeaker?: string) {
   return (rawSpeaker ?? "").trim().replace(/^_+/, "").toLowerCase();
+}
+
+function entryMatchesSearchQuery(entry: PlayPageEntry, query: string, title: string): boolean {
+  if (query.length === 0) {
+    return false;
+  }
+  const looksLikeId = isLikelyIdQuery(query);
+  if (looksLikeId) {
+    return entryTokensForSearch(entry, title).some((token) => token === query);
+  }
+  const haystack = entrySearchHaystack(entry, title);
+  return haystack.includes(query);
+}
+
+function entrySearchHaystack(entry: PlayPageEntry, title: string): string {
+  const searchableParts: string[] = [title, entry.id, entry.speaker, entry.text];
+  if (entry.type === "line") {
+    for (const direction of entry.line.directions) {
+      searchableParts.push(direction.text);
+    }
+  }
+  return searchableParts.join(" ").toLowerCase();
+}
+
+function isLikelyIdQuery(query: string): boolean {
+  return /^[a-z0-9]+-[0-9]+(?:\.[0-9]+)?$/.test(query) || /^[a-z0-9]+-[a-z0-9]+$/.test(query);
+}
+
+function entryTokensForSearch(entry: PlayPageEntry, title: string): string[] {
+  const searchableParts: string[] = [title, entry.id, entry.speaker, entry.text];
+  if (entry.type === "line") {
+    for (const direction of entry.line.directions) {
+      searchableParts.push(direction.text);
+    }
+  }
+  return searchableParts
+    .flatMap((part) => part
+      .toLowerCase()
+      .split(/[^a-z0-9-]+/)
+      .map((token) => token.trim())
+      .filter((token) => token.length > 0));
 }
 
   function sectionStartIndexForPartId(entriesToSearch: PlayPageEntry[], targetPartId: number | null) {
@@ -651,6 +766,45 @@ function canonicalRoleKey(rawSpeaker?: string) {
               </div>
             </div>
             <div className="play-page-utility-bar">
+              <form
+                className="play-page-search"
+                onSubmit={(event) => event.preventDefault()}
+              >
+                <label className="play-page-search-field">
+                  <input
+                    type="search"
+                    placeholder="Search…"
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        runSearch("next");
+                      }
+                    }}
+                    aria-label="Search lines, directions, IDs, or title"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="quick-toggle play-page-search-arrow"
+                  aria-label="Previous match"
+                  onClick={() => runSearch("previous")}
+                  disabled={searchMatches.length === 0}
+                >
+                  &lt;
+                </button>
+                <span className="play-page-search-count" aria-live="polite">{searchMatchDisplay}</span>
+                <button
+                  type="button"
+                  className="quick-toggle play-page-search-arrow"
+                  aria-label="Next match"
+                  onClick={() => runSearch("next")}
+                  disabled={searchMatches.length === 0}
+                >
+                  &gt;
+                </button>
+              </form>
               <button
                 type="button"
                 className={`quick-toggle${readNarration ? " active" : ""}`}
