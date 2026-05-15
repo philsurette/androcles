@@ -325,10 +325,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
         </header>
         <div className="play-page-main">
           <div className="play-page-content">
-            <div className="play-page-meta">
-              <p className="play-page-line-speaker">{currentItemSpeaker}</p>
-            </div>
-            <p className="play-page-caption">{currentItemText}</p>
+            <fieldset className="cue-section-panel play-page-cue-panel" aria-label={`Line: ${currentItemSpeaker}`}>
+              <legend className="cue-section-title">{currentItemSpeaker}</legend>
+              <p className="play-page-caption">{currentItemText}</p>
+            </fieldset>
           </div>
           <div className="play-page-bottom-bar">
             <div className="play-page-controls">
