@@ -39,7 +39,7 @@ type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "fast" | "good";
 type TimingLabel = "fast" | "slow" | "good";
 type TimingPill = "delivery" | "pickup";
-type AutoAdvanceMode = "disabled" | "always" | "on-target";
+type AutoAdvanceMode = "disabled" | "always" | "on-target" | "when-not-slow";
 type TimingStatusPill = {
   delivery: {
     label: TimingLabel;
@@ -515,14 +515,17 @@ export function RehearsalScreen({
     }
   }
 
-  async function goNext(playNextCue = false, autoPlayLine = false) {
+  async function goNext(playNextCue = false, autoPlayLine = false, options: { preserveTimingStatus?: boolean } = {}) {
+    const { preserveTimingStatus = false } = options;
     activeTimingLineIdRef.current = null;
-    setTimingStatusMessage(null);
+    if (!preserveTimingStatus) {
+      setTimingStatusMessage(null);
+    }
     engine.next();
     updatePosition({ revealLine: showLinesByDefault });
     setIsLineRevealed(showLinesByDefault);
     if (playNextCue || hasStarted) {
-      await playCue();
+      await playCue({ preserveTimingStatus });
       if (autoPlayLine && !speakAlongEnabled) {
         await playResponse(currentLineFromEngine());
       }
@@ -632,12 +635,11 @@ export function RehearsalScreen({
     }
   }
 
-  async function playCue() {
+  async function playCue(options: { preserveTimingStatus?: boolean } = {}) {
+    const { preserveTimingStatus = false } = options;
     const currentLine = currentLineFromEngine();
     setHasStarted(true);
     setPlaybackSource("cue");
-    setTimingStatusMessage(null);
-    setPlaybackStatus(speakAlongEnabled ? "Speak along: playing cue, then your line..." : "Playing cue...");
     setPlaybackState("playing");
     const calloutLineItems = buildCalloutPlaybackItemsForCues(cues);
     try {
@@ -652,21 +654,19 @@ export function RehearsalScreen({
             speakAlongPauseMs
           )
         ]);
-        setPlaybackStatus("Speak-along complete.");
       } else {
         await audioQueue.play([...calloutLineItems, ...cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId)]);
-        setPlaybackStatus("Cue complete.");
       }
       setPlaybackState("idle");
       setPlaybackSource(null);
       if (!speakAlongEnabled) {
-        beginTimedAttempt();
+        beginTimedAttempt(preserveTimingStatus);
       }
     } catch (error) {
       setPlaybackState("idle");
       setPlaybackSource(null);
       setPlaybackStatus(userFacingErrorMessage(error));
-      }
+    }
   }
 
   function getTimingToneAudioContext(): AudioContext | null {
@@ -745,7 +745,6 @@ export function RehearsalScreen({
       return;
     }
     setPlaybackSource("line");
-    setTimingStatusMessage(null);
     setPlaybackStatus("Playing your line...");
     setPlaybackState("playing");
     try {
@@ -1335,7 +1334,7 @@ export function RehearsalScreen({
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
   }
 
-  async function beginTimedAttempt() {
+  async function beginTimedAttempt(preserveTimingStatus = false) {
     const timingLine = currentLineFromEngine();
     if (!timingLine) {
       return;
@@ -1358,7 +1357,9 @@ export function RehearsalScreen({
     // Keep capture running for the remainder of the timing session.
     void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
     activeTimingLineIdRef.current = timingLine.id;
-    setTimingStatusMessage(null);
+    if (!preserveTimingStatus) {
+      setTimingStatusMessage(null);
+    }
     setPlaybackStatus("Waiting for your line...");
     detector.beginAttempt();
   }
@@ -1400,26 +1401,28 @@ export function RehearsalScreen({
       setPlaybackStatus(timingResult.details);
       void saveTimingAttempt(timingLine.id, feedback);
       const shouldAutoAdvance =
-        autoAdvanceMode === "always" || (autoAdvanceMode === "on-target" && timingResult.delivery.label === "good");
+        autoAdvanceMode === "always" ||
+        (autoAdvanceMode === "on-target" && timingResult.delivery.label === "good") ||
+        (autoAdvanceMode === "when-not-slow" && timingResult.delivery.label !== "slow");
       const shouldAutoPlayLine =
         autoPlayLineMode !== "disabled" &&
         autoAdvanceMode !== "disabled" &&
         (autoPlayLineMode === "always" || !shouldAutoAdvance);
       if (autoAdvanceMode !== "disabled" && tempoTimingEnabled && !engine.position().atEnd) {
-        const shouldRepeatCue = autoAdvanceMode === "on-target" && !shouldAutoAdvance;
+        const shouldRepeatCue = autoAdvanceMode !== "always" && autoAdvanceMode !== "disabled" && !shouldAutoAdvance;
         if (shouldAutoAdvance) {
-          void (async () => {
-            await playTimingFeedbackTone("auto-advance");
-            await goNext(true, shouldAutoPlayLine);
-          })();
+        void (async () => {
+          await playTimingFeedbackTone("auto-advance");
+          await goNext(true, shouldAutoPlayLine, { preserveTimingStatus: true });
+        })();
         } else if (shouldRepeatCue) {
           void (async () => {
-              await playTimingFeedbackTone("retry");
-              if (shouldAutoPlayLine) {
-                await playResponse(currentLineFromEngine());
-              await new Promise((resolve) => setTimeout(resolve, 1000));
-            }
-            await playCue();
+            await playTimingFeedbackTone("retry");
+            if (shouldAutoPlayLine) {
+              await playResponse(currentLineFromEngine());
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+          }
+            await playCue({ preserveTimingStatus: true });
           })();
         }
       }
@@ -1736,7 +1739,8 @@ export function RehearsalScreen({
                   options={[
                     { value: "disabled", label: "Disabled" },
                     { value: "always", label: "Always" },
-                    { value: "on-target", label: "When on target" }
+                    { value: "on-target", label: "When on target" },
+                    { value: "when-not-slow", label: "When not slow" }
                   ]}
                   onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
                 />
