@@ -22,6 +22,7 @@ type PlayPageEntry =
       type: "line";
       id: string;
       blockId: string;
+      partId: number | null;
       speaker: string;
       text: string;
       line: Line;
@@ -31,6 +32,7 @@ type PlayPageEntry =
       type: "context";
       id: string;
       blockId: string;
+      partId: number | null;
       speaker: string;
       text: string;
       audioPath: string;
@@ -48,6 +50,17 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const currentIndexRef = useRef(0);
   const advanceTimeout = useRef<number | null>(null);
   const entries = useMemo(() => buildPlayEntries(playbook, readNarration), [playbook, readNarration]);
+  const orderedSections = useMemo(
+    () => [...playbook.sections].sort((left, right) => left.ordinal - right.ordinal),
+    [playbook.sections]
+  );
+  const sectionIndexByPartId = useMemo(() => {
+    const mapping = new Map<number | null, number>();
+    for (let index = 0; index < orderedSections.length; index += 1) {
+      mapping.set(orderedSections[index].partId, index);
+    }
+    return mapping;
+  }, [orderedSections]);
   const currentEntry: PlayPageEntry | null = entries[currentIndex] ?? null;
   const currentItemText = currentEntry?.text ?? "";
   const currentItemSpeaker = currentEntry?.speaker ?? "";
@@ -56,6 +69,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     ? -1
     : Math.max(0, Math.min(currentIndex, entries.length - 1));
   const playbackTargetId = clampedIndex === -1 ? "No line selected" : entries[clampedIndex]?.id ?? "No line selected";
+  const previousLine = previousLineIndex(entries, currentIndex);
+  const nextLine = nextLineIndex(entries, currentIndex);
+  const previousSection = previousSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
+  const nextSection = nextSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
 
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
@@ -182,6 +199,81 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     setReadNarration((current) => !current);
   }
 
+  function previousLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
+    return index > 0 ? index - 1 : -1;
+  }
+
+  function nextLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
+    return index >= 0 && index < entriesToSearch.length - 1 ? index + 1 : -1;
+  }
+
+  function sectionStartIndexForPartId(entriesToSearch: PlayPageEntry[], targetPartId: number | null) {
+    for (let entryIndex = 0; entryIndex < entriesToSearch.length; entryIndex += 1) {
+      if (entriesToSearch[entryIndex]?.partId === targetPartId) {
+        return entryIndex;
+      }
+    }
+    return -1;
+  }
+
+  function previousSectionStartIndex(
+    entriesToSearch: PlayPageEntry[],
+    index: number,
+    sectionIndexMap: Map<number | null, number>,
+    orderedSectionList: (typeof orderedSections),
+  ) {
+    if (index < 0 || index >= entriesToSearch.length) {
+      return -1;
+    }
+    const currentPartId = entriesToSearch[index]?.partId ?? null;
+    const currentSectionIndex = sectionIndexMap.get(currentPartId);
+    if (currentSectionIndex === undefined) {
+      return -1;
+    }
+
+    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
+    if (currentSectionStart < 0) {
+      return -1;
+    }
+    if (index > currentSectionStart) {
+      return currentSectionStart;
+    }
+    if (currentSectionIndex <= 0) {
+      return -1;
+    }
+
+    const targetPartId = orderedSectionList[currentSectionIndex - 1]?.partId ?? null;
+    return sectionStartIndexForPartId(entriesToSearch, targetPartId);
+  }
+
+  function nextSectionStartIndex(
+    entriesToSearch: PlayPageEntry[],
+    index: number,
+    sectionIndexMap: Map<number | null, number>,
+    orderedSectionList: (typeof orderedSections),
+  ) {
+    if (index < 0 || index >= entriesToSearch.length) {
+      return -1;
+    }
+    const currentPartId = entriesToSearch[index]?.partId ?? null;
+    const currentSectionIndex = sectionIndexMap.get(currentPartId);
+    if (currentSectionIndex === undefined) {
+      return -1;
+    }
+    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
+    if (currentSectionStart < 0) {
+      return -1;
+    }
+    if (index < currentSectionStart) {
+      return currentSectionStart;
+    }
+    if (currentSectionIndex >= orderedSectionList.length - 1) {
+      return -1;
+    }
+    const targetPartId = orderedSectionList[currentSectionIndex + 1]?.partId ?? null;
+    return sectionStartIndexForPartId(entriesToSearch, targetPartId);
+  }
+
   return (
     <main className="shell">
       <section className="hero play-page">
@@ -212,29 +304,112 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
           </div>
           <p className="play-page-caption">{currentItemText}</p>
           <div className="play-page-controls">
-            <button
-              type="button"
-              className="play-page-control"
-              onClick={() => changeLine(Math.max(0, currentIndex - 1))}
-              disabled={currentIndex === 0 || entries.length === 0}
-              aria-label="Previous section"
-              title="Previous section"
-            >
-              ⏮
-            </button>
-            <button
-              type="button"
-              className="play-page-control play-page-primary"
-              onClick={() => void playCurrentLine()}
-              disabled={!currentEntry}
-              aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
-              title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
-            >
-              {playbackState === "playing" ? "⏸" : "▶"}
-            </button>
-            <button type="button" className="play-page-control" onClick={stopPlayback} disabled={playbackState === "idle"} aria-label="Stop" title="Stop">
-              ⏹
-            </button>
+            <div className="play-page-control-group play-page-control-group-left">
+              <button
+                type="button"
+                className="play-page-control"
+                onClick={() => {
+                  if (previousSection !== -1) {
+                    changeLine(previousSection);
+                  }
+                }}
+                disabled={previousSection === -1 || entries.length === 0}
+                aria-label="Previous section"
+                title="Previous section"
+              >
+                |◀
+              </button>
+              <button
+                type="button"
+                className="play-page-control"
+                aria-label="Rewind 15 seconds"
+                title="Rewind 15 seconds (not implemented yet)"
+                onClick={() => {
+                  // No-op until implementation discussion is complete.
+                }}
+              >
+                ◀◀
+              </button>
+              <button
+                type="button"
+                className="play-page-control"
+                onClick={() => {
+                  if (previousLine !== -1) {
+                    changeLine(previousLine);
+                  }
+                }}
+                disabled={previousLine === -1 || entries.length === 0}
+                aria-label="Previous line"
+                title="Previous line"
+              >
+                ←
+              </button>
+            </div>
+            <div className="play-page-control-group play-page-control-group-center">
+              <button
+                type="button"
+                className="play-page-control play-page-primary"
+                onClick={() => void playCurrentLine()}
+                disabled={!currentEntry}
+                aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
+                title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
+              >
+                {playbackState === "playing" ? "Ⅱ" : "▶"}
+              </button>
+              <button
+                type="button"
+                className="play-page-control"
+                onClick={stopPlayback}
+                disabled={playbackState === "idle"}
+                aria-label="Stop"
+                title="Stop"
+              >
+                ■
+              </button>
+            </div>
+            <div className="play-page-control-group play-page-control-group-right">
+              <button
+                type="button"
+                className="play-page-control"
+                onClick={() => {
+                  if (nextLine !== -1) {
+                    changeLine(nextLine);
+                  }
+                }}
+                disabled={nextLine === -1 || entries.length === 0}
+                aria-label="Next line"
+                title="Next line"
+              >
+                →
+              </button>
+              <button
+                type="button"
+                className="play-page-control"
+                aria-label="Fast-forward 30 seconds"
+                title="Fast-forward 30 seconds (not implemented yet)"
+                onClick={() => {
+                  // No-op until implementation discussion is complete.
+                }}
+              >
+                ▶▶
+              </button>
+              <button
+                type="button"
+                className="play-page-control"
+                onClick={() => {
+                  if (nextSection !== -1) {
+                    changeLine(nextSection);
+                  }
+                }}
+                disabled={nextSection === -1 || entries.length === 0}
+                aria-label="Next section"
+                title="Next section"
+              >
+                ▶|
+              </button>
+            </div>
+          </div>
+          <div className="play-speed-control">
             <button
               type="button"
               className={`quick-toggle${readNarration ? " active" : ""}`}
@@ -245,18 +420,6 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
             >
               <span aria-hidden="true">⌞⌝</span>
             </button>
-            <button
-              type="button"
-              className="play-page-control"
-              onClick={() => changeLine(Math.min(entries.length - 1, currentIndex + 1))}
-              disabled={entries.length === 0 || currentIndex >= entries.length - 1}
-              aria-label="Next section"
-              title="Next section"
-            >
-              ⏭
-            </button>
-          </div>
-          <div className="play-speed-control">
             {playRates.map((rate) => (
               <button
                 type="button"
@@ -297,6 +460,7 @@ function buildPlayEntries(playbook: Playbook, includeNarration: boolean): PlayPa
         type: "context",
         id: block.id,
         blockId: block.blockId,
+        partId: block.partId,
         speaker: block.speaker,
         text: block.text,
         audioPath: block.audioPath,
@@ -308,14 +472,15 @@ function buildPlayEntries(playbook: Playbook, includeNarration: boolean): PlayPa
 
   const lines = Array.from(linesById.values())
     .sort((left, right) => blockOrderForBlockId(left.blockId) - blockOrderForBlockId(right.blockId))
-    .map((line) => ({
-      type: "line",
-      id: line.id,
-      blockId: line.blockId,
-      speaker: line.speaker,
-      text: line.responseText,
-      line,
-      sourceOrder: sourceOrder++
+      .map((line) => ({
+        type: "line",
+        id: line.id,
+        blockId: line.blockId,
+        partId: line.partId,
+        speaker: line.speaker,
+        text: line.responseText,
+        line,
+        sourceOrder: sourceOrder++
     }));
 
   return [...lines, ...contextEntries]

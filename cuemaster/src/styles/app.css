@@ -565,28 +565,48 @@ button:disabled {
 }
 
 .play-page-controls {
-  display: inline-flex;
-  gap: 0.45rem;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.play-page-control-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.play-page-control-group-left {
+  justify-content: flex-start;
+}
+
+.play-page-control-group-center {
+  justify-content: center;
+}
+
+.play-page-control-group-right {
+  justify-content: flex-end;
 }
 
 .play-page-control {
-  width: 2.35rem;
-  min-width: 2.35rem;
-  min-height: 2.35rem;
-  height: 2.35rem;
+  width: 1.95rem;
+  min-width: 1.95rem;
+  min-height: 1.95rem;
+  height: 1.95rem;
   padding: 0;
   border-radius: 999px;
   display: inline-grid;
   place-items: center;
+  font-size: 1rem;
 }
 
 .play-page-primary {
-  width: 2.65rem;
-  min-width: 2.65rem;
-  min-height: 2.65rem;
-  height: 2.65rem;
-  font-size: 1.1rem;
+  width: 2.15rem;
+  min-width: 2.15rem;
+  min-height: 2.15rem;
+  height: 2.15rem;
+  font-size: 1.06rem;
   border-radius: 999px;
 }
 
@@ -2337,7 +2357,16 @@ button:disabled {
   }
 
   .play-page-controls {
-    flex-wrap: wrap;
+    gap: 0.26rem;
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: 100%;
+  }
+
+  .play-page-controls::-webkit-scrollbar {
+    display: none;
   }
 
   .role-start-setting {
