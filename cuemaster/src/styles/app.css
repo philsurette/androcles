@@ -925,6 +925,7 @@ button:disabled {
   display: flex;
   flex-direction: column;
   min-height: 0;
+  overflow: visible;
 }
 
 .options-workspace-shell {
@@ -932,8 +933,9 @@ button:disabled {
   flex-direction: column;
   flex: 1 1 auto;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
+  position: relative;
 }
 
 .rehearsal-workspace.outline-collapsed {
@@ -1725,8 +1727,9 @@ button:disabled {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: visible;
   padding-right: 0.15rem;
+  position: relative;
 }
 
 .line-duration-panel {

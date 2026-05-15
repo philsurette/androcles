@@ -1778,7 +1778,7 @@ export function RehearsalScreen({
               </button>
               <div className="rehearsal-title-stack">
                 <p className="rehearsal-play-title">{playbook.title}</p>
-                <p className="rehearsal-role-title">Options</p>
+                <p className="rehearsal-role-title">Rehearse options</p>
               </div>
             </div>
           </header>
