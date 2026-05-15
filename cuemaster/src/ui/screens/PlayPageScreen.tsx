@@ -71,6 +71,8 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const playbackTargetId = clampedIndex === -1 ? "No line selected" : entries[clampedIndex]?.id ?? "No line selected";
   const previousLine = previousLineIndex(entries, currentIndex);
   const nextLine = nextLineIndex(entries, currentIndex);
+  const previousLineForCurrentRole = previousRoleLineIndex(entries, currentIndex, currentEntry?.speaker);
+  const nextLineForCurrentRole = nextRoleLineIndex(entries, currentIndex, currentEntry?.speaker);
   const previousSection = previousSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
   const nextSection = nextSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
   const currentSectionWindow = useMemo(
@@ -255,6 +257,38 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   function nextLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
     return index >= 0 && index < entriesToSearch.length - 1 ? index + 1 : -1;
   }
+
+function previousRoleLineIndex(entriesToSearch: PlayPageEntry[], index: number, role?: string) {
+  if (!role) {
+    return -1;
+  }
+  const targetRole = canonicalRoleKey(role);
+  for (let entryIndex = index - 1; entryIndex >= 0; entryIndex -= 1) {
+    const entry = entriesToSearch[entryIndex];
+    if (canonicalRoleKey(entry?.speaker) === targetRole) {
+      return entryIndex;
+    }
+  }
+  return -1;
+}
+
+function nextRoleLineIndex(entriesToSearch: PlayPageEntry[], index: number, role?: string) {
+  if (!role) {
+    return -1;
+  }
+  const targetRole = canonicalRoleKey(role);
+  for (let entryIndex = index + 1; entryIndex < entriesToSearch.length; entryIndex += 1) {
+    const entry = entriesToSearch[entryIndex];
+    if (canonicalRoleKey(entry?.speaker) === targetRole) {
+      return entryIndex;
+    }
+  }
+  return -1;
+}
+
+function canonicalRoleKey(rawSpeaker?: string) {
+  return (rawSpeaker ?? "").trim().replace(/^_+/, "").toLowerCase();
+}
 
   function sectionStartIndexForPartId(entriesToSearch: PlayPageEntry[], targetPartId: number | null) {
     for (let entryIndex = 0; entryIndex < entriesToSearch.length; entryIndex += 1) {
@@ -451,13 +485,16 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                 <button
                   type="button"
                   className="play-page-control"
-                  aria-label="Rewind 15 seconds"
-                  title="Rewind 15 seconds (not implemented yet)"
+                  aria-label="Previous line for current role"
+                  title="Previous line for current role"
                   onClick={() => {
-                    // No-op until implementation discussion is complete.
+                    if (previousLineForCurrentRole !== -1) {
+                      playLineFromList(previousLineForCurrentRole);
+                    }
                   }}
+                  disabled={previousLineForCurrentRole === -1 || entries.length === 0}
                 >
-                  ◀◀
+                  🎭◀
                 </button>
                 <button
                   type="button"
@@ -514,13 +551,16 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                 <button
                   type="button"
                   className="play-page-control"
-                  aria-label="Fast-forward 30 seconds"
-                  title="Fast-forward 30 seconds (not implemented yet)"
+                  aria-label="Next line for current role"
+                  title="Next line for current role"
                   onClick={() => {
-                    // No-op until implementation discussion is complete.
+                    if (nextLineForCurrentRole !== -1) {
+                      playLineFromList(nextLineForCurrentRole);
+                    }
                   }}
+                  disabled={nextLineForCurrentRole === -1 || entries.length === 0}
                 >
-                  ▶▶
+                  ▶🎭
                 </button>
                 <button
                   type="button"
@@ -547,7 +587,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                 title={readNarration ? "Directions are enabled" : "Directions are disabled"}
                 onClick={toggleNarrationAndDirections}
               >
-                <span aria-hidden="true">⌞</span>
+                <span aria-hidden="true">⌞⌝</span>
               </button>
               <div className="play-page-speed-wrap" ref={playbackSpeedSelectRef}>
                 <button
