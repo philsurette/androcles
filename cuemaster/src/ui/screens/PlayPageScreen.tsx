@@ -243,8 +243,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   }
 
   function changeLine(nextIndex: number) {
-    stopPlayback();
-    setCurrentIndex(nextIndex);
+    navigateToIndex(nextIndex, true);
   }
 
   function playLineFromList(nextIndex: number) {
@@ -257,11 +256,26 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     void playLineAtIndex(nextIndex);
   }
 
+  function navigateToIndex(nextIndex: number, shouldResumePlayback: boolean) {
+    if (entries[nextIndex] === undefined) {
+      return;
+    }
+    if (!shouldResumePlayback || playbackState !== "playing") {
+      stopPlayback();
+      setCurrentIndex(nextIndex);
+      return;
+    }
+    stopPlayback();
+    isRunthrough.current = true;
+    void playLineAtIndex(nextIndex);
+  }
+
   function runSearch(direction: "previous" | "next") {
     if (searchMatches.length === 0) {
       setSearchMatchIndex(-1);
       return;
     }
+    const shouldResumePlayback = playbackState === "playing";
     const currentMatchPosition = currentIndex >= 0 ? searchMatches.indexOf(currentIndex) : -1;
     let targetMatchPosition: number;
 
@@ -290,6 +304,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     if (targetIndex >= 0) {
       setSearchMatchIndex(targetMatchPosition);
       setCurrentIndex(targetIndex);
+      if (shouldResumePlayback) {
+        isRunthrough.current = true;
+        void playLineAtIndex(targetIndex);
+      }
     } else {
       setSearchMatchIndex(-1);
     }
