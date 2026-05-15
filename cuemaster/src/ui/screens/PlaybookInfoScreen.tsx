@@ -30,6 +30,17 @@ function formatLocalBuildTime(timestamp: string | undefined): string {
 
 export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps) {
   const totalLines = playbook.roles.reduce((sum, role) => sum + role.lines.length, 0);
+  const manifestText = playbook.manifestText ?? JSON.stringify({
+    id: playbook.id,
+    title: playbook.title,
+    authors: playbook.authors,
+    build: playbook.build,
+    sections: playbook.sections,
+    context: playbook.context,
+    roles: playbook.roles,
+    source: playbook.source,
+    schemaVersion: playbook.schemaVersion,
+  }, null, 2);
 
   return (
     <main className="shell">
@@ -96,6 +107,11 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
             <dd>{playbook.context.length}</dd>
           </div>
         </dl>
+
+        <details className="playbook-manifest-details">
+          <summary>Manifest</summary>
+          <pre>{manifestText}</pre>
+        </details>
       </section>
     </main>
   );

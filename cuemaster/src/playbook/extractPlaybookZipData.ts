@@ -16,7 +16,8 @@ export async function extractPlaybookZipData(file: Blob): Promise<ExtractedPlayb
     throw new PlaybookImportError("Playbook zip is missing manifest.json");
   }
 
-  const manifest = validateManifestJson(await manifestEntry.async("text"));
+  const manifestJson = await manifestEntry.async("text");
+  const manifest = validateManifestJson(manifestJson);
   const assetPaths = Object.values(zip.files)
     .filter((entry) => !entry.dir)
     .map((entry) => entry.name);
@@ -25,6 +26,7 @@ export async function extractPlaybookZipData(file: Blob): Promise<ExtractedPlayb
 
   return {
     manifest,
+    manifestJson,
     assetPaths,
     audioAssets: await extractRequiredAudioAssets(zip, collectRequiredAudioAssetPaths(manifest))
   };

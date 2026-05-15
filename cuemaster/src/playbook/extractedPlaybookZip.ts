@@ -14,7 +14,7 @@ export type ExtractedPlaybookZip = {
 
 export type ExtractedPlaybookZipData = {
   manifest: PlaybookManifest;
+  manifestJson: string;
   assetPaths: string[];
   audioAssets: ExtractedAudioAsset[];
 };
-
