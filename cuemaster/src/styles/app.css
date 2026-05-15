@@ -490,11 +490,11 @@ button:disabled {
 }
 
 .play-page-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 0.8rem;
   min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   padding-right: 0.15rem;
 }
 
@@ -543,6 +543,106 @@ button:disabled {
   border-radius: 0;
   padding: 0;
   background: transparent;
+}
+
+.play-page-lines-area {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  gap: 0.35rem;
+}
+
+.play-page-lines-label {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--quiet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play-page-lines-list {
+  display: grid;
+  gap: 0.28rem;
+  min-height: 0;
+  flex: 1 1 auto;
+  border: 1px solid rgba(30, 38, 31, 0.13);
+  border-radius: 0.9rem;
+  padding: 0.36rem 0.36rem 0.36rem 0.62rem;
+  background: rgba(255, 255, 255, 0.42);
+  overflow-y: auto;
+  overflow-x: hidden;
+  align-content: start;
+}
+
+.play-page-line-pane {
+  margin: 0;
+  display: grid;
+  gap: 0.22rem;
+  padding: 0.18rem 0.58rem 0.55rem;
+}
+
+.play-page-line-pane .play-page-caption {
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  background: transparent;
+  margin: 0;
+  line-height: 1.32;
+  font-size: 1rem;
+  min-height: auto;
+  white-space: normal;
+}
+
+.play-page-line-pane.is-current {
+  border-color: rgba(30, 38, 31, 0.35);
+  box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.15);
+}
+
+.play-page-line-pane .cue-section-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  margin-bottom: -0.15rem;
+}
+
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 0.35rem 0.5rem;
+  border-radius: 0.55rem;
+  min-height: 2.05rem;
+  font: inherit;
+}
+
+.play-page-line-row.is-current {
+  background: rgba(30, 38, 31, 0.16);
+}
+
+.play-page-line-row-speaker {
+  margin: 0;
+  font-size: 0.69rem;
+  line-height: 1.1;
+  letter-spacing: 0.06em;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: var(--accent);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.play-page-line-row-text {
+  margin: 0;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .playbook-info {

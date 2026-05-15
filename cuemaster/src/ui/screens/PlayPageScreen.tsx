@@ -50,6 +50,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const currentIndexRef = useRef(0);
   const advanceTimeout = useRef<number | null>(null);
   const playbackSpeedSelectRef = useRef<HTMLDivElement | null>(null);
+  const linePaneRefs = useRef<Map<number, HTMLFieldSetElement | null>>(new Map());
   const [isPlaybackSpeedOpen, setIsPlaybackSpeedOpen] = useState(false);
   const entries = useMemo(() => buildPlayEntries(playbook, readNarration), [playbook, readNarration]);
   const orderedSections = useMemo(
@@ -64,9 +65,6 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return mapping;
   }, [orderedSections]);
   const currentEntry: PlayPageEntry | null = entries[currentIndex] ?? null;
-  const currentItemText = currentEntry?.text ?? "";
-  const currentItemSpeaker = currentEntry?.speaker ?? "";
-  const currentItemId = currentEntry?.id ?? "No line selected";
   const clampedIndex = entries.length === 0
     ? -1
     : Math.max(0, Math.min(currentIndex, entries.length - 1));
@@ -75,6 +73,11 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const nextLine = nextLineIndex(entries, currentIndex);
   const previousSection = previousSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
   const nextSection = nextSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
+  const currentSectionWindow = useMemo(
+    () => sectionWindowForIndex(entries, currentIndex, sectionIndexByPartId, orderedSections),
+    [entries, currentIndex, sectionIndexByPartId, orderedSections]
+  );
+  const currentSectionEntries = entries.slice(currentSectionWindow.start, currentSectionWindow.end);
 
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
@@ -82,6 +85,14 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   useEffect(() => {
     currentIndexRef.current = currentIndex;
   }, [currentIndex]);
+
+  useEffect(() => {
+    const node = linePaneRefs.current.get(currentIndex);
+    if (!node || !currentSectionWindow) {
+      return;
+    }
+    node.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, [currentIndex, currentSectionWindow.start, currentSectionWindow.end]);
 
   useEffect(() => {
     clearPendingAdvance();
@@ -155,6 +166,16 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   function changeLine(nextIndex: number) {
     stopPlayback();
     setCurrentIndex(nextIndex);
+  }
+
+  function playLineFromList(nextIndex: number) {
+    if (entries[nextIndex] === undefined) {
+      return;
+    }
+    stopPlayback();
+    isRunthrough.current = true;
+    setCurrentIndex(nextIndex);
+    void playLineAtIndex(nextIndex);
   }
 
   function changeRate(nextRate: PlaySpeed) {
@@ -302,6 +323,51 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return sectionStartIndexForPartId(entriesToSearch, targetPartId);
   }
 
+  function sectionWindowForIndex(
+    entriesToSearch: PlayPageEntry[],
+    index: number,
+    sectionIndexMap: Map<number | null, number>,
+    orderedSectionList: (typeof orderedSections),
+  ) {
+    if (entriesToSearch.length === 0) {
+      return { start: 0, end: 0, label: "Section" };
+    }
+
+    if (index < 0 || index >= entriesToSearch.length) {
+      const fallbackStart = 0;
+      const fallbackEnd = entriesToSearch.length;
+      return { start: fallbackStart, end: fallbackEnd, label: orderedSectionList[0]?.title ?? "Section" };
+    }
+
+    const currentPartId = entriesToSearch[index]?.partId ?? null;
+    const currentSectionIndex = sectionIndexMap.get(currentPartId);
+    if (currentSectionIndex === undefined) {
+      return { start: 0, end: entriesToSearch.length, label: "Section" };
+    }
+
+    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
+    if (currentSectionStart < 0) {
+      return { start: 0, end: entriesToSearch.length, label: "Section" };
+    }
+
+    let endIndex = entriesToSearch.length;
+    for (let sectionOffset = currentSectionIndex + 1; sectionOffset < orderedSectionList.length; sectionOffset += 1) {
+      const nextPartId = orderedSectionList[sectionOffset]?.partId ?? null;
+      const nextSectionStart = sectionStartIndexForPartId(entriesToSearch, nextPartId);
+      if (nextSectionStart > currentSectionStart) {
+        endIndex = nextSectionStart;
+        break;
+      }
+    }
+
+    const sectionTitle = orderedSectionList[currentSectionIndex]?.title?.trim();
+    return {
+      start: currentSectionStart,
+      end: endIndex,
+      label: sectionTitle && sectionTitle.length > 0 ? sectionTitle : "Section",
+    };
+  }
+
   return (
     <main className="shell">
       <section className="hero play-page">
@@ -325,10 +391,42 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
         </header>
         <div className="play-page-main">
           <div className="play-page-content">
-            <fieldset className="cue-section-panel play-page-cue-panel" aria-label={`Line: ${currentItemSpeaker}`}>
-              <legend className="cue-section-title">{currentItemSpeaker}</legend>
-              <p className="play-page-caption">{currentItemText}</p>
-            </fieldset>
+            <section className="play-page-lines-area" aria-label={currentSectionWindow.label}>
+              <p className="play-page-lines-label">{currentSectionWindow.label}</p>
+              <div className="play-page-lines-list">
+                {currentSectionEntries.map((entry, offset) => {
+                    const globalIndex = currentSectionWindow.start + offset;
+                    const isCurrent = globalIndex === currentIndex;
+                    return (
+                    <fieldset
+                      key={`${entry.id}-${globalIndex}`}
+                      className={`play-page-line-pane cue-section-panel${isCurrent ? " is-current" : ""}`}
+                      ref={(node) => {
+                        if (node) {
+                          linePaneRefs.current.set(globalIndex, node);
+                        } else {
+                          linePaneRefs.current.delete(globalIndex);
+                        }
+                      }}
+                      onClick={() => playLineFromList(globalIndex)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          playLineFromList(globalIndex);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`${entry.speaker}: ${entry.id}`}
+                      aria-current={isCurrent}
+                    >
+                      <legend className="cue-section-title">{entry.speaker}</legend>
+                      <p className="play-page-caption">{entry.text}</p>
+                    </fieldset>
+                  );
+                })}
+              </div>
+            </section>
           </div>
           <div className="play-page-bottom-bar">
             <div className="play-page-controls">
