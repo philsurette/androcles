@@ -273,6 +273,49 @@ def test_playbook_builder_reports_mp3_packaging_progress(tmp_path: Path) -> None
     assert reporter.finished is True
 
 
+def test_playbook_builder_plans_inline_directions(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    role_block = RoleBlock(
+        block_id=BlockId(0, 2),
+        role_names=["MEGAERA"],
+        callout="MEGAERA",
+        text="((Stage note)) I won't go another step.",
+        segments=[
+            DirectionSegment(
+                segment_id=SegmentId(BlockId(0, 2), 1),
+                text="(stage note)",
+                production_id="I-2:d1",
+            ),
+            SpeechSegment(
+                segment_id=SegmentId(BlockId(0, 2), 2),
+                text="I won't go another step.",
+                role="MEGAERA",
+                production_id="I-2:s1",
+            ),
+        ],
+        production_id="I-2",
+    )
+    play = _play([_title_block(), cue_block, role_block])
+    for segment_id in ("0_0_1", "0_1_1", "0_2_1", "0_2_2"):
+        _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_2.wav")
+
+    work_items = PlaybookBuilder(play=play, paths=cfg).plan_audio_work()
+    assert ("_NARRATOR", "0_2_1", "direction") in [(item.role, item.segment_id, item.category) for item in work_items]
+
+    zip_path = PlaybookBuilder(play=play, paths=cfg).build()
+    manifest_path = cfg.build_dir / "app" / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    assert zip_path.exists()
+    assert "audio/segments/_NARRATOR/0_2_1.wav" in {
+        entry["path"] for entry in manifest["assets"]
+    }
+    with zipfile.ZipFile(zip_path) as archive:
+        assert "audio/segments/_NARRATOR/0_2_1.wav" in archive.namelist()
+
+
 def test_playbook_builder_attaches_offsets_to_cue_audio_only(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")

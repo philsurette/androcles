@@ -48,6 +48,7 @@ class PlaybookBuilder:
     progress_reporter: PlaybookProgressReporter | None = None
     build_id: str | None = None
     build_timestamp: str | None = None
+    _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -71,6 +72,7 @@ class PlaybookBuilder:
         return self.paths.build_dir / f"{self.paths.play_name}.playbook.zip"
 
     def build(self) -> Path:
+        self._manifest_assets.clear()
         if self.app_dir.exists():
             shutil.rmtree(self.app_dir)
         self.app_dir.mkdir(parents=True, exist_ok=True)
@@ -95,6 +97,7 @@ class PlaybookBuilder:
             sections=self._build_sections(),
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
+            assets=self._manifest_assets,
         )
 
     def _build_metadata(self) -> AppManifestBuild:
@@ -181,6 +184,16 @@ class PlaybookBuilder:
                             category="response",
                         )
                     )
+                for segment in self._inline_direction_segments_for(block):
+                    segment_id = str(segment.segment_id)
+                    work_items.append(
+                        PlaybookAudioWorkItem(
+                            source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                            role="_NARRATOR",
+                            segment_id=segment_id,
+                            category="direction",
+                        )
+                    )
         return work_items
 
     def _build_context_blocks(self) -> list[AppContextBlock]:
@@ -220,6 +233,14 @@ class PlaybookBuilder:
             if not response_segments:
                 continue
             cue_selection = self.selector.select_for_block(block)
+            for segment in self._inline_direction_segments_for(block):
+                self._copy_required_audio(
+                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment.segment_id}.wav",
+                    role="_NARRATOR",
+                    segment_id=str(segment.segment_id),
+                    category="direction",
+                )
+
             lines.append(
                 AppLine(
                     id=AppLine.line_id_for(block, role.name),
@@ -235,8 +256,7 @@ class PlaybookBuilder:
                     ),
                     directions=[
                         AppDirection.from_segment(segment, placement="inline")
-                        for segment in block.segments
-                        if isinstance(segment, DirectionSegment)
+                        for segment in self._inline_direction_segments_for(block)
                     ],
                     blocking=[
                         AppBlocking.from_segment(segment, placement="inline")
@@ -249,6 +269,9 @@ class PlaybookBuilder:
             )
         app_role.lines = lines
         return app_role
+
+    def _inline_direction_segments_for(self, block: RoleBlock) -> list[DirectionSegment]:
+        return [segment for segment in block.segments if isinstance(segment, DirectionSegment)]
 
     def _response_segments_for_role(self, block: RoleBlock, role: str) -> list[SpeechSegment | SimultaneousSegment]:
         segments: list[SpeechSegment | SimultaneousSegment] = []
@@ -333,14 +356,16 @@ class PlaybookBuilder:
             source_path,
             self.app_dir / "audio" / "segments" / role,
         )
-        if self.progress_reporter is not None:
-            self.progress_reporter.audio_packaged(role, segment_id, category)
-        return AppAudioAsset(
+        asset = AppAudioAsset(
             path=packaged_audio.manifest_path,
             duration_ms=duration_ms,
             required=True,
             cue_start_offsets=cue_start_offsets,
         )
+        self._manifest_assets.append(asset)
+        if self.progress_reporter is not None:
+            self.progress_reporter.audio_packaged(role, segment_id, category)
+        return asset
 
     def _write_zip(self) -> None:
         self.zip_path.parent.mkdir(parents=True, exist_ok=True)

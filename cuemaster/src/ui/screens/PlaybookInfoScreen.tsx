@@ -5,6 +5,29 @@ type PlaybookInfoScreenProps = {
   onBack: () => void;
 };
 
+function formatLocalBuildTime(timestamp: string | undefined): string {
+  if (timestamp === undefined) {
+    return "Unknown";
+  }
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) {
+    return `${timestamp} (invalid timestamp)`;
+  }
+
+  const local = new Intl.DateTimeFormat(undefined, {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+    timeZoneName: "short",
+  }).format(date);
+
+  return `${timestamp} (${local})`;
+}
+
 export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps) {
   const totalLines = playbook.roles.reduce((sum, role) => sum + role.lines.length, 0);
 
@@ -62,7 +85,7 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
           </div>
           <div>
             <dt>Build timestamp</dt>
-            <dd>{playbook.build?.buildTimestamp ?? "Unknown"}</dd>
+            <dd>{formatLocalBuildTime(playbook.build?.buildTimestamp)}</dd>
           </div>
           <div>
             <dt>Sections</dt>

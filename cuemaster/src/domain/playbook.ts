@@ -6,6 +6,7 @@ export type Playbook = {
   id: string;
   title: string;
   authors: string[];
+  audioAssetPaths?: string[];
   build?: PlaybookBuild;
   source?: string;
   schemaVersion: number;
