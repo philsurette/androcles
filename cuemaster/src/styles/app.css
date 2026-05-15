@@ -451,9 +451,10 @@ button:disabled {
 }
 
 .play-page {
-  display: grid;
-  grid-template-rows: auto 1fr;
+  display: flex;
+  flex-direction: column;
   min-height: 0;
+  height: 100%;
 }
 
 .play-page-header.rehearsal-header {
@@ -479,10 +480,28 @@ button:disabled {
 }
 
 .play-page-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+  gap: 0.8rem;
+}
+
+.play-page-content {
   display: grid;
   gap: 0.8rem;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.15rem;
+}
+
+.play-page-bottom-bar {
+  margin-top: auto;
+  display: grid;
+  gap: 0.45rem;
 }
 
 .play-page-meta {
@@ -587,6 +606,37 @@ button:disabled {
 
 .play-page-control-group-right {
   justify-content: flex-end;
+}
+
+.play-page-utility-bar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.play-page-speed-wrap {
+  width: 5.8rem;
+}
+
+.play-page-speed-wrap.practice-select-wrap {
+  width: 5.8rem;
+}
+
+.play-page-speed-wrap .practice-select-trigger {
+  min-height: 1.65rem;
+  padding-top: 0.1rem;
+  padding-bottom: 0.1rem;
+  font-size: 0.95rem;
+}
+
+.play-page-speed-wrap .practice-select-options {
+  top: 2rem;
+}
+
+.play-page-speed-wrap .practice-select-option {
+  min-height: 1.75rem;
 }
 
 .play-page-control {

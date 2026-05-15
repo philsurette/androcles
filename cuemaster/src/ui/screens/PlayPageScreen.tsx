@@ -49,6 +49,8 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const isRunthrough = useRef(false);
   const currentIndexRef = useRef(0);
   const advanceTimeout = useRef<number | null>(null);
+  const playbackSpeedSelectRef = useRef<HTMLDivElement | null>(null);
+  const [isPlaybackSpeedOpen, setIsPlaybackSpeedOpen] = useState(false);
   const entries = useMemo(() => buildPlayEntries(playbook, readNarration), [playbook, readNarration]);
   const orderedSections = useMemo(
     () => [...playbook.sections].sort((left, right) => left.ordinal - right.ordinal),
@@ -88,6 +90,29 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
       clearPendingAdvance();
     };
   }, [audioQueue]);
+
+  useEffect(() => {
+    if (!isPlaybackSpeedOpen) {
+      return;
+    }
+    const onPointerDown = (event: PointerEvent) => {
+      const container = playbackSpeedSelectRef.current;
+      if (container && !container.contains(event.target as Node)) {
+        setIsPlaybackSpeedOpen(false);
+      }
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsPlaybackSpeedOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [isPlaybackSpeedOpen]);
 
   useEffect(() => {
     if (entries.length === 0) {
@@ -134,6 +159,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
 
   function changeRate(nextRate: PlaySpeed) {
     setPlaybackRate(nextRate);
+    setIsPlaybackSpeedOpen(false);
   }
 
   async function playLineAtIndex(index: number) {
@@ -198,6 +224,8 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     stopPlayback();
     setReadNarration((current) => !current);
   }
+
+  const selectedPlaybackRateLabel = `${playbackRate}×`;
 
   function previousLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
     return index > 0 ? index - 1 : -1;
@@ -296,140 +324,161 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
           <div className="play-page-progress">{playbackTargetId}</div>
         </header>
         <div className="play-page-main">
-          <div className="play-page-meta">
-            <p className="play-page-line-id">
-              {currentItemId}
-            </p>
-            <p className="play-page-line-speaker">{currentItemSpeaker}</p>
+          <div className="play-page-content">
+            <div className="play-page-meta">
+              <p className="play-page-line-speaker">{currentItemSpeaker}</p>
+            </div>
+            <p className="play-page-caption">{currentItemText}</p>
           </div>
-          <p className="play-page-caption">{currentItemText}</p>
-          <div className="play-page-controls">
-            <div className="play-page-control-group play-page-control-group-left">
-              <button
-                type="button"
-                className="play-page-control"
-                onClick={() => {
-                  if (previousSection !== -1) {
-                    changeLine(previousSection);
-                  }
-                }}
-                disabled={previousSection === -1 || entries.length === 0}
-                aria-label="Previous section"
-                title="Previous section"
-              >
-                |◀
-              </button>
-              <button
-                type="button"
-                className="play-page-control"
-                aria-label="Rewind 15 seconds"
-                title="Rewind 15 seconds (not implemented yet)"
-                onClick={() => {
-                  // No-op until implementation discussion is complete.
-                }}
-              >
-                ◀◀
-              </button>
-              <button
-                type="button"
-                className="play-page-control"
-                onClick={() => {
-                  if (previousLine !== -1) {
-                    changeLine(previousLine);
-                  }
-                }}
-                disabled={previousLine === -1 || entries.length === 0}
-                aria-label="Previous line"
-                title="Previous line"
-              >
-                ←
-              </button>
+          <div className="play-page-bottom-bar">
+            <div className="play-page-controls">
+              <div className="play-page-control-group play-page-control-group-left">
+                <button
+                  type="button"
+                  className="play-page-control"
+                  onClick={() => {
+                    if (previousSection !== -1) {
+                      changeLine(previousSection);
+                    }
+                  }}
+                  disabled={previousSection === -1 || entries.length === 0}
+                  aria-label="Previous section"
+                  title="Previous section"
+                >
+                  |◀
+                </button>
+                <button
+                  type="button"
+                  className="play-page-control"
+                  aria-label="Rewind 15 seconds"
+                  title="Rewind 15 seconds (not implemented yet)"
+                  onClick={() => {
+                    // No-op until implementation discussion is complete.
+                  }}
+                >
+                  ◀◀
+                </button>
+                <button
+                  type="button"
+                  className="play-page-control"
+                  onClick={() => {
+                    if (previousLine !== -1) {
+                      changeLine(previousLine);
+                    }
+                  }}
+                  disabled={previousLine === -1 || entries.length === 0}
+                  aria-label="Previous line"
+                  title="Previous line"
+                >
+                  ←
+                </button>
+              </div>
+              <div className="play-page-control-group play-page-control-group-center">
+                <button
+                  type="button"
+                  className="play-page-control play-page-primary"
+                  onClick={() => void playCurrentLine()}
+                  disabled={!currentEntry}
+                  aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
+                  title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
+                >
+                  {playbackState === "playing" ? "Ⅱ" : "▶"}
+                </button>
+                <button
+                  type="button"
+                  className="play-page-control"
+                  onClick={stopPlayback}
+                  disabled={playbackState === "idle"}
+                  aria-label="Stop"
+                  title="Stop"
+                >
+                  ■
+                </button>
+              </div>
+              <div className="play-page-control-group play-page-control-group-right">
+                <button
+                  type="button"
+                  className="play-page-control"
+                  onClick={() => {
+                    if (nextLine !== -1) {
+                      changeLine(nextLine);
+                    }
+                  }}
+                  disabled={nextLine === -1 || entries.length === 0}
+                  aria-label="Next line"
+                  title="Next line"
+                >
+                  →
+                </button>
+                <button
+                  type="button"
+                  className="play-page-control"
+                  aria-label="Fast-forward 30 seconds"
+                  title="Fast-forward 30 seconds (not implemented yet)"
+                  onClick={() => {
+                    // No-op until implementation discussion is complete.
+                  }}
+                >
+                  ▶▶
+                </button>
+                <button
+                  type="button"
+                  className="play-page-control"
+                  onClick={() => {
+                    if (nextSection !== -1) {
+                      changeLine(nextSection);
+                    }
+                  }}
+                  disabled={nextSection === -1 || entries.length === 0}
+                  aria-label="Next section"
+                  title="Next section"
+                >
+                  ▶|
+                </button>
+              </div>
             </div>
-            <div className="play-page-control-group play-page-control-group-center">
+            <div className="play-page-utility-bar">
               <button
                 type="button"
-                className="play-page-control play-page-primary"
-                onClick={() => void playCurrentLine()}
-                disabled={!currentEntry}
-                aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
-                title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
+                className={`quick-toggle${readNarration ? " active" : ""}`}
+                aria-label={readNarration ? "Disable directions" : "Enable directions"}
+                aria-pressed={readNarration}
+                title={readNarration ? "Directions are enabled" : "Directions are disabled"}
+                onClick={toggleNarrationAndDirections}
               >
-                {playbackState === "playing" ? "Ⅱ" : "▶"}
+                <span aria-hidden="true">⌞</span>
               </button>
-              <button
-                type="button"
-                className="play-page-control"
-                onClick={stopPlayback}
-                disabled={playbackState === "idle"}
-                aria-label="Stop"
-                title="Stop"
-              >
-                ■
-              </button>
+              <div className="play-page-speed-wrap" ref={playbackSpeedSelectRef}>
+                <button
+                  type="button"
+                  className="practice-select-trigger"
+                  aria-label="Select playback speed"
+                  title="Select playback speed"
+                  aria-expanded={isPlaybackSpeedOpen}
+                  aria-controls="play-page-speed-options"
+                  onClick={() => setIsPlaybackSpeedOpen((current) => !current)}
+                >
+                  <span>{selectedPlaybackRateLabel}</span>
+                  <span className="practice-select-caret" aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
+                <div id="play-page-speed-options" role="listbox" className={`practice-select-options ${isPlaybackSpeedOpen ? "open" : ""}`} aria-label="Playback speed">
+                  {playRates.map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      role="option"
+                      aria-selected={playbackRate === rate}
+                      className={playbackRate === rate ? "practice-select-option active" : "practice-select-option"}
+                      onClick={() => changeRate(rate)}
+                    >
+                      {rate}×
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="play-page-control-group play-page-control-group-right">
-              <button
-                type="button"
-                className="play-page-control"
-                onClick={() => {
-                  if (nextLine !== -1) {
-                    changeLine(nextLine);
-                  }
-                }}
-                disabled={nextLine === -1 || entries.length === 0}
-                aria-label="Next line"
-                title="Next line"
-              >
-                →
-              </button>
-              <button
-                type="button"
-                className="play-page-control"
-                aria-label="Fast-forward 30 seconds"
-                title="Fast-forward 30 seconds (not implemented yet)"
-                onClick={() => {
-                  // No-op until implementation discussion is complete.
-                }}
-              >
-                ▶▶
-              </button>
-              <button
-                type="button"
-                className="play-page-control"
-                onClick={() => {
-                  if (nextSection !== -1) {
-                    changeLine(nextSection);
-                  }
-                }}
-                disabled={nextSection === -1 || entries.length === 0}
-                aria-label="Next section"
-                title="Next section"
-              >
-                ▶|
-              </button>
-            </div>
-          </div>
-          <div className="play-speed-control">
-            <button
-              type="button"
-              className={`quick-toggle${readNarration ? " active" : ""}`}
-              aria-label={readNarration ? "Disable narration and directions" : "Enable narration and directions"}
-              aria-pressed={readNarration}
-              title={readNarration ? "Narration and directions on" : "Narration and directions off"}
-              onClick={toggleNarrationAndDirections}
-            >
-              <span aria-hidden="true">⌞⌝</span>
-            </button>
-            {playRates.map((rate) => (
-              <button
-                type="button"
-                key={rate}
-                className={`play-speed-button${playbackRate === rate ? " is-active" : ""}`}
-                onClick={() => changeRate(rate)}
-              >
-                {rate}×
-              </button>
-            ))}
           </div>
         </div>
       </section>
