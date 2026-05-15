@@ -15,19 +15,44 @@ type PlaySpeed = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
 
 const playRates: PlaySpeed[] = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const lineGapMs = 500;
+const includedContextKinds = new Set(["heading", "description", "direction"]);
+
+type PlayPageEntry =
+  | {
+      type: "line";
+      id: string;
+      blockId: string;
+      speaker: string;
+      text: string;
+      line: Line;
+      sourceOrder: number;
+    }
+  | {
+      type: "context";
+      id: string;
+      blockId: string;
+      speaker: string;
+      text: string;
+      audioPath: string;
+      sourceOrder: number;
+    };
 
 export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<PlaySpeed>(1);
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
+  const [readNarration, setReadNarration] = useState(true);
   const playbackSeq = useRef(0);
   const isRunthrough = useRef(false);
   const currentIndexRef = useRef(0);
   const advanceTimeout = useRef<number | null>(null);
-  const lines = useMemo(() => buildPlayLineList(playbook), [playbook]);
-  const currentLine: Line | null = lines[currentIndex] ?? null;
-  const progressLabel = lines.length === 0 ? "" : `${currentIndex + 1} / ${lines.length}`;
+  const entries = useMemo(() => buildPlayEntries(playbook, readNarration), [playbook, readNarration]);
+  const currentEntry: PlayPageEntry | null = entries[currentIndex] ?? null;
+  const currentItemText = currentEntry?.text ?? "";
+  const currentItemSpeaker = currentEntry?.speaker ?? "";
+  const currentItemId = currentEntry?.id ?? "No line selected";
+  const progressLabel = entries.length === 0 ? "" : `${currentIndex + 1} / ${entries.length}`;
 
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
@@ -44,8 +69,20 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     };
   }, [audioQueue]);
 
+  useEffect(() => {
+    if (entries.length === 0) {
+      setCurrentIndex(0);
+      return;
+    }
+    if (currentIndex >= entries.length) {
+      setCurrentIndex(entries.length - 1);
+    } else if (currentIndex < 0) {
+      setCurrentIndex(0);
+    }
+  }, [entries, currentIndex]);
+
   async function playCurrentLine() {
-    if (!currentLine) {
+    if (!currentEntry) {
       return;
     }
     if (isPlaying) {
@@ -79,11 +116,9 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     setPlaybackRate(nextRate);
   }
 
-  const currentLineText = currentLine?.responseText ?? "";
-
   async function playLineAtIndex(index: number) {
-    const line = lines[index];
-    if (!line) {
+    const entry = entries[index];
+    if (!entry) {
       return;
     }
 
@@ -91,7 +126,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     setCurrentIndex(index);
     setPlaybackState("playing");
     try {
-      await audioQueue.play(responsePlaybackItems(line, playbackRate));
+      await audioQueue.play(playbackItemsForEntry(entry, playbackRate));
     } finally {
       if (thisPlaybackSeq !== playbackSeq.current) {
         return;
@@ -100,7 +135,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
       if (!isRunthrough.current) {
         return;
       }
-      if (index >= lines.length - 1) {
+      if (index >= entries.length - 1) {
         isRunthrough.current = false;
         return;
       }
@@ -110,7 +145,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
 
   function scheduleAutoAdvance(completedIndex: number, thisPlaybackSeq: number) {
     const nextIndex = completedIndex + 1;
-    if (nextIndex >= lines.length) {
+    if (nextIndex >= entries.length) {
       return;
     }
     clearPendingAdvance();
@@ -130,6 +165,18 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
       window.clearTimeout(advanceTimeout.current);
       advanceTimeout.current = null;
     }
+  }
+
+  function playbackItemsForEntry(entry: PlayPageEntry, speed: number) {
+    if (entry.type === "line") {
+      return responsePlaybackItems(entry.line, speed);
+    }
+    return [{ kind: "audio", path: entry.audioPath, playbackRate: 1 }];
+  }
+
+  function toggleNarrationAndDirections() {
+    stopPlayback();
+    setReadNarration((current) => !current);
   }
 
   return (
@@ -156,17 +203,17 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
         <div className="play-page-main">
           <div className="play-page-meta">
             <p className="play-page-line-id">
-              {currentLine ? currentLine.id : "No line selected"}
+              {currentItemId}
             </p>
-            <p className="play-page-line-speaker">{currentLine ? currentLine.speaker : ""}</p>
+            <p className="play-page-line-speaker">{currentItemSpeaker}</p>
           </div>
-          <p className="play-page-caption">{currentLineText}</p>
+          <p className="play-page-caption">{currentItemText}</p>
           <div className="play-page-controls">
             <button
               type="button"
               className="play-page-control"
               onClick={() => changeLine(Math.max(0, currentIndex - 1))}
-              disabled={currentIndex === 0 || lines.length === 0}
+              disabled={currentIndex === 0 || entries.length === 0}
               aria-label="Previous section"
               title="Previous section"
             >
@@ -176,7 +223,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
               type="button"
               className="play-page-control play-page-primary"
               onClick={() => void playCurrentLine()}
-              disabled={!currentLine}
+              disabled={!currentEntry}
               aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
               title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
             >
@@ -187,9 +234,19 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
             </button>
             <button
               type="button"
+              className={`quick-toggle${readNarration ? " active" : ""}`}
+              aria-label={readNarration ? "Disable narration and directions" : "Enable narration and directions"}
+              aria-pressed={readNarration}
+              title={readNarration ? "Narration and directions on" : "Narration and directions off"}
+              onClick={toggleNarrationAndDirections}
+            >
+              <span aria-hidden="true">⌞⌝</span>
+            </button>
+            <button
+              type="button"
               className="play-page-control"
-              onClick={() => changeLine(Math.min(lines.length - 1, currentIndex + 1))}
-              disabled={lines.length === 0 || currentIndex >= lines.length - 1}
+              onClick={() => changeLine(Math.min(entries.length - 1, currentIndex + 1))}
+              disabled={entries.length === 0 || currentIndex >= entries.length - 1}
               aria-label="Next section"
               title="Next section"
             >
@@ -214,8 +271,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   );
 }
 
-function buildPlayLineList(playbook: Playbook): Line[] {
+function buildPlayEntries(playbook: Playbook, includeNarration: boolean): PlayPageEntry[] {
   const linesById = new Map<string, Line>();
+  const contextEntries: PlayPageEntry[] = [];
+  let sourceOrder = 0;
 
   for (const role of playbook.roles) {
     for (const line of role.lines) {
@@ -226,11 +285,56 @@ function buildPlayLineList(playbook: Playbook): Line[] {
     }
   }
 
-  return Array.from(linesById.values()).sort((left, right) => blockOrderForLine(left) - blockOrderForLine(right));
+  if (includeNarration) {
+    for (const block of playbook.context) {
+      if (!block.audioPath || !includedContextKinds.has(block.kind)) {
+        continue;
+      }
+      contextEntries.push({
+        type: "context",
+        id: block.id,
+        blockId: block.blockId,
+        speaker: block.speaker,
+        text: block.text,
+        audioPath: block.audioPath,
+        sourceOrder
+      });
+      sourceOrder += 1;
+    }
+  }
+
+  const lines = Array.from(linesById.values())
+    .sort((left, right) => blockOrderForBlockId(left.blockId) - blockOrderForBlockId(right.blockId))
+    .map((line) => ({
+      type: "line",
+      id: line.id,
+      blockId: line.blockId,
+      speaker: line.speaker,
+      text: line.responseText,
+      line,
+      sourceOrder: sourceOrder++
+    }));
+
+  return [...lines, ...contextEntries]
+    .sort((left, right) => {
+      const leftOrder = blockOrderForBlockId(left.blockId);
+      const rightOrder = blockOrderForBlockId(right.blockId);
+      if (leftOrder !== rightOrder) {
+        return leftOrder - rightOrder;
+      }
+      if (left.type !== right.type) {
+        return left.type === "context" ? -1 : 1;
+      }
+      return left.sourceOrder - right.sourceOrder;
+    });
+}
+
+function blockOrderForBlockId(blockId: string): number {
+  return blockId
+    .split(".")
+    .reduce((total, part, index) => total + Number(part) * 1000 ** (3 - index), 0);
 }
 
 function blockOrderForLine(line: Line): number {
-  return line.blockId
-    .split(".")
-    .reduce((total, part, index) => total + Number(part) * 1000 ** (3 - index), 0);
+  return blockOrderForBlockId(line.blockId);
 }
