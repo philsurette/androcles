@@ -19,6 +19,7 @@ import type { RecordingProjectRecord } from "../storage/db";
 export function App() {
   const [projects, setProjects] = useState<RecordingProjectRecord[]>([]);
   const [selectedProject, setSelectedProject] = useState<RecordingProjectRecord | null>(null);
+  const [isProjectInfoMode, setIsProjectInfoMode] = useState(false);
   const [acceptedItemIds, setAcceptedItemIds] = useState<Set<string>>(new Set());
   const [status, setStatus] = useState("Import a Stager Recording Request to begin.");
   const [isImporting, setIsImporting] = useState(false);
@@ -34,6 +35,7 @@ export function App() {
 
   async function openProject(project: RecordingProjectRecord): Promise<void> {
     setSelectedProject(project);
+    setIsProjectInfoMode(false);
     setStatus(`Opened ${project.request.role.displayName}.`);
     await loadAcceptedSegments(project.id);
   }
@@ -107,6 +109,7 @@ export function App() {
     await projectRepository.delete(project.id);
     if (selectedProject?.id === project.id) {
       setSelectedProject(null);
+      setIsProjectInfoMode(false);
     }
     await loadProjects();
     setStatus(`Deleted local recordings for ${project.request.role.displayName}.`);
@@ -115,17 +118,21 @@ export function App() {
   return (
     <main className="app-shell">
       {selectedProject ? (
-        <ProjectDetail
-          project={selectedProject}
-          acceptedItemIds={acceptedItemIds}
-          status={status}
-          onSelectItem={(item) => void selectItem(selectedProject, item)}
-          onAccepted={() => loadAcceptedSegments(selectedProject.id)}
-          onExport={() => void exportProject(selectedProject)}
-          onDelete={() => void deleteProject(selectedProject)}
-          onBack={() => setSelectedProject(null)}
-          isExporting={isExporting}
-        />
+        isProjectInfoMode ? (
+          <ProjectInfoPanel project={selectedProject} onBack={() => setIsProjectInfoMode(false)} />
+        ) : (
+          <ProjectDetail
+            project={selectedProject}
+            acceptedItemIds={acceptedItemIds}
+            status={status}
+            onSelectItem={(item) => void selectItem(selectedProject, item)}
+            onAccepted={() => loadAcceptedSegments(selectedProject.id)}
+            onExport={() => void exportProject(selectedProject)}
+            onBack={() => setSelectedProject(null)}
+            onViewInfo={() => setIsProjectInfoMode(true)}
+            isExporting={isExporting}
+          />
+        )
       ) : (
         <>
           <section className="toolbar">
@@ -213,8 +220,9 @@ function ProjectLibrary({ projects, onOpenProject, onDeleteProject }: ProjectLib
               <button type="button" onClick={() => onOpenProject(project)}>
                 Open
               </button>
-              <button type="button" className="secondary danger" onClick={() => onDeleteProject(project)}>
-                Delete
+              <button type="button" className="secondary danger summary-action-icon" onClick={() => onDeleteProject(project)}>
+                <span aria-hidden="true">🗑</span>
+                <span className="visually-hidden">Delete project</span>
               </button>
             </div>
           </article>
@@ -231,7 +239,7 @@ type ProjectDetailProps = {
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
   onExport: () => void;
-  onDelete: () => void;
+  onViewInfo: () => void;
   onBack: () => void;
   isExporting: boolean;
 };
@@ -243,8 +251,8 @@ function ProjectDetail({
   onSelectItem,
   onAccepted,
   onExport,
-  onDelete,
   onBack,
+  onViewInfo,
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
@@ -262,8 +270,10 @@ function ProjectDetail({
         progress={progress}
         status={status}
         onExport={onExport}
-        onDelete={onDelete}
+        onViewInfo={onViewInfo}
         onBack={onBack}
+        isExplorerOpen={isExplorerOpen}
+        onToggleExplorer={() => setIsExplorerOpen((current) => !current)}
         isExporting={isExporting}
       />
       <MicrophoneSetup project={project} onReady={setMicrophoneConfig} />
@@ -501,53 +511,141 @@ type ProjectSummaryProps = {
   progress: RecordingItemProgress[];
   status: string;
   onExport: () => void;
-  onDelete: () => void;
+  onViewInfo: () => void;
   onBack: () => void;
+  isExplorerOpen: boolean;
+  onToggleExplorer: () => void;
   isExporting: boolean;
 };
 
-function ProjectSummary({ project, progress, status, onExport, onDelete, onBack, isExporting }: ProjectSummaryProps) {
+function ProjectSummary({
+  project,
+  progress,
+  status,
+  onExport,
+  onViewInfo,
+  onBack,
+  isExplorerOpen,
+  onToggleExplorer,
+  isExporting
+}: ProjectSummaryProps) {
   const acceptedCount = progress.filter((candidate) => candidate.status === "accepted").length;
   return (
     <article className="summary-panel">
       <div className="summary-title">
-        <button type="button" className="secondary" onClick={onBack}>
-          Back
-        </button>
-        <div>
-          <p className="eyebrow">{project.request.play.title}</p>
-          <h2>{project.request.role.displayName}</h2>
+        <div className="summary-title-main">
+          <button type="button" className="secondary icon-button summary-back-button" onClick={onBack}>
+            <span aria-hidden="true">←</span>
+            <span className="visually-hidden">Back</span>
+          </button>
+          <div className="summary-title-text">
+            <p className="eyebrow">{project.request.play.title}</p>
+            <h2>{project.request.role.displayName}</h2>
+          </div>
+        </div>
+        <div className="summary-title-actions">
+          <button
+            type="button"
+            className="secondary summary-action-icon"
+            aria-label={isExporting ? "Export disabled" : "Export recordings"}
+            disabled={acceptedCount === 0 || isExporting}
+            onClick={onExport}
+          >
+            <span aria-hidden="true">⬇</span>
+            <span className="visually-hidden">{isExporting ? "Exporting recordings" : "Export recordings"}</span>
+          </button>
+          <button
+            type="button"
+            className="secondary summary-action-icon summary-lines-toggle"
+            aria-label={isExplorerOpen ? "Hide line list" : "Show line list"}
+            title={isExplorerOpen ? "Hide line list" : "Show line list"}
+            onClick={onToggleExplorer}
+          >
+            <span aria-hidden="true">📋</span>
+            <span className="visually-hidden">{isExplorerOpen ? "Hide line list" : "Show line list"}</span>
+          </button>
+          <button type="button" className="secondary summary-action-icon" onClick={onViewInfo} aria-label="Project info">
+            <span aria-hidden="true">ⓘ</span>
+            <span className="visually-hidden">Project information</span>
+          </button>
         </div>
       </div>
-      <dl>
-        <div>
-          <dt>Request</dt>
-          <dd>{requestKindLabel(project.request.request.kind)}</dd>
-        </div>
-        <div>
-          <dt>Progress</dt>
-          <dd>
-            {acceptedCount}/{progress.length}
-          </dd>
-        </div>
-        <div>
-          <dt>Format</dt>
-          <dd>{project.request.recording.sourceFormat.toUpperCase()}</dd>
-        </div>
-      </dl>
-      <div className="summary-actions">
-        <button type="button" className="secondary danger" onClick={onDelete}>
-          Delete Project
-        </button>
-        <button type="button" disabled={acceptedCount === 0 || isExporting} onClick={onExport}>
-          {isExporting ? "Exporting..." : "Export Recordings"}
-        </button>
-      </div>
+      <div className="summary-compact-meta">{acceptedCount}/{progress.length} accepted</div>
       <p className="status" role="status">
         {status}
       </p>
       {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
     </article>
+  );
+}
+
+type ProjectInfoPanelProps = {
+  project: RecordingProjectRecord;
+  onBack: () => void;
+};
+
+function ProjectInfoPanel({ project, onBack }: ProjectInfoPanelProps) {
+  const requestCreatedAt = new Date(project.request.request.createdAt).toLocaleString();
+  const importedAt = new Date(project.importedAt).toLocaleString();
+
+  return (
+    <section className="project-info-page" aria-label="Project information">
+      <div className="summary-title">
+        <div className="summary-title-main">
+          <button type="button" className="secondary icon-button summary-back-button" onClick={onBack}>
+            <span aria-hidden="true">←</span>
+            <span className="visually-hidden">Back</span>
+          </button>
+          <div className="summary-title-text">
+            <p className="eyebrow">Project info</p>
+            <h2>{project.request.role.displayName}</h2>
+          </div>
+        </div>
+      </div>
+      <dl className="project-info-details">
+        <div>
+          <dt>Play title</dt>
+          <dd>{project.request.play.title}</dd>
+        </div>
+        <div>
+          <dt>Play ID</dt>
+          <dd>{project.request.play.id}</dd>
+        </div>
+        <div>
+          <dt>Role</dt>
+          <dd>{project.request.role.displayName}</dd>
+        </div>
+        <div>
+          <dt>Role ID</dt>
+          <dd>{project.request.role.id}</dd>
+        </div>
+        <div>
+          <dt>Request kind</dt>
+          <dd>{requestKindLabel(project.request.request.kind)}</dd>
+        </div>
+        <div>
+          <dt>Created by</dt>
+          <dd>{project.request.request.createdBy}</dd>
+        </div>
+        <div>
+          <dt>Created at</dt>
+          <dd>{requestCreatedAt}</dd>
+        </div>
+        <div>
+          <dt>Imported at</dt>
+          <dd>{importedAt}</dd>
+        </div>
+        <div>
+          <dt>Audio format</dt>
+          <dd>{project.request.recording.sourceFormat.toUpperCase()}</dd>
+        </div>
+        <div>
+          <dt>Lines</dt>
+          <dd>{project.request.items.length}</dd>
+        </div>
+      </dl>
+      {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
+    </section>
   );
 }
 
@@ -575,21 +673,7 @@ function ItemList({ progress, selectedItemId, isOpen, onToggleOpen, onSelectItem
   }, [isOpen, selectedItemId]);
 
   if (!isOpen) {
-    return (
-      <aside className="item-explorer collapsed" aria-label="Recording items">
-        <button type="button" className="explorer-disclosure-button" aria-label="Show line list" title="Show line list" onClick={onToggleOpen}>
-          <span className="context-disclosure" aria-hidden="true" />
-        </button>
-        <span
-          className="explorer-progress"
-          aria-label={`${acceptedCount} of ${progress.length} requested recordings completed`}
-          title={`${acceptedCount}/${progress.length} requested recordings completed`}
-        >
-          {acceptedCount}/{progress.length}
-          <span>completed</span>
-        </span>
-      </aside>
-    );
+    return null;
   }
 
   return (
@@ -720,7 +804,7 @@ function ItemDetail({
         </div>
       </header>
 
-      <ContextBlock label="Cue" speaker={item.cueSpeaker} text={item.cueText} />
+      <ContextBlock label="Cue" speaker={item.cueSpeaker} text={item.cueText} labelPosition="border" />
       {showPrevious ? <ContextBlock label="Previous" speaker={item.previousSpeaker} text={item.previousText} /> : null}
 
       <section className="line-panel" aria-label="Line to record">
@@ -753,7 +837,7 @@ function ItemDetail({
         </section>
       ) : null}
 
-      <ContextBlock label="Next" speaker={item.nextSpeaker} text={item.nextText} />
+      <ContextBlock label="Next" speaker={item.nextSpeaker} text={item.nextText} labelPosition="border" />
 
       <section className={showDetails ? "item-details expanded" : "item-details"}>
         <button
@@ -1045,9 +1129,10 @@ type ContextBlockProps = {
   label: string;
   speaker?: string;
   text?: string;
+  labelPosition?: "inline" | "border";
 };
 
-function ContextBlock({ label, speaker, text }: ContextBlockProps) {
+function ContextBlock({ label, speaker, text, labelPosition = "inline" }: ContextBlockProps) {
   const textRef = useRef<HTMLParagraphElement | null>(null);
   const [isOverflowing, setIsOverflowing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -1075,8 +1160,11 @@ function ContextBlock({ label, speaker, text }: ContextBlockProps) {
     return null;
   }
   const contentId = `context-${label.toLowerCase().replace(/\s+/g, "-")}-${speaker ?? "text"}`;
+  const isBorderLabel = labelPosition === "border";
+
   return (
-    <section className={isExpanded ? "context-panel expanded" : "context-panel"}>
+    <section className={isExpanded ? `context-panel expanded ${isBorderLabel ? "context-panel--border-label" : ""}`.trim() : `context-panel${isBorderLabel ? " context-panel--border-label" : ""}`}>
+      {isBorderLabel ? <span className="context-border-label">{label}</span> : null}
       <button
         type="button"
         className="context-toggle"
@@ -1085,7 +1173,7 @@ function ContextBlock({ label, speaker, text }: ContextBlockProps) {
         title={isExpanded ? `Collapse ${label.toLowerCase()}` : `Expand ${label.toLowerCase()}`}
         onClick={() => setIsExpanded((current) => !current)}
       >
-        <span className="context-label">{label}</span>
+        <span className={isBorderLabel ? "visually-hidden" : "context-label"}>{label}</span>
         {speaker ? <span className="context-speaker">{speaker}</span> : null}
         <span className={cropFromStart ? "context-text-window" : "context-text-window crop-end"}>
           {isOverflowing && !isExpanded && cropFromStart ? (
