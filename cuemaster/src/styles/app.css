@@ -603,45 +603,25 @@ button:disabled {
   box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.15);
 }
 
-.play-page-line-pane .cue-section-title {
+.play-page-line-pane-title {
+  display: inline-flex;
+  width: 100%;
+  margin: 0;
+  padding: 0 0.3rem;
+  justify-content: space-between;
+  gap: 0.55rem;
+  color: var(--accent);
   font-size: 0.72rem;
   letter-spacing: 0.06em;
-  margin-bottom: -0.15rem;
-}
-
-  width: 100%;
-  text-align: left;
-  border: 0;
-  background: rgba(255, 255, 255, 0.58);
-  padding: 0.35rem 0.5rem;
-  border-radius: 0.55rem;
-  min-height: 2.05rem;
-  font: inherit;
-}
-
-.play-page-line-row.is-current {
-  background: rgba(30, 38, 31, 0.16);
-}
-
-.play-page-line-row-speaker {
-  margin: 0;
-  font-size: 0.69rem;
-  line-height: 1.1;
-  letter-spacing: 0.06em;
-  font-weight: 800;
   text-transform: uppercase;
-  color: var(--accent);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 900;
 }
 
-.play-page-line-row-text {
-  margin: 0;
-  font-size: 0.95rem;
-  line-height: 1.35;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.play-page-line-id-tag {
+  margin-left: auto;
+  color: rgba(30, 38, 31, 0.62);
+  font-size: 0.66rem;
+  font-weight: 800;
   white-space: nowrap;
 }
 

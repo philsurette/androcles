@@ -420,7 +420,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                       aria-label={`${entry.speaker}: ${entry.id}`}
                       aria-current={isCurrent}
                     >
-                      <legend className="cue-section-title">{entry.speaker}</legend>
+                      <legend className="play-page-line-pane-title">
+                        <span>{entry.speaker}</span>
+                        <span className="play-page-line-id-tag">{entry.id}</span>
+                      </legend>
                       <p className="play-page-caption">{entry.text}</p>
                     </fieldset>
                   );
