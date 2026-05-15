@@ -170,52 +170,60 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
                     </p>
                   </div>
                   <div className="row-actions">
-                    <button type="button" className="row-action-rehearse" onClick={() => onSelectPlaybook(playbook)}>
-                      Rehearse
-                    </button>
-                    <button
-                      type="button"
-                      className="row-action-icon-button secondary"
-                      aria-label={`Play ${playbook.title}`}
-                      title="Play entire play"
-                      onClick={() => handlePlayClick(playbook)}
-                      onTouchEnd={() => handlePlayClick(playbook)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          handlePlayClick(playbook);
-                        }
-                      }}
-                    >
-                      ▶
-                      <span className="visually-hidden"> Listen</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="row-action-icon-button secondary"
-                      aria-label={`Playbook info for ${playbook.title}`}
-                      title="Playbook info"
-                      onClick={() => onViewPlaybookInfo(playbook)}
-                      onTouchEnd={() => onViewPlaybookInfo(playbook)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter" || event.key === " ") {
-                          event.preventDefault();
-                          onViewPlaybookInfo(playbook);
-                        }
-                      }}
-                    >
-                      ⓘ
-                      <span className="visually-hidden"> Info</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="row-action-icon-button secondary"
-                      aria-label={`Remove ${playbook.title}`}
-                      title="Remove playbook"
-                      onClick={() => void deletePlaybook(playbook.id)}
-                    >
-                      🗑
-                    </button>
+                    <div className="row-action-group row-action-group-primary">
+                      <button
+                        type="button"
+                        className="row-action-rehearse"
+                        onClick={() => onSelectPlaybook(playbook)}
+                      >
+                        Rehearse
+                      </button>
+                    </div>
+                    <div className="row-action-group row-action-group-secondary">
+                      <button
+                        type="button"
+                        className="row-action-icon-button secondary"
+                        aria-label={`Play ${playbook.title}`}
+                        title="Play entire play"
+                        onClick={() => handlePlayClick(playbook)}
+                        onTouchEnd={() => handlePlayClick(playbook)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            handlePlayClick(playbook);
+                          }
+                        }}
+                      >
+                        ▶
+                        <span className="visually-hidden"> Listen</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="row-action-icon-button secondary"
+                        aria-label={`Playbook info for ${playbook.title}`}
+                        title="Playbook info"
+                        onClick={() => onViewPlaybookInfo(playbook)}
+                        onTouchEnd={() => onViewPlaybookInfo(playbook)}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            onViewPlaybookInfo(playbook);
+                          }
+                        }}
+                      >
+                        ⓘ
+                        <span className="visually-hidden"> Info</span>
+                      </button>
+                      <button
+                        type="button"
+                        className="row-action-icon-button secondary"
+                        aria-label={`Remove ${playbook.title}`}
+                        title="Remove playbook"
+                        onClick={() => void deletePlaybook(playbook.id)}
+                      >
+                        🗑
+                      </button>
+                    </div>
                   </div>
                 </li>
               ))}

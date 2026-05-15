@@ -415,11 +415,28 @@ button:disabled {
 
 .row-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.5rem;
+  justify-content: space-between;
+  align-items: center;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+}
+
+.row-action-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: nowrap;
+}
+
+.row-action-group-primary {
+  margin-right: auto;
+}
+
+.row-action-group-secondary {
   justify-content: flex-end;
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
 .row-actions button {
@@ -2579,9 +2596,23 @@ button:disabled {
   }
 
   .row-actions {
-    width: auto;
-    justify-content: flex-end;
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: nowrap;
     margin-top: 0.25rem;
+  }
+
+  .row-action-group {
+    width: auto;
+  }
+
+  .row-action-group-secondary {
+    justify-content: flex-end;
+  }
+
+  .row-action-group-primary {
+    margin-right: 0;
+    min-width: 0;
   }
 
   .row-actions button {
