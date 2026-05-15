@@ -52,7 +52,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const currentItemText = currentEntry?.text ?? "";
   const currentItemSpeaker = currentEntry?.speaker ?? "";
   const currentItemId = currentEntry?.id ?? "No line selected";
-  const progressLabel = entries.length === 0 ? "" : `${currentIndex + 1} / ${entries.length}`;
+  const clampedIndex = entries.length === 0
+    ? -1
+    : Math.max(0, Math.min(currentIndex, entries.length - 1));
+  const playbackTargetId = clampedIndex === -1 ? "No line selected" : entries[clampedIndex]?.id ?? "No line selected";
 
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
@@ -198,7 +201,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
               <p className="play-page-subtitle">Play</p>
             </div>
           </div>
-          <div className="play-page-progress">{progressLabel}</div>
+          <div className="play-page-progress">{playbackTargetId}</div>
         </header>
         <div className="play-page-main">
           <div className="play-page-meta">
