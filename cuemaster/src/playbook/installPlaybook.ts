@@ -16,7 +16,7 @@ export async function installPlaybook(file: File, options: PlaybookImportOptions
   options.onProgress?.({ phase: "extracting" });
   const extracted = await extractPlaybookZip(file);
   const playbook = normalizePlaybook(extracted.manifest);
-  playbook.manifestText = extracted.manifestJson;
+  playbook.manifestText = JSON.stringify(extracted.manifest);
   playbook.importMetadata = {
     filename: file.name,
     sizeBytes: file.size,

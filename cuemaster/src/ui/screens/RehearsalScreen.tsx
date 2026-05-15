@@ -7,7 +7,7 @@ import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { TimingAttempt } from "../../domain/timingAttempt";
-import { AudioQueue } from "../../rehearsal/audioQueue";
+import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
 import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
@@ -265,8 +265,8 @@ export function RehearsalScreen({
     return resolveCallout(currentCue?.speaker ?? null);
   }, [cues, resolveCallout]);
   const hasCurrentLineCallout = currentCueCallout !== null;
-  function buildCalloutPlaybackItemsForCues(targetCues: Cue[]): Array<{ kind: "audio" | "delay"; path?: string; playbackRate: number; durationMs?: number }> {
-    const calloutItems: Array<{ kind: "audio" | "delay"; path?: string; playbackRate: number; durationMs?: number }> = [];
+  function buildCalloutPlaybackItemsForCues(targetCues: Cue[]): QueueItem[] {
+    const calloutItems: QueueItem[] = [];
     for (const cue of targetCues) {
       const cueCallout = isCalloutEnabled ? resolveCallout(cue.speaker) : null;
       if (!cueCallout) {
@@ -278,7 +278,7 @@ export function RehearsalScreen({
     return calloutItems;
   }
   const visibleCues = useMemo(
-    () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line),
+    () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line ?? undefined),
     [cues, includeDirections, playbook, line]
   );
   const bookmarkedLineIds = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.lineId)), [bookmarks]);
@@ -417,10 +417,8 @@ export function RehearsalScreen({
       return () => layoutQuery.removeEventListener("change", handleViewportChange);
     }
     // Safari 13 and earlier support only addListener/removeListener.
-    // @ts-expect-error - Safari fallback support for deprecated listener API.
     layoutQuery.addListener(handleViewportChange);
     return () => {
-      // @ts-expect-error - Safari fallback support for deprecated listener API.
       layoutQuery.removeListener(handleViewportChange);
     };
   }, []);
@@ -1011,7 +1009,7 @@ export function RehearsalScreen({
     );
   }
 
-  function changeRehearsalTextSize(nextSize: string) {
+  function changeRehearsalTextSize(nextSize: RehearsalTextSize) {
     const nextRehearsalTextSize = normalizeRehearsalTextSize(nextSize);
     setRehearsalTextSize(nextRehearsalTextSize);
     void saveSession(
@@ -1033,7 +1031,10 @@ export function RehearsalScreen({
       absoluteTempoForgivenessMs,
       tempoTolerancePercent,
       absolutePickupForgivenessMs,
-      nextRehearsalTextSize
+      autoAdvanceMode,
+      autoPlayLineMode,
+      nextRehearsalTextSize,
+      tempoEndOfLineSilenceMs
     );
   }
 
@@ -1128,6 +1129,8 @@ export function RehearsalScreen({
       absoluteTempoForgivenessMs,
       tempoTolerancePercent,
       absolutePickupForgivenessMs,
+      autoAdvanceMode,
+      autoPlayLineMode,
       rehearsalTextSize,
       normalizedTempoEndOfLineSilenceMs
     );
@@ -1193,10 +1196,10 @@ export function RehearsalScreen({
       absoluteTempoForgivenessMs,
       tempoTolerancePercent,
       absolutePickupForgivenessMs,
-      rehearsalTextSize,
-      tempoEndOfLineSilenceMs,
       nextAutoAdvanceMode,
-      nextAutoPlayLineMode
+      nextAutoPlayLineMode,
+      rehearsalTextSize,
+      tempoEndOfLineSilenceMs
     );
   }
 
@@ -1409,7 +1412,7 @@ export function RehearsalScreen({
         autoAdvanceMode !== "disabled" &&
         (autoPlayLineMode === "always" || !shouldAutoAdvance);
       if (autoAdvanceMode !== "disabled" && tempoTimingEnabled && !engine.position().atEnd) {
-        const shouldRepeatCue = autoAdvanceMode !== "always" && autoAdvanceMode !== "disabled" && !shouldAutoAdvance;
+        const shouldRepeatCue = (autoAdvanceMode === "on-target" || autoAdvanceMode === "when-not-slow") && !shouldAutoAdvance;
         if (shouldAutoAdvance) {
         void (async () => {
           await playTimingFeedbackTone("auto-advance");
@@ -1591,7 +1594,7 @@ export function RehearsalScreen({
                 value: option,
                 label: option
               }))}
-              onSelect={changeRehearsalTextSize}
+              onSelect={(next) => changeRehearsalTextSize(next as RehearsalTextSize)}
             />
           </label>
         </div>

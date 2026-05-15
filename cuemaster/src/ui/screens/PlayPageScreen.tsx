@@ -1,7 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Playbook } from "../../domain/playbook";
 import type { Line } from "../../domain/line";
-import { AudioQueue } from "../../rehearsal/audioQueue";
+import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
 import { buildCalloutResolver } from "../../rehearsal/calloutLookup";
 
 type PlaybackUiState = "idle" | "playing" | "paused";
@@ -126,7 +126,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const isPlaying = playbackState === "playing";
   const isPaused = playbackState === "paused";
 
-  function calloutPlaybackItemsForEntry(entry: PlayPageEntry): Array<{ kind: "audio" | "delay"; path?: string; playbackRate?: number; durationMs?: number }> {
+  function calloutPlaybackItemsForEntry(entry: PlayPageEntry): QueueItem[] {
     if (!isCalloutEnabled || entry.type !== "line") {
       return [];
     }
@@ -369,7 +369,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     }
   }
 
-  function playbackItemsForEntry(entry: PlayPageEntry, speed: number) {
+  function playbackItemsForEntry(entry: PlayPageEntry, speed: number): QueueItem[] {
     const calloutItems = calloutPlaybackItemsForEntry(entry);
     if (entry.type === "line") {
       const inlineDirectionItems = entry.inlineDirectionAudioPaths.map((direction, index) => ({
@@ -916,7 +916,7 @@ function buildPlayEntries(playbook: Playbook, includeNarration: boolean, directi
     }
   }
 
-  const lines = Array.from(linesById.values())
+  const lines: Array<Extract<PlayPageEntry, { type: "line" }> > = Array.from(linesById.values())
       .sort((left, right) => blockOrderForBlockId(left.blockId) - blockOrderForBlockId(right.blockId))
       .map((line) => {
         const inlineDirectionAudioPaths: Array<{ segmentId: string; path: string }> = [];
@@ -1088,7 +1088,7 @@ function renderLineText(entry: PlayPageEntry, includeDirections: boolean) {
     return left.orderIndex - right.orderIndex;
   });
 
-  const nodes: Array<string | JSX.Element> = [];
+  const nodes: ReactNode[] = [];
   mergedParts.forEach((part, index) => {
     if (part.text.trim().length === 0) {
       return;
