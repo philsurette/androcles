@@ -256,19 +256,45 @@ function ProjectDetail({
   isExporting
 }: ProjectDetailProps) {
   const [microphoneConfig, setMicrophoneConfig] = useState<MicrophoneConfig | null>(null);
+  const [microphoneReading, setMicrophoneReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
   const [isExplorerOpen, setIsExplorerOpen] = useState(false);
+  const [isMicrophoneSetupOpen, setIsMicrophoneSetupOpen] = useState(false);
   const progress = recordingItemProgress(project.request.items, acceptedItemIds);
   const selectedIndex = selectedProgressIndex(progress, project.currentItemId);
   const selectedItem = selectedIndex === -1 ? undefined : progress[selectedIndex];
   const previousItem = previousProgress(progress, selectedIndex);
   const nextItem = nextProgress(progress, selectedIndex);
 
+  if (isMicrophoneSetupOpen) {
+    return (
+      <section className="project-detail microphone-config-page" aria-label="Microphone setup">
+        <div className="summary-title">
+          <div className="summary-title-main">
+            <button type="button" className="secondary icon-button summary-back-button" onClick={() => setIsMicrophoneSetupOpen(false)}>
+              <span aria-hidden="true">←</span>
+              <span className="visually-hidden">Back</span>
+            </button>
+            <div className="summary-title-text">
+              <p className="eyebrow">Microphone</p>
+              <h2>Microphone setup</h2>
+            </div>
+          </div>
+        </div>
+        <MicrophoneSetup
+          project={project}
+          onReady={setMicrophoneConfig}
+          onReading={setMicrophoneReading}
+          onDone={() => setIsMicrophoneSetupOpen(false)}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="project-detail" aria-label="Recording Request detail">
       <ProjectSummary
         project={project}
         progress={progress}
-        status={status}
         onExport={onExport}
         onViewInfo={onViewInfo}
         onBack={onBack}
@@ -276,7 +302,7 @@ function ProjectDetail({
         onToggleExplorer={() => setIsExplorerOpen((current) => !current)}
         isExporting={isExporting}
       />
-      <MicrophoneSetup project={project} onReady={setMicrophoneConfig} />
+      <MicrophoneStrip config={microphoneConfig} reading={microphoneReading} onOpen={() => setIsMicrophoneSetupOpen(true)} />
       <div className={isExplorerOpen ? "recording-workspace" : "recording-workspace explorer-collapsed"}>
         <ItemList
           progress={progress}
@@ -312,9 +338,11 @@ type MicrophoneConfig = {
 type MicrophoneSetupProps = {
   project: RecordingProjectRecord;
   onReady: (config: MicrophoneConfig | null) => void;
+  onReading: (reading: MicrophoneReading) => void;
+  onDone: () => void;
 };
 
-function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
+function MicrophoneSetup({ project, onReady, onReading, onDone }: MicrophoneSetupProps) {
   const sessionRef = useRef<MicrophoneSession | null>(null);
   const floorNoiseRecorderRef = useRef<WavRecorder | null>(null);
   const [devices, setDevices] = useState<MicrophoneDevice[]>([]);
@@ -324,7 +352,10 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
   const [status, setStatus] = useState("Microphone not started.");
   const [isActive, setIsActive] = useState(false);
   const [isCapturingFloorNoise, setIsCapturingFloorNoise] = useState(false);
-  const [showSettings, setShowSettings] = useState(true);
+
+  useEffect(() => {
+    onReading(reading);
+  }, [reading, onReading]);
 
   useEffect(() => {
     return () => {
@@ -353,7 +384,6 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
       await session.start(selectedDeviceId, mode);
       onReady({ deviceId: selectedDeviceId, deviceLabel: selectedDeviceLabel(), mode });
       setIsActive(true);
-      setShowSettings(false);
     } catch (error) {
       const message =
         error instanceof MicrophonePermissionError ? error.message : "Unable to start microphone setup.";
@@ -370,9 +400,9 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
     onReady(null);
     setIsActive(false);
     setIsCapturingFloorNoise(false);
-    setShowSettings(true);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
+    onReading({ energy: 0, level: "no-signal" });
   }
 
   async function captureFloorNoise(): Promise<void> {
@@ -435,66 +465,58 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
         <span className={isActive ? "microphone-glyph active" : "microphone-glyph"} aria-label={isActive ? "Microphone ready" : "Microphone setup"}>
           🎙
         </span>
-        {isActive && !showSettings ? (
-          <button type="button" className="secondary" onClick={() => setShowSettings(true)}>
-            Mic Settings
+        <div className="microphone-actions">
+          <button type="button" className="secondary" onClick={onDone}>
+            OK
           </button>
-        ) : null}
-      </div>
-      {showSettings ? (
-        <div className="microphone-controls">
-          <label>
-            <span className="visually-hidden">Input</span>
-            <select
-              value={selectedDeviceId}
-              disabled={isActive}
-              onFocus={() => void refreshDevices()}
-              onChange={(event) => setSelectedDeviceId(event.target.value)}
-            >
-              {devices.length === 0 ? <option value="">Default microphone</option> : null}
-              {devices.map((device) => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label>
-            <span className="visually-hidden">Mode</span>
-            <select
-              value={mode}
-              disabled={isActive}
-              onChange={(event) => setMode(event.target.value as MicrophoneMode)}
-            >
-              <option value="clean">Clean room</option>
-              <option value="noisy">Noisy room</option>
-            </select>
-          </label>
-          {isActive ? (
-            <button type="button" className="secondary" onClick={stopMicrophone}>
-              Stop Mic
-            </button>
-          ) : (
-            <button type="button" onClick={() => void startMicrophone()}>
-              Start Mic
-            </button>
-          )}
         </div>
-      ) : isActive ? (
-        <div className="microphone-compact-actions">
-          <button
-            type="button"
-            className="secondary"
-            disabled={isCapturingFloorNoise}
-            onClick={() => void captureFloorNoise()}
+      </div>
+      <div className="microphone-controls">
+        <label>
+          <span className="visually-hidden">Input</span>
+          <select
+            value={selectedDeviceId}
+            disabled={isActive && isCapturingFloorNoise}
+            onFocus={() => void refreshDevices()}
+            onChange={(event) => setSelectedDeviceId(event.target.value)}
           >
-            {isCapturingFloorNoise ? "Capturing..." : "Room Tone"}
-          </button>
-          <button type="button" className="secondary" onClick={stopMicrophone}>
+            {devices.length === 0 ? <option value="">Default microphone</option> : null}
+            {devices.map((device) => (
+              <option key={device.deviceId} value={device.deviceId}>
+                {device.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          <span className="visually-hidden">Mode</span>
+          <select
+            value={mode}
+            disabled={isActive && isCapturingFloorNoise}
+            onChange={(event) => setMode(event.target.value as MicrophoneMode)}
+          >
+            <option value="clean">Clean room</option>
+            <option value="noisy">Noisy room</option>
+          </select>
+        </label>
+        {isActive ? (
+          <button type="button" className="secondary" onClick={stopMicrophone} disabled={isCapturingFloorNoise}>
             Stop Mic
           </button>
-        </div>
-      ) : null}
+        ) : (
+          <button type="button" onClick={() => void startMicrophone()}>
+            Start Mic
+          </button>
+        )}
+        <button
+          type="button"
+          className="secondary"
+          disabled={!isActive || isCapturingFloorNoise}
+          onClick={() => void captureFloorNoise()}
+        >
+          {isCapturingFloorNoise ? "Capturing..." : "Room Tone"}
+        </button>
+      </div>
       <div className="meter-row">
         <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
           <span style={{ width: `${meterFillPercentForLevel(reading.energy, reading.level)}%` }} />
@@ -506,10 +528,36 @@ function MicrophoneSetup({ project, onReady }: MicrophoneSetupProps) {
   );
 }
 
+type MicrophoneStripProps = {
+  config: MicrophoneConfig | null;
+  reading: MicrophoneReading;
+  onOpen: () => void;
+};
+
+function MicrophoneStrip({ config, reading, onOpen }: MicrophoneStripProps) {
+  const label = config ? "Mic Open" : "Start Mic";
+
+  return (
+    <section className="microphone-strip" aria-label="Microphone">
+      <span className={config ? "microphone-glyph active" : "microphone-glyph"} aria-label="Microphone">
+        🎙
+      </span>
+      <div className="meter-row">
+        <div className="meter" aria-label={`Input level: ${levelLabel(reading.level)}`}>
+          <span style={{ width: `${meterFillPercentForLevel(reading.energy, reading.level)}%` }} />
+        </div>
+        <span className={`meter-label ${reading.level}`}>{levelLabel(reading.level)}</span>
+      </div>
+      <button type="button" className={config ? "secondary" : "button"} onClick={onOpen}>
+        {label}
+      </button>
+    </section>
+  );
+}
+
 type ProjectSummaryProps = {
   project: RecordingProjectRecord;
   progress: RecordingItemProgress[];
-  status: string;
   onExport: () => void;
   onViewInfo: () => void;
   onBack: () => void;
@@ -521,7 +569,6 @@ type ProjectSummaryProps = {
 function ProjectSummary({
   project,
   progress,
-  status,
   onExport,
   onViewInfo,
   onBack,
@@ -571,9 +618,6 @@ function ProjectSummary({
         </div>
       </div>
       <div className="summary-compact-meta">{acceptedCount}/{progress.length} accepted</div>
-      <p className="status" role="status">
-        {status}
-      </p>
       {project.request.request.notes ? <p className="notes">{project.request.request.notes}</p> : null}
     </article>
   );
