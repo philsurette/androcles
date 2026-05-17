@@ -12,12 +12,20 @@ describe("validateRecordingRequestManifest", () => {
         kind: "full_role",
         created_at: "2026-05-10T14:00:00Z",
         created_by: "stager",
+        production_version: "1@k9f4p2x8m1qd",
         notes: "Initial role recording"
       },
       play: {
         id: "androcles",
         title: "Androcles and the Lion",
         version: "2026-05-10"
+      },
+      production: {
+        source: "published",
+        version: "1@k9f4p2x8m1qd",
+        sequence: 1,
+        publication_id: "k9f4p2x8m1qd",
+        published_at: "2026-05-10T13:00:00Z"
       },
       role: {
         id: "CENTURION",
@@ -69,8 +77,14 @@ describe("validateRecordingRequestManifest", () => {
     });
 
     expect(request.request.kind).toBe("full_role");
+    expect(request.request.productionVersion).toBe("1@k9f4p2x8m1qd");
     expect(request.packageType).toBe("recording_request");
     expect(request.play.id).toBe("androcles");
+    expect(request.production).toMatchObject({
+      source: "published",
+      version: "1@k9f4p2x8m1qd",
+      publicationId: "k9f4p2x8m1qd"
+    });
     expect(request.role.displayName).toBe("Centurion");
     expect(request.items[0]).toMatchObject({
       id: "I-12:s1",
@@ -154,6 +168,7 @@ describe("validateRecordingRequestManifest", () => {
           created_by: "stager"
         },
         play: { id: "androcles", title: "Androcles and the Lion" },
+        production: { source: "working" },
         role: { id: "CENTURION", display_name: "Centurion" },
         recording: { preferred_sample_rate_hz: 48000, preferred_channels: 1, source_format: "wav" },
         items: []
@@ -174,6 +189,7 @@ describe("validateRecordingRequestManifest", () => {
           created_by: "stager"
         },
         play: { id: "androcles", title: "Androcles and the Lion" },
+        production: { source: "working" },
         role: { id: "CENTURION", display_name: "Centurion" },
         recording: { preferred_sample_rate_hz: 48000, preferred_channels: 1, source_format: "wav" },
         items: [
@@ -211,6 +227,13 @@ function recordingRequestManifestFixture() {
       id: "androcles",
       title: "Androcles and the Lion",
       version: "2026-05-10"
+    },
+    production: {
+      source: "published" as const,
+      version: "1@k9f4p2x8m1qd",
+      sequence: 1,
+      publication_id: "k9f4p2x8m1qd",
+      published_at: "2026-05-10T13:00:00Z"
     },
     role: {
       id: "CENTURION",

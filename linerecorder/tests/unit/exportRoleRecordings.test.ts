@@ -20,6 +20,13 @@ describe("exportRoleRecordings", () => {
       schema_version: 1,
       format_version: "1.0.0",
       package_type: "role_recordings",
+      production: {
+        source: "published",
+        version: "1@k9f4p2x8m1qd",
+        sequence: 1,
+        publication_id: "k9f4p2x8m1qd",
+        published_at: "2026-05-10T13:00:00Z"
+      },
       complete: false,
       recordings: [
         {
@@ -114,7 +121,15 @@ function projectFixture(): RecordingProjectRecord {
       },
       play: {
         id: "androcles",
-        title: "Androcles and the Lion"
+        title: "Androcles and the Lion",
+        version: "1@k9f4p2x8m1qd"
+      },
+      production: {
+        source: "published",
+        version: "1@k9f4p2x8m1qd",
+        sequence: 1,
+        publicationId: "k9f4p2x8m1qd",
+        publishedAt: "2026-05-10T13:00:00Z"
       },
       role: {
         id: "CENTURION",

@@ -9,6 +9,7 @@ export type Playbook = {
   audioAssetPaths?: string[];
   manifestText?: string;
   build?: PlaybookBuild;
+  production: PlaybookProduction;
   source?: string;
   schemaVersion: number;
   importMetadata?: PlaybookImportMetadata;
@@ -20,6 +21,15 @@ export type Playbook = {
 export type PlaybookBuild = {
   buildId: string;
   buildTimestamp: string;
+};
+
+export type PlaybookProduction = {
+  source: "published" | "working";
+  version?: string;
+  sequence?: number;
+  publicationId?: string;
+  parentVersion?: string;
+  publishedAt?: string;
 };
 
 export type PlaybookImportMetadata = {

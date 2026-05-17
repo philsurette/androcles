@@ -78,6 +78,7 @@ function packFixture(): RecordingRequest {
       id: "androcles",
       title: "Androcles and the Lion"
     },
+    production: { source: "working" },
     role: {
       id: "CENTURION",
       displayName: "Centurion"

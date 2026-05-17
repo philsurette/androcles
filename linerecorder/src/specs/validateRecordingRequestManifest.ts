@@ -56,12 +56,21 @@ const manifestSchema = z.object({
     kind: z.enum(["full_role", "selected_segments", "rerecord"]),
     created_at: z.string().min(1),
     created_by: z.string().min(1),
+    production_version: z.string().optional(),
     notes: z.string().optional()
   }),
   play: z.object({
     id: z.string().min(1),
     title: z.string().min(1),
     version: z.string().optional()
+  }),
+  production: z.object({
+    source: z.enum(["published", "working"]),
+    version: z.string().optional(),
+    sequence: z.number().int().positive().optional(),
+    publication_id: z.string().min(1).optional(),
+    parent_version: z.string().optional(),
+    published_at: z.string().optional()
   }),
   role: z.object({
     id: z.string().min(1),
@@ -86,12 +95,21 @@ export function validateRecordingRequestManifest(value: unknown): RecordingReque
       kind: manifest.request.kind,
       createdAt: manifest.request.created_at,
       createdBy: manifest.request.created_by,
+      productionVersion: manifest.request.production_version,
       notes: manifest.request.notes
     },
     play: {
       id: manifest.play.id,
       title: manifest.play.title,
       version: manifest.play.version
+    },
+    production: {
+      source: manifest.production.source,
+      version: manifest.production.version,
+      sequence: manifest.production.sequence,
+      publicationId: manifest.production.publication_id,
+      parentVersion: manifest.production.parent_version,
+      publishedAt: manifest.production.published_at
     },
     role: {
       id: manifest.role.id,

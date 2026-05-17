@@ -2,6 +2,14 @@ export type PlaybookManifest = {
   schema_version: 1;
   format_version: string;
   package_type: "playbook";
+  production: {
+    source: "published" | "working";
+    version?: string;
+    sequence?: number;
+    publication_id?: string;
+    parent_version?: string;
+    published_at?: string;
+  };
   build: {
     buildId: string;
     buildTimestamp: string;

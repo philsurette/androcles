@@ -12,6 +12,7 @@ class RecordingRequestMetadata:
     created_at: str
     created_by: str = "stager"
     notes: str | None = None
+    production_version: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {
@@ -20,6 +21,8 @@ class RecordingRequestMetadata:
             "created_at": self.created_at,
             "created_by": self.created_by,
         }
+        if self.production_version is not None:
+            data["production_version"] = self.production_version
         if self.notes is not None:
             data["notes"] = self.notes
         return data
@@ -57,6 +60,30 @@ class RecordingRequestRole:
             "id": self.id,
             "display_name": self.display_name,
         }
+
+
+@dataclass
+class RecordingRequestProduction:
+    source: str
+    version: str | None = None
+    sequence: int | None = None
+    publication_id: str | None = None
+    parent_version: str | None = None
+    published_at: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        data: dict[str, Any] = {"source": self.source}
+        if self.version is not None:
+            data["version"] = self.version
+        if self.sequence is not None:
+            data["sequence"] = self.sequence
+        if self.publication_id is not None:
+            data["publication_id"] = self.publication_id
+        if self.parent_version is not None:
+            data["parent_version"] = self.parent_version
+        if self.published_at is not None:
+            data["published_at"] = self.published_at
+        return data
 
 
 @dataclass
@@ -170,6 +197,7 @@ class RecordingRequestManifest:
     role: RecordingRequestRole
     recording: RecordingPreferences
     items: list[RecordingRequestItem]
+    production: RecordingRequestProduction
     schema_version: int = 1
     format_version: str = "1.0.0"
     package_type: str = "recording_request"
@@ -181,6 +209,7 @@ class RecordingRequestManifest:
             "package_type": self.package_type,
             "request": self.request.to_dict(),
             "play": self.play.to_dict(),
+            "production": self.production.to_dict(),
             "role": self.role.to_dict(),
             "recording": self.recording.to_dict(),
             "items": [item.to_dict() for item in self.items],

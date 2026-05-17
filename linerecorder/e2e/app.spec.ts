@@ -77,6 +77,7 @@ async function writeRecordingRequestZip(path: string): Promise<void> {
           id: "androcles",
           title: "Androcles and the Lion"
         },
+        production: { source: "working" },
         role: {
           id: "CENTURION",
           display_name: "Centurion"

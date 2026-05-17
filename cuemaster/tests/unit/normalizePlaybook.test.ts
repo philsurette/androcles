@@ -8,6 +8,7 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       format_version: "1.0.0",
       package_type: "playbook",
+      production: { source: "working" },
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"
@@ -34,6 +35,7 @@ describe("normalizePlaybook", () => {
     const playbook = normalizePlaybook(manifest);
 
     expect(playbook.context[0].speaker).toBe("_NARRATOR");
+    expect(playbook.production.source).toBe("working");
     expect(playbook.sections[0].title).toBe("Prologue");
     expect(playbook.roles).toEqual([]);
   });
@@ -43,6 +45,7 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       format_version: "1.0.0",
       package_type: "playbook",
+      production: { source: "published", version: "1@k9f4p2x8m1qd", sequence: 1, publication_id: "k9f4p2x8m1qd" },
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"
@@ -129,6 +132,7 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       format_version: "1.0.0",
       package_type: "playbook",
+      production: { source: "published", version: "1@k9f4p2x8m1qd", sequence: 1, publication_id: "k9f4p2x8m1qd" },
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"

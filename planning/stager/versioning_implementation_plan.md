@@ -178,55 +178,65 @@ Goal: generated packages use semantic `format_version` and validate compatibilit
 
 Goal: Playbooks identify the published manuscript they came from.
 
-- [ ] Add root `production` metadata to Playbook manifest.
-  - `version`.
-  - `sequence`.
-  - `publication_id`.
-  - `parent_version`.
-  - `source`.
-  - `published_at` when source is published.
-- [ ] Ensure Playbook builds from `--production-source published` include published metadata.
-- [ ] Ensure Playbook builds from `--production-source working` are visibly marked as working-source builds.
-- [ ] Ensure Playbook builds do not mutate `production.md`.
-- [ ] Decide whether working-source Playbooks omit `production.version` or use a synthetic working suffix.
-- [ ] Update Cuemaster import model and storage schema for Playbook production metadata.
-- [ ] Show production version in Cuemaster import/details UI where useful.
-- [ ] Add Playbook builder tests for published metadata.
-- [ ] Add Playbook builder tests for working-source metadata.
-- [ ] Add Cuemaster import tests for production metadata persistence.
+- [x] Add root `production` metadata to Playbook manifest.
+  - [x] `version`.
+  - [x] `sequence`.
+  - [x] `publication_id`.
+  - [x] `parent_version`.
+  - [x] `source`.
+  - [x] `published_at` when source is published.
+- [x] Ensure Playbook builds from `--production-source published` include published metadata.
+- [x] Ensure Playbook builds from `--production-source working` are visibly marked as working-source builds.
+- [x] Ensure Playbook builds do not mutate `production.md`.
+- [x] Decide whether working-source Playbooks omit `production.version` or use a synthetic working suffix.
+  - Decision: use `source: "working"` and preserve the source `production.version` when present; do not invent a synthetic version.
+- [x] Update Cuemaster import model and storage schema for Playbook production metadata.
+- [x] Show production version in Cuemaster import/details UI where useful.
+- [x] Add Playbook builder tests for published metadata.
+- [x] Add Playbook builder tests for working-source metadata.
+- [x] Add Cuemaster import tests for production metadata persistence.
 
 ## Phase 7: Production Metadata In Recording Packages
 
 Goal: recording workflows preserve the manuscript version that created the request.
 
-- [ ] Add production-version metadata to Recording Request manifests.
-  - `request.production_version`.
-  - `play.version`.
-  - Optional structured `production` object if useful for consistency with Playbooks.
-- [ ] Include production version in Recording Request ids or filenames only if it improves traceability without making names unwieldy.
-- [ ] Ensure Recording Request builds do not mutate `production.md`.
-- [ ] Update LineRecorder import model and local storage to keep request production metadata.
-- [ ] Preserve request production metadata when exporting `role_recordings`.
-- [ ] Update Stager recording export package import to compare package production version to target published version.
-- [ ] Decide import policy for production-version mismatch.
-  - Recommended first behavior: warn/report mismatch, then rely on production ids plus content hashes for accept/reject decisions.
-- [ ] Add Stager tests for Recording Request production metadata.
-- [ ] Add LineRecorder tests for preserving metadata through import/export.
-- [ ] Add Stager import tests for matching and mismatched production versions.
+- [x] Add production-version metadata to Recording Request manifests.
+  - [x] `request.production_version`.
+  - [x] `play.version`.
+  - [x] Optional structured `production` object if useful for consistency with Playbooks.
+- [x] Include production version in Recording Request ids or filenames only if it improves traceability without making names unwieldy.
+  - Decision: do not add production versions to ids or filenames yet; keep traceability in manifest metadata.
+- [x] Ensure Recording Request builds do not mutate `production.md`.
+- [x] Update LineRecorder import model and local storage to keep request production metadata.
+- [x] Preserve request production metadata when exporting `role_recordings`.
+- [x] Update Stager recording export package import to compare package production version to target published version.
+- [x] Decide import policy for production-version mismatch.
+  - Decision: warn/report mismatch, then rely on production ids plus content hashes for accept/reject decisions.
+- [x] Add Stager tests for Recording Request production metadata.
+- [x] Add LineRecorder tests for preserving metadata through import/export.
+- [x] Add Stager import tests for matching and mismatched production versions.
 
 ## Phase 8: Repository Manuscript Migration
 
 Goal: local `production.md` files use the structured format; no legacy support remains.
 
-- [ ] Inventory `plays/*/production.md`.
-- [ ] For each manuscript with publication history, derive the current structured version from history.
-- [ ] For each manuscript without publication history, decide whether to leave version metadata absent or create an initial publication.
-- [ ] Rewrite old `production_version` values to `<sequence>@<publication-id>`.
-- [ ] Add `parent_production_version` where known.
-- [ ] Remove or reject any remaining `v0007`-style metadata.
-- [ ] Run parser tests against migrated manuscripts.
-- [ ] Run Stager publication tests.
-- [ ] Run package generation tests for at least one migrated play.
+- [x] Inventory `plays/*/production.md`.
+  - Tracked repository manuscripts: `plays/androcles/production.md`, `plays/solo-androcles/production.md`.
+  - Local untracked manuscript observed: `plays/fairies/production.md`.
+- [x] For each manuscript with publication history, derive the current structured version from history.
+  - No tracked manuscript has tracked publication history.
+- [x] For each manuscript without publication history, decide whether to leave version metadata absent or create an initial publication.
+  - Decision: leave tracked manuscripts intentionally unpublished until they are explicitly published.
+- [x] Rewrite old `production_version` values to `<sequence>@<publication-id>`.
+  - No tracked manuscript contains old `production_version` metadata.
+- [x] Add `parent_production_version` where known.
+  - No tracked manuscript has known parent publication metadata.
+- [x] Remove or reject any remaining `v0007`-style metadata.
+  - Verified tracked manuscripts have no legacy metadata; parser and CLI tests retain legacy strings only as rejection fixtures.
+- [x] Run parser tests against migrated manuscripts.
+  - Parsed `plays/androcles/production.md` and `plays/solo-androcles/production.md` successfully.
+- [x] Run Stager publication tests.
+- [x] Run package generation tests for at least one migrated play.
 
 ## Phase 9: Documentation And User-Facing Diagnostics
 
@@ -285,10 +295,10 @@ Goal: local `production.md` files use the structured format; no legacy support r
 - [x] Playbook and Recording Request builds do not create new production versions.
 - [x] Published version manifests store producer-authored change summaries.
 - [x] Working `production.md` contains only current-version metadata and optional concise `production_note`, not a growing change-history log.
-- [ ] Playbook manifests include `format_version`, `package_type`, and production metadata.
-- [ ] Recording Request manifests include `format_version`, `package_type`, and production metadata.
-- [ ] LineRecorder recording export packages include `format_version`, `package_type`, and preserved production metadata.
+- [x] Playbook manifests include `format_version`, `package_type`, and production metadata.
+- [x] Recording Request manifests include `format_version`, `package_type`, and production metadata.
+- [x] LineRecorder recording export packages include `format_version`, `package_type`, and preserved production metadata.
 - [x] Cuemaster rejects newer major Playbook format versions and warns on newer minor versions.
 - [x] LineRecorder rejects newer major Recording Request format versions and warns on newer minor versions.
 - [x] Stager rejects newer major LineRecorder recording export package versions and warns on newer minor versions.
-- [ ] Existing repository `production.md` files are migrated or intentionally left unpublished with no legacy version metadata.
+- [x] Existing repository `production.md` files are migrated or intentionally left unpublished with no legacy version metadata.

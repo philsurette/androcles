@@ -17,6 +17,7 @@ from stager.domain.block import RoleBlock
 from stager.domain.play import Play
 from stager.domain.segment import SimultaneousSegment, SpeechSegment
 from stager.playbook.app_line import AppLine
+from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.shared.package_format_version import FormatVersionDecision, PackageFormatVersion
 from stager.shared import paths
 
@@ -273,6 +274,7 @@ class RoleRecordingsImporter:
         if manifest.get("package_type") != "role_recordings":
             raise RuntimeError(f"Expected role_recordings package: {paths.display_path(package_path)}")
         self._validate_format_version(manifest, package_path)
+        self._warn_on_production_version_mismatch(manifest, package_path)
         if manifest.get("play", {}).get("id") != self.paths.play_name:
             raise RuntimeError(
                 f"Package play id {manifest.get('play', {}).get('id')!r} does not match selected play {self.paths.play_name!r}"
@@ -309,6 +311,19 @@ class RoleRecordingsImporter:
                 supported,
                 paths.display_path(package_path),
             )
+
+    def _warn_on_production_version_mismatch(self, manifest: dict, package_path: Path) -> None:
+        package_version = manifest.get("production", {}).get("version")
+        current = ProductionVersionStore(self.paths).current()
+        current_version = str(current.production_version) if current is not None else None
+        if package_version is None or current_version is None or package_version == current_version:
+            return
+        logger.warning(
+            "Role recordings package %s was created from production version %s, but current published production is %s",
+            paths.display_path(package_path),
+            package_version,
+            current_version,
+        )
 
     def _validate_recording(self, recording: dict, role: str, package_path: Path) -> None:
         self._validate_production_id(recording.get("id"), "id", package_path)

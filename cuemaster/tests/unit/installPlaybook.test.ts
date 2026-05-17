@@ -28,7 +28,11 @@ describe("installPlaybook", () => {
       importedAt: Date.parse("2026-05-11T14:00:00Z")
     });
     await expect(playbookRepository.get("androcles-minimal")).resolves.toMatchObject({
-      importMetadata: playbook.importMetadata
+      importMetadata: playbook.importMetadata,
+      production: {
+        source: "published",
+        version: "1@k9f4p2x8m1qd"
+      }
     });
   });
 

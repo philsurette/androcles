@@ -86,6 +86,14 @@ export async function exportRoleRecordings(
       title: project.request.play.title,
       version: project.request.play.version
     },
+    production: {
+      source: project.request.production.source,
+      version: project.request.production.version,
+      sequence: project.request.production.sequence,
+      publication_id: project.request.production.publicationId,
+      parent_version: project.request.production.parentVersion,
+      published_at: project.request.production.publishedAt
+    },
     role: {
       id: project.request.role.id,
       display_name: project.request.role.displayName

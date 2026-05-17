@@ -22,7 +22,17 @@ export type RecordingRequestMetadata = {
   kind: "full_role" | "selected_segments" | "rerecord";
   createdAt: string;
   createdBy: string;
+  productionVersion?: string;
   notes?: string;
+};
+
+export type ProductionMetadata = {
+  source: "published" | "working";
+  version?: string;
+  sequence?: number;
+  publicationId?: string;
+  parentVersion?: string;
+  publishedAt?: string;
 };
 
 export type RecordingRequest = {
@@ -30,6 +40,7 @@ export type RecordingRequest = {
   packageType: "recording_request";
   request: RecordingRequestMetadata;
   play: RecordingRequestPlay;
+  production: ProductionMetadata;
   role: RecordingRequestRole;
   recording: RecordingPreferences;
   items: RecordingItem[];

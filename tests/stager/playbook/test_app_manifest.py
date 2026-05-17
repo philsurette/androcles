@@ -17,6 +17,7 @@ from stager.playbook.app_line import AppLine
 from stager.playbook.app_manifest import AppManifest
 from stager.playbook.app_manifest import AppManifestBuild
 from stager.playbook.app_play import AppPlay
+from stager.playbook.app_production import AppProduction
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
 from stager.playbook.app_response_segment import AppResponseSegment
@@ -88,6 +89,14 @@ def test_manifest_serializes_schema_one_shape() -> None:
             buildId="build-123",
             buildTimestamp="2026-05-10T14:00:00Z",
         ),
+        production=AppProduction(
+            source="published",
+            version="7@k9f4p2x8m1qd",
+            sequence=7,
+            publication_id="k9f4p2x8m1qd",
+            parent_version="6@z8n3d5q1w6te",
+            published_at="2026-05-10T13:00:00Z",
+        ),
         reading=AppReading(type="solo", build_type="custom"),
         sections=[
             AppSection(
@@ -128,6 +137,14 @@ def test_manifest_serializes_schema_one_shape() -> None:
     assert data["schema_version"] == 1
     assert data["format_version"] == "1.0.0"
     assert data["package_type"] == "playbook"
+    assert data["production"] == {
+        "source": "published",
+        "version": "7@k9f4p2x8m1qd",
+        "sequence": 7,
+        "publication_id": "k9f4p2x8m1qd",
+        "parent_version": "6@z8n3d5q1w6te",
+        "published_at": "2026-05-10T13:00:00Z",
+    }
     assert data["play"]["id"] == "androcles"
     assert data["reading"] == {"type": "solo", "build_type": "custom"}
     assert data["sections"][0] == {

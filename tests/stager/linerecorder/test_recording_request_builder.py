@@ -12,6 +12,8 @@ from stager.domain.play import Play, ReadingMetadata, SourceTextMetadata
 from stager.domain.segment import BlockingSegment, DescriptionSegment, DirectionSegment, MetaSegment, SimultaneousSegment, SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
+from stager.production_publication.production_publisher import ProductionPublisher
+from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
 
@@ -23,6 +25,14 @@ def _cfg(tmp_path: Path) -> paths.PathConfig:
         plays_dir=tmp_path / "plays",
         snippets_dir=tmp_path / "snippets",
     )
+
+
+class _PublicationIds:
+    def __init__(self, *ids: str) -> None:
+        self.ids = list(ids)
+
+    def generate(self) -> str:
+        return self.ids.pop(0)
 
 
 def _title_block() -> TitleBlock:
@@ -196,6 +206,7 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
     assert data["play"]["title"] == "Androcles and the Lion"
     assert data["play"]["buildId"] == "build-123"
     assert data["play"]["buildTimestamp"] == "2026-05-10T14:00:00Z"
+    assert data["production"] == {"source": "working"}
     assert data["role"] == {
         "id": "MEGAERA",
         "display_name": "MEGAERA",
@@ -449,3 +460,49 @@ I-2 MEGAERA: I won't go another step.
     assert item["line_content_hash"].startswith("sha256:")
     assert item["segment_content_hash"].startswith("sha256:")
     assert "production_id" not in json.dumps(data)
+
+
+def test_recording_request_manifest_includes_published_production_metadata(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_lockable_production(cfg)
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("k9f4p2x8m1qd"),
+        published_at_provider=lambda: "2026-05-10T13:00:00Z",
+    ).publish(change_summary="Initial publish.")
+    published_path = ProductionVersionStore(cfg).current_production_path()
+    assert published_path is not None
+    cfg.production_markdown = published_path
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    assert data["request"]["production_version"] == "1@k9f4p2x8m1qd"
+    assert data["play"]["version"] == "1@k9f4p2x8m1qd"
+    assert data["production"] == {
+        "source": "published",
+        "version": "1@k9f4p2x8m1qd",
+        "sequence": 1,
+        "publication_id": "k9f4p2x8m1qd",
+        "published_at": "2026-05-10T13:00:00Z",
+    }
+
+
+def _write_lockable_production(cfg: paths.PathConfig) -> None:
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+I-2 MEGAERA: I won't go another step.
+""",
+        encoding="utf-8",
+    )

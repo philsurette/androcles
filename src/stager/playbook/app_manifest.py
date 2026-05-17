@@ -7,6 +7,7 @@ from typing import Any
 from stager.playbook.app_audio_asset import AppAudioAsset
 from stager.playbook.app_context_block import AppContextBlock
 from stager.playbook.app_play import AppPlay
+from stager.playbook.app_production import AppProduction
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_role import AppRole
 from stager.playbook.app_section import AppSection
@@ -29,6 +30,7 @@ class AppManifest:
     play: AppPlay
     reading: AppReading
     build: AppManifestBuild
+    production: AppProduction
     roles: list[AppRole] = field(default_factory=list)
     context: list[AppContextBlock] = field(default_factory=list)
     sections: list[AppSection] = field(default_factory=list)
@@ -42,6 +44,7 @@ class AppManifest:
             "schema_version": self.schema_version,
             "format_version": self.format_version,
             "package_type": self.package_type,
+            "production": self.production.to_dict(),
             "play": self.play.to_dict(),
             "reading": self.reading.to_dict(),
             "build": self.build.to_dict(),

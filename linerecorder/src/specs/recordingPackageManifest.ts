@@ -7,6 +7,7 @@ export type RecordingRequestManifest = {
     kind: "full_role" | "selected_segments" | "rerecord";
     created_at: string;
     created_by: string;
+    production_version?: string;
     notes?: string;
   };
   play: {
@@ -14,6 +15,7 @@ export type RecordingRequestManifest = {
     title: string;
     version?: string;
   };
+  production: ProductionManifestMetadata;
   role: {
     id: string;
     display_name: string;
@@ -63,6 +65,15 @@ export type RecordingRequestItemManifest = {
   simultaneous?: boolean;
 };
 
+export type ProductionManifestMetadata = {
+  source: "published" | "working";
+  version?: string;
+  sequence?: number;
+  publication_id?: string;
+  parent_version?: string;
+  published_at?: string;
+};
+
 export type RoleRecordingsManifest = {
   schema_version: 1;
   format_version: string;
@@ -73,6 +84,7 @@ export type RoleRecordingsManifest = {
     title: string;
     version?: string;
   };
+  production?: ProductionManifestMetadata;
   role: {
     id: string;
     display_name: string;

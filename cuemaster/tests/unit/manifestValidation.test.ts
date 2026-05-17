@@ -9,6 +9,13 @@ describe("validatePlaybookManifest", () => {
 
     expect(manifest.format_version).toBe("1.0.0");
     expect(manifest.package_type).toBe("playbook");
+    expect(manifest.production).toEqual({
+      source: "published",
+      version: "1@k9f4p2x8m1qd",
+      sequence: 1,
+      publication_id: "k9f4p2x8m1qd",
+      published_at: "2026-05-10T13:00:00Z"
+    });
     expect(manifest.context[0].speaker).toBe("_NARRATOR");
     expect(manifest.roles.map((role) => role.id)).toEqual(["ANDROCLES", "MEGAERA"]);
   });

@@ -14,6 +14,14 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
     title: manifest.play.title,
     audioAssetPaths: manifest.assets.map((asset) => asset.path),
     build: manifest.build,
+    production: {
+      source: manifest.production.source,
+      version: manifest.production.version,
+      sequence: manifest.production.sequence,
+      publicationId: manifest.production.publication_id,
+      parentVersion: manifest.production.parent_version,
+      publishedAt: manifest.production.published_at
+    },
     authors: manifest.play.authors,
     source: manifest.play.source,
     schemaVersion: manifest.schema_version,

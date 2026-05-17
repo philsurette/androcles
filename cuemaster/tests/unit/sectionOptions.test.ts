@@ -29,6 +29,7 @@ function playbook(): Playbook {
     id: "androcles",
     title: "Androcles and the Lion",
     authors: ["George Bernard Shaw"],
+    production: { source: "working" },
     schemaVersion: 1,
     sections: [
       { id: "part-0", partId: 0, blockId: "0.0", title: "PROLOGUE", ordinal: 0 },

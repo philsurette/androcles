@@ -16,6 +16,8 @@ from stager.domain.segment_id import SegmentId
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.playbook_audio_packager import PackagedAudio
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.production_publication.production_publisher import ProductionPublisher
+from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
 
@@ -47,6 +49,14 @@ def _named_cfg(tmp_path: Path, play_name: str) -> paths.PathConfig:
         plays_dir=tmp_path / "plays",
         snippets_dir=tmp_path / "snippets",
     )
+
+
+class _PublicationIds:
+    def __init__(self, *ids: str) -> None:
+        self.ids = list(ids)
+
+    def generate(self) -> str:
+        return self.ids.pop(0)
 
 
 def _title_block() -> TitleBlock:
@@ -544,6 +554,56 @@ I-2 MEGAERA: (_suddenly_) I won't go another step.
     assert "production_id" not in json.dumps(data)
 
 
+def test_playbook_manifest_includes_published_production_metadata(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_lockable_production(cfg)
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("k9f4p2x8m1qd"),
+        published_at_provider=lambda: "2026-05-10T13:00:00Z",
+    ).publish(change_summary="Initial publish.")
+    published_path = ProductionVersionStore(cfg).current_production_path()
+    assert published_path is not None
+    cfg.production_markdown = published_path
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_production_playbook_audio(cfg)
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert data["production"] == {
+        "source": "published",
+        "version": "1@k9f4p2x8m1qd",
+        "sequence": 1,
+        "publication_id": "k9f4p2x8m1qd",
+        "published_at": "2026-05-10T13:00:00Z",
+    }
+
+
+def test_playbook_manifest_marks_working_source_production_metadata(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_lockable_production(cfg)
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("k9f4p2x8m1qd"),
+        published_at_provider=lambda: "2026-05-10T13:00:00Z",
+    ).publish(change_summary="Initial publish.")
+    before = cfg.production_markdown.read_text(encoding="utf-8")
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_production_playbook_audio(cfg)
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert data["production"] == {
+        "source": "working",
+        "version": "1@k9f4p2x8m1qd",
+        "sequence": 1,
+        "publication_id": "k9f4p2x8m1qd",
+    }
+    assert cfg.production_markdown.read_text(encoding="utf-8") == before
+
+
 def test_playbook_manifest_exports_blocking_without_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -584,3 +644,24 @@ I-1 ANDROCLES: Hello (_/MEGAERA: crosses behind ANDROCLES_) there.
     assert blocking_context["placement"] == "after"
     assert blocking_context["text"] == "Moves upstage."
     assert "audio" not in blocking_context
+
+
+def _write_lockable_production(cfg: paths.PathConfig) -> None:
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+I-2 MEGAERA: I won't go another step.
+""",
+        encoding="utf-8",
+    )
+
+
+def _write_production_playbook_audio(cfg: paths.PathConfig) -> None:
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "1_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "1_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "1_2_1.wav")

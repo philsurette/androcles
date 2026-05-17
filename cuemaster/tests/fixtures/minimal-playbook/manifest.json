@@ -2,6 +2,13 @@
   "schema_version": 1,
   "format_version": "1.0.0",
   "package_type": "playbook",
+  "production": {
+    "source": "published",
+    "version": "1@k9f4p2x8m1qd",
+    "sequence": 1,
+    "publication_id": "k9f4p2x8m1qd",
+    "published_at": "2026-05-10T13:00:00Z"
+  },
   "build": {
     "buildId": "ffdeeb60-7927-413d-94c4-71de01119e3a",
     "buildTimestamp": "2026-05-14T10:00:00Z"

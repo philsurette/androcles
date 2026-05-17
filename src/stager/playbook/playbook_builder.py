@@ -22,6 +22,7 @@ from stager.playbook.app_direction import AppDirection
 from stager.playbook.app_line import AppLine
 from stager.playbook.app_manifest import AppManifest, AppManifestBuild
 from stager.playbook.app_play import AppPlay
+from stager.playbook.app_production import AppProduction
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_response import AppResponse
 from stager.playbook.app_response_segment import AppResponseSegment
@@ -33,6 +34,9 @@ from stager.playbook.playbook_audio_work_item import PlaybookAudioWorkItem
 from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
+from stager.production_publication.production_version import ProductionVersion
+from stager.production_publication.production_version_store import ProductionVersionStore
+from stager.scriptwright.production_script_parser import ProductionScriptParser
 from stager.shared import paths
 
 
@@ -96,6 +100,7 @@ class PlaybookBuilder:
             play=AppPlay.from_play(self.play_id or self.paths.play_name, self.play),
             reading=AppReading.from_play(self.play, build_type=self.build_type),
             build=self._build_metadata(),
+            production=self._production_metadata(),
             sections=self._build_sections(),
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
@@ -104,6 +109,42 @@ class PlaybookBuilder:
 
     def _build_metadata(self) -> AppManifestBuild:
         return AppManifestBuild(buildId=self._manifest_build_id(), buildTimestamp=self._manifest_build_timestamp())
+
+    def _production_metadata(self) -> AppProduction:
+        source_path = self.paths.production_markdown
+        source = self._production_source(source_path)
+        if not source_path.exists():
+            return AppProduction(source=source)
+
+        metadata = ProductionScriptParser(source_path).parse_path().metadata
+        production_version = self._parse_production_version(metadata.get("production_version"))
+        parent_version = metadata.get("parent_production_version")
+        normalized_parent = None if parent_version in (None, "none") else parent_version
+        published_at = self._published_at(production_version, source)
+        return AppProduction(
+            source=source,
+            version=str(production_version) if production_version is not None else None,
+            sequence=production_version.sequence if production_version is not None else None,
+            publication_id=production_version.publication_id if production_version is not None else None,
+            parent_version=normalized_parent,
+            published_at=published_at,
+        )
+
+    def _production_source(self, source_path: Path) -> str:
+        current_path = ProductionVersionStore(self.paths).current_production_path()
+        if current_path is not None and source_path.resolve() == current_path.resolve():
+            return "published"
+        return "working"
+
+    def _parse_production_version(self, value: str | None) -> ProductionVersion | None:
+        if value is None:
+            return None
+        return ProductionVersion.parse(value)
+
+    def _published_at(self, production_version: ProductionVersion | None, source: str) -> str | None:
+        if production_version is None or source != "published":
+            return None
+        return ProductionVersionStore(self.paths).load_version(str(production_version)).published_at
 
     def _manifest_build_id(self) -> str:
         return self.build_id or uuid4().hex

@@ -35,6 +35,7 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
     title: playbook.title,
     authors: playbook.authors,
     build: playbook.build,
+    production: playbook.production,
     sections: playbook.sections,
     context: playbook.context,
     roles: playbook.roles,
@@ -98,6 +99,20 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
             <dt>Build timestamp</dt>
             <dd>{formatLocalBuildTime(playbook.build?.buildTimestamp)}</dd>
           </div>
+          <div>
+            <dt>Production source</dt>
+            <dd>{playbook.production.source}</dd>
+          </div>
+          <div>
+            <dt>Production version</dt>
+            <dd>{playbook.production.version ?? "Unpublished"}</dd>
+          </div>
+          {playbook.production.publishedAt ? (
+            <div>
+              <dt>Production published</dt>
+              <dd>{formatLocalBuildTime(playbook.production.publishedAt)}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Sections</dt>
             <dd>{playbook.sections.length}</dd>

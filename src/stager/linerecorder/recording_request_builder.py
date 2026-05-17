@@ -18,10 +18,14 @@ from stager.linerecorder.recording_request_manifest import (
     RecordingRequestMetadata,
     RecordingRequestBlocking,
     RecordingRequestPlay,
+    RecordingRequestProduction,
     RecordingRequestRole,
 )
 from stager.playbook.app_line import AppLine
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
+from stager.production_publication.production_version import ProductionVersion
+from stager.production_publication.production_version_store import ProductionVersionStore
+from stager.scriptwright.production_script_parser import ProductionScriptParser
 from stager.shared import paths
 
 
@@ -74,19 +78,23 @@ class RecordingRequestBuilder:
             raise ValueError(f"Unknown rehearsable role: {self.role}")
 
         created_at = self.created_at or self._now()
+        production = self._production_metadata()
         return RecordingRequestManifest(
             request=RecordingRequestMetadata(
                 id=self.request_id or self._default_request_id(created_at),
                 kind=self.request_kind,
                 created_at=created_at,
                 notes=self.notes,
+                production_version=production.version,
             ),
             play=RecordingRequestPlay(
                 id=self.play_id or self.paths.play_name,
                 title=self.play.title,
+                version=production.version,
                 buildId=self.build_id,
                 buildTimestamp=self.build_timestamp,
             ),
+            production=production,
             role=RecordingRequestRole(
                 id=role.name,
                 display_name=role.name,
@@ -94,6 +102,41 @@ class RecordingRequestBuilder:
             recording=RecordingPreferences(),
             items=self._build_items(),
         )
+
+    def _production_metadata(self) -> RecordingRequestProduction:
+        source_path = self.paths.production_markdown
+        source = self._production_source(source_path)
+        if not source_path.exists():
+            return RecordingRequestProduction(source=source)
+        metadata = ProductionScriptParser(source_path).parse_path().metadata
+        production_version = self._parse_production_version(metadata.get("production_version"))
+        parent_version = metadata.get("parent_production_version")
+        normalized_parent = None if parent_version in (None, "none") else parent_version
+        published_at = self._published_at(production_version, source)
+        return RecordingRequestProduction(
+            source=source,
+            version=str(production_version) if production_version is not None else None,
+            sequence=production_version.sequence if production_version is not None else None,
+            publication_id=production_version.publication_id if production_version is not None else None,
+            parent_version=normalized_parent,
+            published_at=published_at,
+        )
+
+    def _production_source(self, source_path: Path) -> str:
+        current_path = ProductionVersionStore(self.paths).current_production_path()
+        if current_path is not None and source_path.resolve() == current_path.resolve():
+            return "published"
+        return "working"
+
+    def _parse_production_version(self, value: str | None) -> ProductionVersion | None:
+        if value is None:
+            return None
+        return ProductionVersion.parse(value)
+
+    def _published_at(self, production_version: ProductionVersion | None, source: str) -> str | None:
+        if production_version is None or source != "published":
+            return None
+        return ProductionVersionStore(self.paths).load_version(str(production_version)).published_at
 
     def _build_items(self) -> list[RecordingRequestItem]:
         items: list[RecordingRequestItem] = []

@@ -15,6 +15,7 @@ from stager.domain.segment import SpeechSegment
 from stager.domain.segment_id import SegmentId
 from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.production_publication.production_publisher import ProductionPublisher
 from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths
 
@@ -26,6 +27,14 @@ def _cfg(tmp_path: Path) -> paths.PathConfig:
         plays_dir=tmp_path / "plays",
         snippets_dir=tmp_path / "snippets",
     )
+
+
+class _PublicationIds:
+    def __init__(self, *ids: str) -> None:
+        self.ids = list(ids)
+
+    def generate(self) -> str:
+        return self.ids.pop(0)
 
 
 def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path) -> None:
@@ -107,6 +116,27 @@ def test_role_recordings_importer_rejects_newer_major_format_version(tmp_path: P
 
     with pytest.raises(RuntimeError, match="Unsupported role_recordings format version 2.0.0"):
         RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+
+def test_role_recordings_importer_warns_on_production_version_mismatch(tmp_path: Path, caplog) -> None:
+    cfg = _cfg(tmp_path)
+    _write_current_production(cfg)
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("k9f4p2x8m1qd"),
+        published_at_provider=lambda: "2026-05-10T13:00:00Z",
+    ).publish(change_summary="Initial publish.")
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest=_role_recordings_manifest(format_version="1.0.0", production_version="2@z8n3d5q1w6te"),
+        files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes()},
+    )
+
+    RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+    assert "was created from production version 2@z8n3d5q1w6te" in caplog.text
+    assert "current published production is 1@k9f4p2x8m1qd" in caplog.text
 
 
 def test_role_recordings_importer_records_existing_segment_before_overwrite(tmp_path: Path) -> None:
@@ -773,8 +803,8 @@ def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes
             archive.writestr(name, data)
 
 
-def _role_recordings_manifest(*, format_version: str) -> dict:
-    return {
+def _role_recordings_manifest(*, format_version: str, production_version: str | None = None) -> dict:
+    manifest = {
         "schema_version": 1,
         "format_version": format_version,
         "package_type": "role_recordings",
@@ -797,6 +827,28 @@ def _role_recordings_manifest(*, format_version: str) -> dict:
         ],
         "missing_segment_ids": [],
     }
+    if production_version is not None:
+        manifest["production"] = {
+            "source": "published",
+            "version": production_version,
+            "sequence": int(production_version.split("@", 1)[0]),
+            "publication_id": production_version.split("@", 1)[1],
+        }
+    return manifest
+
+
+def _write_current_production(cfg: paths.PathConfig) -> None:
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-12 CENTURION: Halt!
+""",
+        encoding="utf-8",
+    )
 
 
 class FakeAudioProcessor:

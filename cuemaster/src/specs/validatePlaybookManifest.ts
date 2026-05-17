@@ -95,6 +95,14 @@ const manifestSchema = z.object({
   schema_version: z.literal(1),
   format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
   package_type: z.literal("playbook"),
+  production: z.object({
+    source: z.enum(["published", "working"]),
+    version: z.string().optional(),
+    sequence: z.number().int().positive().optional(),
+    publication_id: z.string().min(1).optional(),
+    parent_version: z.string().optional(),
+    published_at: z.string().optional()
+  }),
   build: z.object({
     buildId: z.string().min(1),
     buildTimestamp: z.string().min(1),

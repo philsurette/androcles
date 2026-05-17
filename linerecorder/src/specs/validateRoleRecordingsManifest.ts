@@ -47,6 +47,15 @@ const floorNoiseRecordingSchema = z.object({
   mode: z.string().min(1)
 });
 
+const productionSchema = z.object({
+  source: z.enum(["published", "working"]),
+  version: z.string().optional(),
+  sequence: z.number().int().positive().optional(),
+  publication_id: z.string().min(1).optional(),
+  parent_version: z.string().optional(),
+  published_at: z.string().optional()
+});
+
 const roleRecordingsSchema = z.object({
   schema_version: z.literal(1),
   format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
@@ -57,6 +66,7 @@ const roleRecordingsSchema = z.object({
     title: z.string().min(1),
     version: z.string().optional()
   }),
+  production: productionSchema.optional(),
   role: z.object({
     id: z.string().min(1),
     display_name: z.string().min(1)

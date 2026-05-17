@@ -47,6 +47,7 @@ function playbookFixture(): Playbook {
     id: "androcles",
     title: "Androcles",
     authors: [],
+    production: { source: "working" },
     schemaVersion: 1,
     sections: [],
     context: [
