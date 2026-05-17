@@ -74,6 +74,7 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [x] Move timing formatting helpers from `RehearsalScreen.tsx` to a tested module.
   - Candidate module: `cuemaster/src/rehearsal/timingPresentation.ts`.
 - [ ] Keep `RehearsalScreen.tsx` as a composition layer only after extraction.
+  - Progress: moved options rendering to `cuemaster/src/ui/components/RehearsalOptionsPanel.tsx` and bottom controls/status rendering to `cuemaster/src/ui/components/RehearsalBottomBar.tsx`.
 
 ## Phase 3: Cuemaster Play Page
 

@@ -5,7 +5,7 @@ import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { QueueItem } from "../../rehearsal/audioQueue";
-import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
+import { cueWindowPresetForId } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
@@ -19,31 +19,14 @@ import {
 import { deliveryLabel } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs, endOfLineSilenceMs, defaultTempoTimingConfig } from "../../rehearsal/tempoTimingConfig";
 import {
-  absolutePickupForgivenessOptionsMs,
-  absoluteTempoForgivenessOptionsMs,
   clampPlaybackRate,
-  deliveryPillForLabel,
-  formatAbsoluteTempoForgiveness,
-  formatDeliveryTimingDetails,
-  formatDurationMs,
-  formatPickupTimingDetails,
-  formatTempoEndOfLineSilence,
-  formatTempoTolerancePercent,
   formatTimingAttempt,
-  formatTimingOption,
   normalizeAbsolutePickupForgivenessMs,
   normalizeAbsoluteTempoForgivenessMs,
   normalizePracticeTargetPaceMultiplier,
   normalizeRehearsalTextSize,
   normalizeTempoEndOfLineSilenceMs,
   normalizeTempoTolerancePercent,
-  pickupPillForLabel,
-  playbackRates,
-  practicePaceMultiplierOptions,
-  practiceTimingOptionsMs,
-  rehearsalTextSizeOptions,
-  tempoEndOfLineSilenceOptionsMs,
-  tempoToleranceOptionsPercent,
   type RehearsalTextSize,
   type TimingLabel,
   type TimingStatusPill
@@ -53,7 +36,8 @@ import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { CueCard } from "../components/CueCard";
 import { LineCard, type BlockingScope } from "../components/LineCard";
-import { PracticeSelect } from "../components/PracticeSelect";
+import { RehearsalBottomBar } from "../components/RehearsalBottomBar";
+import { RehearsalOptionsPanel } from "../components/RehearsalOptionsPanel";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
@@ -1229,214 +1213,6 @@ export function RehearsalScreen({
     setIsOptionsPageVisible(false);
   }
 
-  const practiceOptionsPanel = (
-      <div className="practice-options-page">
-      <div className="practice-options-panel">
-        <div className="practice-options-inline-row">
-          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
-            Cue length
-            <PracticeSelect
-              label="Cue length"
-              value={cueWindowPresetId}
-              options={cueWindowPresets.map((preset) => ({ value: preset.id, label: preset.label }))}
-              onSelect={changeCueWindowPreset}
-            />
-          </label>
-          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
-            Blocking scope
-            <PracticeSelect
-              label="Blocking scope"
-              value={blockingScope}
-              options={[
-                { value: "role", label: "My role" },
-                { value: "all", label: "All roles" }
-              ]}
-              onSelect={(next) => changeBlockingScope(next as BlockingScope)}
-            />
-          </label>
-          <label className="timing-setting timing-setting-inline timing-setting-inline-wide">
-            Text size
-            <PracticeSelect
-              label="Text size"
-              value={rehearsalTextSize}
-              options={rehearsalTextSizeOptions.map((option) => ({
-                value: option,
-                label: option
-              }))}
-              onSelect={(next) => changeRehearsalTextSize(next as RehearsalTextSize)}
-            />
-          </label>
-        </div>
-        <details className="timing-options timing-options-collapsible">
-          <summary className="timing-options-summary">Tempo</summary>
-          <div className="timing-options-controls">
-            <div className="timing-targets-row">
-              <div className="timing-targets-controls">
-                <label className="timing-setting">
-                  Speakalong
-                  <PracticeSelect
-                    label="Speakalong"
-                    value={String(playbackRate)}
-                    options={playbackRates.map((rate) => ({ value: String(rate), label: `${rate.toFixed(1)}x` }))}
-                    onSelect={(next) => changePlaybackRate(Number(next))}
-                  />
-                </label>
-                <label className="timing-setting">
-                  Target adj.
-                  <PracticeSelect
-                    label="Target adj."
-                    value={String(practiceTargetPaceMultiplier)}
-                    options={practicePaceMultiplierOptions.map((optionMultiplier) => ({
-                      value: String(optionMultiplier),
-                      label: `${optionMultiplier.toFixed(1)}x`
-                    }))}
-                    onSelect={(next) => changePracticeTargetPaceMultiplier(Number(next))}
-                    disabled={syncSpeakAlongSpeed}
-                  />
-                </label>
-              </div>
-              <button
-                type="button"
-                className={`timing-sync-toggle ${syncSpeakAlongSpeed ? "linked" : ""}`}
-                aria-label={syncSpeakAlongSpeed ? "Disable speed control sync." : "Keep speed controls in sync."}
-                aria-pressed={syncSpeakAlongSpeed}
-                title={syncSpeakAlongSpeed ? "Unlock speed controls" : "Lock speed controls"}
-                onClick={() => changeSyncSpeakAlongSpeed(!syncSpeakAlongSpeed)}
-              >
-                <span aria-hidden="true">{syncSpeakAlongSpeed ? "🔒" : "🔓"}</span>
-              </button>
-            </div>
-            <label className="timing-setting">
-              Forgiveness(abs)
-              <PracticeSelect
-                label="Forgiveness(abs)"
-                value={String(absoluteTempoForgivenessMs)}
-                options={absoluteTempoForgivenessOptionsMs.map((optionMs) => ({
-                  value: String(optionMs),
-                  label: formatAbsoluteTempoForgiveness(optionMs)
-                }))}
-                onSelect={(next) => changeAbsoluteTempoForgiveness(Number(next))}
-              />
-            </label>
-            <label className="timing-setting">
-              Forgiveness(%)
-              <PracticeSelect
-                label="Forgiveness(%)"
-                value={String(tempoTolerancePercent)}
-                options={tempoToleranceOptionsPercent.map((optionPercent) => ({
-                  value: String(optionPercent),
-                  label: formatTempoTolerancePercent(optionPercent)
-                }))}
-                onSelect={(next) => changeTempoTolerancePercent(Number(next))}
-              />
-            </label>
-          </div>
-        </details>
-        <details className="timing-options timing-options-collapsible">
-          <summary className="timing-options-summary">Cue Pickup</summary>
-          <div className="timing-options-controls">
-            <div className="timing-targets-row">
-              <div className="timing-targets-controls">
-                <label className="timing-setting">
-                  Speaking pause
-                  <PracticeSelect
-                    label="Speaking pause"
-                    value={String(speakAlongPauseMs)}
-                    options={practiceTimingOptionsMs.map((optionMs) => ({
-                      value: String(optionMs),
-                      label: formatTimingOption(optionMs)
-                    }))}
-                    onSelect={(next) => changeSpeakAlongPauseMs(Number(next))}
-                  />
-                </label>
-                <label className="timing-setting">
-                  Pickup target
-                  <PracticeSelect
-                    label="Pickup target"
-                    value={String(tempoTargetHesitationMs)}
-                    options={practiceTimingOptionsMs.map((optionMs) => ({
-                      value: String(optionMs),
-                      label: formatTimingOption(optionMs)
-                    }))}
-                    onSelect={(next) => changeTempoTargetHesitationMs(Number(next))}
-                    disabled={syncPracticeTiming}
-                  />
-                </label>
-              </div>
-              <button
-                type="button"
-                className={`timing-sync-toggle ${syncPracticeTiming ? "linked" : ""}`}
-                aria-label={syncPracticeTiming ? "Disable sync for timing targets." : "Keep timing targets in sync."}
-                aria-pressed={syncPracticeTiming}
-                title={syncPracticeTiming ? "Unlock timing targets" : "Lock timing targets"}
-                onClick={() => changeSyncPracticeTiming(!syncPracticeTiming)}
-              >
-                <span aria-hidden="true">{syncPracticeTiming ? "🔒" : "🔓"}</span>
-              </button>
-            </div>
-            <label className="timing-setting">
-              Forgiveness
-              <PracticeSelect
-                label="Forgiveness"
-                value={String(absolutePickupForgivenessMs)}
-                options={absolutePickupForgivenessOptionsMs.map((optionMs) => ({
-                  value: String(optionMs),
-                  label: formatAbsoluteTempoForgiveness(optionMs)
-                }))}
-                onSelect={(next) => changeAbsolutePickupForgiveness(Number(next))}
-              />
-            </label>
-            <label className="timing-setting">
-              Line silence
-              <PracticeSelect
-                label="Line silence"
-                value={String(tempoEndOfLineSilenceMs)}
-                options={tempoEndOfLineSilenceOptionsMs.map((optionMs) => ({
-                  value: String(optionMs),
-                  label: formatTempoEndOfLineSilence(optionMs)
-                }))}
-                onSelect={(next) => changeTempoEndOfLineSilenceMs(Number(next))}
-              />
-            </label>
-            </div>
-          </details>
-          <details className="timing-options timing-options-collapsible">
-            <summary className="timing-options-summary">Autoadvance</summary>
-            <div className="timing-options-controls">
-              <label className="timing-setting timing-setting-2x">
-                Advance
-                <PracticeSelect
-                  label="Advance"
-                  value={autoAdvanceMode}
-                  options={[
-                    { value: "disabled", label: "Disabled" },
-                    { value: "always", label: "Always" },
-                    { value: "on-target", label: "When on target" },
-                    { value: "when-not-slow", label: "When not slow" }
-                  ]}
-                  onSelect={(next) => changeAutoAdvanceMode(next as AutoAdvanceMode)}
-                />
-              </label>
-              <label className="timing-setting timing-setting-2x">
-                Replay line
-                <PracticeSelect
-                  label="Replay line"
-                  value={autoPlayLineMode}
-                  options={[
-                    { value: "disabled", label: "Disabled" },
-                    { value: "always", label: "Always" },
-                    { value: "off-target", label: "When off target" }
-                  ]}
-                  onSelect={(next) => changeAutoPlayLineMode(next as AutoPlayLineMode)}
-                  disabled={autoAdvanceMode === "disabled"}
-                />
-              </label>
-            </div>
-          </details>
-        </div>
-      </div>
-  );
-
   if (isOptionsPageVisible) {
     return (
       <main className="shell">
@@ -1465,7 +1241,38 @@ export function RehearsalScreen({
           ) : null}
           <div className="rehearsal-workspace no-outline options-workspace options-workspace-shell">
             <div className="practice-options-scroll">
-              {practiceOptionsPanel}
+              <RehearsalOptionsPanel
+                cueWindowPresetId={cueWindowPresetId}
+                blockingScope={blockingScope}
+                rehearsalTextSize={rehearsalTextSize}
+                playbackRate={playbackRate}
+                practiceTargetPaceMultiplier={practiceTargetPaceMultiplier}
+                syncSpeakAlongSpeed={syncSpeakAlongSpeed}
+                absoluteTempoForgivenessMs={absoluteTempoForgivenessMs}
+                tempoTolerancePercent={tempoTolerancePercent}
+                speakAlongPauseMs={speakAlongPauseMs}
+                tempoTargetHesitationMs={tempoTargetHesitationMs}
+                syncPracticeTiming={syncPracticeTiming}
+                absolutePickupForgivenessMs={absolutePickupForgivenessMs}
+                tempoEndOfLineSilenceMs={tempoEndOfLineSilenceMs}
+                autoAdvanceMode={autoAdvanceMode}
+                autoPlayLineMode={autoPlayLineMode}
+                onCueWindowPresetChange={changeCueWindowPreset}
+                onBlockingScopeChange={changeBlockingScope}
+                onRehearsalTextSizeChange={changeRehearsalTextSize}
+                onPlaybackRateChange={changePlaybackRate}
+                onPracticeTargetPaceMultiplierChange={changePracticeTargetPaceMultiplier}
+                onSyncSpeakAlongSpeedChange={changeSyncSpeakAlongSpeed}
+                onAbsoluteTempoForgivenessChange={changeAbsoluteTempoForgiveness}
+                onTempoTolerancePercentChange={changeTempoTolerancePercent}
+                onSpeakAlongPauseMsChange={changeSpeakAlongPauseMs}
+                onTempoTargetHesitationMsChange={changeTempoTargetHesitationMs}
+                onSyncPracticeTimingChange={changeSyncPracticeTiming}
+                onAbsolutePickupForgivenessChange={changeAbsolutePickupForgiveness}
+                onTempoEndOfLineSilenceMsChange={changeTempoEndOfLineSilenceMs}
+                onAutoAdvanceModeChange={changeAutoAdvanceMode}
+                onAutoPlayLineModeChange={changeAutoPlayLineMode}
+              />
             </div>
           </div>
         </section>
@@ -1702,226 +1509,39 @@ export function RehearsalScreen({
           </div>
         </div>
 
-        <div className="session-settings rehearsal-bottom-strip">
-          <section className="control-strip line-control-strip rehearsal-bottom-line-controls" aria-label="Line controls">
-            <div className="transport">
-              <div className="control-group transport-group line-playback-group">
-                {playbackSource === "line" && playbackState === "playing" ? (
-                  <button
-                    type="button"
-                    className="transport-button secondary"
-                    aria-label="Pause line playback. Shortcut: Space."
-                    title="Pause line"
-                    onClick={() => void runCommand("pause")}
-                  >
-                    <span aria-hidden="true" className="transport-icon">
-                      ⏸
-                    </span>
-                  </button>
-                ) : playbackSource === "line" && playbackState === "paused" ? (
-                  <button
-                    type="button"
-                    className="transport-button secondary"
-                    aria-label="Resume line playback. Shortcut: Space."
-                    title="Resume line"
-                    onClick={() => void runCommand("resume")}
-                  >
-                    <span aria-hidden="true" className="transport-icon">
-                      ▶
-                    </span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="transport-button secondary"
-                    aria-label="Play your line. Shortcut: L."
-                    title="Play your line"
-                    onClick={() => void runCommand("hear-line")}
-                    disabled={!line}
-                  >
-                    <span aria-hidden="true" className="transport-icon">
-                      ▶
-                    </span>
-                  </button>
-                )}
-                <button
-                  type="button"
-                  className="transport-button secondary"
-                  aria-label="Stop line playback. Shortcut: Escape."
-                  title="Stop line"
-                  onClick={() => void runCommand("stop")}
-                >
-                  <span aria-hidden="true" className="transport-icon">
-                    ■
-                  </span>
-                </button>
-              </div>
-            </div>
-          </section>
-          <div className="rehearsal-practice-toggles-inline" aria-label="Quick practice toggles">
-              <button
-                type="button"
-                className={tempoTimingEnabled ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={tempoTimingEnabled}
-                aria-label={tempoTimingEnabled ? "Disable tempo timing." : "Enable tempo timing."}
-                title={tempoTimingEnabled ? "Tempo timing on" : "Tempo timing off"}
-                disabled={speakAlongEnabled}
-                onClick={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
-              >
-              <span aria-hidden="true">⏱</span>
-            </button>
-              <button
-                type="button"
-                className={speakAlongEnabled ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={speakAlongEnabled}
-                aria-label={speakAlongEnabled ? "Disable speak-along practice." : "Enable speak-along practice."}
-                title={speakAlongEnabled ? "Speak-along on" : "Speak-along off"}
-                disabled={tempoTimingEnabled}
-                onClick={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
-              >
-              <span aria-hidden="true">👄</span>
-            </button>
-              <button
-                type="button"
-                className={showLinesByDefault ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={showLinesByDefault}
-                aria-label={showLinesByDefault ? "Hide lines." : "Show lines."}
-                title={showLinesByDefault ? "Show lines on" : "Show lines off"}
-                onClick={() => changeShowLinesByDefault(!showLinesByDefault)}
-              >
-              <span aria-hidden="true">👁</span>
-            </button>
-              <button
-                type="button"
-                className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={includeBlocking}
-                aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
-                title={includeBlocking ? "Blocking on" : "Blocking off"}
-                onClick={() => changeIncludeBlocking(!includeBlocking)}
-              >
-              <span aria-hidden="true">♿</span>
-            </button>
-              <button
-                type="button"
-                className={includeDirections ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={includeDirections}
-                aria-label={includeDirections ? "Hide stage directions." : "Show stage directions."}
-                title={includeDirections ? "Directions on" : "Directions off"}
-                onClick={() => changeIncludeDirections(!includeDirections)}
-              >
-              <span aria-hidden="true">⌞⌝</span>
-            </button>
-              <button
-                type="button"
-                className={`quick-toggle${isCalloutEnabled ? " active" : ""}`}
-                aria-pressed={isCalloutEnabled}
-                aria-label={isCalloutEnabled ? "Disable cue callouts." : "Enable cue callouts."}
-                title={hasCurrentLineCallout
-                  ? (isCalloutEnabled ? `Callouts enabled (${currentCueCallout?.speaker})` : `Callouts disabled (${currentCueCallout?.speaker})`)
-                  : "No callout for this cue"}
-                onClick={() => {
-                  setIsCalloutEnabled((current) => !current);
-                }}
-              >
-                <span aria-hidden="true">📢</span>
-              </button>
-          </div>
-          <div className="rehearsal-quick-actions">
-              <button
-                type="button"
-                className="quick-toggle"
-                aria-label={showLineInfo ? "Hide line info." : "Show line info."}
-                aria-pressed={showLineInfo}
-                title="Line info"
-                onClick={() => setShowLineInfo((current) => !current)}
-              >
-              <span aria-hidden="true">ⓘ</span>
-            </button>
-              <button
-                type="button"
-                className="quick-toggle"
-                aria-label="Choose role."
-                title="Choose role."
-                onClick={onSelectRole}
-              >
-              <span aria-hidden="true">🎭</span>
-            </button>
-              <button
-                type="button"
-                className="quick-toggle rehearsal-options-button"
-                aria-label="Open options"
-                title="Options"
-                onClick={openOptionsPage}
-              >
-              <span aria-hidden="true">⚙</span>
-            </button>
-          </div>
-          {displayedPlaybackStatus ? (
-            <p className={typeof displayedPlaybackStatus === "string" ? "status" : "status status-timing"} aria-live="polite">
-              {typeof displayedPlaybackStatus === "string" ? (
-                displayedPlaybackStatus
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    className={`timing-status-pill timing-status-pill--${displayedPlaybackStatus.delivery.label}`}
-                    aria-label={`Delivery: ${displayedPlaybackStatus.delivery.label}`}
-                    aria-expanded={expandedTimingPill === "delivery"}
-                    onClick={() =>
-                      setExpandedTimingPill((current) => (current === "delivery" ? null : "delivery"))
-                    }
-                  >
-                    <span aria-hidden="true">{deliveryPillForLabel(displayedPlaybackStatus.delivery.label)}</span>
-                    <span>delivery</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`timing-status-pill timing-status-pill--${displayedPlaybackStatus.pickup.label}`}
-                    aria-label={`Pickup: ${displayedPlaybackStatus.pickup.label}`}
-                    aria-expanded={expandedTimingPill === "pickup"}
-                    onClick={() => setExpandedTimingPill((current) => (current === "pickup" ? null : "pickup"))}
-                  >
-                    <span aria-hidden="true">{pickupPillForLabel(displayedPlaybackStatus.pickup.label)}</span>
-                    <span>pickup</span>
-                  </button>
-                  {expandedTimingPill === "delivery" ? (
-                    <span className="timing-status-details">
-                      {formatDeliveryTimingDetails(
-                        displayedPlaybackStatus.delivery.measuredMs,
-                        displayedPlaybackStatus.delivery.targetMs,
-                        absoluteTempoForgivenessMs,
-                        tempoTolerancePercent
-                      )}
-                    </span>
-                  ) : null}
-                  {expandedTimingPill === "pickup" ? (
-                    <span className="timing-status-details">
-                      {formatPickupTimingDetails(
-                        displayedPlaybackStatus.pickup.measuredMs,
-                        displayedPlaybackStatus.pickup.targetMs,
-                        absolutePickupForgivenessMs
-                      )}
-                    </span>
-                  ) : null}
-                </>
-              )}
-            </p>
-          ) : null}
-          {showLineInfo && line ? (
-            <div className="line-duration-panel" role="note" aria-live="polite">
-              <p>Playbook: {playbook.id}</p>
-              <p>Line/Cue ID: {line.id}</p>
-              <p>Cue file: {line.cue.audioPath}</p>
-              <p>Cue length: {formatDurationMs(line.cue.durationMs)}</p>
-              <p>Line length: {formatDurationMs(lineLengthMs)}</p>
-              {latestLineTimingAttempt ? (
-                <p>Timing target: {formatDurationMs(latestLineTimingAttempt.targetDeliveryMs)}</p>
-              ) : (
-                <p>Timing target: {formatDurationMs(lineLengthMs)}</p>
-              )}
-            </div>
-          ) : null}
-        </div>
+        <RehearsalBottomBar
+          playbackSource={playbackSource}
+          playbackState={playbackState}
+          line={line}
+          playbookId={playbook.id}
+          lineLengthMs={lineLengthMs}
+          latestTimingTargetDeliveryMs={latestLineTimingAttempt?.targetDeliveryMs ?? null}
+          tempoTimingEnabled={tempoTimingEnabled}
+          speakAlongEnabled={speakAlongEnabled}
+          showLinesByDefault={showLinesByDefault}
+          includeBlocking={includeBlocking}
+          includeDirections={includeDirections}
+          isCalloutEnabled={isCalloutEnabled}
+          hasCurrentLineCallout={hasCurrentLineCallout}
+          currentCueCalloutSpeaker={currentCueCallout?.speaker ?? null}
+          showLineInfo={showLineInfo}
+          displayedPlaybackStatus={displayedPlaybackStatus}
+          expandedTimingPill={expandedTimingPill}
+          absoluteTempoForgivenessMs={absoluteTempoForgivenessMs}
+          tempoTolerancePercent={tempoTolerancePercent}
+          absolutePickupForgivenessMs={absolutePickupForgivenessMs}
+          onCommand={(command) => void runCommand(command)}
+          onToggleTempoTiming={() => void (tempoTimingEnabled ? disableTempoTiming() : enableTempoTiming())}
+          onToggleSpeakAlong={() => changeSpeakAlongEnabled(!speakAlongEnabled)}
+          onToggleShowLinesByDefault={() => changeShowLinesByDefault(!showLinesByDefault)}
+          onToggleIncludeBlocking={() => changeIncludeBlocking(!includeBlocking)}
+          onToggleIncludeDirections={() => changeIncludeDirections(!includeDirections)}
+          onToggleCallout={() => setIsCalloutEnabled((current) => !current)}
+          onToggleLineInfo={() => setShowLineInfo((current) => !current)}
+          onSelectRole={onSelectRole}
+          onOpenOptions={openOptionsPage}
+          onToggleTimingPill={(pill) => setExpandedTimingPill((current) => (current === pill ? null : pill))}
+        />
       </div>
       </section>
     </main>
