@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Playbook } from "../../domain/playbook";
-import type { Line } from "../../domain/line";
 import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
 import { buildCalloutResolver } from "../../rehearsal/calloutLookup";
+import {
+  buildDirectionAudioPathLookup,
+  buildPlayEntries,
+  compareSegmentIds,
+  type PlayPageEntry
+} from "../../rehearsal/playPageEntries";
+import { entryMatchesSearchQuery } from "../../rehearsal/playPageSearch";
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 
@@ -15,35 +21,8 @@ type PlaySpeed = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
 
 const playRates: PlaySpeed[] = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const lineGapMs = 500;
-const includedContextKinds = new Set(["heading", "description", "direction"]);
 
 const directionPlaybackRate = 1;
-
-type PlayPageEntry =
-  | {
-      type: "line";
-      id: string;
-      blockId: string;
-      partId: number | null;
-      speaker: string;
-      text: string;
-      line: Line;
-      inlineDirectionAudioPaths: Array<{
-        segmentId: string;
-        path: string;
-      }>;
-      sourceOrder: number;
-    }
-  | {
-      type: "context";
-      id: string;
-      blockId: string;
-      partId: number | null;
-      speaker: string;
-      text: string;
-      audioPath: string;
-      sourceOrder: number;
-    };
 
 export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
@@ -454,47 +433,6 @@ function canonicalRoleKey(rawSpeaker?: string) {
   return (rawSpeaker ?? "").trim().replace(/^_+/, "").toLowerCase();
 }
 
-function entryMatchesSearchQuery(entry: PlayPageEntry, query: string, title: string): boolean {
-  if (query.length === 0) {
-    return false;
-  }
-  const looksLikeId = isLikelyIdQuery(query);
-  if (looksLikeId) {
-    return entryTokensForSearch(entry, title).some((token) => token === query);
-  }
-  const haystack = entrySearchHaystack(entry, title);
-  return haystack.includes(query);
-}
-
-function entrySearchHaystack(entry: PlayPageEntry, title: string): string {
-  const searchableParts: string[] = [title, entry.id, entry.speaker, entry.text];
-  if (entry.type === "line") {
-    for (const direction of entry.line.directions) {
-      searchableParts.push(direction.text);
-    }
-  }
-  return searchableParts.join(" ").toLowerCase();
-}
-
-function isLikelyIdQuery(query: string): boolean {
-  return /^[a-z0-9]+-[0-9]+(?:\.[0-9]+)?$/.test(query) || /^[a-z0-9]+-[a-z0-9]+$/.test(query);
-}
-
-function entryTokensForSearch(entry: PlayPageEntry, title: string): string[] {
-  const searchableParts: string[] = [title, entry.id, entry.speaker, entry.text];
-  if (entry.type === "line") {
-    for (const direction of entry.line.directions) {
-      searchableParts.push(direction.text);
-    }
-  }
-  return searchableParts
-    .flatMap((part) => part
-      .toLowerCase()
-      .split(/[^a-z0-9-]+/)
-      .map((token) => token.trim())
-      .filter((token) => token.length > 0));
-}
-
   function sectionStartIndexForPartId(entriesToSearch: PlayPageEntry[], targetPartId: number | null) {
     for (let entryIndex = 0; entryIndex < entriesToSearch.length; entryIndex += 1) {
       if (entriesToSearch[entryIndex]?.partId === targetPartId) {
@@ -883,181 +821,6 @@ function entryTokensForSearch(entry: PlayPageEntry, title: string): string[] {
   );
 }
 
-function buildPlayEntries(playbook: Playbook, includeNarration: boolean, directionAudioLookup: DirectionAudioLookup): PlayPageEntry[] {
-  const linesById = new Map<string, Line>();
-  const contextEntries: PlayPageEntry[] = [];
-  let sourceOrder = 0;
-
-  for (const role of playbook.roles) {
-    for (const line of role.lines) {
-      const prior = linesById.get(line.id);
-      if (!prior || blockOrderForLine(line) < blockOrderForLine(prior)) {
-        linesById.set(line.id, line);
-      }
-    }
-  }
-
-  if (includeNarration) {
-    for (const block of playbook.context) {
-      if (!block.audioPath || !includedContextKinds.has(block.kind)) {
-        continue;
-      }
-      contextEntries.push({
-        type: "context",
-        id: block.id,
-        blockId: block.blockId,
-        partId: block.partId,
-        speaker: block.speaker,
-        text: block.text,
-        audioPath: block.audioPath,
-        sourceOrder
-      });
-      sourceOrder += 1;
-    }
-  }
-
-  const lines: Array<Extract<PlayPageEntry, { type: "line" }> > = Array.from(linesById.values())
-      .sort((left, right) => blockOrderForBlockId(left.blockId) - blockOrderForBlockId(right.blockId))
-      .map((line) => {
-        const inlineDirectionAudioPaths: Array<{ segmentId: string; path: string }> = [];
-        if (includeNarration) {
-          for (const direction of line.directions) {
-            if (direction.placement !== "inline") {
-              continue;
-            }
-            const directionPath = directionAudioLookup.resolvePath(line, direction.segmentId);
-            if (directionPath !== null) {
-              inlineDirectionAudioPaths.push({
-                segmentId: direction.segmentId,
-                path: directionPath,
-              });
-            }
-          }
-        }
-
-        return {
-          type: "line",
-          id: line.id,
-          blockId: line.blockId,
-          partId: line.partId,
-          speaker: line.speaker,
-          text: line.responseText,
-          line,
-          inlineDirectionAudioPaths,
-          sourceOrder: sourceOrder++
-        };
-      });
-
-  return [...lines, ...contextEntries]
-    .sort((left, right) => {
-      const leftOrder = blockOrderForBlockId(left.blockId);
-      const rightOrder = blockOrderForBlockId(right.blockId);
-      if (leftOrder !== rightOrder) {
-        return leftOrder - rightOrder;
-      }
-      if (left.type !== right.type) {
-        return left.type === "context" ? -1 : 1;
-      }
-      return left.sourceOrder - right.sourceOrder;
-    });
-}
-
-type DirectionAudioLookup = {
-  resolvePath(line: Line, segmentId: string): string | null;
-};
-
-function buildDirectionAudioPathLookup(playbook: Playbook): DirectionAudioLookup {
-  const segmentMap = new Map<string, string>();
-  const ambiguousSegments = new Set<string>();
-  const candidateSegmentsByRole = new Map<string, string[]>();
-
-  const addPath = (rawPath: string) => {
-    const normalizedPath = normalizeAssetPath(rawPath);
-    const match = normalizedPath.match(/^audio\/segments\/([^/]+)\/(.+)\.[a-zA-Z0-9]+$/);
-    if (!match) {
-      return;
-    }
-    const [, role, segmentId] = match;
-    const roleKey = normalizeRoleForPath(role);
-    const key = `${roleKey}:${segmentId}`;
-    const existing = segmentMap.get(key);
-    if (existing === undefined) {
-      segmentMap.set(key, normalizedPath);
-      candidateSegmentsByRole.set(segmentId, [...(candidateSegmentsByRole.get(segmentId) ?? []), normalizedPath]);
-      return;
-    }
-    if (existing !== normalizedPath) {
-      ambiguousSegments.add(key);
-    }
-  };
-
-  if (playbook.audioAssetPaths) {
-    for (const path of playbook.audioAssetPaths) {
-      addPath(path);
-    }
-  }
-
-  for (const role of playbook.roles) {
-    for (const line of role.lines) {
-      addPath(line.cue.audioPath);
-      for (const segment of line.responseSegments) {
-        addPath(segment.audioPath);
-      }
-    }
-  }
-
-  for (const block of playbook.context) {
-    if (block.audioPath) {
-      addPath(block.audioPath);
-    }
-  }
-
-  return {
-    resolvePath(line: Line, segmentId: string) {
-      const preferredRoles = [
-        normalizeRoleForPath(line.speaker),
-        normalizeRoleForPath(line.cue.speaker),
-        "NARRATOR"
-      ];
-
-      for (const role of preferredRoles) {
-        const key = `${role}:${segmentId}`;
-        if (ambiguousSegments.has(key)) {
-          continue;
-        }
-        const candidate = segmentMap.get(key);
-        if (candidate) {
-          return candidate;
-        }
-      }
-
-      const ambiguousCandidates = candidateSegmentsByRole.get(segmentId);
-      if (!ambiguousCandidates || ambiguousCandidates.length === 0) {
-        return null;
-      }
-      if (ambiguousCandidates.length === 1) {
-        return ambiguousCandidates[0];
-      }
-      for (const role of preferredRoles) {
-        const key = `${role}:${segmentId}`;
-        const candidate = segmentMap.get(key);
-        if (candidate && !ambiguousSegments.has(key)) {
-          return candidate;
-        }
-      }
-      return null;
-    }
-  };
-}
-
-function normalizeAssetPath(assetPath: string): string {
-  return assetPath.replace(/^\/+/, "");
-}
-
-function normalizeRoleForPath(role: string): string {
-  return role.trim().toUpperCase().replace(/^_+/, "");
-}
-
 function renderLineText(entry: PlayPageEntry, includeDirections: boolean) {
   if (entry.type !== "line" || !includeDirections || entry.line.directions.length === 0) {
     return entry.text;
@@ -1108,48 +871,4 @@ function renderLineText(entry: PlayPageEntry, includeDirections: boolean) {
   });
 
   return <>{nodes}</>;
-}
-
-function compareSegmentIds(left: string, right: string): number {
-  if (left === right) {
-    return 0;
-  }
-  const leftParts = splitSegmentId(left);
-  const rightParts = splitSegmentId(right);
-  const sharedLength = Math.min(leftParts.length, rightParts.length);
-  for (let index = 0; index < sharedLength; index += 1) {
-    const leftPart = leftParts[index];
-    const rightPart = rightParts[index];
-    if (leftPart === rightPart) {
-      continue;
-    }
-    const leftIsNumber = typeof leftPart === "number";
-    const rightIsNumber = typeof rightPart === "number";
-    if (leftIsNumber && rightIsNumber) {
-      return leftPart - rightPart;
-    }
-    if (leftIsNumber !== rightIsNumber) {
-      return leftIsNumber ? -1 : 1;
-    }
-    return String(leftPart).localeCompare(String(rightPart));
-  }
-  return leftParts.length - rightParts.length;
-}
-
-function splitSegmentId(segmentId: string): Array<string | number> {
-  const tokens = segmentId.split(/[^\da-zA-Z]+/).filter((token) => token.length > 0);
-  return tokens.map((token) => {
-    const value = Number(token);
-    return Number.isFinite(value) && String(value) === token ? value : token;
-  });
-}
-
-function blockOrderForBlockId(blockId: string): number {
-  return blockId
-    .split(".")
-    .reduce((total, part, index) => total + Number(part) * 1000 ** (3 - index), 0);
-}
-
-function blockOrderForLine(line: Line): number {
-  return blockOrderForBlockId(line.blockId);
 }

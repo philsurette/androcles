@@ -4,7 +4,17 @@ import {
   resolveCurrentLineFromEngine,
   visibleCuesForDisplay
 } from "../../src/rehearsal/rehearsalPresentation";
-import { clampPlaybackRate } from "../../src/ui/screens/RehearsalScreen";
+import {
+  clampPlaybackRate,
+  formatAbsoluteTempoForgiveness,
+  formatDurationMs,
+  formatTempoTolerancePercent,
+  normalizeAbsolutePickupForgivenessMs,
+  normalizeAbsoluteTempoForgivenessMs,
+  normalizePracticeTargetPaceMultiplier,
+  normalizeTempoEndOfLineSilenceMs,
+  normalizeTempoTolerancePercent
+} from "../../src/rehearsal/timingPresentation";
 import type { Line } from "../../src/domain/line";
 import type { Playbook } from "../../src/domain/playbook";
 
@@ -17,6 +27,24 @@ describe("clampPlaybackRate", () => {
   it("rounds response playback speed to one decimal place", () => {
     expect(clampPlaybackRate(0.94)).toBe(0.9);
     expect(clampPlaybackRate(0.95)).toBe(1);
+  });
+});
+
+describe("timing presentation", () => {
+  it("normalizes timing option values into supported ranges", () => {
+    expect(normalizePracticeTargetPaceMultiplier(0.1)).toBe(0.4);
+    expect(normalizePracticeTargetPaceMultiplier(2)).toBe(1.3);
+    expect(normalizeAbsoluteTempoForgivenessMs(50)).toBe(100);
+    expect(normalizeAbsolutePickupForgivenessMs(1000)).toBe(500);
+    expect(normalizeTempoTolerancePercent(0.9)).toBe(0.3);
+    expect(normalizeTempoEndOfLineSilenceMs(1249)).toBe(1000);
+    expect(normalizeTempoEndOfLineSilenceMs(1250)).toBe(1500);
+  });
+
+  it("formats timing labels for controls and details", () => {
+    expect(formatDurationMs(1234)).toBe("1.23s");
+    expect(formatAbsoluteTempoForgiveness(500)).toBe("±0.5s");
+    expect(formatTempoTolerancePercent(0.2)).toBe("±20%");
   });
 });
 

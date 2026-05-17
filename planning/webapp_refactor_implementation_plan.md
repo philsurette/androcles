@@ -61,27 +61,27 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [ ] Extract tempo timing from `RehearsalScreen.tsx`.
   - Target hook/service: `cuemaster/src/ui/hooks/useTempoTiming.ts`.
   - Own detector lifecycle, feedback tone, timing attempt save/load, and timing status message generation.
-- [ ] Extract bookmark state from `RehearsalScreen.tsx`.
+- [x] Extract bookmark state from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useBookmarks.ts`.
   - Own current bookmark, bookmark list, neighboring bookmarks, and toggle behavior.
 - [ ] Extract outline browser from `RehearsalScreen.tsx`.
   - Target component: `cuemaster/src/ui/components/RehearsalOutline.tsx`.
   - Move outline search/filter helpers to a tested non-React module.
   - Progress: moved outline search, cue display, and current-line helpers to `cuemaster/src/rehearsal/rehearsalPresentation.ts`.
-- [ ] Move timing formatting helpers from `RehearsalScreen.tsx` to a tested module.
+- [x] Move timing formatting helpers from `RehearsalScreen.tsx` to a tested module.
   - Candidate module: `cuemaster/src/rehearsal/timingPresentation.ts`.
 - [ ] Keep `RehearsalScreen.tsx` as a composition layer only after extraction.
 
 ## Phase 3: Cuemaster Play Page
 
-- [ ] Move play page entry building out of `cuemaster/src/ui/screens/PlayPageScreen.tsx`.
+- [x] Move play page entry building out of `cuemaster/src/ui/screens/PlayPageScreen.tsx`.
   - Target module: `cuemaster/src/rehearsal/playPageEntries.ts`.
   - Preserve current narration, direction, and audio lookup behavior.
-- [ ] Move play page search helpers to a tested module.
+- [x] Move play page search helpers to a tested module.
   - Target module: `cuemaster/src/rehearsal/playPageSearch.ts`.
 - [ ] Extract playback controls and navigation UI from `PlayPageScreen.tsx`.
   - Target components under `cuemaster/src/ui/components/`.
-- [ ] Re-run existing PlayPage and rehearsal tests, then add tests for any newly extracted pure modules.
+- [x] Re-run existing PlayPage and rehearsal tests, then add tests for any newly extracted pure modules.
 
 ## Phase 4: Shared Browser-App Boundaries
 

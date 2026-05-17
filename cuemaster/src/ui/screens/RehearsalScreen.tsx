@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useId, useState } from "react";
-import type { Bookmark } from "../../domain/bookmark";
 import type { Cue } from "../../domain/cue";
 import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
@@ -25,12 +24,44 @@ import {
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { deliveryLabel, tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs, endOfLineSilenceMs, defaultTempoTimingConfig } from "../../rehearsal/tempoTimingConfig";
+import {
+  absolutePickupForgivenessOptionsMs,
+  absoluteTempoForgivenessOptionsMs,
+  clampPlaybackRate,
+  deliveryPillForLabel,
+  formatAbsoluteTempoForgiveness,
+  formatDeliveryTimingDetails,
+  formatDurationMs,
+  formatPickupTimingDetails,
+  formatTempoEndOfLineSilence,
+  formatTempoTolerancePercent,
+  formatTimingAttempt,
+  formatTimingOption,
+  formatTimingResult,
+  normalizeAbsolutePickupForgivenessMs,
+  normalizeAbsoluteTempoForgivenessMs,
+  normalizePracticeTargetPaceMultiplier,
+  normalizeRehearsalTextSize,
+  normalizeTempoEndOfLineSilenceMs,
+  normalizeTempoTolerancePercent,
+  pickupPillForLabel,
+  playbackRates,
+  practicePaceMultiplierOptions,
+  practiceTimingOptionsMs,
+  rehearsalTextSizeOptions,
+  tempoEndOfLineSilenceOptionsMs,
+  tempoToleranceOptionsPercent,
+  type RehearsalTextSize,
+  type TimingLabel,
+  type TimingStatusPill
+} from "../../rehearsal/timingPresentation";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { CueCard } from "../components/CueCard";
 import { LineCard, type BlockingScope } from "../components/LineCard";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -44,24 +75,8 @@ type RehearsalScreenProps = {
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
 type TimingLineStatus = "untimed" | "slow" | "fast" | "good";
-type TimingLabel = "fast" | "slow" | "good";
 type TimingPill = "delivery" | "pickup";
 type AutoAdvanceMode = "disabled" | "always" | "on-target" | "when-not-slow";
-type TimingStatusPill = {
-  delivery: {
-    label: TimingLabel;
-    measuredMs: number;
-    targetMs: number;
-  };
-  pickup: {
-    label: TimingLabel;
-    measuredMs: number;
-    targetMs: number;
-  };
-  details: string;
-};
-
-type RehearsalTextSize = "small" | "medium" | "large" | "x-large";
 
 type PracticeSelectOption = {
   value: string;
@@ -237,9 +252,7 @@ export function RehearsalScreen({
   const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
-  const [isCurrentLineBookmarked, setIsCurrentLineBookmarked] = useState(false);
   const [showLineInfo, setShowLineInfo] = useState(false);
   const [isOptionsPageVisible, setIsOptionsPageVisible] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
@@ -288,7 +301,18 @@ export function RehearsalScreen({
     () => visibleCuesForDisplay(cues, includeDirections, playbook.context, playbook, line ?? undefined),
     [cues, includeDirections, playbook, line]
   );
-  const bookmarkedLineIds = useMemo(() => new Set(bookmarks.map((bookmark) => bookmark.lineId)), [bookmarks]);
+  const {
+    bookmarkedLineIds,
+    isCurrentLineBookmarked,
+    bookmarkNeighbors,
+    toggleBookmark
+  } = useBookmarks({
+    playbookId: playbook.id,
+    roleId: role.id,
+    roleLines: role.lines,
+    currentLine: line,
+    onStorageStatus: setStorageStatus
+  });
   const lineTimingStatusByLineId = useMemo(() => {
     const statusByLine = new Map<string, TimingLineStatus>(
       role.lines.map((roleLine) => [roleLine.id, "untimed" as const])
@@ -389,15 +413,10 @@ export function RehearsalScreen({
   ]);
 
   useEffect(() => {
-    void loadCurrentBookmark();
-  }, [line?.id]);
-
-  useEffect(() => {
     setShowLineInfo(false);
   }, [line?.id]);
 
   useEffect(() => {
-    void loadBookmarks();
     void loadReviewAttempts();
   }, []);
 
@@ -1477,86 +1496,6 @@ export function RehearsalScreen({
       setStorageStatus(userFacingErrorMessage(error));
     }
   }
-
-  async function loadCurrentBookmark() {
-    if (!line) {
-      setIsCurrentLineBookmarked(false);
-      return;
-    }
-    try {
-      setIsCurrentLineBookmarked(Boolean(await indexedDbStorage.bookmarks.get(playbook.id, role.id, line.id)));
-    } catch (error) {
-      setIsCurrentLineBookmarked(false);
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function loadBookmarks() {
-    try {
-      setBookmarks(await indexedDbStorage.bookmarks.listForRole(playbook.id, role.id));
-    } catch (error) {
-      setBookmarks([]);
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function toggleBookmark() {
-    if (!line) {
-      return;
-    }
-    try {
-      if (isCurrentLineBookmarked) {
-        await indexedDbStorage.bookmarks.delete(playbook.id, role.id, line.id);
-        setIsCurrentLineBookmarked(false);
-      } else {
-        await indexedDbStorage.bookmarks.save({
-          id: `${playbook.id}:${role.id}:${line.id}`,
-          playbookId: playbook.id,
-          roleId: role.id,
-          lineId: line.id,
-          createdAt: Date.now()
-        });
-        setIsCurrentLineBookmarked(true);
-      }
-      setStorageStatus("");
-      await loadBookmarks();
-    } catch (error) {
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  const bookmarkNeighbors = useMemo(() => {
-    const lineIndexById = new Map(role.lines.map((playbookLine, index) => [playbookLine.id, index]));
-    const orderedBookmarks = bookmarks
-      .map((bookmark) => bookmark.lineId)
-      .filter((lineId) => lineIndexById.has(lineId))
-      .sort((left, right) => (lineIndexById.get(left) ?? 0) - (lineIndexById.get(right) ?? 0));
-
-    if (!line) {
-      return { previousLineId: null, nextLineId: null };
-    }
-
-    const currentLineIndex = lineIndexById.get(line.id);
-    if (currentLineIndex === undefined) {
-      return { previousLineId: null, nextLineId: null };
-    }
-
-    let previousLineId: string | null = null;
-    let nextLineId: string | null = null;
-    for (const bookmarkLineId of orderedBookmarks) {
-      const bookmarkedLineIndex = lineIndexById.get(bookmarkLineId);
-      if (bookmarkedLineIndex === undefined) {
-        continue;
-      }
-      if (bookmarkedLineIndex < currentLineIndex) {
-        previousLineId = bookmarkLineId;
-      } else if (bookmarkedLineIndex > currentLineIndex && nextLineId === null) {
-        nextLineId = bookmarkLineId;
-      }
-    }
-
-    return { previousLineId, nextLineId };
-  }, [bookmarks, line, role.lines]);
 
   function openOptionsPage() {
     void loadReviewAttempts();
@@ -2651,299 +2590,11 @@ function timingLineStatusToLabel(status: TimingLineStatus): string {
   return "Untimed";
 }
 
-function formatTimingResult(
-  feedback: ReturnType<typeof tempoFeedbackFor>,
-  practiceTargetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 500,
-  tempoTolerancePercent = 0.2,
-  absolutePickupForgivenessMs = 250
-): TimingStatusPill {
-  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
-  const displayedDeliveryLabel =
-    feedback.delivery === undefined
-      ? "good"
-      : deliveryLabel(
-          feedback.delivery.measuredMs,
-          feedback.delivery.targetMs,
-          normalizedPracticeTargetPaceMultiplier,
-          absoluteTempoForgivenessMs,
-          tempoTolerancePercent
-        ) === "fast"
-        ? "fast"
-        : feedback.delivery.label === "slow"
-          ? "slow"
-          : "good";
-  const pickupLabel = feedback.hesitation.label === "sharp" ? "fast" : feedback.hesitation.label === "late" ? "slow" : "good";
-  const measuredDeliveryMs = feedback.delivery?.measuredMs ?? 0;
-  const baseTargetDeliveryMs = feedback.delivery?.targetMs ?? 0;
-  const targetDeliveryMs = baseTargetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
-  const measuredPickupMs = feedback.hesitation.measuredMs;
-  const targetPickupMs = feedback.hesitation.targetMs;
-  return {
-    delivery: {
-      label: displayedDeliveryLabel,
-      measuredMs: measuredDeliveryMs,
-      targetMs: targetDeliveryMs
-    },
-    pickup: {
-      label: pickupLabel,
-      measuredMs: measuredPickupMs,
-      targetMs: targetPickupMs
-    },
-    details: `${formatDeliveryTimingDetails(
-      measuredDeliveryMs,
-      targetDeliveryMs,
-      absoluteTempoForgivenessMs,
-      tempoTolerancePercent
-    )}; ${formatPickupTimingDetails(
-      measuredPickupMs,
-      targetPickupMs,
-      absolutePickupForgivenessMs
-    )}`
-  };
-}
-
-function formatTimingAttempt(
-  attempt: TimingAttempt,
-  practiceTargetPaceMultiplier = 1,
-  absoluteTempoForgivenessMs = 500,
-  tempoTolerancePercent = 0.2,
-  absolutePickupForgivenessMs = 250
-): TimingStatusPill {
-  const normalizedPracticeTargetPaceMultiplier = normalizePracticeTargetPaceMultiplier(practiceTargetPaceMultiplier);
-  const targetDeliveryMs = attempt.targetDeliveryMs / normalizedPracticeTargetPaceMultiplier;
-  const lineDeliveryLabel = deliveryLabel(
-    attempt.deliveryMs,
-    attempt.targetDeliveryMs,
-    normalizedPracticeTargetPaceMultiplier,
-    absoluteTempoForgivenessMs,
-    tempoTolerancePercent
-  );
-  const displayDeliveryLabel = lineDeliveryLabel === "fast" ? "fast" : lineDeliveryLabel === "slow" ? "slow" : "good";
-  const pickupLabel = pickupLabelForFeedback(
-    attempt.hesitationMs,
-    attempt.targetHesitationMs,
-    absolutePickupForgivenessMs
-  );
-  return {
-    delivery: {
-      label: displayDeliveryLabel,
-      measuredMs: attempt.deliveryMs,
-      targetMs: targetDeliveryMs
-    },
-    pickup: {
-      label: pickupLabel,
-      measuredMs: attempt.hesitationMs,
-      targetMs: attempt.targetHesitationMs
-    },
-    details: `${formatDeliveryTimingDetails(
-      attempt.deliveryMs,
-      targetDeliveryMs,
-      absoluteTempoForgivenessMs,
-      tempoTolerancePercent
-    )}; ${formatPickupTimingDetails(attempt.hesitationMs, attempt.targetHesitationMs, absolutePickupForgivenessMs)}`
-  };
-}
-
-function deliveryPillForLabel(label: TimingLabel): string {
-  if (label === "fast") {
-    return "🐇";
-  }
-  if (label === "slow") {
-    return "🐢";
-  }
-  return "🎯";
-}
-
-function pickupPillForLabel(label: TimingLabel): string {
-  if (label === "fast") {
-    return "🐇";
-  }
-  if (label === "slow") {
-    return "🐢";
-  }
-  return "🎯";
-}
-
-function formatDeliveryTimingDetails(
-  measuredMs: number,
-  targetMs: number,
-  absoluteTempoForgivenessMs: number,
-  tempoTolerancePercent: number
-): string {
-  if (targetMs <= 0) {
-    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
-  }
-  const normalizedTolerancePercent = Number.isFinite(tempoTolerancePercent)
-    ? Math.min(maxTempoTolerancePercent, Math.max(minTempoTolerancePercent, tempoTolerancePercent))
-    : 0.2;
-  const absoluteForgivenessMs = Number.isFinite(absoluteTempoForgivenessMs) ? Math.max(0, absoluteTempoForgivenessMs) : 0;
-  const toleranceMs = targetMs * normalizedTolerancePercent;
-  const forgivenessMs = Math.max(absoluteForgivenessMs, toleranceMs);
-  const minMs = Math.max(0, targetMs - forgivenessMs);
-  const maxMs = targetMs + forgivenessMs;
-  return `${(measuredMs / 1000).toFixed(2)}s (target: ${(minMs / 1000).toFixed(2)}s - ${(maxMs / 1000).toFixed(2)}s)`;
-}
-
-function formatPickupTimingDetails(
-  measuredMs: number,
-  targetMs: number,
-  absolutePickupForgivenessMs: number
-): string {
-  if (targetMs <= 0) {
-    return `${(measuredMs / 1000).toFixed(2)}s (target unavailable)`;
-  }
-  const absoluteForgivenessMs = Number.isFinite(absolutePickupForgivenessMs)
-    ? Math.max(0, absolutePickupForgivenessMs)
-    : 250;
-  const minMs = Math.max(0, targetMs - absoluteForgivenessMs);
-  const maxMs = targetMs + absoluteForgivenessMs;
-  return `${(measuredMs / 1000).toFixed(2)}s (target: ${(minMs / 1000).toFixed(2)}s - ${(maxMs / 1000).toFixed(2)}s)`;
-}
-
-function pickupLabelForFeedback(
-  measuredMs: number,
-  targetMs: number,
-  absolutePickupForgivenessMs: number
-): TimingLabel {
-  const normalizedForgivenessMs = Number.isFinite(absolutePickupForgivenessMs)
-    ? Math.max(0, absolutePickupForgivenessMs)
-    : 250;
-  const fastToleranceMs = Math.round(normalizedForgivenessMs * 0.8);
-  if (targetMs <= 0) {
-    return "good";
-  }
-  if (targetMs - measuredMs > fastToleranceMs) {
-    return "fast";
-  }
-  if (measuredMs - targetMs > normalizedForgivenessMs) {
-    return "slow";
-  }
-  return "good";
-}
-
-function formatDurationMs(durationMs: number): string {
-  return `${(Math.max(0, durationMs) / 1000).toFixed(2)}s`;
-}
-
-const minPlaybackRate = 0.4;
-const maxPlaybackRate = 1.3;
-const minPracticeTargetPaceMultiplier = 0.4;
-const maxPracticeTargetPaceMultiplier = 1.3;
-const minAbsoluteTempoForgivenessMs = 100;
-const maxAbsoluteTempoForgivenessMs = 1000;
-const minAbsolutePickupForgivenessMs = 50;
-const maxAbsolutePickupForgivenessMs = 500;
-const minTempoTolerancePercent = 0.05;
-const maxTempoTolerancePercent = 0.3;
-const minTempoEndOfLineSilenceMs = 1000;
-const maxTempoEndOfLineSilenceMs = 3000;
-const tempoEndOfLineSilenceStepMs = 500;
-const absoluteTempoForgivenessOptionsMs = [
-  100,
-  200,
-  300,
-  400,
-  500,
-  600,
-  700,
-  800,
-  900,
-  1000
-];
-const absolutePickupForgivenessOptionsMs = [500, 450, 400, 350, 300, 250, 200, 150, 100, 50];
-const tempoToleranceOptionsPercent = [0.05, 0.1, 0.15, 0.2, 0.25, 0.3];
-const rehearsalTextSizeOptions: RehearsalTextSize[] = ["small", "medium", "large", "x-large"];
-const practicePaceMultiplierOptions = [
-  0.4,
-  0.5,
-  0.6,
-  0.7,
-  0.8,
-  0.9,
-  1.0,
-  1.1,
-  1.2,
-  1.3
-];
-const tempoEndOfLineSilenceOptionsMs = [1000, 1500, 2000, 2500, 3000];
 const REHEARSAL_COMPACT_MEDIA_QUERY = "(max-width: 760px), (orientation: landscape) and (max-height: 540px)";
-const playbackRates = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1, 1.1, 1.2, 1.3];
-const practiceTimingOptionsMs = [250, 500, 750, 1000, 1250, 1500, 2000];
 
 function isCompactRehearsalViewport() {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
     return false;
   }
   return window.matchMedia(REHEARSAL_COMPACT_MEDIA_QUERY).matches;
-}
-
-function formatTimingOption(optionMs: number): string {
-  return `${(optionMs / 1000).toFixed(optionMs % 1000 === 0 ? 0 : 2)}s`;
-}
-
-function formatAbsoluteTempoForgiveness(optionMs: number): string {
-  const seconds = (optionMs / 1000).toFixed(2).replace(/\.?0+$/, "");
-  return `±${seconds}s`;
-}
-
-function formatTempoTolerancePercent(optionPercent: number): string {
-  return `±${(optionPercent * 100).toFixed(0)}%`;
-}
-
-function formatTempoEndOfLineSilence(optionMs: number): string {
-  return `${(optionMs / 1000).toFixed(1)}s`;
-}
-
-export function clampPlaybackRate(playbackRate: number): number {
-  const roundedPlaybackRate = Math.round(playbackRate * 10) / 10;
-  return Math.min(maxPlaybackRate, Math.max(minPlaybackRate, roundedPlaybackRate));
-}
-
-export function normalizePracticeTargetPaceMultiplier(value: number | undefined): number {
-  const parsedValue = value ?? 1;
-  if (!Number.isFinite(parsedValue)) {
-    return 1;
-  }
-  return Math.min(maxPracticeTargetPaceMultiplier, Math.max(minPracticeTargetPaceMultiplier, parsedValue));
-}
-
-function normalizeRehearsalTextSize(value: string | undefined): RehearsalTextSize {
-  if (value === "small" || value === "large" || value === "x-large") {
-    return value;
-  }
-  return "medium";
-}
-
-export function normalizeAbsoluteTempoForgivenessMs(value: number | undefined): number {
-  const parsedValue = value ?? 500;
-  if (!Number.isFinite(parsedValue)) {
-    return 500;
-  }
-  return Math.min(maxAbsoluteTempoForgivenessMs, Math.max(minAbsoluteTempoForgivenessMs, parsedValue));
-}
-
-export function normalizeAbsolutePickupForgivenessMs(value: number | undefined): number {
-  const parsedValue = value ?? 250;
-  if (!Number.isFinite(parsedValue)) {
-    return 250;
-  }
-  return Math.min(maxAbsolutePickupForgivenessMs, Math.max(minAbsolutePickupForgivenessMs, parsedValue));
-}
-
-export function normalizeTempoTolerancePercent(value: number | undefined): number {
-  const parsedValue = value ?? 0.2;
-  if (!Number.isFinite(parsedValue)) {
-    return 0.2;
-  }
-  return Math.min(maxTempoTolerancePercent, Math.max(minTempoTolerancePercent, parsedValue));
-}
-
-export function normalizeTempoEndOfLineSilenceMs(value: number | undefined): number {
-  const parsedValue = value ?? endOfLineSilenceMs;
-  if (!Number.isFinite(parsedValue)) {
-    return endOfLineSilenceMs;
-  }
-  const quantizedValue = Math.round(parsedValue / tempoEndOfLineSilenceStepMs) * tempoEndOfLineSilenceStepMs;
-  return Math.min(maxTempoEndOfLineSilenceMs, Math.max(minTempoEndOfLineSilenceMs, quantizedValue));
 }
