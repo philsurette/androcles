@@ -248,7 +248,7 @@ type ProjectDetailProps = {
   onSelectItem: (item: RecordingItem) => void;
   onAccepted: () => Promise<void>;
   onExport: () => void;
-  onViewInfo: () => void;
+  onViewInfo: (item?: RecordingItem) => void;
   onBack: () => void;
   isExporting: boolean;
 };
@@ -884,8 +884,17 @@ function ItemDetail({
       {showPrevious ? <ContextBlock label="Previous" speaker={item.previousSpeaker} text={item.previousText} /> : null}
 
       <section className="line-panel" aria-label="Line to record">
+        <div className="line-control-strip">
+          <TakeRecorder
+            project={project}
+            item={item}
+            microphoneConfig={microphoneConfig}
+            onAccepted={onAccepted}
+            onNavigatePrevious={previousItem ? () => onNavigate(previousItem.item) : undefined}
+            onNavigateNext={nextItem ? () => onNavigate(nextItem.item) : undefined}
+          />
+        </div>
         <p className="line-text">{item.displayText}</p>
-        <TakeRecorder project={project} item={item} microphoneConfig={microphoneConfig} onAccepted={onAccepted} />
       </section>
 
       {item.stageDirections.length > 0 ? (
@@ -923,9 +932,18 @@ type TakeRecorderProps = {
   item: RecordingItem;
   microphoneConfig: MicrophoneConfig | null;
   onAccepted: () => Promise<void>;
+  onNavigatePrevious?: () => void;
+  onNavigateNext?: () => void;
 };
 
-function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecorderProps) {
+function TakeRecorder({
+  project,
+  item,
+  microphoneConfig,
+  onAccepted,
+  onNavigatePrevious,
+  onNavigateNext
+}: TakeRecorderProps) {
   const recorderRef = useRef<WavRecorder | null>(null);
   const playbackUrlRef = useRef<string | null>(null);
   const playbackAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -1087,9 +1105,6 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
 
   return (
     <section className="take-panel" aria-label="Take recorder">
-      <div className="take-status-row">
-        <p className={statusTone === "warning" ? "take-status warning" : "take-status"}>{status}</p>
-      </div>
       {isRecording ? (
         <div className="take-controls recording-active">
           <button type="button" className="record-control stop-control" aria-label="Stop recording" title="Stop recording" onClick={stopRecording}>
@@ -1104,71 +1119,82 @@ function TakeRecorder({ project, item, microphoneConfig, onAccepted }: TakeRecor
         </div>
       ) : (
         <div className="take-controls">
-          <button
-            type="button"
-            className="record-control"
-            aria-label={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
-            title={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
-            onClick={() => void startRecording()}
-          >
-            <span aria-hidden="true">●</span>
-          </button>
-          {playingSource === "take" ? (
-            <button type="button" className="secondary recorder-icon-button" aria-label="Stop playback" title="Stop playback" onClick={stopPlayback}>
-              <span aria-hidden="true">■</span>
+          <div className="take-control-group">
+            <button
+              type="button"
+              className="record-control"
+              aria-label={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
+              title={currentTake ? "Record another take" : acceptedTake ? "Record replacement take" : "Record"}
+              onClick={() => void startRecording()}
+            >
+              <span aria-hidden="true">●</span>
             </button>
-          ) : (
+            {playingSource === "take" || playingSource === "saved" ? (
+              <button type="button" className="secondary recorder-icon-button" aria-label="Stop playback" title="Stop playback" onClick={stopPlayback}>
+                <span aria-hidden="true">■</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="secondary recorder-icon-button"
+                disabled={!currentTake && !acceptedTake}
+                aria-label="Play take"
+                title="Play take"
+                onClick={() => (currentTake ? playTake() : playAcceptedTake())}
+              >
+                <span aria-hidden="true">▶</span>
+              </button>
+            )}
+            <button
+              type="button"
+              className="secondary recorder-icon-button accept-control"
+              disabled={!currentTake || isRecording}
+              aria-label="Accept take"
+              title="Accept take"
+              onClick={() => void acceptTake()}
+            >
+              <span aria-hidden="true">✓</span>
+            </button>
+            {currentTake ? (
+              <button
+                type="button"
+                className="secondary recorder-icon-button discard-control"
+                disabled={isRecording}
+                aria-label="Discard current take"
+                title="Discard current take"
+                onClick={discardTake}
+              >
+                <span aria-hidden="true">×</span>
+              </button>
+            ) : null}
+          </div>
+          <div className="take-control-group">
             <button
               type="button"
               className="secondary recorder-icon-button"
-              disabled={!currentTake || isRecording || Boolean(playingSource)}
-              aria-label="Play current take"
-              title="Play current take"
-              onClick={playTake}
+              disabled={!onNavigatePrevious}
+              aria-label="Previous unaccepted line"
+              title="Previous unaccepted line"
+              onClick={() => onNavigatePrevious?.()}
             >
-              <span aria-hidden="true">▶</span>
+              <span aria-hidden="true">◁</span>
             </button>
-          )}
-          <button
-            type="button"
-            className="secondary recorder-icon-button accept-control"
-            disabled={!currentTake || isRecording}
-            aria-label="Accept take"
-            title="Accept take"
-            onClick={() => void acceptTake()}
-          >
-            <span aria-hidden="true">✓</span>
-          </button>
-          {playingSource === "saved" ? (
-            <button type="button" className="secondary recorder-icon-button" aria-label="Stop saved playback" title="Stop saved playback" onClick={stopPlayback}>
-              <span aria-hidden="true">■</span>
-            </button>
-          ) : (
             <button
               type="button"
               className="secondary recorder-icon-button"
-              disabled={!acceptedTake || isRecording || Boolean(playingSource)}
-              aria-label="Play saved take"
-              title="Play saved take"
-              onClick={playAcceptedTake}
+              disabled={!onNavigateNext}
+              aria-label="Next unaccepted line"
+              title="Next unaccepted line"
+              onClick={() => onNavigateNext?.()}
             >
-              <span aria-hidden="true">▶︎</span>
+              <span aria-hidden="true">▷</span>
             </button>
-          )}
-          {currentTake ? (
-            <button
-              type="button"
-              className="secondary recorder-icon-button discard-control"
-              disabled={isRecording}
-              aria-label="Discard current take"
-              title="Discard current take"
-              onClick={discardTake}
-            >
-              <span aria-hidden="true">×</span>
-            </button>
-          ) : null}
+          </div>
         </div>
       )}
+      <div className="take-status-row">
+        <p className={statusTone === "warning" ? "take-status warning" : "take-status"}>{status}</p>
+      </div>
     </section>
   );
 }
