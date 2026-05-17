@@ -56,12 +56,14 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
   - Target hook: `cuemaster/src/ui/hooks/useRehearsalSettings.ts`.
   - Include playback rate, cue window preset, line reveal defaults, blocking options, speak-along settings, and timing tolerances.
   - Progress: moved settings state ownership and persisted-session initialization into `cuemaster/src/ui/hooks/useRehearsalSettings.ts`.
-- [ ] Extract playback orchestration from `RehearsalScreen.tsx`.
+- [x] Extract playback orchestration from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useRehearsalPlayback.ts`.
   - Own `AudioQueue`, cue playback, response playback, callout playback, pause/resume/stop, and playback status.
+  - Progress: moved `AudioQueue` lifecycle, generic cue/line/callout playback execution, pause/resume/stop, playback source, and status state into `cuemaster/src/ui/hooks/useRehearsalPlayback.ts`.
 - [ ] Extract tempo timing from `RehearsalScreen.tsx`.
   - Target hook/service: `cuemaster/src/ui/hooks/useTempoTiming.ts`.
   - Own detector lifecycle, feedback tone, timing attempt save/load, and timing status message generation.
+  - Progress: moved feedback tone `AudioContext` lifecycle and playback into `cuemaster/src/ui/hooks/useTempoTiming.ts`.
 - [x] Extract bookmark state from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useBookmarks.ts`.
   - Own current bookmark, bookmark list, neighboring bookmarks, and toggle behavior.

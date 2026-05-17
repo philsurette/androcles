@@ -5,7 +5,7 @@ import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { TimingAttempt } from "../../domain/timingAttempt";
-import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
+import type { QueueItem } from "../../rehearsal/audioQueue";
 import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
@@ -59,7 +59,9 @@ import { PracticeSelect } from "../components/PracticeSelect";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { useRehearsalPlayback } from "../hooks/useRehearsalPlayback";
 import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
+import { useTempoTiming } from "../hooks/useTempoTiming";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -70,8 +72,6 @@ type RehearsalScreenProps = {
   onSelectRole: () => void;
 };
 
-type PlaybackUiState = "idle" | "playing" | "paused";
-type PlaybackSource = "cue" | "line";
 type TimingPill = "delivery" | "pickup";
 
 export function RehearsalScreen({
@@ -92,7 +92,6 @@ export function RehearsalScreen({
     const startLine = role.lines[engine.position().index];
     return startLine ? startLine.id : null;
   });
-  const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
   const {
     playbackRate,
@@ -140,9 +139,16 @@ export function RehearsalScreen({
     tempoTimingPreferred,
     setTempoTimingPreferred
   } = useRehearsalSettings(initialSession, engine.includeDirections());
-  const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
-  const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
-  const [playbackStatus, setPlaybackStatus] = useState<string>("");
+  const {
+    playbackState,
+    playbackSource,
+    playbackStatus,
+    setPlaybackStatus,
+    playItems,
+    pausePlayback,
+    resumePlayback,
+    stopPlayback: stopPlaybackQueue
+  } = useRehearsalPlayback(playbook.id);
   const [timingStatusMessage, setTimingStatusMessage] = useState<TimingStatusPill | null>(null);
   const [expandedTimingPill, setExpandedTimingPill] = useState<TimingPill | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
@@ -154,7 +160,7 @@ export function RehearsalScreen({
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
   const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
-  const timingToneAudioContextRef = useRef<AudioContext | null>(null);
+  const { playTimingFeedbackTone } = useTempoTiming();
   const calloutPlaybackSeq = useRef(0);
   const rehearsalLayoutClass = isCompactViewport ? "rehearsal-no-outline" : isOutlineOpen ? "rehearsal-outline-open" : "rehearsal-outline-collapsed";
   const activeTimingLineIdRef = useRef<string | null>(null);
@@ -342,17 +348,6 @@ export function RehearsalScreen({
     layoutQuery.addListener(handleViewportChange);
     return () => {
       layoutQuery.removeListener(handleViewportChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      const toneContext = timingToneAudioContextRef.current;
-      if (!toneContext) {
-        return;
-      }
-      void toneContext.close();
-      timingToneAudioContextRef.current = null;
     };
   }, []);
 
@@ -559,12 +554,10 @@ export function RehearsalScreen({
     const { preserveTimingStatus = false } = options;
     const currentLine = currentLineFromEngine();
     setHasStarted(true);
-    setPlaybackSource("cue");
-    setPlaybackState("playing");
     const calloutLineItems = buildCalloutPlaybackItemsForCues(cues);
-    try {
-      if (speakAlongEnabled && currentLine) {
-        await audioQueue.play([
+    const didComplete = speakAlongEnabled && currentLine
+      ? await playItems(
+        [
           ...calloutLineItems,
           ...speakAlongPlaybackItems(
             engine.cuePayloads(cueWindowPresetId),
@@ -573,110 +566,28 @@ export function RehearsalScreen({
             cueWindowPresetId,
             speakAlongPauseMs
           )
-        ]);
-      } else {
-        await audioQueue.play([...calloutLineItems, ...cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId)]);
-      }
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-      if (!speakAlongEnabled) {
-        beginTimedAttempt(preserveTimingStatus);
-      }
-    } catch (error) {
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-      setPlaybackStatus(userFacingErrorMessage(error));
+        ],
+        { source: "cue" }
+      )
+      : await playItems(
+        [...calloutLineItems, ...cuePlaybackItems(engine.cuePayloads(cueWindowPresetId), cueWindowPresetId)],
+        { source: "cue" }
+      );
+
+    if (didComplete && !speakAlongEnabled) {
+      beginTimedAttempt(preserveTimingStatus);
     }
-  }
-
-  function getTimingToneAudioContext(): AudioContext | null {
-    if (typeof window === "undefined") {
-      return null;
-    }
-
-    const audioContextConstructor =
-      window.AudioContext ??
-      (window as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ??
-      null;
-    if (!audioContextConstructor) {
-      return null;
-    }
-
-    if (!timingToneAudioContextRef.current) {
-      timingToneAudioContextRef.current = new audioContextConstructor();
-    }
-
-    return timingToneAudioContextRef.current;
-  }
-
-  async function playTimingFeedbackTone(kind: "auto-advance" | "retry"): Promise<void> {
-    const context = getTimingToneAudioContext();
-    if (!context) {
-      return;
-    }
-
-    if (context.state === "suspended") {
-      try {
-        await context.resume();
-      } catch (_error) {
-        return;
-      }
-    }
-
-    const now = context.currentTime;
-    const pattern =
-      kind === "auto-advance"
-        ? [
-            { frequency: 640, durationMs: 120, gapMs: 35, volume: 0.06 },
-            { frequency: 860, durationMs: 120, gapMs: 0, volume: 0.06 }
-          ]
-        : [{ frequency: 260, durationMs: 210, gapMs: 0, volume: 0.06 }];
-    let cursor = now;
-
-    for (const tone of pattern) {
-      if (context.state !== "running") {
-        break;
-      }
-
-      const oscillator = context.createOscillator();
-      const gain = context.createGain();
-      const start = cursor;
-      const end = start + tone.durationMs / 1000;
-
-      oscillator.type = "triangle";
-      oscillator.frequency.setValueAtTime(tone.frequency, start);
-      gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(tone.volume, start + 0.015);
-      gain.gain.linearRampToValueAtTime(0, end);
-
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(end + 0.03);
-
-      cursor = end + tone.gapMs / 1000;
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, cursor - now + 40));
   }
 
   async function playResponse(responseLine: Line | null) {
     if (!responseLine) {
       return;
     }
-    setPlaybackSource("line");
-    setPlaybackStatus("Playing your line...");
-    setPlaybackState("playing");
-    try {
-      await audioQueue.play(responsePlaybackItems(responseLine, playbackRate));
-      setPlaybackStatus("Line complete.");
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-    } catch (error) {
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-      setPlaybackStatus(userFacingErrorMessage(error));
-    }
+    await playItems(responsePlaybackItems(responseLine, playbackRate), {
+      source: "line",
+      startStatus: "Playing your line...",
+      completeStatus: "Line complete."
+    });
   }
 
   async function playCurrentCallout() {
@@ -688,55 +599,20 @@ export function RehearsalScreen({
     const calloutLineId = line?.id;
     const thisCalloutPlaybackSeq = ++calloutPlaybackSeq.current;
     setTimingStatusMessage(null);
-    setPlaybackStatus(`Playing callout (${callout.speaker})...`);
-    setPlaybackState("playing");
-    try {
-      await audioQueue.play([{ kind: "audio", path: callout.audioPath, playbackRate: 1 }]);
-      if (thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
-        return;
-      }
-      if (line?.id === calloutLineId) {
-        setPlaybackStatus("Callout complete.");
-      } else {
-        setPlaybackStatus("Playback complete.");
-      }
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-    } catch (error) {
-      if (thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
-        return;
-      }
-      setPlaybackState("idle");
-      setPlaybackSource(null);
-      setPlaybackStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  function pausePlayback() {
-    if (playbackState !== "playing") {
+    const didComplete = await playItems([{ kind: "audio", path: callout.audioPath, playbackRate: 1 }], {
+      source: "cue",
+      startStatus: `Playing callout (${callout.speaker})...`
+    });
+    if (!didComplete || thisCalloutPlaybackSeq !== calloutPlaybackSeq.current) {
       return;
     }
-    audioQueue.pause();
-    setPlaybackState("paused");
-    setPlaybackStatus("Playback paused.");
-  }
-
-  function resumePlayback() {
-    if (playbackState !== "paused") {
-      return;
-    }
-    audioQueue.resume();
-    setPlaybackState("playing");
-    setPlaybackStatus("Playback resumed.");
+    setPlaybackStatus(line?.id === calloutLineId ? "Callout complete." : "Playback complete.");
   }
 
   function stopPlayback() {
-    audioQueue.cancel();
     activeTimingLineIdRef.current = null;
     setTimingStatusMessage(null);
-    setPlaybackState("idle");
-    setPlaybackSource(null);
-    setPlaybackStatus("Playback stopped.");
+    stopPlaybackQueue();
   }
 
   function makeTempoTimingDetector(): VoiceActivityDetector {
