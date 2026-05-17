@@ -13,7 +13,6 @@ import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehear
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
 import {
   resolveCurrentLineFromEngine,
-  visibleBlockingForLine,
   visibleCuesForDisplay
 } from "../../rehearsal/rehearsalPresentation";
 import { deliveryLabel } from "../../rehearsal/tempoFeedback";
@@ -34,9 +33,9 @@ import {
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
-import { CueCard } from "../components/CueCard";
-import { LineCard, type BlockingScope } from "../components/LineCard";
+import type { BlockingScope } from "../components/LineCard";
 import { RehearsalBottomBar } from "../components/RehearsalBottomBar";
+import { RehearsalLineWorkspace } from "../components/RehearsalLineWorkspace";
 import { RehearsalOptionsPanel } from "../components/RehearsalOptionsPanel";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
@@ -1344,168 +1343,25 @@ export function RehearsalScreen({
             onToggleOpen={() => setIsOutlineOpen((current) => !current)}
           />
           <div className="rehearsal-main">
-            {line ? (
-              <div className={`rehearsal-line-layout rehearsal-text-size rehearsal-text-size-${rehearsalTextSize}`}>
-                <fieldset className="cue-section-panel" aria-label={`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}>
-                  <legend className="cue-section-title">{`Cue: ${visibleCues[0]?.speaker ?? role.displayName}`}</legend>
-                  <section className="cue-strip" aria-label="Cue">
-                    <section className="control-strip cue-control-strip" aria-label="Cue controls">
-                      <div className="transport">
-                        <div className="control-group transport-group cue-play-group">
-                          {playbackSource === "cue" && playbackState === "playing" ? (
-                            <button
-                              type="button"
-                              className="transport-button secondary"
-                              aria-label="Pause cue playback. Shortcut: Space."
-                              title="Pause cue"
-                              onClick={() => void runCommand("pause")}
-                            >
-                              <span aria-hidden="true" className="transport-icon">
-                                ⏸
-                              </span>
-                            </button>
-                          ) : null}
-                          {playbackSource === "cue" && playbackState === "paused" ? (
-                            <button
-                              type="button"
-                              className="transport-button secondary"
-                              aria-label="Resume cue playback. Shortcut: Space."
-                              title="Resume cue"
-                              onClick={() => void runCommand("resume")}
-                            >
-                              <span aria-hidden="true" className="transport-icon">
-                                ▶
-                              </span>
-                            </button>
-                          ) : null}
-                          {playbackSource !== "cue" || playbackState === "idle" ? (
-                            <button
-                              type="button"
-                              className="transport-button secondary"
-                              aria-label={`${hasStarted ? "Replay cue" : "Play cue"}. Shortcut: R.`}
-                              title={hasStarted ? "Replay cue" : "Play cue"}
-                              onClick={() => void runCommand("repeat-cue")}
-                            >
-                              <span aria-hidden="true" className="transport-icon">
-                                ▶
-                              </span>
-                            </button>
-                          ) : null}
-                          <button
-                            type="button"
-                            className="transport-button secondary"
-                            aria-label="Stop cue playback. Shortcut: Escape."
-                            title="Stop"
-                            onClick={() => void runCommand("stop")}
-                          >
-                            <span aria-hidden="true" className="transport-icon">
-                              ■
-                            </span>
-                          </button>
-                        </div>
-                        <div className="control-group transport-group cue-navigation-group">
-                          <button
-                            type="button"
-                            className="transport-button secondary"
-                            aria-label="Go to previous line. Shortcut: Left arrow."
-                            title="Previous line"
-                            disabled={position.atBeginning}
-                            onClick={() => void runCommand("back")}
-                          >
-                            <span aria-hidden="true" className="transport-icon">
-                              ⏮
-                            </span>
-                          </button>
-                          <button
-                            type="button"
-                            className="transport-button secondary"
-                            aria-label="Go to next line. Shortcut: Right arrow."
-                            title="Next line"
-                            disabled={position.atEnd}
-                            onClick={() => void runCommand("next")}
-                          >
-                            <span aria-hidden="true" className="transport-icon">
-                              ⏭
-                            </span>
-                          </button>
-                        </div>
-                        <div className="control-group transport-group cue-bookmark-group">
-                          <button
-                            type="button"
-                            className="quick-toggle"
-                            aria-label="Go to previous bookmark."
-                            title="Previous bookmark"
-                            onClick={() => bookmarkNeighbors.previousLineId && jumpToLine(bookmarkNeighbors.previousLineId)}
-                            disabled={!bookmarkNeighbors.previousLineId}
-                          >
-                            <span aria-hidden="true">↤</span>
-                          </button>
-                          <button
-                            type="button"
-                            className={isCurrentLineBookmarked ? "quick-toggle active" : "quick-toggle"}
-                            aria-pressed={isCurrentLineBookmarked}
-                            aria-label={
-                              isCurrentLineBookmarked
-                                ? "Remove bookmark from current line."
-                                : "Bookmark current line."
-                            }
-                            title={isCurrentLineBookmarked ? "Bookmarked" : "Bookmark"}
-                            onClick={() => void runCommand("bookmark")}
-                          >
-                            <span aria-hidden="true">{isCurrentLineBookmarked ? "★" : "☆"}</span>
-                          </button>
-                          <button
-                            type="button"
-                            className="quick-toggle"
-                            aria-label="Go to next bookmark."
-                            title="Next bookmark"
-                            onClick={() => bookmarkNeighbors.nextLineId && jumpToLine(bookmarkNeighbors.nextLineId)}
-                            disabled={!bookmarkNeighbors.nextLineId}
-                          >
-                            <span aria-hidden="true">↦</span>
-                          </button>
-                        </div>
-                      </div>
-                    </section>
-                    <div className="cue-strip-cards">
-                    {visibleCues.map((cue, index) => (
-                      <CueCard cue={cue} showSpeaker={false} key={`${line.id}-cue-${index}`} />
-                      ))}
-                      {includeBlocking
-                        ? visibleBlockingForLine(line, blockingScope)
-                            .filter((blocking) => blocking.placement !== "inline")
-                            .map((blocking) => (
-                              <article
-                                className="card cue-card cue-blocking-card"
-                                key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
-                              >
-                                <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
-                                <p className="cue-blocking-text">({blocking.text})</p>
-                              </article>
-                            ))
-                        : null}
-                    </div>
-                  </section>
-                </fieldset>
-
-                  <section className="stack" aria-label="Current cue and line">
-                    <div className="rehearsal-line-content">
-                      {isLineRevealed ? (
-                        <LineCard
-                          line={line}
-                          includeDirections={includeDirections}
-                          includeBlocking={includeBlocking}
-                        blockingScope={blockingScope}
-                      />
-                    ) : (
-                      <article className="card hidden-line">Line hidden</article>
-                    )}
-                  </div>
-                </section>
-              </div>
-            ) : (
-              <p className="empty">This role has no rehearsable lines.</p>
-            )}
+            <RehearsalLineWorkspace
+              line={line}
+              roleDisplayName={role.displayName}
+              rehearsalTextSize={rehearsalTextSize}
+              visibleCues={visibleCues}
+              playbackSource={playbackSource}
+              playbackState={playbackState}
+              hasStarted={hasStarted}
+              atBeginning={position.atBeginning}
+              atEnd={position.atEnd}
+              bookmarkNeighbors={bookmarkNeighbors}
+              isCurrentLineBookmarked={isCurrentLineBookmarked}
+              includeBlocking={includeBlocking}
+              includeDirections={includeDirections}
+              isLineRevealed={isLineRevealed}
+              blockingScope={blockingScope}
+              onCommand={(command) => void runCommand(command)}
+              onJumpToLine={jumpToLine}
+            />
           </div>
         </div>
 
