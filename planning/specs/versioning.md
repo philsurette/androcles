@@ -213,6 +213,8 @@ The sequence is human-facing and convenient. The full `sequence@publication-id` 
 
 This document calls the manuscript counter `sequence` rather than `major` to avoid confusion with semantic format-version major numbers. It serves the same purpose as the producer-facing monotonically increasing manuscript version number.
 
+There is no legacy production-version compatibility mode. Existing `production.md` files in this repository should be updated to this structured format when the feature lands. If Stager encounters an older production-version string, such as plain `v0007`, it should fail with a migration diagnostic rather than trying to infer lineage.
+
 ### Fork Detection
 
 A fork exists when two production manuscripts claim the same sequence number but have different publication ids.
