@@ -35,8 +35,9 @@ import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import type { BlockingScope } from "../components/LineCard";
 import { RehearsalBottomBar } from "../components/RehearsalBottomBar";
+import { RehearsalHeader } from "../components/RehearsalHeader";
 import { RehearsalLineWorkspace } from "../components/RehearsalLineWorkspace";
-import { RehearsalOptionsPanel } from "../components/RehearsalOptionsPanel";
+import { RehearsalOptionsScreen } from "../components/RehearsalOptionsScreen";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
@@ -1214,103 +1215,59 @@ export function RehearsalScreen({
 
   if (isOptionsPageVisible) {
     return (
-      <main className="shell">
-        <section className="hero rehearsal">
-          <header className="rehearsal-header">
-            <div className="breadcrumb-row">
-              <button
-                type="button"
-                className="icon-button secondary"
-                aria-label="Back to rehearsal."
-                title="Back to rehearsal"
-                onClick={closeOptionsPage}
-              >
-                <span aria-hidden="true">←</span>
-              </button>
-              <div className="rehearsal-title-stack">
-                <p className="rehearsal-play-title">{playbook.title}</p>
-                <p className="rehearsal-role-title">Rehearse options</p>
-              </div>
-            </div>
-          </header>
-          {storageStatus ? (
-            <p className="error" role="alert">
-              {storageStatus}
-            </p>
-          ) : null}
-          <div className="rehearsal-workspace no-outline options-workspace options-workspace-shell">
-            <div className="practice-options-scroll">
-              <RehearsalOptionsPanel
-                cueWindowPresetId={cueWindowPresetId}
-                blockingScope={blockingScope}
-                rehearsalTextSize={rehearsalTextSize}
-                playbackRate={playbackRate}
-                practiceTargetPaceMultiplier={practiceTargetPaceMultiplier}
-                syncSpeakAlongSpeed={syncSpeakAlongSpeed}
-                absoluteTempoForgivenessMs={absoluteTempoForgivenessMs}
-                tempoTolerancePercent={tempoTolerancePercent}
-                speakAlongPauseMs={speakAlongPauseMs}
-                tempoTargetHesitationMs={tempoTargetHesitationMs}
-                syncPracticeTiming={syncPracticeTiming}
-                absolutePickupForgivenessMs={absolutePickupForgivenessMs}
-                tempoEndOfLineSilenceMs={tempoEndOfLineSilenceMs}
-                autoAdvanceMode={autoAdvanceMode}
-                autoPlayLineMode={autoPlayLineMode}
-                onCueWindowPresetChange={changeCueWindowPreset}
-                onBlockingScopeChange={changeBlockingScope}
-                onRehearsalTextSizeChange={changeRehearsalTextSize}
-                onPlaybackRateChange={changePlaybackRate}
-                onPracticeTargetPaceMultiplierChange={changePracticeTargetPaceMultiplier}
-                onSyncSpeakAlongSpeedChange={changeSyncSpeakAlongSpeed}
-                onAbsoluteTempoForgivenessChange={changeAbsoluteTempoForgiveness}
-                onTempoTolerancePercentChange={changeTempoTolerancePercent}
-                onSpeakAlongPauseMsChange={changeSpeakAlongPauseMs}
-                onTempoTargetHesitationMsChange={changeTempoTargetHesitationMs}
-                onSyncPracticeTimingChange={changeSyncPracticeTiming}
-                onAbsolutePickupForgivenessChange={changeAbsolutePickupForgiveness}
-                onTempoEndOfLineSilenceMsChange={changeTempoEndOfLineSilenceMs}
-                onAutoAdvanceModeChange={changeAutoAdvanceMode}
-                onAutoPlayLineModeChange={changeAutoPlayLineMode}
-              />
-            </div>
-          </div>
-        </section>
-      </main>
+      <RehearsalOptionsScreen
+        playTitle={playbook.title}
+        storageStatus={storageStatus}
+        onBackToRehearsal={closeOptionsPage}
+        options={{
+          cueWindowPresetId,
+          blockingScope,
+          rehearsalTextSize,
+          playbackRate,
+          practiceTargetPaceMultiplier,
+          syncSpeakAlongSpeed,
+          absoluteTempoForgivenessMs,
+          tempoTolerancePercent,
+          speakAlongPauseMs,
+          tempoTargetHesitationMs,
+          syncPracticeTiming,
+          absolutePickupForgivenessMs,
+          tempoEndOfLineSilenceMs,
+          autoAdvanceMode,
+          autoPlayLineMode,
+          onCueWindowPresetChange: changeCueWindowPreset,
+          onBlockingScopeChange: changeBlockingScope,
+          onRehearsalTextSizeChange: changeRehearsalTextSize,
+          onPlaybackRateChange: changePlaybackRate,
+          onPracticeTargetPaceMultiplierChange: changePracticeTargetPaceMultiplier,
+          onSyncSpeakAlongSpeedChange: changeSyncSpeakAlongSpeed,
+          onAbsoluteTempoForgivenessChange: changeAbsoluteTempoForgiveness,
+          onTempoTolerancePercentChange: changeTempoTolerancePercent,
+          onSpeakAlongPauseMsChange: changeSpeakAlongPauseMs,
+          onTempoTargetHesitationMsChange: changeTempoTargetHesitationMs,
+          onSyncPracticeTimingChange: changeSyncPracticeTiming,
+          onAbsolutePickupForgivenessChange: changeAbsolutePickupForgiveness,
+          onTempoEndOfLineSilenceMsChange: changeTempoEndOfLineSilenceMs,
+          onAutoAdvanceModeChange: changeAutoAdvanceMode,
+          onAutoPlayLineModeChange: changeAutoPlayLineMode
+        }}
+      />
     );
   }
 
   return (
     <main className="shell">
       <section className={`hero rehearsal ${rehearsalLayoutClass}`}>
-        <header className="rehearsal-header">
-          <div className="breadcrumb-row">
-            <button
-              type="button"
-              className="icon-button secondary"
-              aria-label="Back to library."
-              title="Back to library."
-              onClick={onBack}
-            >
-              <span aria-hidden="true">←</span>
-            </button>
-            <div className="rehearsal-title-stack">
-              <p className="rehearsal-play-title">{playbook.title}</p>
-              <p className="rehearsal-role-title">{role.displayName}</p>
-            </div>
-          </div>
-          <div className="rehearsal-line-metadata">
-              <button
-                type="button"
-                className="outline-open-button icon-button secondary"
-                aria-label={isOutlineOpen ? "Browse cues" : "Open cues"}
-                title={isOutlineOpen ? "Browse cues" : "Open cues"}
-                onClick={() => setIsOutlineOpen(true)}
-              >
-              <span aria-hidden="true">📋</span>
-            </button>
-            <p className="line-position">{line ? line.id : "No lines"}</p>
-          </div>
-        </header>
+        <RehearsalHeader
+          playTitle={playbook.title}
+          roleTitle={role.displayName}
+          backLabel="Back to library."
+          backTitle="Back to library."
+          onBack={onBack}
+          lineId={line?.id ?? null}
+          isOutlineOpen={isOutlineOpen}
+          onOpenOutline={() => setIsOutlineOpen(true)}
+        />
         {storageStatus ? (
           <p className="error" role="alert">
             {storageStatus}
