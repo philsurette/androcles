@@ -8,18 +8,24 @@ import {
   compareSegmentIds,
   type PlayPageEntry
 } from "../../rehearsal/playPageEntries";
+import {
+  nextLineIndex,
+  nextRoleLineIndex,
+  nextSectionStartIndex,
+  previousLineIndex,
+  previousRoleLineIndex,
+  previousSectionStartIndex,
+  sectionIndexByPartId,
+  sectionWindowForIndex
+} from "../../rehearsal/playPageNavigation";
 import { entryMatchesSearchQuery } from "../../rehearsal/playPageSearch";
-
-type PlaybackUiState = "idle" | "playing" | "paused";
+import { PlayPageControls, type PlayPagePlaybackState, type PlaySpeed } from "../components/PlayPageControls";
 
 type PlayPageScreenProps = {
   playbook: Playbook;
   onBack: () => void;
 };
 
-type PlaySpeed = 0.5 | 0.75 | 1 | 1.25 | 1.5 | 2;
-
-const playRates: PlaySpeed[] = [0.5, 0.75, 1, 1.25, 1.5, 2];
 const lineGapMs = 500;
 
 const directionPlaybackRate = 1;
@@ -28,7 +34,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [currentIndex, setCurrentIndex] = useState(0);
   const [playbackRate, setPlaybackRate] = useState<PlaySpeed>(1);
-  const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
+  const [playbackState, setPlaybackState] = useState<PlayPagePlaybackState>("idle");
   const [readNarration, setReadNarration] = useState(true);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,13 +54,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     [playbook.sections]
   );
   const resolveCallout = useMemo(() => buildCalloutResolver(playbook), [playbook]);
-  const sectionIndexByPartId = useMemo(() => {
-    const mapping = new Map<number | null, number>();
-    for (let index = 0; index < orderedSections.length; index += 1) {
-      mapping.set(orderedSections[index].partId, index);
-    }
-    return mapping;
-  }, [orderedSections]);
+  const sectionIndexMap = useMemo(() => sectionIndexByPartId(orderedSections), [orderedSections]);
   const currentEntry: PlayPageEntry | null = entries[currentIndex] ?? null;
   const currentLine = currentEntry?.type === "line" ? currentEntry.line : null;
   const currentLineCallout = useMemo(() => {
@@ -94,11 +94,11 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const nextLine = nextLineIndex(entries, currentIndex);
   const previousLineForCurrentRole = previousRoleLineIndex(entries, currentIndex, currentEntry?.speaker);
   const nextLineForCurrentRole = nextRoleLineIndex(entries, currentIndex, currentEntry?.speaker);
-  const previousSection = previousSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
-  const nextSection = nextSectionStartIndex(entries, currentIndex, sectionIndexByPartId, orderedSections);
+  const previousSection = previousSectionStartIndex(entries, currentIndex, sectionIndexMap, orderedSections);
+  const nextSection = nextSectionStartIndex(entries, currentIndex, sectionIndexMap, orderedSections);
   const currentSectionWindow = useMemo(
-    () => sectionWindowForIndex(entries, currentIndex, sectionIndexByPartId, orderedSections),
-    [entries, currentIndex, sectionIndexByPartId, orderedSections]
+    () => sectionWindowForIndex(entries, currentIndex, sectionIndexMap, orderedSections),
+    [entries, currentIndex, sectionIndexMap, orderedSections]
   );
   const currentSectionEntries = entries.slice(currentSectionWindow.start, currentSectionWindow.end);
 
@@ -391,160 +391,6 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     setReadNarration((current) => !current);
   }
 
-  const selectedPlaybackRateLabel = `${playbackRate}×`;
-
-  function previousLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
-    return index > 0 ? index - 1 : -1;
-  }
-
-  function nextLineIndex(entriesToSearch: PlayPageEntry[], index: number) {
-    return index >= 0 && index < entriesToSearch.length - 1 ? index + 1 : -1;
-  }
-
-function previousRoleLineIndex(entriesToSearch: PlayPageEntry[], index: number, role?: string) {
-  if (!role) {
-    return -1;
-  }
-  const targetRole = canonicalRoleKey(role);
-  for (let entryIndex = index - 1; entryIndex >= 0; entryIndex -= 1) {
-    const entry = entriesToSearch[entryIndex];
-    if (canonicalRoleKey(entry?.speaker) === targetRole) {
-      return entryIndex;
-    }
-  }
-  return -1;
-}
-
-function nextRoleLineIndex(entriesToSearch: PlayPageEntry[], index: number, role?: string) {
-  if (!role) {
-    return -1;
-  }
-  const targetRole = canonicalRoleKey(role);
-  for (let entryIndex = index + 1; entryIndex < entriesToSearch.length; entryIndex += 1) {
-    const entry = entriesToSearch[entryIndex];
-    if (canonicalRoleKey(entry?.speaker) === targetRole) {
-      return entryIndex;
-    }
-  }
-  return -1;
-}
-
-function canonicalRoleKey(rawSpeaker?: string) {
-  return (rawSpeaker ?? "").trim().replace(/^_+/, "").toLowerCase();
-}
-
-  function sectionStartIndexForPartId(entriesToSearch: PlayPageEntry[], targetPartId: number | null) {
-    for (let entryIndex = 0; entryIndex < entriesToSearch.length; entryIndex += 1) {
-      if (entriesToSearch[entryIndex]?.partId === targetPartId) {
-        return entryIndex;
-      }
-    }
-    return -1;
-  }
-
-  function previousSectionStartIndex(
-    entriesToSearch: PlayPageEntry[],
-    index: number,
-    sectionIndexMap: Map<number | null, number>,
-    orderedSectionList: (typeof orderedSections),
-  ) {
-    if (index < 0 || index >= entriesToSearch.length) {
-      return -1;
-    }
-    const currentPartId = entriesToSearch[index]?.partId ?? null;
-    const currentSectionIndex = sectionIndexMap.get(currentPartId);
-    if (currentSectionIndex === undefined) {
-      return -1;
-    }
-
-    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
-    if (currentSectionStart < 0) {
-      return -1;
-    }
-    if (index > currentSectionStart) {
-      return currentSectionStart;
-    }
-    if (currentSectionIndex <= 0) {
-      return -1;
-    }
-
-    const targetPartId = orderedSectionList[currentSectionIndex - 1]?.partId ?? null;
-    return sectionStartIndexForPartId(entriesToSearch, targetPartId);
-  }
-
-  function nextSectionStartIndex(
-    entriesToSearch: PlayPageEntry[],
-    index: number,
-    sectionIndexMap: Map<number | null, number>,
-    orderedSectionList: (typeof orderedSections),
-  ) {
-    if (index < 0 || index >= entriesToSearch.length) {
-      return -1;
-    }
-    const currentPartId = entriesToSearch[index]?.partId ?? null;
-    const currentSectionIndex = sectionIndexMap.get(currentPartId);
-    if (currentSectionIndex === undefined) {
-      return -1;
-    }
-    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
-    if (currentSectionStart < 0) {
-      return -1;
-    }
-    if (index < currentSectionStart) {
-      return currentSectionStart;
-    }
-    if (currentSectionIndex >= orderedSectionList.length - 1) {
-      return -1;
-    }
-    const targetPartId = orderedSectionList[currentSectionIndex + 1]?.partId ?? null;
-    return sectionStartIndexForPartId(entriesToSearch, targetPartId);
-  }
-
-  function sectionWindowForIndex(
-    entriesToSearch: PlayPageEntry[],
-    index: number,
-    sectionIndexMap: Map<number | null, number>,
-    orderedSectionList: (typeof orderedSections),
-  ) {
-    if (entriesToSearch.length === 0) {
-      return { start: 0, end: 0, label: "Section" };
-    }
-
-    if (index < 0 || index >= entriesToSearch.length) {
-      const fallbackStart = 0;
-      const fallbackEnd = entriesToSearch.length;
-      return { start: fallbackStart, end: fallbackEnd, label: orderedSectionList[0]?.title ?? "Section" };
-    }
-
-    const currentPartId = entriesToSearch[index]?.partId ?? null;
-    const currentSectionIndex = sectionIndexMap.get(currentPartId);
-    if (currentSectionIndex === undefined) {
-      return { start: 0, end: entriesToSearch.length, label: "Section" };
-    }
-
-    const currentSectionStart = sectionStartIndexForPartId(entriesToSearch, currentPartId);
-    if (currentSectionStart < 0) {
-      return { start: 0, end: entriesToSearch.length, label: "Section" };
-    }
-
-    let endIndex = entriesToSearch.length;
-    for (let sectionOffset = currentSectionIndex + 1; sectionOffset < orderedSectionList.length; sectionOffset += 1) {
-      const nextPartId = orderedSectionList[sectionOffset]?.partId ?? null;
-      const nextSectionStart = sectionStartIndexForPartId(entriesToSearch, nextPartId);
-      if (nextSectionStart > currentSectionStart) {
-        endIndex = nextSectionStart;
-        break;
-      }
-    }
-
-    const sectionTitle = orderedSectionList[currentSectionIndex]?.title?.trim();
-    return {
-      start: currentSectionStart,
-      end: endIndex,
-      label: sectionTitle && sectionTitle.length > 0 ? sectionTitle : "Section",
-    };
-  }
-
   return (
     <main className="shell">
       <section className="hero play-page">
@@ -608,213 +454,36 @@ function canonicalRoleKey(rawSpeaker?: string) {
               </div>
             </section>
           </div>
-          <div className="play-page-bottom-bar">
-            <div className="play-page-controls">
-              <div className="play-page-control-group play-page-control-group-left">
-                <button
-                  type="button"
-                  className="play-page-control"
-                  onClick={() => {
-                    if (previousSection !== -1) {
-                      changeLine(previousSection);
-                    }
-                  }}
-                  disabled={previousSection === -1 || entries.length === 0}
-                  aria-label="Previous section"
-                  title="Previous section"
-                >
-                  |◀
-                </button>
-                <button
-                  type="button"
-                  className="play-page-control"
-                  aria-label="Previous line for current role"
-                  title="Previous line for current role"
-                  onClick={() => {
-                    if (previousLineForCurrentRole !== -1) {
-                      playLineFromList(previousLineForCurrentRole);
-                    }
-                  }}
-                  disabled={previousLineForCurrentRole === -1 || entries.length === 0}
-                >
-                  🎭◀
-                </button>
-                <button
-                  type="button"
-                  className="play-page-control"
-                  onClick={() => {
-                    if (previousLine !== -1) {
-                      changeLine(previousLine);
-                    }
-                  }}
-                  disabled={previousLine === -1 || entries.length === 0}
-                  aria-label="Previous line"
-                  title="Previous line"
-                >
-                  ←
-                </button>
-              </div>
-              <div className="play-page-control-group play-page-control-group-center">
-                <button
-                  type="button"
-                  className="play-page-control play-page-primary"
-                  onClick={() => void playCurrentLine()}
-                  disabled={!currentEntry}
-                  aria-label={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
-                  title={playbackState === "playing" ? "Pause section" : playbackState === "paused" ? "Resume section" : "Play section"}
-                >
-                  {playbackState === "playing" ? "Ⅱ" : "▶"}
-                </button>
-                <button
-                  type="button"
-                  className="play-page-control"
-                  onClick={stopPlayback}
-                  disabled={playbackState === "idle"}
-                  aria-label="Stop"
-                  title="Stop"
-                >
-                  ■
-                </button>
-              </div>
-              <div className="play-page-control-group play-page-control-group-right">
-                <button
-                  type="button"
-                  className="play-page-control"
-                  onClick={() => {
-                    if (nextLine !== -1) {
-                      changeLine(nextLine);
-                    }
-                  }}
-                  disabled={nextLine === -1 || entries.length === 0}
-                  aria-label="Next line"
-                  title="Next line"
-                >
-                  →
-                </button>
-                <button
-                  type="button"
-                  className="play-page-control"
-                  aria-label="Next line for current role"
-                  title="Next line for current role"
-                  onClick={() => {
-                    if (nextLineForCurrentRole !== -1) {
-                      playLineFromList(nextLineForCurrentRole);
-                    }
-                  }}
-                  disabled={nextLineForCurrentRole === -1 || entries.length === 0}
-                >
-                  ▶🎭
-                </button>
-                <button
-                  type="button"
-                  className="play-page-control"
-                  onClick={() => {
-                    if (nextSection !== -1) {
-                      changeLine(nextSection);
-                    }
-                  }}
-                  disabled={nextSection === -1 || entries.length === 0}
-                  aria-label="Next section"
-                  title="Next section"
-                >
-                  ▶|
-                </button>
-              </div>
-            </div>
-            <div className="play-page-utility-bar">
-              <form
-                className="play-page-search"
-                onSubmit={(event) => event.preventDefault()}
-              >
-                <label className="play-page-search-field">
-                  <input
-                    type="search"
-                    placeholder="Search…"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault();
-                        runSearch("next");
-                      }
-                    }}
-                    aria-label="Search lines, directions, IDs, or title"
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="quick-toggle play-page-search-arrow"
-                  aria-label="Previous match"
-                  onClick={() => runSearch("previous")}
-                  disabled={searchMatches.length === 0}
-                >
-                  &lt;
-                </button>
-                <span className="play-page-search-count" aria-live="polite">{searchMatchDisplay}</span>
-                <button
-                  type="button"
-                  className="quick-toggle play-page-search-arrow"
-                  aria-label="Next match"
-                  onClick={() => runSearch("next")}
-                  disabled={searchMatches.length === 0}
-                >
-                  &gt;
-                </button>
-              </form>
-              <button
-                type="button"
-                className={`quick-toggle${readNarration ? " active" : ""}`}
-                aria-label={readNarration ? "Disable directions" : "Enable directions"}
-                aria-pressed={readNarration}
-                title={readNarration ? "Directions are enabled" : "Directions are disabled"}
-                onClick={toggleNarrationAndDirections}
-              >
-                <span aria-hidden="true">⌞⌝</span>
-              </button>
-              <button
-                type="button"
-                className={isCalloutEnabled ? "quick-toggle active" : "quick-toggle"}
-                aria-pressed={isCalloutEnabled}
-                aria-label={isCalloutEnabled ? "Disable line callouts." : "Enable line callouts."}
-                title={hasCurrentLineCallout ? `Callouts ${isCalloutEnabled ? "enabled" : "disabled"}` : "No callout for this line"}
-                onClick={() => {
-                  setIsCalloutEnabled((current) => !current);
-                }}
-              >
-                <span aria-hidden="true">📢</span>
-              </button>
-              <div className="play-page-speed-wrap" ref={playbackSpeedSelectRef}>
-                <button
-                  type="button"
-                  className="practice-select-trigger"
-                  aria-label="Select playback speed"
-                  title="Select playback speed"
-                  aria-expanded={isPlaybackSpeedOpen}
-                  aria-controls="play-page-speed-options"
-                  onClick={() => setIsPlaybackSpeedOpen((current) => !current)}
-                >
-                  <span>{selectedPlaybackRateLabel}</span>
-                  <span className="practice-select-caret" aria-hidden="true">
-                    ▾
-                  </span>
-                </button>
-                <div id="play-page-speed-options" role="listbox" className={`practice-select-options ${isPlaybackSpeedOpen ? "open" : ""}`} aria-label="Playback speed">
-                  {playRates.map((rate) => (
-                    <button
-                      key={rate}
-                      type="button"
-                      role="option"
-                      aria-selected={playbackRate === rate}
-                      className={playbackRate === rate ? "practice-select-option active" : "practice-select-option"}
-                      onClick={() => changeRate(rate)}
-                    >
-                      {rate}×
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+          <PlayPageControls
+            entryCount={entries.length}
+            currentEntryExists={currentEntry !== null}
+            previousSection={previousSection}
+            previousLineForCurrentRole={previousLineForCurrentRole}
+            previousLine={previousLine}
+            nextLine={nextLine}
+            nextLineForCurrentRole={nextLineForCurrentRole}
+            nextSection={nextSection}
+            playbackState={playbackState}
+            searchQuery={searchQuery}
+            searchMatchDisplay={searchMatchDisplay}
+            searchMatchCount={searchMatches.length}
+            readNarration={readNarration}
+            isCalloutEnabled={isCalloutEnabled}
+            hasCurrentLineCallout={hasCurrentLineCallout}
+            playbackRate={playbackRate}
+            isPlaybackSpeedOpen={isPlaybackSpeedOpen}
+            playbackSpeedSelectRef={playbackSpeedSelectRef}
+            onChangeLine={changeLine}
+            onPlayLineFromList={playLineFromList}
+            onPlayCurrentLine={() => void playCurrentLine()}
+            onStopPlayback={stopPlayback}
+            onSearchQueryChange={setSearchQuery}
+            onRunSearch={runSearch}
+            onToggleNarrationAndDirections={toggleNarrationAndDirections}
+            onToggleCallout={() => setIsCalloutEnabled((current) => !current)}
+            onTogglePlaybackSpeed={() => setIsPlaybackSpeedOpen((current) => !current)}
+            onChangeRate={changeRate}
+          />
         </div>
       </section>
     </main>

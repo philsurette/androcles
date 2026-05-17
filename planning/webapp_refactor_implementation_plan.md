@@ -64,10 +64,10 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [x] Extract bookmark state from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useBookmarks.ts`.
   - Own current bookmark, bookmark list, neighboring bookmarks, and toggle behavior.
-- [ ] Extract outline browser from `RehearsalScreen.tsx`.
+- [x] Extract outline browser from `RehearsalScreen.tsx`.
   - Target component: `cuemaster/src/ui/components/RehearsalOutline.tsx`.
   - Move outline search/filter helpers to a tested non-React module.
-  - Progress: moved outline search, cue display, and current-line helpers to `cuemaster/src/rehearsal/rehearsalPresentation.ts`.
+  - Progress: moved outline search, cue display, and current-line helpers to `cuemaster/src/rehearsal/rehearsalPresentation.ts`; extracted `cuemaster/src/ui/components/RehearsalOutline.tsx`.
 - [x] Move timing formatting helpers from `RehearsalScreen.tsx` to a tested module.
   - Candidate module: `cuemaster/src/rehearsal/timingPresentation.ts`.
 - [ ] Keep `RehearsalScreen.tsx` as a composition layer only after extraction.
@@ -79,8 +79,9 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
   - Preserve current narration, direction, and audio lookup behavior.
 - [x] Move play page search helpers to a tested module.
   - Target module: `cuemaster/src/rehearsal/playPageSearch.ts`.
-- [ ] Extract playback controls and navigation UI from `PlayPageScreen.tsx`.
+- [x] Extract playback controls and navigation UI from `PlayPageScreen.tsx`.
   - Target components under `cuemaster/src/ui/components/`.
+  - Progress: moved navigation calculations to `cuemaster/src/rehearsal/playPageNavigation.ts`; extracted `cuemaster/src/ui/components/PlayPageControls.tsx`.
 - [x] Re-run existing PlayPage and rehearsal tests, then add tests for any newly extracted pure modules.
 
 ## Phase 4: Shared Browser-App Boundaries
@@ -112,5 +113,5 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [x] Both apps pass unit tests.
 - [x] Top-level LineRecorder `App.tsx` is mostly composition and app routing.
 - [ ] Cuemaster `RehearsalScreen.tsx` no longer owns storage, playback, timing, bookmarks, outline, and rendering all in one file.
-- [ ] Cuemaster `PlayPageScreen.tsx` delegates entry building, search, and playback controls to smaller modules.
+- [x] Cuemaster `PlayPageScreen.tsx` delegates entry building, search, and playback controls to smaller modules.
 - [ ] New feature work can usually touch a hook/service plus one component instead of editing a thousand-line screen.
