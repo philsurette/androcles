@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
+import type { Line } from "../../domain/line";
 import type { TimingAttempt } from "../../domain/timingAttempt";
-import type { TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { tempoFeedbackFor, type TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { formatTimingResult, type TimingStatusPill } from "../../rehearsal/timingPresentation";
+import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
+import type { AutoAdvanceMode, AutoPlayLineMode } from "./useRehearsalSettings";
 
 export type TimingFeedbackTone = "auto-advance" | "retry";
 export type TempoTimingDetector = {
@@ -16,6 +20,35 @@ type UseTempoTimingProps = {
   roleId: string;
   onStorageStatus: (message: string) => void;
 };
+
+type TempoTimingEvaluationOptions = {
+  result: VoiceActivityResult;
+  line: Line;
+  tempoTargetHesitationMs: number;
+  practiceTargetPaceMultiplier: number;
+  absoluteTempoForgivenessMs: number;
+  tempoTolerancePercent: number;
+  absolutePickupForgivenessMs: number;
+  autoAdvanceMode: AutoAdvanceMode;
+  autoPlayLineMode: AutoPlayLineMode;
+  tempoTimingEnabled: boolean;
+  atEnd: boolean;
+};
+
+export type TempoTimingEvaluation =
+  | {
+      kind: "speech-started";
+      playbackStatus: string;
+    }
+  | {
+      kind: "delivery-ended";
+      feedback: TempoFeedback;
+      timingStatus: TimingStatusPill;
+      playbackStatus: string;
+      shouldAutoAdvance: boolean;
+      shouldAutoPlayLine: boolean;
+      shouldRepeatCue: boolean;
+    };
 
 export function useTempoTiming(props?: UseTempoTimingProps) {
   const timingToneAudioContextRef = useRef<AudioContext | null>(null);
@@ -177,5 +210,70 @@ export function useTempoTiming(props?: UseTempoTimingProps) {
     loadReviewAttempts,
     saveTimingAttempt,
     playTimingFeedbackTone
+  };
+}
+
+export function evaluateTempoTimingResult({
+  result,
+  line,
+  tempoTargetHesitationMs,
+  practiceTargetPaceMultiplier,
+  absoluteTempoForgivenessMs,
+  tempoTolerancePercent,
+  absolutePickupForgivenessMs,
+  autoAdvanceMode,
+  autoPlayLineMode,
+  tempoTimingEnabled,
+  atEnd
+}: TempoTimingEvaluationOptions): TempoTimingEvaluation {
+  if (result.event === "speech-started") {
+    const hesitationMs = Math.round(result.hesitationMs ?? 0);
+    return {
+      kind: "speech-started",
+      playbackStatus: `Speech detected${hesitationMs > 0 ? ` (${hesitationMs}ms pause)` : ""}.`
+    };
+  }
+
+  const hesitationMs = Math.round(result.hesitationMs ?? 0);
+  const deliveryMs = Math.max(0, Math.round(result.deliveryMs ?? 0));
+  const feedback = tempoFeedbackFor(
+    line,
+    { hesitationMs, deliveryMs },
+    tempoTargetHesitationMs,
+    practiceTargetPaceMultiplier,
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent,
+    absolutePickupForgivenessMs
+  );
+  const timingStatus = formatTimingResult(
+    feedback,
+    practiceTargetPaceMultiplier,
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent,
+    absolutePickupForgivenessMs
+  );
+  const shouldAutoAdvance =
+    autoAdvanceMode === "always" ||
+    (autoAdvanceMode === "on-target" && timingStatus.delivery.label === "good") ||
+    (autoAdvanceMode === "when-not-slow" && timingStatus.delivery.label !== "slow");
+  const shouldAutoPlayLine =
+    autoPlayLineMode !== "disabled" &&
+    autoAdvanceMode !== "disabled" &&
+    (autoPlayLineMode === "always" || !shouldAutoAdvance);
+  const shouldRepeatCue =
+    autoAdvanceMode !== "disabled" &&
+    tempoTimingEnabled &&
+    !atEnd &&
+    (autoAdvanceMode === "on-target" || autoAdvanceMode === "when-not-slow") &&
+    !shouldAutoAdvance;
+
+  return {
+    kind: "delivery-ended",
+    feedback,
+    timingStatus,
+    playbackStatus: timingStatus.details,
+    shouldAutoAdvance: autoAdvanceMode !== "disabled" && tempoTimingEnabled && !atEnd && shouldAutoAdvance,
+    shouldAutoPlayLine,
+    shouldRepeatCue
   };
 }

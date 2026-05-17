@@ -16,7 +16,7 @@ import {
   visibleBlockingForLine,
   visibleCuesForDisplay
 } from "../../rehearsal/rehearsalPresentation";
-import { deliveryLabel, tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
+import { deliveryLabel } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs, endOfLineSilenceMs, defaultTempoTimingConfig } from "../../rehearsal/tempoTimingConfig";
 import {
   absolutePickupForgivenessOptionsMs,
@@ -31,7 +31,6 @@ import {
   formatTempoTolerancePercent,
   formatTimingAttempt,
   formatTimingOption,
-  formatTimingResult,
   normalizeAbsolutePickupForgivenessMs,
   normalizeAbsoluteTempoForgivenessMs,
   normalizePracticeTargetPaceMultiplier,
@@ -60,7 +59,7 @@ import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useRehearsalPlayback } from "../hooks/useRehearsalPlayback";
 import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
-import { useTempoTiming } from "../hooks/useTempoTiming";
+import { evaluateTempoTimingResult, useTempoTiming } from "../hooks/useTempoTiming";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -1165,56 +1164,55 @@ export function RehearsalScreen({
       return;
     }
     if (result.event === "speech-started") {
-      const hesitationMs = Math.round(result.hesitationMs ?? 0);
-      setTimingStatusMessage(null);
-      setPlaybackStatus(`Speech detected${hesitationMs > 0 ? ` (${hesitationMs}ms pause)` : ""}.`);
-    } else if (result.event === "delivery-ended") {
-      const hesitationMs = Math.round(result.hesitationMs ?? 0);
-      const deliveryMs = Math.max(0, Math.round(result.deliveryMs ?? 0));
-      const feedback = tempoFeedbackFor(
-        timingLine,
-        { hesitationMs, deliveryMs },
+      const timingEvaluation = evaluateTempoTimingResult({
+        result,
+        line: timingLine,
         tempoTargetHesitationMs,
         practiceTargetPaceMultiplier,
         absoluteTempoForgivenessMs,
         tempoTolerancePercent,
-        absolutePickupForgivenessMs
-      );
-      const timingResult = formatTimingResult(
-        feedback,
+        absolutePickupForgivenessMs,
+        autoAdvanceMode,
+        autoPlayLineMode,
+        tempoTimingEnabled,
+        atEnd: engine.position().atEnd
+      });
+      setTimingStatusMessage(null);
+      setPlaybackStatus(timingEvaluation.playbackStatus);
+    } else if (result.event === "delivery-ended") {
+      const timingEvaluation = evaluateTempoTimingResult({
+        result,
+        line: timingLine,
+        tempoTargetHesitationMs,
         practiceTargetPaceMultiplier,
         absoluteTempoForgivenessMs,
         tempoTolerancePercent,
-        absolutePickupForgivenessMs
-      );
-      setTimingStatusMessage(timingResult);
-      setPlaybackStatus(timingResult.details);
-      void saveTimingAttempt(timingLine.id, feedback);
-      const shouldAutoAdvance =
-        autoAdvanceMode === "always" ||
-        (autoAdvanceMode === "on-target" && timingResult.delivery.label === "good") ||
-        (autoAdvanceMode === "when-not-slow" && timingResult.delivery.label !== "slow");
-      const shouldAutoPlayLine =
-        autoPlayLineMode !== "disabled" &&
-        autoAdvanceMode !== "disabled" &&
-        (autoPlayLineMode === "always" || !shouldAutoAdvance);
-      if (autoAdvanceMode !== "disabled" && tempoTimingEnabled && !engine.position().atEnd) {
-        const shouldRepeatCue = (autoAdvanceMode === "on-target" || autoAdvanceMode === "when-not-slow") && !shouldAutoAdvance;
-        if (shouldAutoAdvance) {
+        absolutePickupForgivenessMs,
+        autoAdvanceMode,
+        autoPlayLineMode,
+        tempoTimingEnabled,
+        atEnd: engine.position().atEnd
+      });
+      if (timingEvaluation.kind !== "delivery-ended") {
+        return;
+      }
+      setTimingStatusMessage(timingEvaluation.timingStatus);
+      setPlaybackStatus(timingEvaluation.playbackStatus);
+      void saveTimingAttempt(timingLine.id, timingEvaluation.feedback);
+      if (timingEvaluation.shouldAutoAdvance) {
         void (async () => {
           await playTimingFeedbackTone("auto-advance");
-          await goNext(true, shouldAutoPlayLine, { preserveTimingStatus: true });
+          await goNext(true, timingEvaluation.shouldAutoPlayLine, { preserveTimingStatus: true });
         })();
-        } else if (shouldRepeatCue) {
-          void (async () => {
-            await playTimingFeedbackTone("retry");
-            if (shouldAutoPlayLine) {
-              await playResponse(currentLineFromEngine());
+      } else if (timingEvaluation.shouldRepeatCue) {
+        void (async () => {
+          await playTimingFeedbackTone("retry");
+          if (timingEvaluation.shouldAutoPlayLine) {
+            await playResponse(currentLineFromEngine());
             await new Promise((resolve) => setTimeout(resolve, 1000));
           }
-            await playCue({ preserveTimingStatus: true });
-          })();
-        }
+          await playCue({ preserveTimingStatus: true });
+        })();
       }
       activeTimingLineIdRef.current = null;
     } else {
