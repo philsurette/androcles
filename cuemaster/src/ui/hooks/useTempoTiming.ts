@@ -1,9 +1,26 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { TimingAttempt } from "../../domain/timingAttempt";
+import type { TempoFeedback } from "../../rehearsal/tempoFeedback";
+import { indexedDbStorage } from "../../storage/indexedDbStorage";
+import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
 export type TimingFeedbackTone = "auto-advance" | "retry";
+export type TempoTimingDetector = {
+  start(): Promise<void>;
+  stop(): void;
+  beginAttempt(): void;
+};
 
-export function useTempoTiming() {
+type UseTempoTimingProps = {
+  playbookId: string;
+  roleId: string;
+  onStorageStatus: (message: string) => void;
+};
+
+export function useTempoTiming(props?: UseTempoTimingProps) {
   const timingToneAudioContextRef = useRef<AudioContext | null>(null);
+  const voiceActivityDetectorRef = useRef<TempoTimingDetector | null>(null);
+  const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
 
   useEffect(() => {
     return () => {
@@ -15,6 +32,32 @@ export function useTempoTiming() {
       timingToneAudioContextRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    return () => {
+      voiceActivityDetectorRef.current?.stop();
+      voiceActivityDetectorRef.current = null;
+    };
+  }, []);
+
+  async function startVoiceActivityDetector(createDetector: () => TempoTimingDetector): Promise<TempoTimingDetector | null> {
+    const detector = createDetector();
+    try {
+      await detector.start();
+      voiceActivityDetectorRef.current?.stop();
+      voiceActivityDetectorRef.current = detector;
+      return detector;
+    } catch (error) {
+      detector.stop();
+      props?.onStorageStatus(userFacingErrorMessage(error));
+      return null;
+    }
+  }
+
+  function stopVoiceActivityDetector() {
+    voiceActivityDetectorRef.current?.stop();
+    voiceActivityDetectorRef.current = null;
+  }
 
   function getTimingToneAudioContext(): AudioContext | null {
     if (typeof window === "undefined") {
@@ -87,7 +130,52 @@ export function useTempoTiming() {
     await new Promise((resolve) => setTimeout(resolve, cursor - now + 40));
   }
 
+  async function saveTimingAttempt(lineId: string, feedback: TempoFeedback) {
+    if (!feedback.delivery || !props) {
+      return;
+    }
+    const attempt: TimingAttempt = {
+      id: crypto.randomUUID(),
+      playbookId: props.playbookId,
+      roleId: props.roleId,
+      lineId,
+      createdAt: Date.now(),
+      hesitationMs: feedback.hesitation.measuredMs,
+      deliveryMs: feedback.delivery.measuredMs,
+      targetHesitationMs: feedback.hesitation.targetMs,
+      targetDeliveryMs: feedback.delivery.targetMs,
+      hesitationLabel: feedback.hesitation.label,
+      deliveryLabel: feedback.delivery.label,
+      detectionMode: "energy"
+    };
+    try {
+      await indexedDbStorage.timingAttempts.save(attempt);
+      props.onStorageStatus("");
+      await loadReviewAttempts();
+    } catch (error) {
+      props.onStorageStatus(userFacingErrorMessage(error));
+    }
+  }
+
+  async function loadReviewAttempts() {
+    if (!props) {
+      setReviewAttempts([]);
+      return;
+    }
+    try {
+      setReviewAttempts(await indexedDbStorage.timingAttempts.latestForRole(props.playbookId, props.roleId));
+    } catch (error) {
+      setReviewAttempts([]);
+      props.onStorageStatus(userFacingErrorMessage(error));
+    }
+  }
+
   return {
+    reviewAttempts,
+    startVoiceActivityDetector,
+    stopVoiceActivityDetector,
+    loadReviewAttempts,
+    saveTimingAttempt,
     playTimingFeedbackTone
   };
 }

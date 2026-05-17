@@ -63,7 +63,7 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [ ] Extract tempo timing from `RehearsalScreen.tsx`.
   - Target hook/service: `cuemaster/src/ui/hooks/useTempoTiming.ts`.
   - Own detector lifecycle, feedback tone, timing attempt save/load, and timing status message generation.
-  - Progress: moved feedback tone `AudioContext` lifecycle and playback into `cuemaster/src/ui/hooks/useTempoTiming.ts`.
+  - Progress: moved feedback tone `AudioContext` lifecycle/playback, voice activity detector start/stop, and timing attempt save/load into `cuemaster/src/ui/hooks/useTempoTiming.ts`.
 - [x] Extract bookmark state from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useBookmarks.ts`.
   - Own current bookmark, bookmark list, neighboring bookmarks, and toggle behavior.

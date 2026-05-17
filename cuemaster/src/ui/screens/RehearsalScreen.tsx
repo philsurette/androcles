@@ -4,7 +4,6 @@ import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
-import type { TimingAttempt } from "../../domain/timingAttempt";
 import type { QueueItem } from "../../rehearsal/audioQueue";
 import { cueWindowPresetForId, cueWindowPresets } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
@@ -152,15 +151,24 @@ export function RehearsalScreen({
   const [timingStatusMessage, setTimingStatusMessage] = useState<TimingStatusPill | null>(null);
   const [expandedTimingPill, setExpandedTimingPill] = useState<TimingPill | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
-  const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
   const [showLineInfo, setShowLineInfo] = useState(false);
   const [isOptionsPageVisible, setIsOptionsPageVisible] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
-  const [voiceActivityDetector, setVoiceActivityDetector] = useState<VoiceActivityDetector | null>(null);
-  const { playTimingFeedbackTone } = useTempoTiming();
+  const {
+    reviewAttempts,
+    startVoiceActivityDetector,
+    stopVoiceActivityDetector,
+    loadReviewAttempts,
+    saveTimingAttempt,
+    playTimingFeedbackTone
+  } = useTempoTiming({
+    playbookId: playbook.id,
+    roleId: role.id,
+    onStorageStatus: setStorageStatus
+  });
   const calloutPlaybackSeq = useRef(0);
   const rehearsalLayoutClass = isCompactViewport ? "rehearsal-no-outline" : isOutlineOpen ? "rehearsal-outline-open" : "rehearsal-outline-collapsed";
   const activeTimingLineIdRef = useRef<string | null>(null);
@@ -269,12 +277,6 @@ export function RehearsalScreen({
   useEffect(() => {
     void saveSession(engine.position().index);
   }, []);
-
-  useEffect(() => {
-    return () => {
-      voiceActivityDetector?.stop();
-    };
-  }, [voiceActivityDetector]);
 
   useEffect(() => {
     if (tempoTimingRestoreStartedRef.current || !tempoTimingPreferred || tempoTimingEnabled || speakAlongEnabled) {
@@ -1108,28 +1110,21 @@ export function RehearsalScreen({
   }
 
   async function enableTempoTiming() {
-    const detector = makeTempoTimingDetector();
-
-    try {
-      await detector.start();
-      voiceActivityDetector?.stop();
-      setVoiceActivityDetector(detector);
-      activeTimingLineIdRef.current = null;
-      setTempoTimingEnabled(true);
-      setTempoTimingPreferred(true);
-      setSpeakAlongEnabled(false);
-      await saveSession(position.index, playbackRate, false, true);
-    } catch (error) {
-      detector.stop();
+    const detector = await startVoiceActivityDetector(makeTempoTimingDetector);
+    if (!detector) {
       setTempoTimingEnabled(false);
-      setStorageStatus(userFacingErrorMessage(error));
+      return;
     }
+    activeTimingLineIdRef.current = null;
+    setTempoTimingEnabled(true);
+    setTempoTimingPreferred(true);
+    setSpeakAlongEnabled(false);
+    await saveSession(position.index, playbackRate, false, true);
   }
 
   async function disableTempoTiming(): Promise<void> {
-    voiceActivityDetector?.stop();
+    stopVoiceActivityDetector();
     activeTimingLineIdRef.current = null;
-    setVoiceActivityDetector(null);
     setTempoTimingEnabled(false);
     setTempoTimingPreferred(false);
     await saveSession(position.index, playbackRate, speakAlongEnabled, false);
@@ -1145,16 +1140,10 @@ export function RehearsalScreen({
       setTimingStatusMessage(null);
       return;
     }
-    const detector = makeTempoTimingDetector();
-    voiceActivityDetector?.stop();
-    try {
-      await detector.start();
-    } catch (error) {
-      detector.stop();
-      setStorageStatus(userFacingErrorMessage(error));
+    const detector = await startVoiceActivityDetector(makeTempoTimingDetector);
+    if (!detector) {
       return;
     }
-    setVoiceActivityDetector(detector);
     // Keep capture running for the remainder of the timing session.
     void saveSession(position.index, playbackRate, speakAlongEnabled, true, isLineRevealed);
     activeTimingLineIdRef.current = timingLine.id;
@@ -1230,42 +1219,6 @@ export function RehearsalScreen({
       activeTimingLineIdRef.current = null;
     } else {
       return;
-    }
-  }
-
-  async function saveTimingAttempt(lineId: string, feedback: ReturnType<typeof tempoFeedbackFor>) {
-    if (!feedback.delivery) {
-      return;
-    }
-    const attempt: TimingAttempt = {
-      id: crypto.randomUUID(),
-      playbookId: playbook.id,
-      roleId: role.id,
-      lineId,
-      createdAt: Date.now(),
-      hesitationMs: feedback.hesitation.measuredMs,
-      deliveryMs: feedback.delivery.measuredMs,
-      targetHesitationMs: feedback.hesitation.targetMs,
-      targetDeliveryMs: feedback.delivery.targetMs,
-      hesitationLabel: feedback.hesitation.label,
-      deliveryLabel: feedback.delivery.label,
-      detectionMode: "energy"
-    };
-    try {
-      await indexedDbStorage.timingAttempts.save(attempt);
-      setStorageStatus("");
-      await loadReviewAttempts();
-    } catch (error) {
-      setStorageStatus(userFacingErrorMessage(error));
-    }
-  }
-
-  async function loadReviewAttempts() {
-    try {
-      setReviewAttempts(await indexedDbStorage.timingAttempts.latestForRole(playbook.id, role.id));
-    } catch (error) {
-      setReviewAttempts([]);
-      setStorageStatus(userFacingErrorMessage(error));
     }
   }
 
