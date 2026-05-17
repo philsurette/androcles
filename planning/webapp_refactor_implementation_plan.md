@@ -52,9 +52,10 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 
 ## Phase 2: Cuemaster Rehearsal Screen
 
-- [ ] Extract rehearsal session settings state from `cuemaster/src/ui/screens/RehearsalScreen.tsx`.
+- [x] Extract rehearsal session settings state from `cuemaster/src/ui/screens/RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useRehearsalSettings.ts`.
   - Include playback rate, cue window preset, line reveal defaults, blocking options, speak-along settings, and timing tolerances.
+  - Progress: moved settings state ownership and persisted-session initialization into `cuemaster/src/ui/hooks/useRehearsalSettings.ts`.
 - [ ] Extract playback orchestration from `RehearsalScreen.tsx`.
   - Target hook: `cuemaster/src/ui/hooks/useRehearsalPlayback.ts`.
   - Own `AudioQueue`, cue playback, response playback, callout playback, pause/resume/stop, and playback status.

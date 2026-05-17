@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useId, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Cue } from "../../domain/cue";
 import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
@@ -55,9 +55,11 @@ import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { CueCard } from "../components/CueCard";
 import { LineCard, type BlockingScope } from "../components/LineCard";
+import { PracticeSelect } from "../components/PracticeSelect";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
+import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -71,105 +73,6 @@ type RehearsalScreenProps = {
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
 type TimingPill = "delivery" | "pickup";
-type AutoAdvanceMode = "disabled" | "always" | "on-target" | "when-not-slow";
-
-type PracticeSelectOption = {
-  value: string;
-  label: string;
-};
-
-type AutoPlayLineMode = "disabled" | "always" | "off-target";
-
-function PracticeSelect({
-  label,
-  value,
-  options,
-  onSelect,
-  disabled = false
-}: {
-  label: string;
-  value: string;
-  options: PracticeSelectOption[];
-  onSelect: (nextValue: string) => void;
-  disabled?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectRef = useRef<HTMLDivElement | null>(null);
-  const selectId = useId();
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (!selectRef.current?.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("pointerdown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!disabled) {
-      return;
-    }
-    setIsOpen(false);
-  }, [disabled]);
-
-  const selectedLabel = options.find((option) => option.value === value)?.label ?? value;
-
-  return (
-    <div className="practice-select-wrap" ref={selectRef}>
-      <button
-        type="button"
-        className="practice-select-trigger"
-        aria-label={label}
-        title={label}
-        aria-expanded={isOpen}
-        aria-controls={`${selectId}-options`}
-        onClick={() => setIsOpen((current) => !current)}
-        disabled={disabled}
-      >
-        <span>{selectedLabel}</span>
-        <span className="practice-select-caret" aria-hidden="true">
-          ▾
-        </span>
-      </button>
-      <div id={`${selectId}-options`} role="listbox" className={`practice-select-options ${isOpen ? "open" : ""}`} aria-label={label}>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            role="option"
-            aria-selected={option.value === value}
-            className={option.value === value ? "practice-select-option active" : "practice-select-option"}
-            onClick={() => {
-              onSelect(option.value);
-              setIsOpen(false);
-            }}
-            disabled={disabled}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function RehearsalScreen({
   playbook,
@@ -179,8 +82,6 @@ export function RehearsalScreen({
   onBack,
   onSelectRole
 }: RehearsalScreenProps) {
-  const initialAutoAdvanceMode = initialSession?.autoAdvanceMode ??
-    (initialSession?.autoAdvanceOnGoodTempo ? "on-target" : "disabled");
   const [engine] = useState(() =>
     RehearsalEngine.forRole(playbook, role.id, {
       startLineId: role.lines[initialSession?.lineIndex ?? 0]?.id,
@@ -193,58 +94,58 @@ export function RehearsalScreen({
   });
   const [audioQueue] = useState(() => new AudioQueue(playbook.id));
   const [position, setPosition] = useState(() => engine.position());
-  const [playbackRate, setPlaybackRate] = useState(clampPlaybackRate(initialSession?.playbackRate ?? 1));
-  const [cueWindowPresetId, setCueWindowPresetId] = useState(
-    cueWindowPresetForId(initialSession?.cueWindowPresetId).id
-  );
+  const {
+    playbackRate,
+    setPlaybackRate,
+    cueWindowPresetId,
+    setCueWindowPresetId,
+    showLinesByDefault,
+    setShowLinesByDefault,
+    isLineRevealed,
+    setIsLineRevealed,
+    includeDirections,
+    setIncludeDirections,
+    includeBlocking,
+    setIncludeBlocking,
+    blockingScope,
+    setBlockingScope,
+    speakAlongEnabled,
+    setSpeakAlongEnabled,
+    speakAlongPauseMs,
+    setSpeakAlongPauseMs,
+    practiceTargetPaceMultiplier,
+    setPracticeTargetPaceMultiplier,
+    tempoTargetHesitationMs,
+    setTempoTargetHesitationMs,
+    syncPracticeTiming,
+    setSyncPracticeTiming,
+    syncSpeakAlongSpeed,
+    setSyncSpeakAlongSpeed,
+    rehearsalTextSize,
+    setRehearsalTextSize,
+    absoluteTempoForgivenessMs,
+    setAbsoluteTempoForgivenessMs,
+    absolutePickupForgivenessMs,
+    setAbsolutePickupForgivenessMs,
+    autoAdvanceMode,
+    setAutoAdvanceMode,
+    autoPlayLineMode,
+    setAutoPlayLineMode,
+    tempoTolerancePercent,
+    setTempoTolerancePercent,
+    tempoEndOfLineSilenceMs,
+    setTempoEndOfLineSilenceMs,
+    tempoTimingEnabled,
+    setTempoTimingEnabled,
+    tempoTimingPreferred,
+    setTempoTimingPreferred
+  } = useRehearsalSettings(initialSession, engine.includeDirections());
   const [playbackState, setPlaybackState] = useState<PlaybackUiState>("idle");
   const [playbackSource, setPlaybackSource] = useState<PlaybackSource | null>(null);
   const [playbackStatus, setPlaybackStatus] = useState<string>("");
   const [timingStatusMessage, setTimingStatusMessage] = useState<TimingStatusPill | null>(null);
   const [expandedTimingPill, setExpandedTimingPill] = useState<TimingPill | null>(null);
-  const [showLinesByDefault, setShowLinesByDefault] = useState(
-    initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
-  );
-  const [isLineRevealed, setIsLineRevealed] = useState(
-    initialSession?.showLinesByDefault ?? initialSession?.revealLine ?? false
-  );
-  const [includeDirections, setIncludeDirections] = useState(engine.includeDirections());
-  const [includeBlocking, setIncludeBlocking] = useState(initialSession?.includeBlocking ?? true);
-  const [blockingScope, setBlockingScope] = useState<BlockingScope>(initialSession?.blockingScope ?? "role");
   const [hasStarted, setHasStarted] = useState(false);
-  const [speakAlongEnabled, setSpeakAlongEnabled] = useState(initialSession?.speakAlongEnabled ?? false);
-  const [speakAlongPauseMs, setSpeakAlongPauseMs] = useState(
-    initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
-  );
-  const [practiceTargetPaceMultiplier, setPracticeTargetPaceMultiplier] = useState(
-    normalizePracticeTargetPaceMultiplier(initialSession?.practiceTargetPaceMultiplier)
-  );
-  const [tempoTargetHesitationMs, setTempoTargetHesitationMs] = useState(
-    initialSession?.tempoTargetHesitationMs ?? initialSession?.speakAlongPauseMs ?? defaultTargetHesitationMs
-  );
-  const [syncPracticeTiming, setSyncPracticeTiming] = useState(initialSession?.syncPracticeTiming ?? true);
-  const [syncSpeakAlongSpeed, setSyncSpeakAlongSpeed] = useState(initialSession?.syncSpeakAlongSpeed ?? true);
-  const [rehearsalTextSize, setRehearsalTextSize] = useState(normalizeRehearsalTextSize(initialSession?.rehearsalTextSize));
-  const [absoluteTempoForgivenessMs, setAbsoluteTempoForgivenessMs] = useState(
-    normalizeAbsoluteTempoForgivenessMs(initialSession?.absoluteTempoForgivenessMs)
-  );
-  const [absolutePickupForgivenessMs, setAbsolutePickupForgivenessMs] = useState(
-    normalizeAbsolutePickupForgivenessMs(initialSession?.absolutePickupForgivenessMs)
-  );
-  const [autoAdvanceMode, setAutoAdvanceMode] = useState<AutoAdvanceMode>(
-    initialAutoAdvanceMode
-  );
-  const [autoPlayLineMode, setAutoPlayLineMode] = useState<AutoPlayLineMode>(
-    initialAutoAdvanceMode === "disabled" ? "disabled" : (initialSession?.autoPlayLineMode ?? "disabled")
-  );
-  const [tempoTolerancePercent, setTempoTolerancePercent] = useState(
-    normalizeTempoTolerancePercent(initialSession?.tempoTolerancePercent)
-  );
-  const [tempoEndOfLineSilenceMs, setTempoEndOfLineSilenceMs] = useState(
-    normalizeTempoEndOfLineSilenceMs(initialSession?.tempoEndOfLineSilenceMs ?? endOfLineSilenceMs)
-  );
-  const [tempoTimingEnabled, setTempoTimingEnabled] = useState(initialSession?.tempoTimingPreferred ?? false);
-  const [tempoTimingPreferred, setTempoTimingPreferred] = useState(initialSession?.tempoTimingPreferred ?? false);
   const [reviewAttempts, setReviewAttempts] = useState<TimingAttempt[]>([]);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
   const [storageStatus, setStorageStatus] = useState(initialStorageStatus);
