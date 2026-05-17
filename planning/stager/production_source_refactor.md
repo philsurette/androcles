@@ -61,6 +61,7 @@ This milestone should not change Cuemaster or LineRecorder contracts beyond what
 - [x] Move current `play.txt` parsing behind ScriptWright-only APIs.
 - [x] Update `src/format.md` to point to `planning/specs/script_text_format.md`.
 - [x] Update user-facing docs to explain the ScriptWright then Stager workflow.
+  - Hardening: updated `planning/stager/playbook_usage.md` so Playbook required inputs name locked `production.md` instead of legacy `play.txt`.
 - [x] Update AGENTS.md if new CLI commands become sticky project workflow.
 
 ## Acceptance Criteria

@@ -61,9 +61,9 @@ Manifest audio paths are relative to the Playbook root, not repository-root path
 
 ## Required Inputs
 
-Playbook generation expects parsed play text and split segment audio:
+Playbook generation expects a locked production script and split segment audio:
 
-- `plays/<play_id>/play.txt`
+- `plays/<play_id>/production.md` with `production_ids: locked`
 - `build/<play_id>/audio/segments/<ROLE>/<segment_id>.wav`
 - cue audio for every rehearsable role line
 - response audio for every rehearsable role line
@@ -71,6 +71,7 @@ Playbook generation expects parsed play text and split segment audio:
 Run the relevant Stager preparation commands before Playbook export:
 
 ```sh
+./main scriptwright lock
 ./main text
 ./main segments
 ./main playbook

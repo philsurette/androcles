@@ -343,6 +343,7 @@ def test_playbook_builder_plans_inline_directions(tmp_path: Path) -> None:
     play = _play([_title_block(), cue_block, role_block])
     for segment_id in ("0_0_1", "0_1_1", "0_2_1", "0_2_2"):
         _write_wav(cfg.segments_dir / "_NARRATOR" / f"{segment_id}.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_2.wav")
     _write_wav(cfg.build_dir / "audio" / "callouts" / "MEGAERA.wav")
 

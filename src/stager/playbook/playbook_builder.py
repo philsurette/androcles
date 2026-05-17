@@ -50,7 +50,7 @@ class PlaybookBuilder:
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
-    _audio_asset_cache: dict[Path, AppAudioAsset] = field(default_factory=dict, init=False, repr=False)
+    _audio_asset_cache: dict[tuple[Path, str, str], AppAudioAsset] = field(default_factory=dict, init=False, repr=False)
     _logger: logging.Logger = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -433,7 +433,8 @@ class PlaybookBuilder:
                 f"Missing required {category} audio for role {role} segment {segment_id} "
                 f"while building Playbook: {paths.display_path(source_path)}"
             )
-        cached = self._audio_asset_cache.get(source_path)
+        cache_key = (source_path, category, destination_dir)
+        cached = self._audio_asset_cache.get(cache_key)
         if cached is not None:
             return cached
         duration_ms = self.paths.get_audio_length_ms(source_path)
@@ -453,7 +454,7 @@ class PlaybookBuilder:
             cue_start_offsets=cue_start_offsets,
         )
         self._manifest_assets.append(asset)
-        self._audio_asset_cache[source_path] = asset
+        self._audio_asset_cache[cache_key] = asset
         if self.progress_reporter is not None:
             self.progress_reporter.audio_packaged(role, segment_id, category)
         return asset
