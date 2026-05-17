@@ -1,5 +1,10 @@
 ## Project context
-This project contains Stager, a Python command-line application for creating audio plays and, in planned work, Quince tools including LineRecorder and Cuemaster.
+This project contains Quince, a local-first production suite for creating and rehearsing audio plays.
+
+The active codebases are:
+- Stager: a Python command-line build tool.
+- LineRecorder: a React/TypeScript actor-facing recording app.
+- Cuemaster: a React/TypeScript rehearsal app.
 
 The key workflows are:
 - Use ScriptWright to convert source scripts such as the legacy custom `play.txt` format into locked `plays/<play_id>/production.md`.
@@ -54,6 +59,26 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/test_name.py
 
 Avoid tests that require real recordings, downloaded Whisper models, network access, or ffmpeg unless the test explicitly mocks or skips those dependencies.
 
+For browser app changes, run commands from the relevant app directory.
+
+Cuemaster checks:
+
+```sh
+cd cuemaster
+npm run build
+npm test
+```
+
+LineRecorder checks:
+
+```sh
+cd linerecorder
+npm run build
+npm test
+```
+
+Do not assume the Python test suite covers browser behavior. For cross-boundary changes, run the Stager tests plus the affected browser app build/test commands.
+
 ## Coding style
 Use Python object-oriented code style. Prefer classes over standalone functions for production behavior.
 
@@ -62,6 +87,40 @@ Default to dataclasses when creating new data-holding classes.
 Use one primary class per file for new code. Existing grouped model files such as `play.py`, `block.py`, `segment.py`, and `clip.py` may keep closely related small dataclasses together; do not split them as part of unrelated changes.
 
 Prefer dependency injection for collaborators such as `paths.PathConfig`, parsed `Play` objects, Whisper stores, transcription caches, and audio helpers. This keeps tests fast and lets them use `tmp_path` and monkeypatching.
+
+For TypeScript browser code, prefer dependency injection for storage, browser APIs, audio and microphone collaborators, and import/export services. Avoid importing concrete IndexedDB repositories or browser globals deep inside workflow logic when a small interface would keep tests fast and local.
+
+## Browser app architecture
+Keep React screen files as composition layers. Do not add substantial workflow logic, storage orchestration, browser API handling, audio state machines, or formatting helpers directly to large screen components.
+
+Prefer these ownership boundaries:
+- Domain models and pure domain behavior under `src/domain/`.
+- App workflow hooks under `src/ui/hooks/`.
+- Reusable UI components under `src/ui/components/`.
+- Browser API wrappers under `src/platform/`.
+- IndexedDB and repository code under `src/storage/`.
+- Import/export package behavior under `src/package/` or `src/playbook/`.
+- Pure rehearsal, recording, audio, and navigation behavior under `src/rehearsal/` or `src/audio/`.
+- Manifest schemas and validators under `src/specs/`.
+
+When a screen exceeds a few hundred lines, new feature work should usually extract a hook, component, or pure helper instead of adding more local state. Keep extracted helpers testable without rendering React when practical.
+
+For browser CSS, keep styles owned by feature or component area where practical. Do not expand large global CSS files when a feature-specific stylesheet or clearer selector boundary would reduce coupling. Avoid visual redesign during mechanical CSS moves.
+
+## Shared contracts
+When changing Playbook, Recording Request, role recording, production-id, cue-window, or other shared file contracts, update the source spec under `planning/specs/` first or in the same change. Then update Stager generation, browser validators, and tests together.
+
+Do not duplicate schema rules across planning docs. Product behavior belongs in the relevant product doc; machine-readable or file-format contracts belong in `planning/specs/`.
+
+Planning docs should be actionable and resumable. Prefer checklists with verification steps, file/module targets, and completion criteria.
+
+## Refactoring
+For refactors:
+- Keep behavior stable.
+- Move code before changing behavior.
+- Add or preserve tests around extracted pure logic.
+- Avoid mixing CSS restyling, component extraction, and behavior changes in the same slice.
+- Use resumable checklist plans under `planning/` for multi-step refactors.
 
 ## Paths and configuration
 Prefer passing `paths.PathConfig` into classes and helpers instead of reading module-level path globals.
@@ -98,7 +157,7 @@ Use `typer.BadParameter` for invalid CLI arguments. Use normal exceptions for in
 CLI commands may use `typer.echo` for deliberate user-facing terminal output.
 
 ## Defensive programming
-Do not program defensively. If an unexpected condition occurs, raise an exception.
+Do not hide unexpected internal states with fallback behavior. Validate external inputs at boundaries, raise clear errors for invalid contracts, and keep internal failures loud.
 
 In some cases I will change exceptions to logging. If you see an error condition being logged, do not change it back.
 
