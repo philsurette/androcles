@@ -34,7 +34,6 @@ class PlayBuilder:
 
     def build_audio(self, part_no: int) -> list[Path]:
         """Build audio plans (and optional outputs) using configured settings."""
-        # self.play = PlayTextParser().parse()
         if self.librivox:
             return self._build_librivox()
 
