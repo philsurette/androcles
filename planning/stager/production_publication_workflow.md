@@ -6,7 +6,8 @@ Give the producer a simple loop:
 
 1. Edit `plays/<play_id>/production.md`.
 2. Run `./main publish-production --play <play_id>`.
-3. Let Stager detect script changes, preserve history, recommend changed-line ids, and generate targeted Recording Requests.
+3. Describe the changes being published.
+4. Let Stager detect script changes, preserve history, assign the next production version, recommend changed-line ids, and optionally generate targeted Recording Requests.
 
 The producer should not manually manage snapshots, diff sidecars, or per-role request item lists.
 
@@ -38,6 +39,8 @@ build/<play_id>/production-history/
 
 `current.json` identifies the current published version. The producer continues to edit only `plays/<play_id>/production.md`.
 
+Each version `manifest.json` stores publication metadata, including the structured production version, parent production version, publication timestamp, and producer-authored change summary. The working `production.md` should contain only current-version metadata and a concise current `production_note`, not a growing change-history log.
+
 ## Publish Flow
 
 `./main publish-production` should:
@@ -53,10 +56,15 @@ build/<play_id>/production-history/
    - `removed`
 6. For each `changed_id_reuse`, recommend the next revision id, such as `2-5a`.
 7. If requested, rewrite the producer source with the recommended revision ids before publishing.
-8. Store the new published version.
-9. Optionally generate Recording Requests for added and changed recordable role lines.
+8. Prompt for or accept a producer-authored change summary.
+9. Allocate the next structured production version.
+10. Store the new published version.
+11. Back-write `production_version`, `parent_production_version`, and a concise `production_note` into the working producer source.
+12. Optionally generate Recording Requests for added and changed recordable role lines.
 
 By default, changed id reuse should stop publication unless the producer applies recommended ids or explicitly allows id reuse. This protects existing recordings and Playbooks from silently treating changed text as the same line.
+
+Playbook and Recording Request builds should never assign production versions or mutate `production.md`. They consume a published or working production source and copy its production metadata into generated artifacts.
 
 ## Production Source Selection
 

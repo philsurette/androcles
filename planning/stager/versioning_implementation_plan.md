@@ -20,6 +20,8 @@ There is no compatibility requirement for old production-version strings. The on
 - Treat timestamps as metadata only. Do not use timestamps as unique identity.
 - Normal build commands must not mutate `production.md`.
 - Only publication commands may write `production_version` and `parent_production_version` back to the working manuscript.
+- Playbook, Recording Request, audioplay, and other artifact builds must consume production metadata; they must not create new production versions.
+- Durable change history belongs in `production-history`, not as a growing comment block in `production.md`.
 - Prefer small commits by phase, with tests for each boundary before moving on.
 
 ## Phase 0: Audit Current State
@@ -66,9 +68,11 @@ Goal: `production.md` can carry structured version metadata without weakening sc
 
 - [ ] Update production metadata parsing to allow `production_version`.
 - [ ] Update production metadata parsing to allow `parent_production_version`.
+- [ ] Update production metadata parsing to allow `production_note`.
 - [ ] Treat `parent_production_version: none` as first-publication lineage only, or decide to omit parent metadata for first publication.
 - [ ] Validate `production_version` with the production-version value object when present.
 - [ ] Validate `parent_production_version` with the production-version value object when present and not `none`.
+- [ ] Treat `production_note` as freeform current-version orientation text, not durable history.
 - [ ] Reject legacy production-version strings with a clear diagnostic.
 - [ ] Preserve version metadata when parsing and rendering locked output where appropriate.
 - [ ] Update ScriptWright locking behavior.
@@ -90,6 +94,7 @@ Goal: publication history stores structured identities and can detect forks.
   - Include `publication_id`.
   - Include `parent_production_version`.
   - Include `published_at`.
+  - Include `change_summary`.
   - Include source/content hash for the published manuscript snapshot if useful for drift detection.
 - [ ] Update version listing to display structured production versions.
 - [ ] Update restore behavior to restore the exact published metadata.
@@ -112,11 +117,18 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
 
 - [ ] Update `publish-production` to allocate the next sequence number from current history.
 - [ ] Inject publication-id and timestamp generators for deterministic tests.
+- [ ] Add producer change-summary input.
+  - Prompt interactively when the command is attached to a terminal.
+  - Accept `--change-summary` for non-interactive use.
+  - Require `--allow-empty-summary` if an empty summary is allowed.
 - [ ] Write `production_version` into the published snapshot.
 - [ ] Write `parent_production_version` into the published snapshot.
-- [ ] Back-write both fields to working `plays/<play_id>/production.md` after successful publication.
+- [ ] Write `production_note` into the published snapshot as the concise current-version note.
+- [ ] Write the full `change_summary` into the version's managed publication `manifest.json`.
+- [ ] Back-write `production_version`, `parent_production_version`, and `production_note` to working `plays/<play_id>/production.md` after successful publication.
 - [ ] Ensure failed publication does not mutate the working manuscript.
 - [ ] Ensure normal build commands never write production-version metadata.
+- [ ] Ensure Playbook and Recording Request builds never create or back-write production-version metadata.
 - [ ] Update `production-diff` output to include:
   - current published production version,
   - working production version,
@@ -124,6 +136,7 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
   - fork or lineage warnings when detected.
 - [ ] Update CLI tests for successful back-writing.
 - [ ] Update CLI tests for no mutation on failure.
+- [ ] Update CLI tests for required or explicitly-empty change summaries.
 - [ ] Update CLI tests for diagnostics around legacy production-version strings.
 
 ## Phase 5: Package Format Versions
@@ -165,6 +178,7 @@ Goal: Playbooks identify the published manuscript they came from.
   - `published_at` when source is published.
 - [ ] Ensure Playbook builds from `--production-source published` include published metadata.
 - [ ] Ensure Playbook builds from `--production-source working` are visibly marked as working-source builds.
+- [ ] Ensure Playbook builds do not mutate `production.md`.
 - [ ] Decide whether working-source Playbooks omit `production.version` or use a synthetic working suffix.
 - [ ] Update Cuemaster import model and storage schema for Playbook production metadata.
 - [ ] Show production version in Cuemaster import/details UI where useful.
@@ -181,6 +195,7 @@ Goal: recording workflows preserve the manuscript version that created the reque
   - `play.version`.
   - Optional structured `production` object if useful for consistency with Playbooks.
 - [ ] Include production version in Recording Request ids or filenames only if it improves traceability without making names unwieldy.
+- [ ] Ensure Recording Request builds do not mutate `production.md`.
 - [ ] Update LineRecorder import model and local storage to keep request production metadata.
 - [ ] Preserve request production metadata when exporting `role_recordings`.
 - [ ] Update Stager recording export package import to compare package production version to target published version.
@@ -216,6 +231,7 @@ Goal: local `production.md` files use the structured format; no legacy support r
   - legacy production-version strings,
   - forked histories,
   - out-of-date publish attempts,
+  - missing change summaries when publishing,
   - package format versions that are too new,
   - package format versions that are missing.
 - [ ] Ensure diagnostics use `paths.display_path()` or `paths.display_location()` where they mention repository files.
@@ -257,6 +273,9 @@ Goal: local `production.md` files use the structured format; no legacy support r
 - [ ] Stager detects out-of-date publish attempts.
 - [ ] Publication commands back-write structured version metadata only after success.
 - [ ] Normal build commands do not mutate `production.md`.
+- [ ] Playbook and Recording Request builds do not create new production versions.
+- [ ] Published version manifests store producer-authored change summaries.
+- [ ] Working `production.md` contains only current-version metadata and optional concise `production_note`, not a growing change-history log.
 - [ ] Playbook manifests include `format_version`, `package_type`, and production metadata.
 - [ ] Recording Request manifests include `format_version`, `package_type`, and production metadata.
 - [ ] LineRecorder recording export packages include `format_version`, `package_type`, and preserved production metadata.

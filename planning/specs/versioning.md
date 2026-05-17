@@ -182,6 +182,7 @@ The current recording contracts are defined by [recording_package_manifest.md](r
 // production_ids: locked
 // production_version: 7@k9f4p2x8m1qd
 // parent_production_version: 6@h7p2v9c4t6ra
+// production_note: Cut two lines from Act II and updated Megaera blocking.
 ```
 
 The production version identifies a published manuscript snapshot, not a file format. It should change only when the producer publishes a version, not on every edit or artifact build.
@@ -250,23 +251,46 @@ The `production_version` metadata in the working `plays/<play_id>/production.md`
 
 ### Publish Behavior
 
+Production version ids are created by manuscript publication, not by Playbook generation. Building a Playbook, Recording Request, audioplay, or other artifact must not mutate `production.md`; those commands should consume the selected production source and copy its production metadata into their outputs.
+
 `./main publish-production` should:
 
 1. Parse the working `production.md`.
 2. Diff it against the current published version when one exists.
 3. Reject changed id reuse unless ids are updated or the user explicitly allows reuse.
 4. Verify `parent_production_version` is either absent for the first publication or matches the current published version.
-5. Allocate the next sequence number.
-6. Generate a new publication id.
-7. Write `production_version` and `parent_production_version` into the published snapshot.
-8. Update the working `production.md` with those fields after successful publication.
-9. Store publication metadata under `production-history`.
+5. Collect a producer-authored change summary.
+   - Interactive CLI use may prompt for it.
+   - Non-interactive use should accept an option such as `--change-summary`.
+   - Empty summaries may be allowed only with an explicit flag such as `--allow-empty-summary`.
+6. Allocate the next sequence number.
+7. Generate a new publication id.
+8. Write `production_version`, `parent_production_version`, and a concise `production_note` into the published snapshot.
+9. Update the working `production.md` with those fields after successful publication.
+10. Store publication metadata under `production-history`.
 
 If the working `production.md` has unmerged differences from the current published version, Stager should treat its `production_version` metadata as stale. It may either remove the field during rewrite or replace it only after publication succeeds. It should not let a stale `production_version` imply that unpublished edits are already published.
 
+### Change History
+
+The durable change history should live in managed publication history, not as an ever-growing comment log at the top of `production.md`.
+
+Each published version's `manifest.json` should include:
+
+```json
+{
+  "production_version": "7@k9f4p2x8m1qd",
+  "parent_production_version": "6@h7p2v9c4t6ra",
+  "published_at": "2026-05-17T13:40:00Z",
+  "change_summary": "Cut two lines from Act II and updated Megaera blocking."
+}
+```
+
+`production.md` may carry only the current version's concise `production_note`. That note is for quick human orientation when opening the manuscript. The full sequence of change summaries belongs under `build/<play_id>/production-history/`.
+
 ### Back-Writing Versions
 
-Back-writing production versions into `production.md` is allowed only from publication commands. Normal build commands should not mutate the manuscript.
+Back-writing production versions and the current `production_note` into `production.md` is allowed only from publication commands. Normal build commands should not mutate the manuscript.
 
 When `production-diff` detects differences between the working file and the current published snapshot, it should report:
 

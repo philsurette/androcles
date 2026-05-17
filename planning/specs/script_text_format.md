@@ -108,9 +108,10 @@ Published production manuscripts may also include:
 ```text
 // production_version: 1@k9f4p2x8m1qd
 // parent_production_version: none
+// production_note: Initial published manuscript.
 ```
 
-`production_version` and `parent_production_version` are publication/versioning markers, not script-format markers. Their lifecycle is defined in [versioning.md](versioning.md).
+`production_version`, `parent_production_version`, and `production_note` are publication/versioning markers, not script-format markers. Their lifecycle is defined in [versioning.md](versioning.md).
 
 Allowed `production_ids` values:
 
