@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useId, useState } from "react";
 import type { Bookmark } from "../../domain/bookmark";
-import type { ContextBlock } from "../../domain/context";
 import type { Cue } from "../../domain/cue";
 import type { Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
@@ -14,6 +13,15 @@ import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
 import { cuePlaybackItems, responsePlaybackItems, speakAlongPlaybackItems } from "../../rehearsal/playbackItems";
 import type { RehearsalCommand, RehearsalShortcut } from "../../rehearsal/rehearsalCommand";
 import { RehearsalEngine } from "../../rehearsal/rehearsalEngine";
+import {
+  outlineSearchText,
+  outlineSpeaker,
+  outlineText,
+  resolveCurrentLineFromEngine,
+  visibleBlockingForLine,
+  visibleCuesForDisplay,
+  type OutlineMode
+} from "../../rehearsal/rehearsalPresentation";
 import { scriptBrowserSections } from "../../rehearsal/scriptBrowser";
 import { deliveryLabel, tempoFeedbackFor } from "../../rehearsal/tempoFeedback";
 import { defaultTargetHesitationMs, endOfLineSilenceMs, defaultTempoTimingConfig } from "../../rehearsal/tempoTimingConfig";
@@ -35,7 +43,6 @@ type RehearsalScreenProps = {
 
 type PlaybackUiState = "idle" | "playing" | "paused";
 type PlaybackSource = "cue" | "line";
-type OutlineMode = "cues" | "lines";
 type TimingLineStatus = "untimed" | "slow" | "fast" | "good";
 type TimingLabel = "fast" | "slow" | "good";
 type TimingPill = "delivery" | "pickup";
@@ -2618,54 +2625,6 @@ function OutlinePanel({
   );
 }
 
-export function outlineSearchText(
-  line: Line,
-  mode: OutlineMode,
-  includeDirections: boolean,
-  includeBlocking: boolean,
-  blockingScope: BlockingScope,
-  playbook: Playbook
-): string {
-  const parts = [
-    line.id,
-    outlineSpeaker(line, mode, includeDirections, playbook),
-    outlineText(line, mode, includeDirections, playbook)
-  ];
-  if (mode === "cues") {
-    return parts.join(" ");
-  }
-  if (mode === "lines" && includeDirections) {
-    parts.push(...line.directions.map((direction) => direction.text));
-  }
-  if (mode === "lines" && includeBlocking) {
-    parts.push(...visibleBlockingForLine(line, blockingScope).map((blocking) => `${blocking.targets.join(" ")} ${blocking.text}`));
-  }
-  return parts.join(" ");
-}
-
-function outlineSpeaker(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
-  if (mode === "cues") {
-    return visibleCuesForDisplay([line.cue], false, playbook.context, playbook, line)[0]?.speaker ?? line.cue.speaker;
-  }
-  if (mode === "lines") {
-    return line.speaker;
-  }
-  return "";
-}
-
-function outlineText(line: Line, mode: OutlineMode, includeDirections: boolean, playbook: Playbook): string {
-  if (mode === "lines") {
-    return line.responseText;
-  }
-  return visibleCuesForDisplay([line.cue], false, playbook.context, playbook, line)[0]?.text ?? line.cue.text;
-}
-
-function visibleBlockingForLine(line: Line, blockingScope: BlockingScope) {
-  return (line.blocking ?? []).filter(
-    (blocking) => blockingScope === "all" || blocking.targets.includes("*") || blocking.targets.includes(line.role)
-  );
-}
-
 function timingLineStatusToGlyph(status: TimingLineStatus): string {
   if (status === "slow") {
     return "🐢";
@@ -2987,67 +2946,4 @@ export function normalizeTempoEndOfLineSilenceMs(value: number | undefined): num
   }
   const quantizedValue = Math.round(parsedValue / tempoEndOfLineSilenceStepMs) * tempoEndOfLineSilenceStepMs;
   return Math.min(maxTempoEndOfLineSilenceMs, Math.max(minTempoEndOfLineSilenceMs, quantizedValue));
-}
-
-export function visibleCuesForDisplay(
-  cues: Cue[],
-  includeDirections: boolean,
-  context: ContextBlock[] = [],
-  playbook?: Playbook,
-  currentLine?: Line
-): Cue[] {
-  if (includeDirections) {
-    return cues;
-  }
-  const contextKindByCueKey = new Map(
-    context
-      .filter((block) => block.audioPath)
-      .map((block) => [cueKey(block.speaker, block.text, block.audioPath ?? ""), block.kind])
-  );
-  return cues.map((cue) => {
-    const kind = cue.kind ?? contextKindByCueKey.get(cueKey(cue.speaker, cue.text, cue.audioPath));
-    if (kind === "description" || kind === "direction") {
-      return precedingSpeechCue(playbook, currentLine) ?? cue;
-    }
-    return cue;
-  });
-}
-
-export function resolveCurrentLineFromEngine(
-  roleLines: Line[],
-  positionIndex: number,
-  fallbackLine: Line | null
-): Line | null {
-  return roleLines[positionIndex] ?? fallbackLine;
-}
-
-function cueKey(speaker: string, text: string, audioPath: string) {
-  return `${speaker}\u0000${text}\u0000${audioPath}`;
-}
-
-function precedingSpeechCue(playbook: Playbook | undefined, currentLine: Line | undefined): Cue | null {
-  if (!playbook || !currentLine) {
-    return null;
-  }
-  const priorLine = playbook.roles
-    .flatMap((role) => role.lines)
-    .filter((line) => line.responseSegments.length > 0)
-    .filter((line) => blockOrder(line.blockId) < blockOrder(currentLine.blockId))
-    .sort((left, right) => blockOrder(right.blockId) - blockOrder(left.blockId))[0];
-  if (!priorLine) {
-    return null;
-  }
-  return {
-    speaker: priorLine.speaker,
-    text: priorLine.responseText,
-    audioPath: priorLine.responseSegments[0].audioPath,
-    durationMs: priorLine.responseSegments.reduce((totalMs, segment) => totalMs + segment.durationMs, 0),
-    kind: "speech"
-  };
-}
-
-function blockOrder(blockId: string): number {
-  return blockId
-    .split(".")
-    .reduce((total, part, index) => total + Number(part) * 1000 ** (3 - index), 0);
 }

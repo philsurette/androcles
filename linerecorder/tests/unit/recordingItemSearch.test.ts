@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { recordingItemSearchText } from "../../src/ui/App";
+import {
+  isUsableFloorNoise,
+  levelLabel,
+  levelStatus,
+  reasonLabel,
+  recordingItemSearchText,
+  requestKindLabel,
+  sameContext
+} from "../../src/ui/recordingItemPresentation";
 
 describe("recordingItemSearchText", () => {
   it("includes ids, cue text, line text, and blocking", () => {
@@ -40,5 +48,40 @@ describe("recordingItemSearchText", () => {
   });
 });
 
+describe("recording item presentation helpers", () => {
+  it("formats labels used by the recording UI", () => {
+    expect(requestKindLabel("selected_segments")).toBe("Selected Segments");
+    expect(reasonLabel(undefined)).toBe("recording");
+    expect(reasonLabel("pickup_fix")).toBe("pickup fix");
+    expect(levelLabel("too-quiet")).toBe("Too quiet");
+    expect(levelStatus("clipping")).toBe("Input is clipping. Move back or reduce gain.");
+  });
+
+  it("compares context only when speaker and trimmed text match", () => {
+    expect(sameContext("A", "same text ", "A", "same text")).toBe(true);
+    expect(sameContext("A", "same text", "B", "same text")).toBe(false);
+    expect(sameContext("A", undefined, "A", "same text")).toBe(false);
+  });
+
+  it("accepts floor noise only when it is not clipped or speech-heavy", () => {
+    expect(isUsableFloorNoise(recordedWithLevelCounts({ "no-signal": 5, "too-quiet": 5, good: 1, clipping: 0 }))).toBe(true);
+    expect(isUsableFloorNoise(recordedWithLevelCounts({ "no-signal": 1, "too-quiet": 1, good: 8, clipping: 0 }))).toBe(false);
+    expect(isUsableFloorNoise(recordedWithLevelCounts({ "no-signal": 5, "too-quiet": 5, good: 0, clipping: 1 }))).toBe(false);
+  });
+});
+
 const lineHash = "sha256:0000000000000000000000000000000000000000000000000000000000000001";
 const segmentHash = "sha256:0000000000000000000000000000000000000000000000000000000000000002";
+
+function recordedWithLevelCounts(levelCounts: Record<"no-signal" | "too-quiet" | "good" | "clipping", number>) {
+  return {
+    blob: new Blob(),
+    durationMs: 1000,
+    sampleRateHz: 44100,
+    channels: 1,
+    inputQuality: {
+      peakEnergy: 0.1,
+      levelCounts
+    }
+  };
+}

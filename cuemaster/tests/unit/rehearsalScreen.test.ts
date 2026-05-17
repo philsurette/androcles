@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
-  clampPlaybackRate,
   outlineSearchText,
   resolveCurrentLineFromEngine,
   visibleCuesForDisplay
-} from "../../src/ui/screens/RehearsalScreen";
+} from "../../src/rehearsal/rehearsalPresentation";
+import { clampPlaybackRate } from "../../src/ui/screens/RehearsalScreen";
 import type { Line } from "../../src/domain/line";
 import type { Playbook } from "../../src/domain/playbook";
 

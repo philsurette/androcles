@@ -23,30 +23,31 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 
 - [x] Verify LineRecorder builds with `npm run build`.
 - [x] Verify LineRecorder tests still pass with `npm test`.
-- [ ] Verify Cuemaster builds with `npm run build`.
-- [ ] Verify Cuemaster tests still pass with `npm test`.
-- [ ] Decide whether to add a root-level webapp quality command or keep per-app commands only.
+- [x] Verify Cuemaster builds with `npm run build`.
+- [x] Verify Cuemaster tests still pass with `npm test`.
+- [x] Decide whether to add a root-level webapp quality command or keep per-app commands only.
+  - Decision: keep per-app commands for now; revisit after the browser refactor settles.
 
 ## Phase 1: LineRecorder Structure
 
-- [ ] Extract project library workflow from `linerecorder/src/ui/App.tsx`.
+- [x] Extract project library workflow from `linerecorder/src/ui/App.tsx`.
   - Target module: `linerecorder/src/ui/hooks/useProjectLibrary.ts`.
   - Own project listing, import, open, delete, selected project, project info mode, and accepted item ids.
   - Keep repository calls injectable or isolated behind a small service boundary.
-- [ ] Extract microphone setup UI from `App.tsx`.
+- [x] Extract microphone setup UI from `App.tsx`.
   - Target component: `linerecorder/src/ui/components/MicrophoneSetup.tsx`.
   - Keep browser microphone/session behavior out of the top-level app component.
-- [ ] Extract recording workspace components from `App.tsx`.
+- [x] Extract recording workspace components from `App.tsx`.
   - Target components: `ProjectLibrary`, `ProjectDetail`, `ProjectSummary`, `ItemList`, `ItemDetail`, `TakeRecorder`, `ContextBlock`.
   - Move one component per commit-sized slice.
-- [ ] Extract `TakeRecorder` behavior into a hook.
+- [x] Extract `TakeRecorder` behavior into a hook.
   - Target module: `linerecorder/src/ui/hooks/useTakeRecorder.ts`.
   - Own start/stop recording, playback, accepted take loading, and status text.
-- [ ] Move pure helpers out of `App.tsx`.
+- [x] Move pure helpers out of `App.tsx`.
   - Candidate module: `linerecorder/src/ui/recordingItemPresentation.ts`.
   - Include `recordingItemSearchText`, context comparison, level labels, and recording quality labels.
-- [ ] Add focused tests for extracted pure helpers before changing behavior around them.
-- [ ] Stop importing concrete repositories directly from large UI components where practical.
+- [x] Add focused tests for extracted pure helpers before changing behavior around them.
+- [x] Stop importing concrete repositories directly from large UI components where practical.
   - Introduce a small `LineRecorderStorage` interface if needed.
 
 ## Phase 2: Cuemaster Rehearsal Screen
@@ -66,6 +67,7 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 - [ ] Extract outline browser from `RehearsalScreen.tsx`.
   - Target component: `cuemaster/src/ui/components/RehearsalOutline.tsx`.
   - Move outline search/filter helpers to a tested non-React module.
+  - Progress: moved outline search, cue display, and current-line helpers to `cuemaster/src/rehearsal/rehearsalPresentation.ts`.
 - [ ] Move timing formatting helpers from `RehearsalScreen.tsx` to a tested module.
   - Candidate module: `cuemaster/src/rehearsal/timingPresentation.ts`.
 - [ ] Keep `RehearsalScreen.tsx` as a composition layer only after extraction.
@@ -83,14 +85,16 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 
 ## Phase 4: Shared Browser-App Boundaries
 
-- [ ] Review storage singleton usage in both apps.
+- [x] Review storage singleton usage in both apps.
   - Cuemaster already has `CuemasterStorage`; prefer passing that through app-level composition.
   - LineRecorder should gain a comparable storage interface if UI extraction still depends directly on concrete repositories.
-- [ ] Remove or implement unused placeholder abstractions.
+  - Done: added `LineRecorderStorage` and `indexedDbStorage` for LineRecorder.
+- [x] Remove or implement unused placeholder abstractions.
   - Candidate files: `cuemaster/src/rehearsal/cuePlayer.ts`, `cuemaster/src/rehearsal/responsePlayer.ts`.
-- [ ] Decide whether shared browser utilities should live in a future shared package or remain copied per app.
+- [x] Decide whether shared browser utilities should live in a future shared package or remain copied per app.
   - Candidate areas: microphone permissions, downloads, IndexedDB test setup, package import errors.
-- [ ] Add a lightweight quality command per app if useful.
+  - Decision: keep browser utilities app-local for now; revisit after the app boundaries settle and duplication becomes clearer.
+- [x] Add a lightweight quality command per app if useful.
   - Candidate script: `quality`, running `npm run build && npm test`.
 
 ## Phase 5: CSS Ownership
@@ -104,9 +108,9 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
 
 ## Completion Criteria
 
-- [ ] Both apps build cleanly.
-- [ ] Both apps pass unit tests.
-- [ ] Top-level LineRecorder `App.tsx` is mostly composition and app routing.
+- [x] Both apps build cleanly.
+- [x] Both apps pass unit tests.
+- [x] Top-level LineRecorder `App.tsx` is mostly composition and app routing.
 - [ ] Cuemaster `RehearsalScreen.tsx` no longer owns storage, playback, timing, bookmarks, outline, and rendering all in one file.
 - [ ] Cuemaster `PlayPageScreen.tsx` delegates entry building, search, and playback controls to smaller modules.
 - [ ] New feature work can usually touch a hook/service plus one component instead of editing a thousand-line screen.
