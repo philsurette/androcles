@@ -1069,7 +1069,7 @@ def production_history(play: str | None = PLAY_OPTION) -> None:
 
 @app.command("restore-production", rich_help_panel="build")
 def restore_production(
-    version: str = typer.Argument(..., help="Published version to restore, such as v0002 or 2"),
+    version: str = typer.Argument(..., help="Published version to restore, such as 2@k9f4p2x8m1qd or 2"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Restore a published production version back to the producer source."""

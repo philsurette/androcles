@@ -7,6 +7,7 @@ import shutil
 
 from stager.production_publication.published_version import PublishedVersion
 from stager.production_publication.production_change_report import ProductionChangeReport
+from stager.production_publication.production_version import ProductionVersion
 from stager.shared import paths
 
 
@@ -30,17 +31,17 @@ class ProductionVersionStore:
         if not self.current_path.exists():
             return None
         current = json.loads(self.current_path.read_text(encoding="utf-8"))
-        return self.load_version(current["version"])
+        return self.load_version(current["production_version"])
 
     def current_production_path(self) -> Path | None:
         current = self.current()
         if current is None:
             return None
-        return self._version_dir(current.version) / "production.md"
+        return self._version_dir(current.production_version) / "production.md"
 
     def load_version(self, version: int | str) -> PublishedVersion:
-        version_no = self._version_number(version)
-        manifest_path = self._version_dir(version_no) / "manifest.json"
+        production_version = self._resolve_version(version)
+        manifest_path = self._version_dir(production_version) / "manifest.json"
         return PublishedVersion.from_dict(json.loads(manifest_path.read_text(encoding="utf-8")))
 
     def list_versions(self) -> list[PublishedVersion]:
@@ -63,7 +64,7 @@ class ProductionVersionStore:
         source_path: Path,
         change_report: ProductionChangeReport,
     ) -> Path:
-        version_dir = self._version_dir(version.version)
+        version_dir = self._version_dir(version.production_version)
         version_dir.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source_path, version_dir / "production.md")
         (version_dir / "manifest.json").write_text(
@@ -71,7 +72,9 @@ class ProductionVersionStore:
             encoding="utf-8",
         )
         if change_report.base_version is not None:
-            (version_dir / f"changes_from_v{change_report.base_version:04d}.json").write_text(
+            base_version = self._version_for_sequence(change_report.base_version)
+            base_name = base_version.history_directory_name if base_version is not None else f"{change_report.base_version:04d}"
+            (version_dir / f"changes_from_{base_name}.json").write_text(
                 json.dumps(change_report.to_dict(), indent=2) + "\n",
                 encoding="utf-8",
             )
@@ -79,7 +82,9 @@ class ProductionVersionStore:
         self.current_path.write_text(
             json.dumps(
                 {
-                    "version": version.version,
+                    "production_version": str(version.production_version),
+                    "sequence": version.production_version.sequence,
+                    "publication_id": version.production_version.publication_id,
                     "label": version.label,
                     "published_at": version.published_at,
                 },
@@ -91,8 +96,8 @@ class ProductionVersionStore:
         return version_dir
 
     def restore_source(self, version: int | str) -> Path:
-        version_no = self._version_number(version)
-        source = self._version_dir(version_no) / "production.md"
+        production_version = self._resolve_version(version)
+        source = self._version_dir(production_version) / "production.md"
         if not source.exists():
             raise RuntimeError(f"Unknown published production version: {version}")
         self.paths_config.production_markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -103,13 +108,39 @@ class ProductionVersionStore:
         current = self.current()
         return 1 if current is None else current.version + 1
 
-    def _version_dir(self, version: int) -> Path:
-        return self.versions_dir / f"v{version:04d}"
+    def next_production_version(self, publication_id: str) -> ProductionVersion:
+        current = self.current()
+        parent = current.production_version if current is not None else None
+        return ProductionVersion.next_after(parent, publication_id)
 
-    def _version_number(self, version: int | str) -> int:
+    def _version_dir(self, version: ProductionVersion) -> Path:
+        return self.versions_dir / version.history_directory_name
+
+    def _resolve_version(self, version: int | str) -> ProductionVersion:
         if isinstance(version, int):
-            return version
+            resolved = self._version_for_sequence(version)
+            if resolved is None:
+                raise RuntimeError(f"Unknown published production version: {version}")
+            return resolved
         label = version.strip()
-        if label.startswith("v"):
-            label = label[1:]
-        return int(label)
+        if label.startswith("v") and label[1:].isdigit():
+            raise RuntimeError(f"Legacy production version labels are not supported: {version}")
+        if "@" in label:
+            return ProductionVersion.parse(label)
+        if "-" in label:
+            sequence_text, _, publication_id = label.partition("-")
+            return ProductionVersion(int(sequence_text), publication_id)
+        if label.isdigit():
+            resolved = self._version_for_sequence(int(label))
+            if resolved is None:
+                raise RuntimeError(f"Unknown published production version: {version}")
+            return resolved
+        raise RuntimeError(f"Unknown published production version: {version}")
+
+    def _version_for_sequence(self, sequence: int) -> ProductionVersion | None:
+        matches = [version.production_version for version in self.list_versions() if version.version == sequence]
+        if not matches:
+            return None
+        if len(matches) > 1:
+            raise RuntimeError(f"Forked production history has multiple versions for sequence {sequence}")
+        return matches[0]

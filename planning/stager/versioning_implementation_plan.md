@@ -26,78 +26,85 @@ There is no compatibility requirement for old production-version strings. The on
 
 ## Phase 0: Audit Current State
 
-- [ ] List all Stager manifest writers that emit `schema_version`.
+- [x] List all Stager manifest writers that emit `schema_version`.
   - Candidate areas: Playbook builder, Recording Request builder, role recordings exporter/importer tests.
-- [ ] List all browser import validators that read `schema_version`.
+  - Audit: Playbook manifests use `src/stager/playbook/app_manifest.py`; Recording Requests use `src/stager/linerecorder/recording_request_manifest.py`; LineRecorder recording export packages are assembled in `linerecorder/src/package/exportRoleRecordings.ts`; Stager import validation checks `schema_version` in `src/stager/linerecorder/role_recordings_importer.py`.
+- [x] List all browser import validators that read `schema_version`.
   - Candidate areas: Cuemaster Playbook import validation, LineRecorder Recording Request validation.
-- [ ] List all Stager import validators that read recording package manifests.
-- [ ] List all production publication classes that create, store, or restore published versions.
+  - Audit: Cuemaster validates Playbooks in `cuemaster/src/specs/validatePlaybookManifest.ts`; LineRecorder validates Recording Requests in `linerecorder/src/specs/validateRecordingRequestManifest.ts`; LineRecorder validates local role recording package shape in `linerecorder/src/specs/validateRoleRecordingsManifest.ts`.
+- [x] List all Stager import validators that read recording package manifests.
+- [x] List all production publication classes that create, store, or restore published versions.
   - Candidate areas: `production_version_store`, `production_publisher`, source rewriter, source resolver.
-- [ ] List existing `plays/*/production.md` files and note whether they already have production-version metadata.
-- [ ] Confirm current tests that snapshot manifest JSON examples so expected payloads can be updated deliberately.
+  - Audit: `ProductionPublisher` creates versions; `ProductionVersionStore` stores/lists/restores versions; `ProductionSourceRewriter` writes locked sources; `ProductionSourceResolver` chooses published versus working sources.
+- [x] List existing `plays/*/production.md` files and note whether they already have production-version metadata.
+  - Audit: `plays/androcles/production.md`, `plays/solo-androcles/production.md`, and `plays/fairies/production.md` exist; none currently contain `production_version`, `parent_production_version`, or `production_note`.
+- [x] Confirm current tests that snapshot manifest JSON examples so expected payloads can be updated deliberately.
+  - Audit: key snapshot/assertion tests include `tests/stager/playbook/test_app_manifest.py`, `tests/stager/playbook/test_playbook_builder.py`, `tests/stager/linerecorder/test_recording_request_builder.py`, `tests/stager/linerecorder/test_role_recordings_importer.py`, Cuemaster Playbook normalization/import tests, and LineRecorder Recording Request/export validation tests.
 
 ## Phase 1: Shared Version Domain
 
 Goal: one tested Stager module owns structured production versions and package format versions.
 
-- [ ] Add a production-version value object.
+- [x] Add a production-version value object.
   - Suggested module: `src/stager/production_publication/production_version.py`.
   - Parse `<sequence>@<publication-id>`.
   - Expose `sequence`, `publication_id`, and string rendering.
   - Reject missing sequence, non-positive sequence, malformed separators, empty ids, and legacy `v0007`-style values.
-- [ ] Add publication-id generation.
+- [x] Add publication-id generation.
   - Generate at least 60 random bits.
   - Encode as a short lowercase or Crockford Base32 token.
   - Avoid ambiguous characters if using Crockford Base32.
   - Add deterministic injection for tests.
-- [ ] Add lineage helpers.
+- [x] Add lineage helpers.
   - `is_successor_of(parent)`.
   - `same_sequence_different_publication_id(other)`.
   - `history_directory_name`, such as `0007-k9f4p2x8m1qd`.
-- [ ] Add package format-version helpers.
+- [x] Add package format-version helpers.
   - Parse semantic versions.
   - Map existing `schema_version: 1` to `format_version: 1.0.0` only for package manifests.
   - Compare supported major/minor/patch.
   - Return warning/reject decisions without mixing UI text into the domain helper.
-- [ ] Add focused tests for production-version parsing, rendering, generation, lineage, and legacy rejection.
-- [ ] Add focused tests for format-version compatibility decisions.
+- [x] Add focused tests for production-version parsing, rendering, generation, lineage, and legacy rejection.
+- [x] Add focused tests for format-version compatibility decisions.
 
 ## Phase 2: Production Markdown Metadata
 
 Goal: `production.md` can carry structured version metadata without weakening script parsing.
 
-- [ ] Update production metadata parsing to allow `production_version`.
-- [ ] Update production metadata parsing to allow `parent_production_version`.
-- [ ] Update production metadata parsing to allow `production_note`.
-- [ ] Treat `parent_production_version: none` as first-publication lineage only, or decide to omit parent metadata for first publication.
-- [ ] Validate `production_version` with the production-version value object when present.
-- [ ] Validate `parent_production_version` with the production-version value object when present and not `none`.
-- [ ] Treat `production_note` as freeform current-version orientation text, not durable history.
-- [ ] Reject legacy production-version strings with a clear diagnostic.
-- [ ] Preserve version metadata when parsing and rendering locked output where appropriate.
+- [x] Update production metadata parsing to allow `production_version`.
+- [x] Update production metadata parsing to allow `parent_production_version`.
+- [x] Update production metadata parsing to allow `production_note`.
+- [x] Treat `parent_production_version: none` as first-publication lineage only, or decide to omit parent metadata for first publication.
+  - Decision for now: parser accepts `none`; publisher behavior will decide whether first publication writes `none` or omits the field.
+- [x] Validate `production_version` with the production-version value object when present.
+- [x] Validate `parent_production_version` with the production-version value object when present and not `none`.
+- [x] Treat `production_note` as freeform current-version orientation text, not durable history.
+- [x] Reject legacy production-version strings with a clear diagnostic.
+- [x] Preserve version metadata when parsing and rendering locked output where appropriate.
+  - Progress: parser preserves metadata in `ProductionScript.metadata`; publication/source rendering behavior remains in the later publish-command slice.
 - [ ] Update ScriptWright locking behavior.
   - Draft-to-locked output should not invent a production version.
   - Existing valid production-version metadata should be preserved only if the source remains a published working copy.
   - Force/regeneration behavior should not accidentally claim published lineage.
-- [ ] Add parser tests for valid metadata.
-- [ ] Add parser tests for missing metadata on unpublished locked files.
-- [ ] Add parser tests for malformed and legacy metadata rejection.
+- [x] Add parser tests for valid metadata.
+- [x] Add parser tests for missing metadata on unpublished locked files.
+- [x] Add parser tests for malformed and legacy metadata rejection.
 
 ## Phase 3: Publication History Storage
 
 Goal: publication history stores structured identities and can detect forks.
 
-- [ ] Update history directory naming from `v0007` style to `0007-<publication-id>`.
-- [ ] Update `current.json` shape.
-  - Include `production_version`.
-  - Include `sequence`.
-  - Include `publication_id`.
-  - Include `parent_production_version`.
-  - Include `published_at`.
-  - Include `change_summary`.
+- [x] Update history directory naming from `v0007` style to `0007-<publication-id>`.
+- [x] Update `current.json` shape.
+  - [x] Include `production_version`.
+  - [x] Include `sequence`.
+  - [x] Include `publication_id`.
+  - [ ] Include `parent_production_version`.
+  - [x] Include `published_at`.
+  - [ ] Include `change_summary`.
   - Include source/content hash for the published manuscript snapshot if useful for drift detection.
-- [ ] Update version listing to display structured production versions.
-- [ ] Update restore behavior to restore the exact published metadata.
+- [x] Update version listing to display structured production versions.
+- [x] Update restore behavior to restore the exact published metadata.
 - [ ] Update diff behavior to report current published version and working manuscript version.
 - [ ] Detect forked local history.
   - Same sequence, different publication id.
@@ -105,18 +112,19 @@ Goal: publication history stores structured identities and can detect forks.
 - [ ] Detect out-of-date publish attempts.
   - Working `parent_production_version` does not match current published version.
   - Working `production_version` claims an older published version but the file has unpublished changes.
-- [ ] Add tests for first publication.
-- [ ] Add tests for normal successor publication.
+- [x] Add tests for first publication.
+- [x] Add tests for normal successor publication.
 - [ ] Add tests for fork detection.
 - [ ] Add tests for out-of-date publish rejection.
-- [ ] Add tests for restore and history listing.
+- [x] Add tests for restore and history listing.
 
 ## Phase 4: Publish Command Back-Writing
 
 Goal: producer workflow stays simple: edit `production.md`, publish, let Stager write version metadata.
 
-- [ ] Update `publish-production` to allocate the next sequence number from current history.
+- [x] Update `publish-production` to allocate the next sequence number from current history.
 - [ ] Inject publication-id and timestamp generators for deterministic tests.
+  - Progress: publication id generation is injectable; timestamp generation still needs injection.
 - [ ] Add producer change-summary input.
   - Prompt interactively when the command is attached to a terminal.
   - Accept `--change-summary` for non-interactive use.

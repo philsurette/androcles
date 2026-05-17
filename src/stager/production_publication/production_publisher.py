@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 
@@ -10,6 +10,7 @@ from stager.production_publication.production_change_analyzer import ProductionC
 from stager.production_publication.production_publish_result import ProductionPublishResult
 from stager.production_publication.production_snapshot_builder import ProductionSnapshotBuilder
 from stager.production_publication.production_source_rewriter import ProductionSourceRewriter
+from stager.production_publication.production_version import PublicationIdGenerator
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader, ProductionScriptParser, ScriptWright
 from stager.shared import paths
@@ -18,6 +19,7 @@ from stager.shared import paths
 @dataclass
 class ProductionPublisher:
     paths_config: paths.PathConfig
+    publication_id_generator: PublicationIdGenerator = field(default_factory=PublicationIdGenerator)
 
     def publish(
         self,
@@ -25,6 +27,7 @@ class ProductionPublisher:
         apply_id_updates: bool = False,
         allow_id_reuse: bool = False,
         recording_requests: bool = False,
+        change_summary: str = "",
     ) -> ProductionPublishResult:
         production = self._locked_source()
         store = ProductionVersionStore(self.paths_config)
@@ -54,11 +57,15 @@ class ProductionPublisher:
         elif id_updates and not allow_id_reuse:
             raise RuntimeError(self._id_reuse_message(id_updates))
 
+        parent_version = previous.production_version if previous is not None else None
+        production_version = store.next_production_version(self.publication_id_generator.generate())
         version = PublishedVersion(
-            version=store.next_version_number(),
+            production_version=production_version,
+            parent_production_version=parent_version,
             published_at=self._now(),
             source_path=paths.display_path(self.paths_config.production_markdown),
             lines=snapshot_builder.build_lines(production),
+            change_summary=change_summary,
         )
         store.save(
             version=version,

@@ -157,6 +157,60 @@ CAPTAIN: I will never submit.
     assert script.entries[2].roles == ("CAPTAIN",)
 
 
+def test_parse_allows_publication_metadata():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+// production_version: 7@k9f4p2x8m1qd
+// parent_production_version: 6@h7p2v9c4t6ra
+// production_note: Cut two lines from Act II.
+
+# I-0 ACT I
+"""
+    )
+
+    assert script.metadata["production_version"] == "7@k9f4p2x8m1qd"
+    assert script.metadata["parent_production_version"] == "6@h7p2v9c4t6ra"
+    assert script.metadata["production_note"] == "Cut two lines from Act II."
+
+
+def test_parse_allows_first_publication_parent_metadata():
+    script = ProductionScriptParser().parse_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+// production_version: 1@k9f4p2x8m1qd
+// parent_production_version: none
+
+# I-0 ACT I
+"""
+    )
+
+    assert script.metadata["parent_production_version"] == "none"
+
+
+@pytest.mark.parametrize(
+    ("metadata_line", "message"),
+    [
+        ("// production_version: v0007", "Legacy production version is not supported"),
+        ("// production_version: 7", "must use '<sequence>@<publication-id>'"),
+        ("// parent_production_version: v0006", "Legacy production version is not supported"),
+    ],
+)
+def test_parse_rejects_malformed_publication_metadata(metadata_line, message):
+    with pytest.raises(RuntimeError, match=message):
+        ProductionScriptParser().parse_text(
+            f"""// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+{metadata_line}
+
+# I-0 ACT I
+"""
+        )
+
+
 @pytest.mark.parametrize(
     ("text", "message"),
     [

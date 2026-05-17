@@ -10,6 +10,7 @@ from stager.scriptwright.production_script import (
     ProductionEntryKind,
     ProductionScript,
 )
+from stager.production_publication.production_version import ProductionVersion
 from stager.shared import paths
 
 
@@ -31,7 +32,14 @@ class ProductionScriptParser:
         "script_format": "quince-production-v1",
         "source_kind": "production",
     }
-    ALLOWED_METADATA_KEYS = {"script_format", "source_kind", "production_ids"}
+    ALLOWED_METADATA_KEYS = {
+        "script_format",
+        "source_kind",
+        "production_ids",
+        "production_version",
+        "parent_production_version",
+        "production_note",
+    }
     ALLOWED_PRODUCTION_IDS = {"draft", "locked"}
 
     def parse_path(self, source_path: Path | None = None) -> ProductionScript:
@@ -150,6 +158,21 @@ class ProductionScriptParser:
             if metadata.get(key) != value:
                 self._fail(f"Missing or invalid metadata: {key}", line_no, path)
         self._metadata_lock_state(metadata, line_no, path)
+        self._validate_version_metadata(metadata, line_no, path)
+
+    def _validate_version_metadata(self, metadata: dict[str, str], line_no: int, path: Path | None) -> None:
+        production_version = metadata.get("production_version")
+        if production_version is not None:
+            try:
+                ProductionVersion.parse(production_version)
+            except ValueError as exc:
+                self._fail(str(exc), line_no, path)
+        parent_version = metadata.get("parent_production_version")
+        if parent_version is not None and parent_version != "none":
+            try:
+                ProductionVersion.parse(parent_version)
+            except ValueError as exc:
+                self._fail(str(exc), line_no, path)
 
     def _parse_entry(
         self,
