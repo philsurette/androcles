@@ -103,7 +103,7 @@ Required `production.md` metadata:
 // production_ids: draft
 ```
 
-Published production manuscripts may also include:
+Published production manuscripts include:
 
 ```text
 // production_version: 1@k9f4p2x8m1qd
@@ -111,7 +111,7 @@ Published production manuscripts may also include:
 // production_note: Initial published manuscript.
 ```
 
-`production_version`, `parent_production_version`, and `production_note` are publication/versioning markers, not script-format markers. Their lifecycle is defined in [versioning.md](versioning.md).
+`production_version`, `parent_production_version`, and `production_note` are publication/versioning markers, not script-format markers. Their lifecycle is defined in [versioning.md](versioning.md). Unpublished locked scripts may omit these fields. After publication history exists, publish attempts require the working script's `production_version` to match the current published version before a successor can be created.
 
 Allowed `production_ids` values:
 

@@ -103,6 +103,38 @@ CAPTAIN, MEGAERA: Together.
 """
 
 
+def test_write_locked_drops_publication_metadata_from_draft_production_markdown(tmp_path):
+    cfg = _path_config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: draft
+// production_version: 1@k9f4p2x8m1qd
+// parent_production_version: none
+// production_note: Draft should not claim publication.
+
+# ACT I
+CAPTAIN: I will go.
+""",
+        encoding="utf-8",
+    )
+
+    ScriptWright(paths_config=cfg).write_locked()
+
+    output = cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_version:" not in output
+    assert "// parent_production_version:" not in output
+    assert "// production_note:" not in output
+    assert output.startswith(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+"""
+    )
+
+
 def test_write_locked_preserves_draft_comments_and_provisional_ids(tmp_path):
     cfg = _path_config(tmp_path)
     cfg.production_markdown.write_text(

@@ -15,12 +15,13 @@ The file contracts are defined elsewhere. The Playbook manifest source of truth 
 
 1. Create or update `plays/<play_id>/production.md`.
 2. Lock or reconcile the production script with ScriptWright.
-3. Build Stager text artifacts for review and production use.
-4. Collect or import line recordings for each rehearsable role.
-5. Split, verify, and fix segment audio.
-6. Build cue audio and a strict Playbook.
-7. Distribute the Playbook to actors for Cuemaster rehearsal.
-8. When script text or recordings change, issue targeted Recording Requests, import new recordings, and build a replacement Playbook.
+3. Publish the production script to create a structured production version.
+4. Build Stager text artifacts for review and production use.
+5. Collect or import line recordings for each rehearsable role.
+6. Split, verify, and fix segment audio.
+7. Build cue audio and a strict Playbook.
+8. Distribute the Playbook to actors for Cuemaster rehearsal.
+9. When script text or recordings change, publish a successor version, issue targeted Recording Requests, import new recordings, and build a replacement Playbook.
 
 ## 1. Create The Production Script
 
@@ -46,6 +47,14 @@ When the source script changes after locking, reconcile the changes instead of t
 
 The goal is that actors, recording packages, Playbooks, and future re-recording requests can all refer to the same stable line and segment identities across revisions.
 
+Publish the locked script when it is ready to become the production baseline:
+
+```sh
+./main publish-production --play <play_id> --change-summary "Initial published manuscript."
+```
+
+Publishing creates a structured version such as `1@k9f4p2x8m1qd`, stores the snapshot under `build/<play_id>/production-history/`, and back-writes the current version metadata into `plays/<play_id>/production.md`. Normal build commands copy that metadata into generated packages; they do not create new production versions or mutate the manuscript.
+
 ## 2. Build Review Artifacts
 
 After the production script is locked, build the normal text artifacts:
@@ -67,6 +76,8 @@ For an initial cast recording pass, create one Recording Request per rehearsable
 Stager writes a local zip package for LineRecorder. Send that package to the actor or reader assigned to the role.
 
 Recording Requests are intentionally text-first work orders. They include the role's recording items, production ids, Stager segment ids, display text, cue/context text where available, and expected output paths. They do not need to include audio assets. This keeps requests small and keeps audio collection separate from rehearsal Playbook distribution.
+
+Recording Requests also carry the production version they were created from. LineRecorder preserves that metadata when exporting role recording packages so Stager can warn if an actor returns recordings from a different published script version.
 
 The actor imports the request in LineRecorder, records and reviews each line, accepts the usable takes, and exports a role recording package. LineRecorder may export a complete package or an explicitly partial package.
 
@@ -176,6 +187,14 @@ For script text changes, update or reconcile `production.md` first:
 ```
 
 Then identify the affected roles and recording items. For targeted re-recording, create a selected Recording Request:
+
+Publish a successor production version before creating release re-recording requests:
+
+```sh
+./main publish-production --play <play_id> --change-summary "Describe the script change."
+```
+
+If the working file was edited from an out-of-date published version or local history contains a fork, Stager stops and reports the lineage problem instead of assigning a new version.
 
 ```sh
 ./main recording-request --play <play_id> --role <ROLE> --item <PRODUCTION_SEGMENT_ID> --reason script_changed

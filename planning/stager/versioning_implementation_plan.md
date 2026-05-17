@@ -82,7 +82,7 @@ Goal: `production.md` can carry structured version metadata without weakening sc
 - [x] Reject legacy production-version strings with a clear diagnostic.
 - [x] Preserve version metadata when parsing and rendering locked output where appropriate.
   - Progress: parser preserves metadata in `ProductionScript.metadata`; publication/source rendering behavior remains in the later publish-command slice.
-- [ ] Update ScriptWright locking behavior.
+- [x] Update ScriptWright locking behavior.
   - Draft-to-locked output should not invent a production version.
   - Existing valid production-version metadata should be preserved only if the source remains a published working copy.
   - Force/regeneration behavior should not accidentally claim published lineage.
@@ -240,12 +240,12 @@ Goal: local `production.md` files use the structured format; no legacy support r
 
 ## Phase 9: Documentation And User-Facing Diagnostics
 
-- [ ] Update [../specs/versioning.md](../specs/versioning.md) with any implementation decisions made during rollout.
-- [ ] Update [../specs/script_text_format.md](../specs/script_text_format.md) with final metadata examples.
-- [ ] Update [production_publication_workflow.md](production_publication_workflow.md) with final CLI behavior.
-- [ ] Update [../quince-workflow.md](../quince-workflow.md) to explain production versions in the producer workflow.
-- [ ] Update [playbook_usage.md](playbook_usage.md) to mention production metadata in Playbooks.
-- [ ] Add diagnostics for:
+- [x] Update [../specs/versioning.md](../specs/versioning.md) with any implementation decisions made during rollout.
+- [x] Update [../specs/script_text_format.md](../specs/script_text_format.md) with final metadata examples.
+- [x] Update [production_publication_workflow.md](production_publication_workflow.md) with final CLI behavior.
+- [x] Update [../quince-workflow.md](../quince-workflow.md) to explain production versions in the producer workflow.
+- [x] Update [playbook_usage.md](playbook_usage.md) to mention production metadata in Playbooks.
+- [x] Add diagnostics for:
   - malformed production versions,
   - legacy production-version strings,
   - forked histories,
@@ -253,30 +253,30 @@ Goal: local `production.md` files use the structured format; no legacy support r
   - missing change summaries when publishing,
   - package format versions that are too new,
   - package format versions that are missing.
-- [ ] Ensure diagnostics use `paths.display_path()` or `paths.display_location()` where they mention repository files.
+- [x] Ensure diagnostics use `paths.display_path()` or `paths.display_location()` where they mention repository files.
 
 ## Phase 10: Final Verification
 
-- [ ] Run targeted Stager versioning tests.
-- [ ] Run targeted Stager publication tests.
-- [ ] Run targeted Playbook generation tests.
-- [ ] Run targeted Recording Request and recording package tests.
-- [ ] Run Cuemaster import tests.
-- [ ] Run LineRecorder import/export tests.
-- [ ] Run full Python suite:
+- [x] Run targeted Stager versioning tests.
+- [x] Run targeted Stager publication tests.
+- [x] Run targeted Playbook generation tests.
+- [x] Run targeted Recording Request and recording package tests.
+- [x] Run Cuemaster import tests.
+- [x] Run LineRecorder import/export tests.
+- [x] Run full Python suite:
 
   ```sh
   .venv/bin/python run_tests.py
   ```
 
-- [ ] Run Cuemaster quality:
+- [x] Run Cuemaster quality:
 
   ```sh
   cd cuemaster
   npm run quality
   ```
 
-- [ ] Run LineRecorder quality:
+- [x] Run LineRecorder quality:
 
   ```sh
   cd linerecorder

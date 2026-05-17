@@ -302,7 +302,8 @@ class RoleRecordingsImporter:
         decision = package_version.compatibility_with(supported)
         if decision == FormatVersionDecision.REJECT:
             raise RuntimeError(
-                f"Unsupported role_recordings format version {package_version}; supported version is {supported}"
+                f"Unsupported role_recordings format version {package_version} in {paths.display_path(package_path)}; "
+                f"supported version is {supported}"
             )
         if decision == FormatVersionDecision.WARN:
             logger.warning(

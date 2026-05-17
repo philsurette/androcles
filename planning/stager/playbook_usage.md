@@ -26,6 +26,8 @@ Supported Playbook audio formats are `wav` and `mp3`. The default is `wav`; MP3 
 
 The command is strict. It raises if any rehearsable non-meta role line is missing required cue audio or response audio.
 
+Playbook generation copies production metadata from the selected production source into `manifest.json`. Published-source builds include `production.version`, `production.sequence`, `production.publication_id`, and `production.source: "published"`. Working-source preview builds are marked with `production.source: "working"` and do not create synthetic production versions.
+
 ## Output Layout
 
 Stager writes an unpacked Playbook directory for inspection and a distributable zip package.
@@ -67,6 +69,14 @@ Playbook generation expects a locked production script and split segment audio:
 - `build/<play_id>/audio/segments/<ROLE>/<segment_id>.wav`
 - cue audio for every rehearsable role line
 - response audio for every rehearsable role line
+
+For release/distribution builds, publish the production first:
+
+```sh
+./main publish-production --play <play_id> --change-summary "Describe the release script state."
+```
+
+The Playbook command does not mutate `plays/<play_id>/production.md`; it only records the production metadata it was built from.
 
 Run the relevant Stager preparation commands before Playbook export:
 

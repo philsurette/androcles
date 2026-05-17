@@ -114,7 +114,7 @@ def test_role_recordings_importer_rejects_newer_major_format_version(tmp_path: P
         files={},
     )
 
-    with pytest.raises(RuntimeError, match="Unsupported role_recordings format version 2.0.0"):
+    with pytest.raises(RuntimeError, match=r"Unsupported role_recordings format version 2.0.0 in .*CENTURION"):
         RoleRecordingsImporter(paths=cfg).import_package(package_path)
 
 

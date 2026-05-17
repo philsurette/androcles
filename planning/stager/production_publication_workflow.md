@@ -5,7 +5,7 @@
 Give the producer a simple loop:
 
 1. Edit `plays/<play_id>/production.md`.
-2. Run `./main publish-production --play <play_id>`.
+2. Run `./main publish-production --play <play_id> --change-summary "..."`.
 3. Describe the changes being published.
 4. Let Stager detect script changes, preserve history, assign the next production version, recommend changed-line ids, and optionally generate targeted Recording Requests.
 
@@ -39,32 +39,35 @@ build/<play_id>/production-history/
 
 `current.json` identifies the current published version. The producer continues to edit only `plays/<play_id>/production.md`.
 
-Each version `manifest.json` stores publication metadata, including the structured production version, parent production version, publication timestamp, and producer-authored change summary. The working `production.md` should contain only current-version metadata and a concise current `production_note`, not a growing change-history log.
+Each version `manifest.json` stores publication metadata, including the structured production version, parent production version, publication timestamp, and producer-authored change summary. The working `production.md` contains only current-version metadata and a concise current `production_note`, not a growing change-history log.
 
 ## Publish Flow
 
-`./main publish-production` should:
+`./main publish-production`:
 
 1. Parse the current producer source.
 2. If the source is draft production markdown, lock ids before publishing.
 3. Load the last published version, if one exists.
-4. Compare line ids and normalized content fingerprints.
-5. Classify line changes:
+4. Reject the publish when history exists and the working `production_version` does not match the current published version.
+5. Compare line ids and normalized content fingerprints.
+6. Classify line changes:
    - `unchanged`
    - `changed_id_reuse`
    - `added`
    - `removed`
-6. For each `changed_id_reuse`, recommend the next revision id, such as `2-5a`.
-7. If requested, rewrite the producer source with the recommended revision ids before publishing.
-8. Prompt for or accept a producer-authored change summary.
-9. Allocate the next structured production version.
-10. Store the new published version.
-11. Back-write `production_version`, `parent_production_version`, and a concise `production_note` into the working producer source.
-12. Optionally generate Recording Requests for added and changed recordable role lines.
+7. For each `changed_id_reuse`, recommend the next revision id, such as `2-5a`.
+8. If requested, rewrite the producer source with the recommended revision ids before publishing.
+9. Prompt for or accept a producer-authored change summary.
+10. Allocate the next structured production version.
+11. Store the new published version.
+12. Back-write `production_version`, `parent_production_version`, and a concise `production_note` into the working producer source.
+13. Optionally generate Recording Requests for added and changed recordable role lines.
 
 By default, changed id reuse should stop publication unless the producer applies recommended ids or explicitly allows id reuse. This protects existing recordings and Playbooks from silently treating changed text as the same line.
 
-Playbook and Recording Request builds should never assign production versions or mutate `production.md`. They consume a published or working production source and copy its production metadata into generated artifacts.
+Playbook and Recording Request builds never assign production versions or mutate `production.md`. They consume a published or working production source and copy its production metadata into generated artifacts.
+
+In non-interactive shells, `publish-production` requires `--change-summary` unless `--allow-empty-summary` is passed. Interactive runs may prompt for the summary.
 
 ## Production Source Selection
 
@@ -110,22 +113,13 @@ This allows one role request to contain both added and changed material without 
 
 `./main production-history` lists published versions.
 
-`./main restore-production VERSION` copies a prior published `production.md` back to the producer source. It should not silently publish the restored file; the producer can inspect it and then run `publish-production` again.
+`./main restore-production VERSION` copies a prior published `production.md` back to the producer source. `VERSION` may be the full structured version, such as `2@k9f4p2x8m1qd`, or a numeric sequence when that sequence is unambiguous. Legacy labels such as `v0002` are rejected. Restore does not silently publish the restored file; the producer can inspect it and then run `publish-production` again.
 
 Later, `restore-production --publish` can combine those steps.
 
-## Initial Implementation Slice
+## Diagnostics
 
-- Add managed production history storage.
-- Add diff classification against the current published version.
-- Add recommended revision ids for changed id reuse.
-- Add optional source rewrite for recommended ids.
-- Add selected Recording Request generation for changed/added lines.
-- Add CLI commands:
-  - `publish-production`
-  - `production-diff`
-  - `production-history`
-  - `restore-production`
+`./main production-diff` reports the current published production version, the working source production version, whether the working source has unpublished changes, and any lineage warning. Publication fails for forked histories, out-of-date working sources, changed id reuse without an explicit override or rewrite, malformed structured versions, legacy version labels, and missing change summaries in non-interactive runs.
 
 ## Later Work
 
