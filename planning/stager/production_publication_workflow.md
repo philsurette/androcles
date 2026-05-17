@@ -10,6 +10,8 @@ Give the producer a simple loop:
 
 The producer should not manually manage snapshots, diff sidecars, or per-role request item lists.
 
+Production version metadata and artifact propagation rules are defined in [../specs/versioning.md](../specs/versioning.md).
+
 ## Terms
 
 - **Producer**: the person controlling `production.md`; this may be a stage manager, director, showrunner, or other production lead.
@@ -25,13 +27,13 @@ Stager manages production history under:
 build/<play_id>/production-history/
   current.json
   versions/
-    v0001/
+    0001-h7p2v9c4t6ra/
       production.md
       manifest.json
-    v0002/
+    0002-k9f4p2x8m1qd/
       production.md
       manifest.json
-      changes_from_v0001.json
+      changes_from_0001-h7p2v9c4t6ra.json
 ```
 
 `current.json` identifies the current published version. The producer continues to edit only `plays/<play_id>/production.md`.

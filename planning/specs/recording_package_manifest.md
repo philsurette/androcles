@@ -6,14 +6,18 @@ LineRecorder uses actor-facing language such as "line" in the UI, but recording-
 
 Permanent production-script identifiers and content fingerprints are defined in `planning/specs/production_script_ids.md`. Recording manifests use production ids as canonical `id` values for script units; this document defines where they appear but does not redefine the id syntax or fingerprint rules.
 
+Format compatibility and production-version rules are defined in [versioning.md](versioning.md). This document defines the current recording package payload shapes, not the cross-format versioning policy.
+
 ## Package Types
 
-Schema version 1 defines two local file contracts:
+Schema version 1 defines two local recording package types:
 
 - `recording_request`: Stager or Cuemaster to LineRecorder. Contains the recording items an actor should record. A request may contain every segment for a role or only selected changed/problem segments.
 - `role_recordings`: LineRecorder to Stager. Contains accepted WAV recordings and import metadata.
 
 All packages are zip archives with a `manifest.json` at the root. Paths inside manifests are relative to the zip root.
+
+New writers should emit both `schema_version: 1` and `format_version: "1.0.0"` until all consumers have migrated to semantic format versions.
 
 ## Recording Request
 
@@ -151,7 +155,7 @@ Rules:
 
 ## Role Recording Package
 
-LineRecorder exports a role recording package that Stager can import.
+LineRecorder exports a recording export package that Stager can import.
 
 Example archive:
 

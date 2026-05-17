@@ -103,6 +103,15 @@ Required `production.md` metadata:
 // production_ids: draft
 ```
 
+Published production manuscripts may also include:
+
+```text
+// production_version: 1@k9f4p2x8m1qd
+// parent_production_version: none
+```
+
+`production_version` and `parent_production_version` are publication/versioning markers, not script-format markers. Their lifecycle is defined in [versioning.md](versioning.md).
+
 Allowed `production_ids` values:
 
 - `draft`: ScriptWright may add, replace, or remove production ids while generating locked output.

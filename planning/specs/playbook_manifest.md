@@ -6,6 +6,8 @@ This document defines the first app-facing export contract for Cuemaster, an act
 
 Permanent production-script identifiers and content fingerprints are defined in `planning/specs/production_script_ids.md`. Playbook manifests use production ids as canonical `id` values for script units; this document defines where they appear but does not redefine the id syntax or fingerprint rules.
 
+Format compatibility and production-version rules are defined in [versioning.md](versioning.md). This document defines the current Playbook payload shape, not the cross-format versioning policy.
+
 ## Intended Consumer
 
 The primary consumer is Cuemaster, an offline-first actor rehearsal app.
@@ -63,6 +65,8 @@ Compatibility rules:
 - Increment `schema_version` for breaking changes.
 - Additive fields may keep the same schema version if existing fields retain their meaning.
 - Cuemaster should reject unsupported schema versions explicitly.
+
+New writers should also emit `format_version` as described in [versioning.md](versioning.md). During migration, `schema_version: 1` maps to `format_version: 1.0.0` when the semantic format version is absent.
 
 ## Shared Cue Window Presets
 
