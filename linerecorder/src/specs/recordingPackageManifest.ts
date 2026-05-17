@@ -1,5 +1,6 @@
 export type RecordingRequestManifest = {
   schema_version: 1;
+  format_version: string;
   package_type: "recording_request";
   request: {
     id: string;
@@ -64,6 +65,7 @@ export type RecordingRequestItemManifest = {
 
 export type RoleRecordingsManifest = {
   schema_version: 1;
+  format_version: string;
   package_type: "role_recordings";
   complete: boolean;
   play: {

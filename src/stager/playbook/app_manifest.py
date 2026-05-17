@@ -34,10 +34,14 @@ class AppManifest:
     sections: list[AppSection] = field(default_factory=list)
     assets: list[AppAudioAsset] = field(default_factory=list)
     schema_version: int = 1
+    format_version: str = "1.0.0"
+    package_type: str = "playbook"
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
+            "format_version": self.format_version,
+            "package_type": self.package_type,
             "play": self.play.to_dict(),
             "reading": self.reading.to_dict(),
             "build": self.build.to_dict(),

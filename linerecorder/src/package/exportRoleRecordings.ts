@@ -78,6 +78,7 @@ export async function exportRoleRecordings(
 
   const manifest: RoleRecordingsManifest = {
     schema_version: 1,
+    format_version: "1.0.0",
     package_type: "role_recordings",
     complete: missingSegmentIds.length === 0,
     play: {

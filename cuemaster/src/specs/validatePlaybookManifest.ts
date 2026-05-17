@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PlaybookManifest } from "./playbookManifest";
+import { validatePackageFormatVersion } from "./packageFormatVersion";
 
 const audioAssetSchema = z.object({
   path: z.string().min(1),
@@ -92,6 +93,8 @@ const roleSchema = z.object({
 
 const manifestSchema = z.object({
   schema_version: z.literal(1),
+  format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  package_type: z.literal("playbook"),
   build: z.object({
     buildId: z.string().min(1),
     buildTimestamp: z.string().min(1),
@@ -126,5 +129,6 @@ const manifestSchema = z.object({
 });
 
 export function validatePlaybookManifest(input: unknown): PlaybookManifest {
+  validatePackageFormatVersion(input, "playbook", "1.0.0");
   return manifestSchema.parse(input) as PlaybookManifest;
 }

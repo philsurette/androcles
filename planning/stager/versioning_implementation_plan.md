@@ -135,8 +135,8 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
 - [x] Back-write `production_version`, `parent_production_version`, and `production_note` to working `plays/<play_id>/production.md` after successful publication.
 - [x] Ensure failed publication does not mutate the working manuscript.
   - Progress: missing CLI change summary exits before publication and test coverage verifies the failure path; broader failure-after-diff coverage remains useful with later lineage checks.
-- [ ] Ensure normal build commands never write production-version metadata.
-- [ ] Ensure Playbook and Recording Request builds never create or back-write production-version metadata.
+- [x] Ensure normal build commands never write production-version metadata.
+- [x] Ensure Playbook and Recording Request builds never create or back-write production-version metadata.
 - [x] Update `production-diff` output to include:
   - [x] current published production version,
   - [x] working production version,
@@ -144,7 +144,7 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
   - [x] fork warnings when detected.
   - [x] lineage warnings when detected.
 - [x] Update CLI tests for successful back-writing.
-- [ ] Update CLI tests for no mutation on failure.
+- [x] Update CLI tests for no mutation on failure.
 - [x] Update CLI tests for required or explicitly-empty change summaries.
 - [x] Update CLI tests for diagnostics around legacy production-version strings.
 
@@ -152,27 +152,27 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
 
 Goal: generated packages use semantic `format_version` and validate compatibility consistently.
 
-- [ ] Add `format_version: "1.0.0"` to Playbook manifests.
-- [ ] Add `package_type: "playbook"` to Playbook manifests if not already present.
-- [ ] Add `format_version: "1.0.0"` to Recording Request manifests.
-- [ ] Keep `package_type: "recording_request"` in Recording Request manifests.
-- [ ] Add `format_version: "1.0.0"` to LineRecorder recording export package manifests.
-- [ ] Keep `package_type: "role_recordings"` in LineRecorder recording export package manifests.
-- [ ] Keep `schema_version: 1` during this package-format rollout.
-- [ ] Add Stager tests for generated package version fields.
-- [ ] Add Cuemaster tests for Playbook import:
-  - exact supported version imports cleanly,
-  - newer minor version imports with warning,
-  - newer major version rejects,
-  - missing version rejects unless `schema_version: 1` mapping is deliberately accepted for package manifests.
-- [ ] Add LineRecorder tests for Recording Request import:
-  - exact supported version imports cleanly,
-  - newer minor version imports with warning,
-  - newer major version rejects.
-- [ ] Add Stager tests for LineRecorder recording export package import:
-  - exact supported version imports cleanly,
-  - newer minor version imports with warning,
-  - newer major version rejects.
+- [x] Add `format_version: "1.0.0"` to Playbook manifests.
+- [x] Add `package_type: "playbook"` to Playbook manifests if not already present.
+- [x] Add `format_version: "1.0.0"` to Recording Request manifests.
+- [x] Keep `package_type: "recording_request"` in Recording Request manifests.
+- [x] Add `format_version: "1.0.0"` to LineRecorder recording export package manifests.
+- [x] Keep `package_type: "role_recordings"` in LineRecorder recording export package manifests.
+- [x] Keep `schema_version: 1` during this package-format rollout.
+- [x] Add Stager tests for generated package version fields.
+- [x] Add Cuemaster tests for Playbook import:
+  - [x] exact supported version imports cleanly,
+  - [x] newer minor version imports with warning,
+  - [x] newer major version rejects,
+  - [x] missing version rejects unless `schema_version: 1` mapping is deliberately accepted for package manifests.
+- [x] Add LineRecorder tests for Recording Request import:
+  - [x] exact supported version imports cleanly,
+  - [x] newer minor version imports with warning,
+  - [x] newer major version rejects.
+- [x] Add Stager tests for LineRecorder recording export package import:
+  - [x] exact supported version imports cleanly,
+  - [x] newer minor version imports with warning,
+  - [x] newer major version rejects.
 
 ## Phase 6: Production Metadata In Playbooks
 
@@ -280,15 +280,15 @@ Goal: local `production.md` files use the structured format; no legacy support r
 - [x] Stager can publish a normal successor version.
 - [x] Stager detects same-sequence/different-publication-id forks.
 - [x] Stager detects out-of-date publish attempts.
-- [ ] Publication commands back-write structured version metadata only after success.
-- [ ] Normal build commands do not mutate `production.md`.
-- [ ] Playbook and Recording Request builds do not create new production versions.
+- [x] Publication commands back-write structured version metadata only after success.
+- [x] Normal build commands do not mutate `production.md`.
+- [x] Playbook and Recording Request builds do not create new production versions.
 - [x] Published version manifests store producer-authored change summaries.
 - [x] Working `production.md` contains only current-version metadata and optional concise `production_note`, not a growing change-history log.
 - [ ] Playbook manifests include `format_version`, `package_type`, and production metadata.
 - [ ] Recording Request manifests include `format_version`, `package_type`, and production metadata.
 - [ ] LineRecorder recording export packages include `format_version`, `package_type`, and preserved production metadata.
-- [ ] Cuemaster rejects newer major Playbook format versions and warns on newer minor versions.
-- [ ] LineRecorder rejects newer major Recording Request format versions and warns on newer minor versions.
-- [ ] Stager rejects newer major LineRecorder recording export package versions and warns on newer minor versions.
+- [x] Cuemaster rejects newer major Playbook format versions and warns on newer minor versions.
+- [x] LineRecorder rejects newer major Recording Request format versions and warns on newer minor versions.
+- [x] Stager rejects newer major LineRecorder recording export package versions and warns on newer minor versions.
 - [ ] Existing repository `production.md` files are migrated or intentionally left unpublished with no legacy version metadata.

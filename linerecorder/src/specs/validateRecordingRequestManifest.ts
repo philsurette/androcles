@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { RecordingRequest } from "../domain/recordingRequest";
+import { validatePackageFormatVersion } from "./packageFormatVersion";
 import type { RecordingRequestManifest } from "./recordingPackageManifest";
 
 const productionIdSchema = z
@@ -48,6 +49,7 @@ const itemSchema = z.object({
 
 const manifestSchema = z.object({
   schema_version: z.literal(1),
+  format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
   package_type: z.literal("recording_request"),
   request: z.object({
     id: z.string().min(1),
@@ -74,6 +76,7 @@ const manifestSchema = z.object({
 });
 
 export function validateRecordingRequestManifest(value: unknown): RecordingRequest {
+  validatePackageFormatVersion(value, "recording_request", "1.0.0");
   const manifest = manifestSchema.parse(value) satisfies RecordingRequestManifest;
   return {
     schemaVersion: manifest.schema_version,

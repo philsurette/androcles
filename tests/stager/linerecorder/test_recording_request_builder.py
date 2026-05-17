@@ -184,6 +184,8 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
     data = json.loads((cfg.build_dir / "linerecorder" / "MEGAERA" / "manifest.json").read_text(encoding="utf-8"))
 
     assert zip_path == cfg.build_dir / "linerecorder" / "MEGAERA.recording-request.zip"
+    assert data["schema_version"] == 1
+    assert data["format_version"] == "1.0.0"
     assert data["package_type"] == "recording_request"
     assert data["request"] == {
         "id": "test-play-MEGAERA-full_role-2026-05-10",

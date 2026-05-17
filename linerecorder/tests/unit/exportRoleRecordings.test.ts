@@ -17,6 +17,8 @@ describe("exportRoleRecordings", () => {
 
     expect(result.fileName).toBe("androcles-CENTURION-role-recordings-20260510T140000Z.zip");
     expect(manifest).toMatchObject({
+      schema_version: 1,
+      format_version: "1.0.0",
       package_type: "role_recordings",
       complete: false,
       recordings: [

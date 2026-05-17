@@ -98,6 +98,19 @@ def test_text_cli_uses_locked_production_markdown(tmp_path: Path, monkeypatch) -
     assert (cfg.markdown_dir / "Untitled.md").exists()
 
 
+def test_text_cli_does_not_write_production_version_metadata(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    before = cfg.production_markdown.read_text(encoding="utf-8")
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["text", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert cfg.production_markdown.read_text(encoding="utf-8") == before
+    assert "// production_version:" not in cfg.production_markdown.read_text(encoding="utf-8")
+
+
 def test_text_cli_auto_uses_published_production_when_available(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     ScriptWright(paths_config=cfg).write_locked()
@@ -143,6 +156,37 @@ I-1 CAPTAIN: Working text.
     assert "Working text." in (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
 
 
+def test_playbook_cli_does_not_create_or_back_write_production_version_metadata(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    before = cfg.production_markdown.read_text(encoding="utf-8")
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "run_playbook", lambda **kwargs: cfg.build_dir / "test.playbook.zip")
+
+    result = CliRunner().invoke(build.app, ["playbook", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert cfg.production_markdown.read_text(encoding="utf-8") == before
+    assert "// production_version:" not in cfg.production_markdown.read_text(encoding="utf-8")
+
+
+def test_recording_request_cli_does_not_create_or_back_write_production_version_metadata(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    before = cfg.production_markdown.read_text(encoding="utf-8")
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "run_recording_request", lambda **kwargs: cfg.build_dir / "CAPTAIN.recording-request.zip")
+
+    result = CliRunner().invoke(build.app, ["recording-request", "--role", "CAPTAIN", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert cfg.production_markdown.read_text(encoding="utf-8") == before
+    assert "// production_version:" not in cfg.production_markdown.read_text(encoding="utf-8")
+
+
 def test_publish_production_cli_requires_change_summary(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     ScriptWright(paths_config=cfg).write_locked()
@@ -182,6 +226,28 @@ def test_publish_production_cli_can_allow_empty_summary(tmp_path: Path, monkeypa
     production_text = cfg.production_markdown.read_text(encoding="utf-8")
     assert "// production_version: " in production_text
     assert "// production_note: Published production." in production_text
+
+
+def test_publish_production_cli_does_not_mutate_on_id_reuse_failure(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    ProductionPublisher(cfg).publish(change_summary="Initial publish.")
+    _replace_production_body(
+        cfg,
+        """# I-0 ACT I
+I-1 CAPTAIN: Hold fast.""",
+    )
+    before = cfg.production_markdown.read_text(encoding="utf-8")
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(
+        build.app,
+        ["publish-production", "--change-summary", "Change captain line.", "--play", "test"],
+    )
+
+    assert result.exit_code != 0
+    assert "I-1 -> I-1a" in result.output
+    assert cfg.production_markdown.read_text(encoding="utf-8") == before
 
 
 def test_publish_production_cli_reports_legacy_production_version(tmp_path: Path, monkeypatch) -> None:

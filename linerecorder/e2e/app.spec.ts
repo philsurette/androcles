@@ -65,6 +65,7 @@ async function writeRecordingRequestZip(path: string): Promise<void> {
     JSON.stringify(
       {
         schema_version: 1,
+        format_version: "1.0.0",
         package_type: "recording_request",
         request: {
           id: "androcles-CENTURION-full-2026-05-10",

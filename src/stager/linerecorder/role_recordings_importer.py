@@ -17,6 +17,7 @@ from stager.domain.block import RoleBlock
 from stager.domain.play import Play
 from stager.domain.segment import SimultaneousSegment, SpeechSegment
 from stager.playbook.app_line import AppLine
+from stager.shared.package_format_version import FormatVersionDecision, PackageFormatVersion
 from stager.shared import paths
 
 logger = logging.getLogger(__name__)
@@ -271,6 +272,7 @@ class RoleRecordingsImporter:
             raise RuntimeError(f"Unsupported role recordings schema in {paths.display_path(package_path)}")
         if manifest.get("package_type") != "role_recordings":
             raise RuntimeError(f"Expected role_recordings package: {paths.display_path(package_path)}")
+        self._validate_format_version(manifest, package_path)
         if manifest.get("play", {}).get("id") != self.paths.play_name:
             raise RuntimeError(
                 f"Package play id {manifest.get('play', {}).get('id')!r} does not match selected play {self.paths.play_name!r}"
@@ -291,6 +293,22 @@ class RoleRecordingsImporter:
             self._validate_recording(recording, role, package_path)
         self._validate_floor_noise_recordings(manifest, package_path)
         self._validate_play_segments(manifest, role, package_path)
+
+    def _validate_format_version(self, manifest: dict, package_path: Path) -> None:
+        supported = PackageFormatVersion(1, 0, 0)
+        package_version = PackageFormatVersion.from_manifest(manifest)
+        decision = package_version.compatibility_with(supported)
+        if decision == FormatVersionDecision.REJECT:
+            raise RuntimeError(
+                f"Unsupported role_recordings format version {package_version}; supported version is {supported}"
+            )
+        if decision == FormatVersionDecision.WARN:
+            logger.warning(
+                "role_recordings format version %s is newer than supported %s; newer fields may be ignored in %s",
+                package_version,
+                supported,
+                paths.display_path(package_path),
+            )
 
     def _validate_recording(self, recording: dict, role: str, package_path: Path) -> None:
         self._validate_production_id(recording.get("id"), "id", package_path)

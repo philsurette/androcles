@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validatePackageFormatVersion } from "./packageFormatVersion";
 import type { RoleRecordingsManifest } from "./recordingPackageManifest";
 
 const productionIdSchema = z
@@ -48,6 +49,7 @@ const floorNoiseRecordingSchema = z.object({
 
 const roleRecordingsSchema = z.object({
   schema_version: z.literal(1),
+  format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
   package_type: z.literal("role_recordings"),
   complete: z.boolean(),
   play: z.object({
@@ -65,5 +67,6 @@ const roleRecordingsSchema = z.object({
 });
 
 export function validateRoleRecordingsManifest(value: unknown): RoleRecordingsManifest {
+  validatePackageFormatVersion(value, "role_recordings", "1.0.0");
   return roleRecordingsSchema.parse(value) satisfies RoleRecordingsManifest;
 }

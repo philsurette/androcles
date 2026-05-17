@@ -126,6 +126,8 @@ def test_manifest_serializes_schema_one_shape() -> None:
     data = json.loads(manifest.to_json())
 
     assert data["schema_version"] == 1
+    assert data["format_version"] == "1.0.0"
+    assert data["package_type"] == "playbook"
     assert data["play"]["id"] == "androcles"
     assert data["reading"] == {"type": "solo", "build_type": "custom"}
     assert data["sections"][0] == {

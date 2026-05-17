@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import manifestFixture from "../fixtures/minimal-playbook/manifest.json";
 import type { PlaybookManifest } from "../../src/specs/playbookManifest";
 import { validatePlaybookManifest } from "../../src/specs/validatePlaybookManifest";
@@ -7,8 +7,50 @@ describe("validatePlaybookManifest", () => {
   it("accepts a Stager-shaped manifest with narrator context and actor roles", () => {
     const manifest = validatePlaybookManifest(manifestFixture);
 
+    expect(manifest.format_version).toBe("1.0.0");
+    expect(manifest.package_type).toBe("playbook");
     expect(manifest.context[0].speaker).toBe("_NARRATOR");
     expect(manifest.roles.map((role) => role.id)).toEqual(["ANDROCLES", "MEGAERA"]);
+  });
+
+  it("accepts a newer patch format without warning", () => {
+    const manifest = structuredClone(manifestFixture);
+    manifest.format_version = "1.0.1";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    expect(validatePlaybookManifest(manifest).format_version).toBe("1.0.1");
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockRestore();
+  });
+
+  it("accepts a newer minor format with a warning", () => {
+    const manifest = structuredClone(manifestFixture);
+    manifest.format_version = "1.1.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    expect(validatePlaybookManifest(manifest).format_version).toBe("1.1.0");
+    expect(warn).toHaveBeenCalledWith(
+      "playbook format version 1.1.0 is newer than supported 1.0.0; newer features may be ignored."
+    );
+
+    warn.mockRestore();
+  });
+
+  it("rejects a newer major format", () => {
+    const manifest = structuredClone(manifestFixture);
+    manifest.format_version = "2.0.0";
+
+    expect(() => validatePlaybookManifest(manifest)).toThrow(
+      "Unsupported playbook format version 2.0.0; supported version is 1.0.0"
+    );
+  });
+
+  it("rejects a missing format version", () => {
+    const manifest = structuredClone(manifestFixture) as Partial<PlaybookManifest>;
+    delete manifest.format_version;
+
+    expect(() => validatePlaybookManifest(manifest)).toThrow("playbook package is missing format_version");
   });
 
   it("rejects a role without a line array", () => {

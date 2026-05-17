@@ -1,10 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { validateRoleRecordingsManifest } from "../../src/specs/validateRoleRecordingsManifest";
 
 describe("validateRoleRecordingsManifest", () => {
   it("accepts a valid role recordings manifest", () => {
     const manifest = validateRoleRecordingsManifest({
       schema_version: 1,
+      format_version: "1.0.0",
       package_type: "role_recordings",
       complete: false,
       play: {
@@ -66,10 +67,51 @@ describe("validateRoleRecordingsManifest", () => {
     expect(manifest.missing_segment_ids).toEqual(["I-14:s1"]);
   });
 
+  it("accepts a newer patch format without warning", () => {
+    const manifest = roleRecordingsManifestFixture();
+    manifest.format_version = "1.0.1";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    expect(validateRoleRecordingsManifest(manifest).package_type).toBe("role_recordings");
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockRestore();
+  });
+
+  it("accepts a newer minor format with a warning", () => {
+    const manifest = roleRecordingsManifestFixture();
+    manifest.format_version = "1.1.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    expect(validateRoleRecordingsManifest(manifest).package_type).toBe("role_recordings");
+    expect(warn).toHaveBeenCalledWith(
+      "role_recordings format version 1.1.0 is newer than supported 1.0.0; newer fields may be ignored."
+    );
+
+    warn.mockRestore();
+  });
+
+  it("rejects a newer major format", () => {
+    const manifest = roleRecordingsManifestFixture();
+    manifest.format_version = "2.0.0";
+
+    expect(() => validateRoleRecordingsManifest(manifest)).toThrow(
+      "Unsupported role_recordings format version 2.0.0; supported version is 1.0.0"
+    );
+  });
+
+  it("rejects a missing format version", () => {
+    const manifest = roleRecordingsManifestFixture() as Partial<ReturnType<typeof roleRecordingsManifestFixture>>;
+    delete manifest.format_version;
+
+    expect(() => validateRoleRecordingsManifest(manifest)).toThrow("role_recordings package is missing format_version");
+  });
+
   it("rejects unsupported package types", () => {
     expect(() =>
       validateRoleRecordingsManifest({
         schema_version: 1,
+        format_version: "1.0.0",
         package_type: "recording_request",
         complete: true,
         play: { id: "androcles", title: "Androcles and the Lion" },
@@ -84,6 +126,7 @@ describe("validateRoleRecordingsManifest", () => {
     expect(() =>
       validateRoleRecordingsManifest({
         schema_version: 1,
+        format_version: "1.0.0",
         package_type: "role_recordings",
         complete: true,
         play: { id: "androcles", title: "Androcles and the Lion" },
@@ -109,6 +152,19 @@ describe("validateRoleRecordingsManifest", () => {
     ).toThrow("Expected a production id");
   });
 });
+
+function roleRecordingsManifestFixture() {
+  return {
+    schema_version: 1,
+    format_version: "1.0.0",
+    package_type: "role_recordings" as const,
+    complete: true,
+    play: { id: "androcles", title: "Androcles and the Lion" },
+    role: { id: "CENTURION", display_name: "Centurion" },
+    recordings: [],
+    missing_segment_ids: []
+  };
+}
 
 const line12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000000012";
 const segment12Hash = "sha256:0000000000000000000000000000000000000000000000000000000000001012";

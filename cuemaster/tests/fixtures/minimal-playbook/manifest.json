@@ -1,5 +1,7 @@
 {
   "schema_version": 1,
+  "format_version": "1.0.0",
+  "package_type": "playbook",
   "build": {
     "buildId": "ffdeeb60-7927-413d-94c4-71de01119e3a",
     "buildTimestamp": "2026-05-14T10:00:00Z"

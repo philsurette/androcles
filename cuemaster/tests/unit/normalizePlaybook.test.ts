@@ -6,6 +6,8 @@ describe("normalizePlaybook", () => {
   it("keeps narrator context separate from selectable roles", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      format_version: "1.0.0",
+      package_type: "playbook",
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"
@@ -39,6 +41,8 @@ describe("normalizePlaybook", () => {
   it("preserves line stage directions", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      format_version: "1.0.0",
+      package_type: "playbook",
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"
@@ -123,6 +127,8 @@ describe("normalizePlaybook", () => {
   it("preserves blocking context and line blocking", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,
+      format_version: "1.0.0",
+      package_type: "playbook",
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"

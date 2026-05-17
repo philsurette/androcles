@@ -171,11 +171,13 @@ class RecordingRequestManifest:
     recording: RecordingPreferences
     items: list[RecordingRequestItem]
     schema_version: int = 1
+    format_version: str = "1.0.0"
     package_type: str = "recording_request"
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
+            "format_version": self.format_version,
             "package_type": self.package_type,
             "request": self.request.to_dict(),
             "play": self.play.to_dict(),

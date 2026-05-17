@@ -67,6 +67,48 @@ def test_role_recordings_importer_writes_segments_to_stager_tree(tmp_path: Path)
     assert (cfg.segments_dir / "CENTURION" / "0_12_1.wav").read_bytes() == _wav_bytes()
 
 
+def test_role_recordings_importer_accepts_exact_format_version(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest=_role_recordings_manifest(format_version="1.0.0"),
+        files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes()},
+    )
+
+    result = RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+    assert result.role == "CENTURION"
+    assert result.imported_count == 1
+
+
+def test_role_recordings_importer_warns_on_newer_minor_format_version(tmp_path: Path, caplog) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest=_role_recordings_manifest(format_version="1.1.0"),
+        files={"audio/segments/CENTURION/0_12_1.wav": _wav_bytes()},
+    )
+
+    RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+    assert "role_recordings format version 1.1.0 is newer than supported 1.0.0" in caplog.text
+
+
+def test_role_recordings_importer_rejects_newer_major_format_version(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    package_path = tmp_path / "CENTURION.role-recordings.zip"
+    _write_package(
+        package_path,
+        manifest=_role_recordings_manifest(format_version="2.0.0"),
+        files={},
+    )
+
+    with pytest.raises(RuntimeError, match="Unsupported role_recordings format version 2.0.0"):
+        RoleRecordingsImporter(paths=cfg).import_package(package_path)
+
+
 def test_role_recordings_importer_records_existing_segment_before_overwrite(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     existing_path = cfg.segments_dir / "CENTURION" / "0_12_1.wav"
@@ -729,6 +771,32 @@ def _write_package(package_path: Path, *, manifest: dict, files: dict[str, bytes
         archive.writestr("manifest.json", json.dumps(manifest))
         for name, data in files.items():
             archive.writestr(name, data)
+
+
+def _role_recordings_manifest(*, format_version: str) -> dict:
+    return {
+        "schema_version": 1,
+        "format_version": format_version,
+        "package_type": "role_recordings",
+        "complete": True,
+        "play": {"id": "androcles", "title": "Androcles and the Lion"},
+        "role": {"id": "CENTURION", "display_name": "Centurion"},
+        "recordings": [
+            {
+                "id": "I-12:s1",
+                "line_id": "I-12",
+                "block_id": "0.12",
+                "segment_id": "0_12_1",
+                "audio_path": "audio/segments/CENTURION/0_12_1.wav",
+                "recorded_at": "2026-05-11T12:00:00Z",
+                "duration_ms": 1000,
+                "sample_rate_hz": 48000,
+                "channels": 1,
+                "status": "accepted",
+            }
+        ],
+        "missing_segment_ids": [],
+    }
 
 
 class FakeAudioProcessor:
