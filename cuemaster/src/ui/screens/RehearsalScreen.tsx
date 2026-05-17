@@ -32,16 +32,15 @@ import {
 } from "../../rehearsal/timingPresentation";
 import { VoiceActivityDetector } from "../../rehearsal/voiceActivityDetector";
 import type { VoiceActivityResult } from "../../rehearsal/voiceActivityTracker";
-import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import type { BlockingScope } from "../components/LineCard";
 import { RehearsalBottomBar } from "../components/RehearsalBottomBar";
 import { RehearsalHeader } from "../components/RehearsalHeader";
 import { RehearsalLineWorkspace } from "../components/RehearsalLineWorkspace";
 import { RehearsalOptionsScreen } from "../components/RehearsalOptionsScreen";
 import { RehearsalOutline, type TimingLineStatus } from "../components/RehearsalOutline";
-import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { useRehearsalPlayback } from "../hooks/useRehearsalPlayback";
+import { useRehearsalSessionPersistence } from "../hooks/useRehearsalSessionPersistence";
 import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
 import { evaluateTempoTimingResult, useTempoTiming } from "../hooks/useTempoTiming";
 
@@ -150,6 +149,32 @@ export function RehearsalScreen({
   } = useTempoTiming({
     playbookId: playbook.id,
     roleId: role.id,
+    onStorageStatus: setStorageStatus
+  });
+  const { saveSession } = useRehearsalSessionPersistence({
+    playbookId: playbook.id,
+    roleId: role.id,
+    playbackRate,
+    speakAlongEnabled,
+    tempoTimingPreferred,
+    isLineRevealed,
+    cueWindowPresetId,
+    includeDirections,
+    showLinesByDefault,
+    speakAlongPauseMs,
+    tempoTargetHesitationMs,
+    syncPracticeTiming,
+    includeBlocking,
+    blockingScope,
+    practiceTargetPaceMultiplier,
+    syncSpeakAlongSpeed,
+    absoluteTempoForgivenessMs,
+    tempoTolerancePercent,
+    absolutePickupForgivenessMs,
+    autoAdvanceMode,
+    autoPlayLineMode,
+    rehearsalTextSize,
+    tempoEndOfLineSilenceMs,
     onStorageStatus: setStorageStatus
   });
   const calloutPlaybackSeq = useRef(0);
@@ -473,66 +498,6 @@ export function RehearsalScreen({
       tempoTimingPreferred,
       nextRevealLine
     );
-  }
-
-  async function saveSession(
-    lineIndex: number,
-    nextPlaybackRate = playbackRate,
-    nextSpeakAlongEnabled = speakAlongEnabled,
-    nextTempoTimingPreferred = tempoTimingPreferred,
-    nextRevealLine = isLineRevealed,
-    nextCueWindowPresetId = cueWindowPresetId,
-    nextIncludeDirections = includeDirections,
-    nextShowLinesByDefault = showLinesByDefault,
-    nextSpeakAlongPauseMs = speakAlongPauseMs,
-    nextTempoTargetHesitationMs = tempoTargetHesitationMs,
-    nextSyncPracticeTiming = syncPracticeTiming,
-    nextIncludeBlocking = includeBlocking,
-    nextBlockingScope = blockingScope,
-    nextPracticeTargetPaceMultiplier = practiceTargetPaceMultiplier,
-    nextSyncSpeakAlongSpeed = syncSpeakAlongSpeed,
-    nextAbsoluteTempoForgivenessMs = absoluteTempoForgivenessMs,
-    nextTempoTolerancePercent = tempoTolerancePercent,
-    nextAbsolutePickupForgivenessMs = absolutePickupForgivenessMs,
-    nextAutoAdvanceMode = autoAdvanceMode,
-    nextAutoPlayLineMode = autoPlayLineMode,
-    nextRehearsalTextSize = rehearsalTextSize,
-    nextTempoEndOfLineSilenceMs = tempoEndOfLineSilenceMs
-  ) {
-    const normalizedAutoPlayLineMode: AutoPlayLineMode = nextAutoAdvanceMode === "disabled" ? "disabled" : nextAutoPlayLineMode;
-    try {
-      await indexedDbStorage.sessions.save({
-        playbookId: playbook.id,
-        roleId: role.id,
-        lineIndex,
-        cueDepth: 1,
-        includeDirections: nextIncludeDirections,
-        includeBlocking: nextIncludeBlocking,
-        blockingScope: nextBlockingScope,
-        revealLine: nextRevealLine,
-        showLinesByDefault: nextShowLinesByDefault,
-        cueWindowPresetId: nextCueWindowPresetId,
-        playbackRate: nextPlaybackRate,
-        speakAlongEnabled: nextSpeakAlongEnabled,
-        speakAlongPauseMs: nextSpeakAlongPauseMs,
-        tempoTargetHesitationMs: nextTempoTargetHesitationMs,
-        practiceTargetPaceMultiplier: nextPracticeTargetPaceMultiplier,
-        absoluteTempoForgivenessMs: nextAbsoluteTempoForgivenessMs,
-        tempoTolerancePercent: nextTempoTolerancePercent,
-        absolutePickupForgivenessMs: nextAbsolutePickupForgivenessMs,
-        tempoEndOfLineSilenceMs: nextTempoEndOfLineSilenceMs,
-        autoAdvanceMode: nextAutoAdvanceMode,
-        autoPlayLineMode: normalizedAutoPlayLineMode,
-        syncSpeakAlongSpeed: nextSyncSpeakAlongSpeed,
-        syncPracticeTiming: nextSyncPracticeTiming,
-        rehearsalTextSize: nextRehearsalTextSize,
-        tempoTimingPreferred: nextTempoTimingPreferred,
-        updatedAt: Date.now()
-      });
-      setStorageStatus("");
-    } catch (error) {
-      setStorageStatus(userFacingErrorMessage(error));
-    }
   }
 
   async function playCue(options: { preserveTimingStatus?: boolean } = {}) {

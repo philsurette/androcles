@@ -77,6 +77,7 @@ This is a resumable implementation plan for making the Cuemaster and LineRecorde
   - Progress: moved options rendering to `cuemaster/src/ui/components/RehearsalOptionsPanel.tsx` and bottom controls/status rendering to `cuemaster/src/ui/components/RehearsalBottomBar.tsx`.
   - Progress: moved the central cue/line workspace to `cuemaster/src/ui/components/RehearsalLineWorkspace.tsx`.
   - Progress: moved shared rehearsal header and options page shell to `cuemaster/src/ui/components/RehearsalHeader.tsx` and `cuemaster/src/ui/components/RehearsalOptionsScreen.tsx`.
+  - Progress: moved session persistence to `cuemaster/src/ui/hooks/useRehearsalSessionPersistence.ts`.
 
 ## Phase 3: Cuemaster Play Page
 
