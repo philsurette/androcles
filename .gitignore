@@ -17,4 +17,5 @@ plays/androcles-no-appendix
 plays/fairies
 play-config.yaml
 recordings/
+queued_plays/
 prompt*.md
