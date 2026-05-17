@@ -38,6 +38,23 @@ def _patch_path_config(monkeypatch, cfg: paths.PathConfig) -> None:
     monkeypatch.setattr(build.paths, "PathConfig", fake_path_config)
 
 
+def _replace_production_body(cfg: paths.PathConfig, body: str) -> None:
+    lines = cfg.production_markdown.read_text(encoding="utf-8").splitlines()
+    header_lines: list[str] = []
+    for line in lines:
+        if not line.startswith("//"):
+            break
+        header_lines.append(line)
+    cfg.production_markdown.write_text("\n".join(header_lines) + f"\n\n{body}\n", encoding="utf-8")
+
+
+def _production_version(cfg: paths.PathConfig) -> str:
+    for line in cfg.production_markdown.read_text(encoding="utf-8").splitlines():
+        if line.startswith("// production_version: "):
+            return line.removeprefix("// production_version: ")
+    raise AssertionError("Missing production_version metadata")
+
+
 def test_text_cli_rejects_missing_production_markdown(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)
@@ -165,6 +182,77 @@ def test_publish_production_cli_can_allow_empty_summary(tmp_path: Path, monkeypa
     production_text = cfg.production_markdown.read_text(encoding="utf-8")
     assert "// production_version: " in production_text
     assert "// production_note: Published production." in production_text
+
+
+def test_publish_production_cli_reports_legacy_production_version(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+// production_version: v0001
+// parent_production_version: none
+
+# I-0 ACT I
+I-1 CAPTAIN: Stand fast.
+""",
+        encoding="utf-8",
+    )
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(
+        build.app,
+        ["publish-production", "--change-summary", "Initial table read.", "--play", "test"],
+    )
+
+    assert result.exit_code != 0
+    assert "Legacy production version is not supported: v0001" in result.output
+
+
+def test_production_diff_cli_reports_structured_versions(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    ProductionPublisher(cfg).publish(change_summary="Initial publish.")
+    production_version = _production_version(cfg)
+    _replace_production_body(
+        cfg,
+        """# I-0 ACT I
+I-1 CAPTAIN: Hold fast.""",
+    )
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["production-diff", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert f"Current published production: {production_version}" in result.output
+    assert f"Working production version: {production_version}" in result.output
+    assert "Working source has unpublished changes: yes" in result.output
+    assert f"Production changes since {production_version}:" in result.output
+
+
+def test_production_diff_cli_reports_stale_lineage(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    ProductionPublisher(cfg).publish(change_summary="Initial publish.")
+    version_one_source = cfg.production_markdown.read_text(encoding="utf-8")
+    version_one = _production_version(cfg)
+    _replace_production_body(
+        cfg,
+        """# I-0 ACT I
+I-1 CAPTAIN: Stand fast.
+I-2 CAPTAIN: Hold the line.""",
+    )
+    ProductionPublisher(cfg).publish(change_summary="Add line.", allow_id_reuse=True)
+    version_two = _production_version(cfg)
+    cfg.production_markdown.write_text(version_one_source, encoding="utf-8")
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["production-diff", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert f"Current published production: {version_two}" in result.output
+    assert f"Working production version: {version_one}" in result.output
+    assert f"Lineage warning: working production is based on {version_one}, not current {version_two}." in result.output
 
 
 def test_scriptwright_reconcile_reports_not_implemented(tmp_path: Path, monkeypatch) -> None:

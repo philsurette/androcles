@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
@@ -7,12 +8,14 @@ import json
 from stager.production_publication.published_recording_request_builder import PublishedRecordingRequestBuilder
 from stager.production_publication.published_version import PublishedVersion
 from stager.production_publication.production_change_analyzer import ProductionChangeAnalyzer
+from stager.production_publication.production_diff_result import ProductionDiffResult
 from stager.production_publication.production_publish_result import ProductionPublishResult
 from stager.production_publication.production_snapshot_builder import ProductionSnapshotBuilder
 from stager.production_publication.production_source_rewriter import ProductionSourceRewriter
-from stager.production_publication.production_version import PublicationIdGenerator
+from stager.production_publication.production_version import ProductionVersion, PublicationIdGenerator
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader, ProductionScriptParser, ScriptWright
+from stager.scriptwright.production_script import ProductionScript
 from stager.shared import paths
 
 
@@ -20,6 +23,7 @@ from stager.shared import paths
 class ProductionPublisher:
     paths_config: paths.PathConfig
     publication_id_generator: PublicationIdGenerator = field(default_factory=PublicationIdGenerator)
+    published_at_provider: Callable[[], str] = field(default_factory=lambda: _utc_timestamp_now)
 
     def publish(
         self,
@@ -31,7 +35,9 @@ class ProductionPublisher:
     ) -> ProductionPublishResult:
         production = self._locked_source()
         store = ProductionVersionStore(self.paths_config)
+        store.assert_no_forks()
         previous = store.current()
+        self._validate_working_lineage(production, previous)
         snapshot_builder = ProductionSnapshotBuilder()
         analyzer = ProductionChangeAnalyzer()
         report = analyzer.analyze(
@@ -110,11 +116,22 @@ class ProductionPublisher:
         )
 
     def diff(self):
+        return self.diff_with_versions().change_report
+
+    def diff_with_versions(self) -> ProductionDiffResult:
         production = self._locked_source(write_locked=False)
         store = ProductionVersionStore(self.paths_config)
-        return ProductionChangeAnalyzer().analyze(
-            previous=store.current(),
+        store.assert_no_forks()
+        current = store.current()
+        working_version = self._working_production_version(production)
+        report = ProductionChangeAnalyzer().analyze(
+            previous=current,
             current_lines=ProductionSnapshotBuilder().build_lines(production),
+        )
+        return ProductionDiffResult(
+            change_report=report,
+            current_version=current,
+            working_production_version=working_version,
         )
 
     def _locked_source(self, write_locked: bool = True):
@@ -130,6 +147,30 @@ class ProductionPublisher:
             return production
         ScriptWright(paths_config=self.paths_config).write_locked()
         return ProductionScriptParser(self.paths_config.production_markdown).parse_path()
+
+    def _validate_working_lineage(self, production: ProductionScript, previous: PublishedVersion | None) -> None:
+        working_version = production.metadata.get("production_version")
+        if previous is None:
+            return
+        if working_version is None:
+            raise RuntimeError(
+                "Published production history exists, but the working production script has no production_version; "
+                "restore the current published production before publishing."
+            )
+        production_version = ProductionVersion.parse(working_version)
+        if production_version == previous.production_version:
+            return
+        raise RuntimeError(
+            "Working production source is based on "
+            f"{production_version}, but the current published version is {previous.production_version}; "
+            "restore or merge before publishing."
+        )
+
+    def _working_production_version(self, production: ProductionScript) -> ProductionVersion | None:
+        working_version = production.metadata.get("production_version")
+        if working_version is None:
+            return None
+        return ProductionVersion.parse(working_version)
 
     def _line_reasons(self, report, changed_reasons: dict[str, str]) -> dict[str, str]:
         reasons = dict(changed_reasons)
@@ -161,7 +202,7 @@ class ProductionPublisher:
         return "\n".join(lines)
 
     def _now(self) -> str:
-        return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        return self.published_at_provider()
 
     def _production_note(self, change_summary: str) -> str:
         first_line = next((line.strip() for line in change_summary.splitlines() if line.strip()), "")
@@ -185,3 +226,7 @@ def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str |
         build_id if isinstance(build_id, str) and build_id else None,
         build_timestamp if isinstance(build_timestamp, str) and build_timestamp else None,
     )
+
+
+def _utc_timestamp_now() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")

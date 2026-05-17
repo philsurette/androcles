@@ -6,8 +6,11 @@ from pathlib import Path
 
 import pytest
 
+from stager.production_publication.published_version import PublishedVersion
+from stager.production_publication.production_change_report import ProductionChangeReport
 from stager.production_publication.production_publisher import ProductionPublisher
 from stager.production_publication.production_source_resolver import ProductionSourceResolver
+from stager.production_publication.production_version import ProductionVersion
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.shared.paths import PathConfig
 
@@ -35,6 +38,16 @@ def _write_production(cfg: PathConfig, body: str) -> None:
     )
 
 
+def _replace_production_body(cfg: PathConfig, body: str) -> None:
+    lines = cfg.production_markdown.read_text(encoding="utf-8").splitlines()
+    header_lines: list[str] = []
+    for line in lines:
+        if not line.startswith("//"):
+            break
+        header_lines.append(line)
+    cfg.production_markdown.write_text("\n".join(header_lines) + f"\n\n{body}\n", encoding="utf-8")
+
+
 class _PublicationIds:
     def __init__(self, *ids: str) -> None:
         self.ids = list(ids)
@@ -43,8 +56,16 @@ class _PublicationIds:
         return self.ids.pop(0)
 
 
-def _publisher(cfg: PathConfig, *ids: str) -> ProductionPublisher:
-    return ProductionPublisher(cfg, publication_id_generator=_PublicationIds(*ids or ("k9f4p2x8m1qd",)))
+def _publisher(
+    cfg: PathConfig,
+    *ids: str,
+    published_at: str = "2026-05-17T12:00:00Z",
+) -> ProductionPublisher:
+    return ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds(*ids or ("k9f4p2x8m1qd",)),
+        published_at_provider=lambda: published_at,
+    )
 
 
 def test_publish_creates_initial_managed_version(tmp_path: Path) -> None:
@@ -64,12 +85,14 @@ P-1 LILLIAN: Please do.""",
     assert current["sequence"] == 1
     assert current["production_version"] == "1@k9f4p2x8m1qd"
     assert current["parent_production_version"] is None
+    assert current["published_at"] == "2026-05-17T12:00:00Z"
     assert current["change_summary"] == "Initial publish."
     manifest = json.loads(
         (cfg.build_dir / "production-history" / "versions" / "0001-k9f4p2x8m1qd" / "manifest.json").read_text(
             encoding="utf-8"
         )
     )
+    assert manifest["published_at"] == "2026-05-17T12:00:00Z"
     assert manifest["change_summary"] == "Initial publish."
     production_text = cfg.production_markdown.read_text(encoding="utf-8")
     assert "// production_version: 1@k9f4p2x8m1qd" in production_text
@@ -85,7 +108,7 @@ def test_publish_rejects_changed_id_reuse_without_explicit_policy(tmp_path: Path
 P-1 LILLIAN: Please do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 LILLIAN: Please do it now.""",
@@ -104,7 +127,7 @@ P-1 CHRISTINE: Do you mind if I record?
 P-2 LILLIAN: Please do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 CHRISTINE: Do you mind if I record?
@@ -142,7 +165,7 @@ def test_publish_can_generate_recording_request_when_id_reuse_is_allowed(tmp_pat
 P-1 LILLIAN: Please do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 LILLIAN: Please do it now.""",
@@ -163,7 +186,7 @@ def test_publish_treats_inline_direction_changes_as_context_not_recording_work(t
 P-1 LILLIAN: Please (_crossing_) do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 LILLIAN: Please (_sitting_) do.""",
@@ -183,7 +206,7 @@ def test_publish_treats_inline_blocking_changes_as_context_not_recording_work(tm
 P-1 LILLIAN: Please (_/CHRISTINE: crosses_) do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 LILLIAN: Please (_/CHRISTINE: sits_) do.""",
@@ -229,7 +252,7 @@ def test_restore_copies_published_version_to_producer_source(tmp_path: Path) -> 
 P-1 LILLIAN: Please do.""",
     )
     _publisher(cfg, "k9f4p2x8m1qd").publish()
-    _write_production(
+    _replace_production_body(
         cfg,
         """# P-0 PROLOGUE
 P-1 LILLIAN: Please do.
@@ -240,6 +263,80 @@ P-2 LILLIAN: I am Lillian Barnes.""",
     ProductionVersionStore(cfg).restore_source("1@k9f4p2x8m1qd")
 
     assert "P-2" not in cfg.production_markdown.read_text(encoding="utf-8")
+
+
+def test_publish_rejects_forked_history(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.""",
+    )
+    _publisher(cfg, "k9f4p2x8m1qd").publish(change_summary="Initial publish.")
+    _replace_production_body(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+P-2 LILLIAN: I am Lillian Barnes.""",
+    )
+    _publisher(cfg, "z8n3d5q1w6te").publish(change_summary="Add Lillian intro.")
+    store = ProductionVersionStore(cfg)
+    store.save(
+        version=PublishedVersion(
+            production_version=ProductionVersion(2, "r6b1c7h2m9vx"),
+            parent_production_version=ProductionVersion(1, "k9f4p2x8m1qd"),
+            published_at="2026-05-17T12:00:00Z",
+            source_path="plays/test-play/production.md",
+            lines=(),
+            change_summary="Forked change.",
+        ),
+        source_path=cfg.production_markdown,
+        change_report=ProductionChangeReport(base_version=1, changes=()),
+        source_text="""// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+// production_version: 2@r6b1c7h2m9vx
+// parent_production_version: 1@k9f4p2x8m1qd
+// production_note: Forked change.
+
+# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+P-2 CHRISTINE: This is a fork.
+""",
+    )
+
+    with pytest.raises(RuntimeError, match="Forked production history detected"):
+        _publisher(cfg, "x2q7w4e9t1yu").publish(change_summary="Attempt successor.")
+
+
+def test_publish_rejects_out_of_date_working_production(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.""",
+    )
+    _publisher(cfg, "k9f4p2x8m1qd").publish(change_summary="Initial publish.")
+    version_one_source = cfg.production_markdown.read_text(encoding="utf-8")
+    _replace_production_body(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+P-2 LILLIAN: I am Lillian Barnes.""",
+    )
+    _publisher(cfg, "z8n3d5q1w6te").publish(change_summary="Add Lillian intro.")
+    cfg.production_markdown.write_text(version_one_source, encoding="utf-8")
+    _replace_production_body(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do it now.""",
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="based on 1@k9f4p2x8m1qd, but the current published version is 2@z8n3d5q1w6te",
+    ):
+        _publisher(cfg, "x2q7w4e9t1yu").publish(change_summary="Edit stale copy.")
 
 
 def test_production_source_resolver_auto_prefers_published_version(tmp_path: Path) -> None:

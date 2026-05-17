@@ -188,12 +188,13 @@ def raise_playbook_cli_error(exc: RuntimeError) -> None:
     raise exc
 
 
-def render_production_change_report(report) -> str:
+def render_production_change_report(report, base_label: str | None = None) -> str:
     if report.base_version is None:
         return "No prior published production version."
+    base = base_label or f"production sequence {report.base_version}"
     if not report.changes:
-        return f"No production changes since v{report.base_version:04d}."
-    lines = [f"Production changes since v{report.base_version:04d}:"]
+        return f"No production changes since {base}."
+    lines = [f"Production changes since {base}:"]
     for change in report.changes:
         if change.kind == "changed_id_reuse":
             lines.append(f"  changed id reused: {change.line_id} -> {change.recommended_id}")
@@ -1034,6 +1035,9 @@ def publish_production(
     setup_logging(cfg)
     summary = (change_summary or "").strip()
     if not summary and not allow_empty_summary:
+        if sys.stdin.isatty():
+            summary = typer.prompt("Change summary").strip()
+    if not summary and not allow_empty_summary:
         raise click.ClickException("Publishing requires --change-summary or --allow-empty-summary.")
     try:
         result = ProductionPublisher(paths_config=cfg).publish(
@@ -1045,7 +1049,14 @@ def publish_production(
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     typer.echo(f"Published production {result.version.label}.")
-    typer.echo(render_production_change_report(result.change_report))
+    typer.echo(
+        render_production_change_report(
+            result.change_report,
+            base_label=str(result.version.parent_production_version)
+            if result.version.parent_production_version is not None
+            else None,
+        )
+    )
     if result.id_updates:
         typer.echo("Applied id updates:" if apply_id_updates else "Recommended id updates:")
         for old_id, new_id in sorted(result.id_updates.items()):
@@ -1062,10 +1073,31 @@ def production_diff(play: str | None = PLAY_OPTION) -> None:
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     try:
-        report = ProductionPublisher(paths_config=cfg).diff()
+        result = ProductionPublisher(paths_config=cfg).diff_with_versions()
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
-    typer.echo(render_production_change_report(report))
+    current_label = result.current_version.label if result.current_version is not None else "none"
+    working_label = str(result.working_production_version) if result.working_production_version is not None else "unpublished"
+    typer.echo(f"Current published production: {current_label}")
+    typer.echo(f"Working production version: {working_label}")
+    typer.echo(f"Working source has unpublished changes: {'yes' if result.change_report.changes else 'no'}")
+    if result.current_version is not None and result.working_production_version is None:
+        typer.echo("Lineage warning: working production has no production_version metadata.")
+    elif (
+        result.current_version is not None
+        and result.working_production_version is not None
+        and result.working_production_version != result.current_version.production_version
+    ):
+        typer.echo(
+            "Lineage warning: working production is based on "
+            f"{result.working_production_version}, not current {result.current_version.production_version}."
+        )
+    typer.echo(
+        render_production_change_report(
+            result.change_report,
+            base_label=current_label if result.current_version is not None else None,
+        )
+    )
 
 
 @app.command("production-history", rich_help_panel="build")

@@ -105,17 +105,17 @@ Goal: publication history stores structured identities and can detect forks.
   - Include source/content hash for the published manuscript snapshot if useful for drift detection.
 - [x] Update version listing to display structured production versions.
 - [x] Update restore behavior to restore the exact published metadata.
-- [ ] Update diff behavior to report current published version and working manuscript version.
-- [ ] Detect forked local history.
+- [x] Update diff behavior to report current published version and working manuscript version.
+- [x] Detect forked local history.
   - Same sequence, different publication id.
   - Report all colliding history entries.
-- [ ] Detect out-of-date publish attempts.
-  - Working `parent_production_version` does not match current published version.
+- [x] Detect out-of-date publish attempts.
+  - Publishing now requires the working `production_version` to match the current published version when history exists.
   - Working `production_version` claims an older published version but the file has unpublished changes.
 - [x] Add tests for first publication.
 - [x] Add tests for normal successor publication.
-- [ ] Add tests for fork detection.
-- [ ] Add tests for out-of-date publish rejection.
+- [x] Add tests for fork detection.
+- [x] Add tests for out-of-date publish rejection.
 - [x] Add tests for restore and history listing.
 
 ## Phase 4: Publish Command Back-Writing
@@ -123,10 +123,9 @@ Goal: publication history stores structured identities and can detect forks.
 Goal: producer workflow stays simple: edit `production.md`, publish, let Stager write version metadata.
 
 - [x] Update `publish-production` to allocate the next sequence number from current history.
-- [ ] Inject publication-id and timestamp generators for deterministic tests.
-  - Progress: publication id generation is injectable; timestamp generation still needs injection.
+- [x] Inject publication-id and timestamp generators for deterministic tests.
 - [x] Add producer change-summary input.
-  - [ ] Prompt interactively when the command is attached to a terminal.
+  - [x] Prompt interactively when the command is attached to a terminal.
   - [x] Accept `--change-summary` for non-interactive use.
   - [x] Require `--allow-empty-summary` if an empty summary is allowed.
 - [x] Write `production_version` into the published snapshot.
@@ -138,15 +137,16 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
   - Progress: missing CLI change summary exits before publication and test coverage verifies the failure path; broader failure-after-diff coverage remains useful with later lineage checks.
 - [ ] Ensure normal build commands never write production-version metadata.
 - [ ] Ensure Playbook and Recording Request builds never create or back-write production-version metadata.
-- [ ] Update `production-diff` output to include:
-  - current published production version,
-  - working production version,
-  - whether the working source has unpublished changes,
-  - fork or lineage warnings when detected.
+- [x] Update `production-diff` output to include:
+  - [x] current published production version,
+  - [x] working production version,
+  - [x] whether the working source has unpublished changes,
+  - [x] fork warnings when detected.
+  - [x] lineage warnings when detected.
 - [x] Update CLI tests for successful back-writing.
 - [ ] Update CLI tests for no mutation on failure.
 - [x] Update CLI tests for required or explicitly-empty change summaries.
-- [ ] Update CLI tests for diagnostics around legacy production-version strings.
+- [x] Update CLI tests for diagnostics around legacy production-version strings.
 
 ## Phase 5: Package Format Versions
 
@@ -275,16 +275,16 @@ Goal: local `production.md` files use the structured format; no legacy support r
 
 ## Acceptance Criteria
 
-- [ ] Stager rejects legacy production-version strings instead of attempting compatibility.
-- [ ] Stager can publish a first structured production version.
-- [ ] Stager can publish a normal successor version.
-- [ ] Stager detects same-sequence/different-publication-id forks.
-- [ ] Stager detects out-of-date publish attempts.
+- [x] Stager rejects legacy production-version strings instead of attempting compatibility.
+- [x] Stager can publish a first structured production version.
+- [x] Stager can publish a normal successor version.
+- [x] Stager detects same-sequence/different-publication-id forks.
+- [x] Stager detects out-of-date publish attempts.
 - [ ] Publication commands back-write structured version metadata only after success.
 - [ ] Normal build commands do not mutate `production.md`.
 - [ ] Playbook and Recording Request builds do not create new production versions.
-- [ ] Published version manifests store producer-authored change summaries.
-- [ ] Working `production.md` contains only current-version metadata and optional concise `production_note`, not a growing change-history log.
+- [x] Published version manifests store producer-authored change summaries.
+- [x] Working `production.md` contains only current-version metadata and optional concise `production_note`, not a growing change-history log.
 - [ ] Playbook manifests include `format_version`, `package_type`, and production metadata.
 - [ ] Recording Request manifests include `format_version`, `package_type`, and production metadata.
 - [ ] LineRecorder recording export packages include `format_version`, `package_type`, and preserved production metadata.

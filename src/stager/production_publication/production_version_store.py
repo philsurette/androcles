@@ -57,6 +57,26 @@ class ProductionVersionStore:
                 )
         return versions
 
+    def forked_sequences(self) -> dict[int, tuple[ProductionVersion, ...]]:
+        versions_by_sequence: dict[int, list[ProductionVersion]] = {}
+        for version in self.list_versions():
+            versions_by_sequence.setdefault(version.version, []).append(version.production_version)
+        return {
+            sequence: tuple(sorted(production_versions))
+            for sequence, production_versions in versions_by_sequence.items()
+            if len({production_version.publication_id for production_version in production_versions}) > 1
+        }
+
+    def assert_no_forks(self) -> None:
+        forks = self.forked_sequences()
+        if not forks:
+            return
+        lines = ["Forked production history detected."]
+        for sequence, versions in sorted(forks.items()):
+            labels = ", ".join(str(version) for version in versions)
+            lines.append(f"  sequence {sequence}: {labels}")
+        raise RuntimeError("\n".join(lines))
+
     def save(
         self,
         *,
