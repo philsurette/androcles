@@ -116,7 +116,7 @@ type MicrophoneStripProps = {
 };
 
 function MicrophoneStrip({ config, reading, onOpen }: MicrophoneStripProps) {
-  const label = config ? "Mic Open" : "Start Mic";
+  const label = config ? "Mic Ready" : "Start Mic";
 
   return (
     <section className="microphone-strip" aria-label="Microphone">

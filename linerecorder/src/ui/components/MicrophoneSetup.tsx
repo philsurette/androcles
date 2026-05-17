@@ -38,6 +38,7 @@ export function MicrophoneSetup({
   const [reading, setReading] = useState<MicrophoneReading>({ energy: 0, level: "no-signal" });
   const [status, setStatus] = useState("Microphone not started.");
   const [isActive, setIsActive] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
   const [isCapturingFloorNoise, setIsCapturingFloorNoise] = useState(false);
 
   useEffect(() => {
@@ -51,31 +52,46 @@ export function MicrophoneSetup({
     };
   }, []);
 
-  async function refreshDevices(): Promise<void> {
+  async function refreshDevices(): Promise<MicrophoneDevice[]> {
     const availableDevices = await listMicrophoneDevices();
     setDevices(availableDevices);
     if (!selectedDeviceId && availableDevices[0]) {
       setSelectedDeviceId(availableDevices[0].deviceId);
     }
+    return availableDevices;
   }
 
   async function startMicrophone(): Promise<void> {
+    if (isStarting || isCapturingFloorNoise) {
+      return;
+    }
     try {
+      setIsStarting(true);
       setStatus("Requesting microphone permission...");
-      await refreshDevices();
+      sessionRef.current?.stop();
+      sessionRef.current = null;
+      const availableDevices = await refreshDevices();
+      const deviceId = selectedDeviceId || availableDevices[0]?.deviceId || "";
+      const deviceLabel = selectedDeviceLabel(availableDevices, deviceId);
+      setSelectedDeviceId(deviceId);
       const session = new MicrophoneSession((nextReading) => {
         setReading(nextReading);
         setStatus(levelStatus(nextReading.level));
       });
       sessionRef.current = session;
-      await session.start(selectedDeviceId, mode);
-      onReady({ deviceId: selectedDeviceId, deviceLabel: selectedDeviceLabel(), mode });
+      await session.start(deviceId, mode);
+      onReady({ deviceId, deviceLabel, mode });
       setIsActive(true);
     } catch (error) {
+      sessionRef.current?.stop();
+      sessionRef.current = null;
       const message =
         error instanceof MicrophonePermissionError ? error.message : "Unable to start microphone setup.";
       setStatus(message);
       setIsActive(false);
+      onReady(null);
+    } finally {
+      setIsStarting(false);
     }
   }
 
@@ -86,6 +102,7 @@ export function MicrophoneSetup({
     sessionRef.current = null;
     onReady(null);
     setIsActive(false);
+    setIsStarting(false);
     setIsCapturingFloorNoise(false);
     setReading({ energy: 0, level: "no-signal" });
     setStatus("Microphone stopped.");
@@ -118,7 +135,7 @@ export function MicrophoneSetup({
         sampleRateHz: recorded.sampleRateHz,
         channels: recorded.channels,
         deviceId: selectedDeviceId,
-        deviceLabel: selectedDeviceLabel(),
+        deviceLabel: selectedDeviceLabel(devices, selectedDeviceId),
         mode,
         inputQuality: recordingInputQuality(recorded),
         blob: recorded.blob
@@ -134,8 +151,8 @@ export function MicrophoneSetup({
     }
   }
 
-  function selectedDeviceLabel(): string {
-    return devices.find((device) => device.deviceId === selectedDeviceId)?.label || "Default microphone";
+  function selectedDeviceLabel(availableDevices: MicrophoneDevice[], deviceId: string): string {
+    return availableDevices.find((device) => device.deviceId === deviceId)?.label || "Default microphone";
   }
 
   const showStatus =
@@ -145,6 +162,7 @@ export function MicrophoneSetup({
     status.startsWith("Room tone") ||
     status === "Unable to capture room tone." ||
     status.startsWith("Microphone access");
+  const isSetupBusy = isStarting || isCapturingFloorNoise;
 
   return (
     <section className="microphone-panel compact" aria-label="Microphone setup">
@@ -163,7 +181,7 @@ export function MicrophoneSetup({
           <span className="visually-hidden">Input</span>
           <select
             value={selectedDeviceId}
-            disabled={isActive && isCapturingFloorNoise}
+            disabled={isActive || isSetupBusy}
             onFocus={() => void refreshDevices()}
             onChange={(event) => setSelectedDeviceId(event.target.value)}
           >
@@ -179,7 +197,7 @@ export function MicrophoneSetup({
           <span className="visually-hidden">Mode</span>
           <select
             value={mode}
-            disabled={isActive && isCapturingFloorNoise}
+            disabled={isActive || isSetupBusy}
             onChange={(event) => setMode(event.target.value as MicrophoneMode)}
           >
             <option value="clean">Clean room</option>
@@ -187,12 +205,12 @@ export function MicrophoneSetup({
           </select>
         </label>
         {isActive ? (
-          <button type="button" className="secondary" onClick={stopMicrophone} disabled={isCapturingFloorNoise}>
+          <button type="button" className="secondary" onClick={stopMicrophone} disabled={isSetupBusy}>
             Stop Mic
           </button>
         ) : (
-          <button type="button" onClick={() => void startMicrophone()}>
-            Start Mic
+          <button type="button" onClick={() => void startMicrophone()} disabled={isSetupBusy}>
+            {isStarting ? "Starting..." : "Start Mic"}
           </button>
         )}
         <button
