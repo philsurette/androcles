@@ -63,10 +63,14 @@ class ProductionVersionStore:
         version: PublishedVersion,
         source_path: Path,
         change_report: ProductionChangeReport,
+        source_text: str | None = None,
     ) -> Path:
         version_dir = self._version_dir(version.production_version)
         version_dir.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source_path, version_dir / "production.md")
+        if source_text is None:
+            shutil.copy2(source_path, version_dir / "production.md")
+        else:
+            (version_dir / "production.md").write_text(source_text, encoding="utf-8")
         (version_dir / "manifest.json").write_text(
             json.dumps(version.to_dict(), indent=2) + "\n",
             encoding="utf-8",
@@ -85,8 +89,14 @@ class ProductionVersionStore:
                     "production_version": str(version.production_version),
                     "sequence": version.production_version.sequence,
                     "publication_id": version.production_version.publication_id,
+                    "parent_production_version": (
+                        str(version.parent_production_version)
+                        if version.parent_production_version is not None
+                        else None
+                    ),
                     "label": version.label,
                     "published_at": version.published_at,
+                    "change_summary": version.change_summary,
                 },
                 indent=2,
             )

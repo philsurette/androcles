@@ -21,6 +21,15 @@ class ProductionSourceRewriter:
                 updated_entries.append(entry)
         return ProductionScript(metadata=dict(production.metadata), entries=tuple(updated_entries))
 
+    def rewrite_metadata(self, production: ProductionScript, metadata_updates: dict[str, str | None]) -> ProductionScript:
+        metadata = dict(production.metadata)
+        for key, value in metadata_updates.items():
+            if value is None:
+                metadata.pop(key, None)
+            else:
+                metadata[key] = value
+        return ProductionScript(metadata=metadata, entries=production.entries)
+
     def write_locked(self, production: ProductionScript) -> None:
         text = ScriptWright(paths_config=self.paths_config).render_locked_production(production)
         self.paths_config.production_markdown.write_text(text, encoding="utf-8")

@@ -99,9 +99,9 @@ Goal: publication history stores structured identities and can detect forks.
   - [x] Include `production_version`.
   - [x] Include `sequence`.
   - [x] Include `publication_id`.
-  - [ ] Include `parent_production_version`.
+  - [x] Include `parent_production_version`.
   - [x] Include `published_at`.
-  - [ ] Include `change_summary`.
+  - [x] Include `change_summary`.
   - Include source/content hash for the published manuscript snapshot if useful for drift detection.
 - [x] Update version listing to display structured production versions.
 - [x] Update restore behavior to restore the exact published metadata.
@@ -125,16 +125,17 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
 - [x] Update `publish-production` to allocate the next sequence number from current history.
 - [ ] Inject publication-id and timestamp generators for deterministic tests.
   - Progress: publication id generation is injectable; timestamp generation still needs injection.
-- [ ] Add producer change-summary input.
-  - Prompt interactively when the command is attached to a terminal.
-  - Accept `--change-summary` for non-interactive use.
-  - Require `--allow-empty-summary` if an empty summary is allowed.
-- [ ] Write `production_version` into the published snapshot.
-- [ ] Write `parent_production_version` into the published snapshot.
-- [ ] Write `production_note` into the published snapshot as the concise current-version note.
-- [ ] Write the full `change_summary` into the version's managed publication `manifest.json`.
-- [ ] Back-write `production_version`, `parent_production_version`, and `production_note` to working `plays/<play_id>/production.md` after successful publication.
-- [ ] Ensure failed publication does not mutate the working manuscript.
+- [x] Add producer change-summary input.
+  - [ ] Prompt interactively when the command is attached to a terminal.
+  - [x] Accept `--change-summary` for non-interactive use.
+  - [x] Require `--allow-empty-summary` if an empty summary is allowed.
+- [x] Write `production_version` into the published snapshot.
+- [x] Write `parent_production_version` into the published snapshot.
+- [x] Write `production_note` into the published snapshot as the concise current-version note.
+- [x] Write the full `change_summary` into the version's managed publication `manifest.json`.
+- [x] Back-write `production_version`, `parent_production_version`, and `production_note` to working `plays/<play_id>/production.md` after successful publication.
+- [x] Ensure failed publication does not mutate the working manuscript.
+  - Progress: missing CLI change summary exits before publication and test coverage verifies the failure path; broader failure-after-diff coverage remains useful with later lineage checks.
 - [ ] Ensure normal build commands never write production-version metadata.
 - [ ] Ensure Playbook and Recording Request builds never create or back-write production-version metadata.
 - [ ] Update `production-diff` output to include:
@@ -142,9 +143,9 @@ Goal: producer workflow stays simple: edit `production.md`, publish, let Stager 
   - working production version,
   - whether the working source has unpublished changes,
   - fork or lineage warnings when detected.
-- [ ] Update CLI tests for successful back-writing.
+- [x] Update CLI tests for successful back-writing.
 - [ ] Update CLI tests for no mutation on failure.
-- [ ] Update CLI tests for required or explicitly-empty change summaries.
+- [x] Update CLI tests for required or explicitly-empty change summaries.
 - [ ] Update CLI tests for diagnostics around legacy production-version strings.
 
 ## Phase 5: Package Format Versions

@@ -80,8 +80,12 @@ class ScriptWright:
             "// script_format: quince-production-v1",
             "// source_kind: production",
             "// production_ids: locked",
-            "",
         ]
+        for key in ("production_version", "parent_production_version", "production_note"):
+            value = production.metadata.get(key)
+            if value is not None:
+                lines.append(f"// {key}: {value}")
+        lines.append("")
         for production_id, entry in self._assign_ids(production.entries):
             lines.extend(entry.leading_comments)
             self._append_formatted_entry(

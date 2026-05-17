@@ -126,6 +126,47 @@ I-1 CAPTAIN: Working text.
     assert "Working text." in (cfg.markdown_dir / "Untitled.md").read_text(encoding="utf-8")
 
 
+def test_publish_production_cli_requires_change_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["publish-production", "--play", "test"])
+
+    assert result.exit_code != 0
+    assert "Publishing requires --change-summary or --allow-empty-summary." in result.output
+
+
+def test_publish_production_cli_accepts_change_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(
+        build.app,
+        ["publish-production", "--change-summary", "Initial table read.", "--play", "test"],
+    )
+
+    assert result.exit_code == 0
+    production_text = cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_version: " in production_text
+    assert "// parent_production_version: none" in production_text
+    assert "// production_note: Initial table read." in production_text
+
+
+def test_publish_production_cli_can_allow_empty_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["publish-production", "--allow-empty-summary", "--play", "test"])
+
+    assert result.exit_code == 0
+    production_text = cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_version: " in production_text
+    assert "// production_note: Published production." in production_text
+
+
 def test_scriptwright_reconcile_reports_not_implemented(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _patch_path_config(monkeypatch, cfg)

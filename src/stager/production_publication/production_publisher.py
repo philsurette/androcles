@@ -59,6 +59,7 @@ class ProductionPublisher:
 
         parent_version = previous.production_version if previous is not None else None
         production_version = store.next_production_version(self.publication_id_generator.generate())
+        production_note = self._production_note(change_summary)
         version = PublishedVersion(
             production_version=production_version,
             parent_production_version=parent_version,
@@ -67,11 +68,23 @@ class ProductionPublisher:
             lines=snapshot_builder.build_lines(production),
             change_summary=change_summary,
         )
+        rewriter = ProductionSourceRewriter(self.paths_config)
+        published_production = rewriter.rewrite_metadata(
+            production,
+            {
+                "production_version": str(production_version),
+                "parent_production_version": str(parent_version) if parent_version is not None else "none",
+                "production_note": production_note,
+            },
+        )
+        published_text = ScriptWright(paths_config=self.paths_config).render_locked_production(published_production)
         store.save(
             version=version,
             source_path=self.paths_config.production_markdown,
             change_report=report,
+            source_text=published_text,
         )
+        rewriter.write_locked(published_production)
 
         request_paths = ()
         if recording_requests:
@@ -149,6 +162,10 @@ class ProductionPublisher:
 
     def _now(self) -> str:
         return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def _production_note(self, change_summary: str) -> str:
+        first_line = next((line.strip() for line in change_summary.splitlines() if line.strip()), "")
+        return first_line or "Published production."
 
 
 def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str | None, str | None]:

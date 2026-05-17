@@ -1017,16 +1017,30 @@ def publish_production(
         "--recording-requests",
         help="Generate LineRecorder requests for changed and added role lines",
     ),
+    change_summary: str | None = typer.Option(
+        None,
+        "--change-summary",
+        help="Producer-authored summary of the manuscript changes being published",
+    ),
+    allow_empty_summary: bool = typer.Option(
+        False,
+        "--allow-empty-summary",
+        help="Publish without a change summary",
+    ),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Publish the current producer-edited production.md into Stager-managed history."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
+    summary = (change_summary or "").strip()
+    if not summary and not allow_empty_summary:
+        raise click.ClickException("Publishing requires --change-summary or --allow-empty-summary.")
     try:
         result = ProductionPublisher(paths_config=cfg).publish(
             apply_id_updates=apply_id_updates,
             allow_id_reuse=allow_id_reuse,
             recording_requests=recording_requests,
+            change_summary=summary,
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc

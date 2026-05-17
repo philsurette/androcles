@@ -63,6 +63,18 @@ P-1 LILLIAN: Please do.""",
     current = json.loads((cfg.build_dir / "production-history" / "current.json").read_text(encoding="utf-8"))
     assert current["sequence"] == 1
     assert current["production_version"] == "1@k9f4p2x8m1qd"
+    assert current["parent_production_version"] is None
+    assert current["change_summary"] == "Initial publish."
+    manifest = json.loads(
+        (cfg.build_dir / "production-history" / "versions" / "0001-k9f4p2x8m1qd" / "manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert manifest["change_summary"] == "Initial publish."
+    production_text = cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_version: 1@k9f4p2x8m1qd" in production_text
+    assert "// parent_production_version: none" in production_text
+    assert "// production_note: Initial publish." in production_text
 
 
 def test_publish_rejects_changed_id_reuse_without_explicit_policy(tmp_path: Path) -> None:
@@ -100,11 +112,18 @@ P-2 LILLIAN: Please do it now.
 P-3 LILLIAN: I am Lillian Barnes.""",
     )
 
-    result = _publisher(cfg, "z8n3d5q1w6te").publish(apply_id_updates=True, recording_requests=True)
+    result = _publisher(cfg, "z8n3d5q1w6te").publish(
+        apply_id_updates=True,
+        recording_requests=True,
+        change_summary="Changed Lillian's line.",
+    )
 
     assert result.version.label == "2@z8n3d5q1w6te"
     assert result.id_updates == {"P-2": "P-2a"}
     assert "P-2a LILLIAN: Please do it now." in cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_version: 2@z8n3d5q1w6te" in cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// parent_production_version: 1@k9f4p2x8m1qd" in cfg.production_markdown.read_text(encoding="utf-8")
+    assert "// production_note: Changed Lillian's line." in cfg.production_markdown.read_text(encoding="utf-8")
     assert result.recording_request_paths == (cfg.build_dir / "linerecorder" / "LILLIAN.recording-request.zip",)
 
     manifest = json.loads((cfg.build_dir / "linerecorder" / "LILLIAN" / "manifest.json").read_text(encoding="utf-8"))
