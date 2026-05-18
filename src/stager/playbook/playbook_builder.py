@@ -13,6 +13,7 @@ import zipfile
 from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
 from stager.domain.segment import BlockingSegment, DirectionSegment, SimultaneousSegment, SpeechSegment
+from stager.audio.cleaned_audio_selector import CleanedAudioSelector
 from stager.playbook.app_audio_asset import AppAudioAsset
 from stager.playbook.app_blocking import AppBlocking
 from stager.playbook.app_context_block import AppContextBlock
@@ -51,6 +52,7 @@ class PlaybookBuilder:
     cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
     audio_packager: PlaybookAudioPackager | None = None
     progress_reporter: PlaybookProgressReporter | None = None
+    use_cleaned_audio: bool = False
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
@@ -59,8 +61,9 @@ class PlaybookBuilder:
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
+        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, enabled=self.use_cleaned_audio)
         if self.selector is None:
-            self.selector = PlaybookCueSelector(play=self.play, paths=self.paths)
+            self.selector = PlaybookCueSelector(play=self.play, paths=self.paths, audio_selector=self.audio_selector)
         if self.cue_start_offset_analyzer is None:
             self.cue_start_offset_analyzer = CueStartOffsetAnalyzer()
         if self.audio_packager is None:
@@ -191,7 +194,7 @@ class PlaybookBuilder:
             segment_id = str(block.segments[0].segment_id)
             work_items.append(
                 PlaybookAudioWorkItem(
-                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                    source_path=self._segment_audio_path("_NARRATOR", segment_id),
                     role="_NARRATOR",
                     segment_id=segment_id,
                     category="context",
@@ -231,7 +234,7 @@ class PlaybookBuilder:
                     segment_id = str(segment.segment_id)
                     work_items.append(
                         PlaybookAudioWorkItem(
-                            source_path=self.paths.segments_dir / role.name / f"{segment_id}.wav",
+                            source_path=self._segment_audio_path(role.name, segment_id),
                             role=role.name,
                             segment_id=segment_id,
                             category="response",
@@ -241,7 +244,7 @@ class PlaybookBuilder:
                     segment_id = str(segment.segment_id)
                     work_items.append(
                         PlaybookAudioWorkItem(
-                            source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                            source_path=self._segment_audio_path("_NARRATOR", segment_id),
                             role="_NARRATOR",
                             segment_id=segment_id,
                             category="direction",
@@ -257,7 +260,7 @@ class PlaybookBuilder:
             audio = None
             if not isinstance(block, BlockingBlock):
                 audio = self._copy_required_audio(
-                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment_id}.wav",
+                    source_path=self._segment_audio_path("_NARRATOR", segment_id),
                     role="_NARRATOR",
                     segment_id=segment_id,
                     category="context",
@@ -289,7 +292,7 @@ class PlaybookBuilder:
             self._build_callout(block)
             for segment in self._inline_direction_segments_for(block):
                 self._copy_required_audio(
-                    source_path=self.paths.segments_dir / "_NARRATOR" / f"{segment.segment_id}.wav",
+                    source_path=self._segment_audio_path("_NARRATOR", str(segment.segment_id)),
                     role="_NARRATOR",
                     segment_id=str(segment.segment_id),
                     category="direction",
@@ -373,7 +376,7 @@ class PlaybookBuilder:
         segment: SpeechSegment | SimultaneousSegment,
     ) -> AppResponseSegment:
         asset = self._copy_required_audio(
-            source_path=self.paths.segments_dir / role / f"{segment.segment_id}.wav",
+            source_path=self._segment_audio_path(role, str(segment.segment_id)),
             role=role,
             segment_id=str(segment.segment_id),
             category="response",
@@ -388,6 +391,9 @@ class PlaybookBuilder:
             audio=asset,
             simultaneous=isinstance(segment, SimultaneousSegment),
         )
+
+    def _segment_audio_path(self, role: str, segment_id: str) -> Path:
+        return self.audio_selector.segment_path(role, segment_id)
 
     def _build_callout(self, block: RoleBlock) -> None:
         source_path = self._callout_source_for(block)

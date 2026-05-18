@@ -861,6 +861,7 @@ def audioplay(
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
+    use_cleaned_audio: bool = typer.Option(False, "--use-cleaned-audio", help="Use rendered audio cleanup outputs"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -894,6 +895,7 @@ def audioplay(
             librivox=librivox,
             audio_format=audio_format,
             normalize_output=normalize_output,
+            use_cleaned_audio=use_cleaned_audio,
             paths_config=cfg,
             prepare=prepare,
             progress_reporter=RichProgressReporter(progress),
@@ -954,6 +956,7 @@ def cues(
 def playbook(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type metadata"),
     audio_format: str = typer.Option("wav", "--audio-format", help="Playbook audio format: wav or mp3"),
+    use_cleaned_audio: bool = typer.Option(False, "--use-cleaned-audio", help="Use rendered audio cleanup outputs"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -969,6 +972,7 @@ def playbook(
                 paths_config=cfg,
                 build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
                 audio_format=audio_format,
+                use_cleaned_audio=use_cleaned_audio,
                 progress_reporter=RichPlaybookProgressReporter(progress),
             )
         except RuntimeError as exc:
@@ -1500,6 +1504,7 @@ def run_audioplay(
     audio_format: str = "mp4",
     normalize_output: bool = True,
     prepare: bool = True,
+    use_cleaned_audio: bool = False,
     paths_config: paths.PathConfig | None = None,
     progress_reporter: ProgressReporter | None = None,
 ):
@@ -1518,6 +1523,7 @@ def run_audioplay(
         audio_format=audio_format,
         normalize_output=normalize_output,
         prepare=prepare,
+        use_cleaned_audio=use_cleaned_audio,
     )
 
 
@@ -1555,6 +1561,7 @@ def run_playbook(
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
     audio_format: str = "wav",
+    use_cleaned_audio: bool = False,
     progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
@@ -1570,6 +1577,7 @@ def run_playbook(
         paths=cfg,
         build_type=effective_build_type,
         audio_format=audio_format,
+        use_cleaned_audio=use_cleaned_audio,
         progress_reporter=progress_reporter,
     )
     return builder.build()

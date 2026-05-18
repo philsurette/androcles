@@ -174,6 +174,30 @@ class _FakeProgressReporter:
         self.finished = True
 
 
+def _write_cleanup_review(cfg: paths.PathConfig, *, entries: list[tuple[str, str, Path]]) -> None:
+    review_path = cfg.audio_out_dir / "cleaned" / "cleanup_review.json"
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(
+        json.dumps(
+            {
+                "play_id": cfg.play_name,
+                "entries": [
+                    {
+                        "batch_id": "batch",
+                        "role": role,
+                        "segment_id": segment_id,
+                        "output_path": output_path.as_posix(),
+                        "warnings": [],
+                        "fallback": False,
+                    }
+                    for role, segment_id, output_path in entries
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -212,6 +236,47 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
         assert "manifest.json" in archive.namelist()
         assert line["cue"]["audio"]["path"] in archive.namelist()
         assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
+
+
+def test_playbook_builder_can_select_reviewed_cleaned_audio(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    cleaned_narrator = cfg.audio_out_dir / "cleaned" / "batch" / "_NARRATOR" / "0_0_1.wav"
+    cleaned_androcles = cfg.audio_out_dir / "cleaned" / "batch" / "ANDROCLES" / "0_1_1.wav"
+    cleaned_megaera = cfg.audio_out_dir / "cleaned" / "batch" / "MEGAERA" / "0_2_1.wav"
+    for path in (cleaned_narrator, cleaned_androcles, cleaned_megaera):
+        _write_wav(path)
+    _write_cleanup_review(
+        cfg,
+        entries=[
+            ("_NARRATOR", "0_0_1", cleaned_narrator),
+            ("ANDROCLES", "0_1_1", cleaned_androcles),
+            ("MEGAERA", "0_2_1", cleaned_megaera),
+        ],
+    )
+
+    work_items = PlaybookBuilder(play=play, paths=cfg, use_cleaned_audio=True).plan_audio_work()
+
+    assert {item.source_path for item in work_items} == {
+        cleaned_narrator,
+        cleaned_androcles,
+        cleaned_megaera,
+    }
+
+
+def test_playbook_builder_fails_when_cleaned_audio_is_incomplete(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    cleaned_narrator = cfg.audio_out_dir / "cleaned" / "batch" / "_NARRATOR" / "0_0_1.wav"
+    _write_wav(cleaned_narrator)
+    _write_cleanup_review(cfg, entries=[("_NARRATOR", "0_0_1", cleaned_narrator)])
+
+    with pytest.raises(RuntimeError, match="no cleanup review output exists for ANDROCLES/0_1_1"):
+        PlaybookBuilder(play=play, paths=cfg, use_cleaned_audio=True).plan_audio_work()
 
 
 def test_playbook_builder_includes_callout_audio_when_present(tmp_path: Path) -> None:

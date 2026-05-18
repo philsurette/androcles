@@ -176,10 +176,10 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 10: Integration
 
-- [ ] Let Playbook generation optionally use cleaned audio.
-- [ ] Let audioplay generation optionally use cleaned audio.
-- [ ] Keep verification on canonical segment audio unless explicitly requested.
-- [ ] Add tests for cleaned-audio selection.
+- [x] Let Playbook generation optionally use cleaned audio.
+- [x] Let audioplay generation optionally use cleaned audio.
+- [x] Keep verification on canonical segment audio unless explicitly requested.
+- [x] Add tests for cleaned-audio selection.
 
 ## Phase 11: Documentation And Verification
 

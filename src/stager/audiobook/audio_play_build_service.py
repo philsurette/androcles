@@ -40,6 +40,7 @@ class AudioPlayBuildService:
         audio_format: str = "mp4",
         normalize_output: bool = True,
         prepare: bool = True,
+        use_cleaned_audio: bool = False,
     ):
         effective_build_type = BuildTypeResolver(
             paths_config=self.paths,
@@ -77,6 +78,7 @@ class AudioPlayBuildService:
             generate_audio=generate_audio,
             generate_captions=captions,
             librivox=effective_librivox,
+            use_cleaned_audio=use_cleaned_audio,
             play=play,
             paths=self.paths,
             progress_reporter=self.progress_reporter,

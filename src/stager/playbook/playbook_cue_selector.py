@@ -6,6 +6,7 @@ from pathlib import Path
 from stager.domain.block import DescriptionBlock, DirectionBlock, RoleBlock, TitleBlock
 from stager.domain.play import Play
 from stager.domain.segment import DescriptionSegment, DirectionSegment, Segment, SimultaneousSegment, SpeechSegment
+from stager.audio.cleaned_audio_selector import CleanedAudioSelector
 from stager.playbook.cue_selection import CueSelection
 from stager.shared import paths
 
@@ -14,6 +15,7 @@ from stager.shared import paths
 class PlaybookCueSelector:
     play: Play
     paths: paths.PathConfig
+    audio_selector: CleanedAudioSelector | None = None
 
     def select_for_block(self, block: RoleBlock) -> CueSelection:
         preceding = []
@@ -101,4 +103,6 @@ class PlaybookCueSelector:
         return block.text
 
     def _segment_path(self, role: str, segment_id: str) -> Path:
-        return self.paths.segments_dir / role / f"{segment_id}.wav"
+        if self.audio_selector is None:
+            return self.paths.segments_dir / role / f"{segment_id}.wav"
+        return self.audio_selector.segment_path(role, segment_id)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import textwrap
 from pathlib import Path
 
@@ -32,6 +33,30 @@ def _write_segment(cfg: paths.PathConfig, role: str, segment_id: str) -> None:
     path.write_bytes(b"placeholder")
 
 
+def _write_cleanup_review(cfg: paths.PathConfig, *, entries: list[tuple[str, str, Path]]) -> None:
+    review_path = cfg.audio_out_dir / "cleaned" / "cleanup_review.json"
+    review_path.parent.mkdir(parents=True, exist_ok=True)
+    review_path.write_text(
+        json.dumps(
+            {
+                "play_id": cfg.play_name,
+                "entries": [
+                    {
+                        "batch_id": "batch",
+                        "role": role,
+                        "segment_id": segment_id,
+                        "output_path": output_path.as_posix(),
+                        "warnings": [],
+                        "fallback": False,
+                    }
+                    for role, segment_id, output_path in entries
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def _existing_audio_length(path: Path, cache: dict[Path, int] | None = None) -> int:
     if not path.exists():
         raise RuntimeError(f"Audio file missing: {paths.display_path(path)}")
@@ -59,6 +84,42 @@ def test_audioplay_plan_fails_when_role_segment_audio_is_missing(
 
     with pytest.raises(RuntimeError, match=r"Audio file missing: .*ANDROCLES/1_1_1\.wav"):
         builder.build_audio_plan(part_no=1)
+
+
+def test_audioplay_plan_can_select_reviewed_cleaned_audio(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cfg = _config(tmp_path)
+    play = _parse_play(
+        tmp_path,
+        cfg,
+        """
+        ## 1: Part One ##
+
+        ANDROCLES. Hello.
+        """,
+    )
+    cleaned_narrator = cfg.audio_out_dir / "cleaned" / "batch" / "_NARRATOR" / "1_0_1.wav"
+    cleaned_androcles = cfg.audio_out_dir / "cleaned" / "batch" / "ANDROCLES" / "1_1_1.wav"
+    for path in (cleaned_narrator, cleaned_androcles):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(b"placeholder")
+    _write_cleanup_review(
+        cfg,
+        entries=[
+            ("_NARRATOR", "1_0_1", cleaned_narrator),
+            ("ANDROCLES", "1_1_1", cleaned_androcles),
+        ],
+    )
+    monkeypatch.setattr(PlayPlanBuilder, "get_audio_length_ms", staticmethod(_existing_audio_length))
+
+    builder = PlayPlanBuilder(play=play, paths=cfg, segment_spacing_ms=0, use_cleaned_audio=True)
+    plan = builder.build_audio_plan(part_no=1)
+
+    segment_paths = [item.path for item in plan if getattr(item, "kind", None) == "segment"]
+    assert cleaned_narrator in segment_paths
+    assert cleaned_androcles in segment_paths
 
 
 def test_audioplay_plan_fails_when_simultaneous_segment_audio_is_missing(

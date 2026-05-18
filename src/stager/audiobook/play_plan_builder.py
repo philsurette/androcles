@@ -10,6 +10,7 @@ from typing import Dict, List, Tuple, Union
 
 from pydub import AudioSegment
 
+from stager.audio.cleaned_audio_selector import CleanedAudioSelector
 from stager.cues.callout_director import (
     CalloutDirector,
     NoCalloutDirector,
@@ -60,10 +61,12 @@ class PlayPlanBuilder:
     minimal_callouts: bool = False
     part_gap_ms: int = 0
     librivox: bool = False
+    use_cleaned_audio: bool = False
     length_cache: Dict[Path, int] = field(default_factory=dict)
     audio_plan: AudioPlan = field(init=False)
 
     def __post_init__(self) -> None:
+        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, enabled=self.use_cleaned_audio)
         if self.director is None:
             self.director = NoCalloutDirector(self.play, paths_config=self.paths)
         if self.chapters is None:
@@ -118,7 +121,7 @@ class PlayPlanBuilder:
             if bullet.simultaneous or len(bullet.owners) > 1:
                 clips: List[SegmentClip] = []
                 for role in bullet.owners:
-                    wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
+                    wav_path = self._segment_audio_path(role, seg_id.replace(":", "_"))
                     length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
                     clips.append(
                         SegmentClip(
@@ -133,7 +136,7 @@ class PlayPlanBuilder:
                 plan_items.add_parallel(clips, following_silence_ms=gap)
             else:
                 role = bullet.owners[0]
-                wav_path = self.paths.segments_dir / role / f"{seg_id.replace(':', '_')}.wav"
+                wav_path = self._segment_audio_path(role, seg_id.replace(":", "_"))
                 length_ms = self.get_audio_length_ms(wav_path, self.length_cache)
                 plan_items.addClip(
                     SegmentClip(path=wav_path, text=bullet.text, role=role, clip_id=seg_id, length_ms=length_ms, offset_ms=0),
@@ -268,6 +271,9 @@ class PlayPlanBuilder:
                 self.play_plan_decorator.add_section_epilog(part_no=part_id)
 
         return self.plan
+
+    def _segment_audio_path(self, role: str, segment_id: str) -> Path:
+        return self.audio_selector.segment_path(role, segment_id)
 
     @staticmethod
     def load_audio_by_path(path: Path, cache: Dict[Path, AudioSegment | None]) -> AudioSegment | None:
