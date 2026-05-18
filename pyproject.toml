@@ -30,6 +30,7 @@ bundle = ["pyinstaller"]
 
 [project.scripts]
 stager = "stager.cli.build:main"
+quince = "stager.cli.quince:main_cli"
 
 [tool.setuptools.packages.find]
 where = ["src"]

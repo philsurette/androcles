@@ -251,6 +251,12 @@ def render_production_change_report(report, base_label: str | None = None) -> st
             lines.append(f"  removed: {change.line_id} {change.previous.text}")
         elif change.kind == "context_changed" and change.current is not None:
             lines.append(f"  context changed: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_changed" and change.current is not None:
+            lines.append(f"  blocking changed: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_added" and change.current is not None:
+            lines.append(f"  blocking added: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_removed" and change.previous is not None:
+            lines.append(f"  blocking removed: {change.line_id} {change.previous.text}")
     return "\n".join(lines)
 
 

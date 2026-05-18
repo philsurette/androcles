@@ -1,0 +1,306 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Annotated
+
+import click
+import typer
+from ruamel.yaml import YAML
+
+from stager.cli.build import render_production_change_report, render_production_status
+from stager.production.production_status import ProductionStatusService
+from stager.production.quince_context import QuinceContext, QuinceContextResolver, QuinceWorkspaceConfig
+from stager.production_publication.production_source_resolver import ProductionSourceResolver
+from stager.production_publication.production_publisher import ProductionPublisher
+from stager.scriptwright import ProductionPlayLoader
+
+
+app = typer.Typer(
+    add_completion=False,
+    pretty_exceptions_enable=False,
+    help="Producer workflow CLI for Quince productions.",
+)
+
+PlayOption = Annotated[str | None, typer.Option("--play", "-p", help="Production id under plays/.")]
+WorkspaceOption = Annotated[
+    Path | None,
+    typer.Option("--workspace", help="Quince workspace root. Defaults to current-directory discovery."),
+]
+ProductionSourceOption = Annotated[
+    str,
+    typer.Option(
+        "--production-source",
+        "-ps",
+        help="Production source: working, published, or auto. Producer status defaults to working.",
+    ),
+]
+FormatOption = Annotated[str, typer.Option("--format", help="Output format: text, yaml, or json.")]
+
+
+@app.callback(invoke_without_command=True)
+def main(ctx: typer.Context) -> None:
+    """Start with `quince status` or `quince next`."""
+    if ctx.invoked_subcommand is None:
+        typer.echo("Start with `quince status` or `quince next`. Use `quince --help` to see commands.")
+        raise typer.Exit(code=0)
+
+
+@app.command("list")
+def list_productions(workspace: WorkspaceOption = None) -> None:
+    """List productions in the current Quince workspace."""
+    try:
+        resolver = QuinceContextResolver(workspace=workspace)
+        workspace_root = resolver.resolve_workspace_root()
+        play_ids = resolver.play_ids(workspace_root)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    if not play_ids:
+        typer.echo("No productions found.")
+        return
+    typer.echo(f"Productions in {workspace_root.as_posix()}:")
+    for play_id in play_ids:
+        typer.echo(f"  {play_id}")
+
+
+@app.command("use")
+def use_production(play_id: str, workspace: WorkspaceOption = None) -> None:
+    """Set the workspace-local active production."""
+    try:
+        resolver = QuinceContextResolver(workspace=workspace)
+        workspace_root = resolver.resolve_workspace_root()
+        resolver.resolve_play_id(workspace_root, play_id=play_id)
+        config_path = resolver.save_workspace_config(
+            workspace_root,
+            QuinceWorkspaceConfig(active_play=play_id),
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Active production: {play_id}")
+    typer.echo(f"Wrote {config_path.relative_to(workspace_root).as_posix()}")
+
+
+@app.command("status")
+def status(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    output_format: FormatOption = "text",
+    production_source: ProductionSourceOption = "working",
+) -> None:
+    """Show production, cast, recording, and Playbook readiness."""
+    if output_format not in ("text", "yaml", "json"):
+        raise typer.BadParameter("format must be text, yaml, or json")
+    try:
+        context = _resolve_context(play=play, workspace=workspace, production_source=production_source)
+        status_model = _production_status(context)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    payload = {
+        "context": context.to_dict(),
+        "status": status_model.to_dict(),
+    }
+    if output_format == "json":
+        typer.echo(json.dumps(payload, indent=2) + "\n")
+    elif output_format == "yaml":
+        yaml = YAML()
+        yaml.default_flow_style = False
+        from io import StringIO
+
+        output = StringIO()
+        yaml.dump(payload, output)
+        typer.echo(output.getvalue())
+    else:
+        typer.echo(_render_context(context))
+        typer.echo(render_production_status(status_model))
+
+
+@app.command("changes")
+def changes(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
+    """Show changes between working production.md and the current published version."""
+    try:
+        context = _resolve_context(play=play, workspace=workspace, production_source="working")
+        result = ProductionPublisher(paths_config=context.path_config).diff_with_versions()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    current_label = result.current_version.label if result.current_version is not None else "none"
+    working_label = str(result.working_production_version) if result.working_production_version is not None else "unpublished"
+    typer.echo(_render_context(context))
+    typer.echo(f"Current published production: {current_label}")
+    typer.echo(f"Working production version: {working_label}")
+    typer.echo(f"Working source has unpublished changes: {'yes' if result.change_report.changes else 'no'}")
+    if result.current_version is not None and result.working_production_version is None:
+        typer.echo("Lineage warning: working production has no production_version metadata.")
+    elif (
+        result.current_version is not None
+        and result.working_production_version is not None
+        and result.working_production_version != result.current_version.production_version
+    ):
+        typer.echo(
+            "Lineage warning: working production is based on "
+            f"{result.working_production_version}, not current {result.current_version.production_version}."
+        )
+    typer.echo(
+        render_production_change_report(
+            result.change_report,
+            base_label=current_label if result.current_version is not None else None,
+        )
+    )
+
+
+@app.command("publish")
+def publish(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    change_summary: str | None = typer.Option(
+        None,
+        "--change-summary",
+        help="Producer-authored summary of the manuscript changes being published.",
+    ),
+    allow_empty_summary: bool = typer.Option(
+        False,
+        "--allow-empty-summary",
+        help="Publish without a change summary.",
+    ),
+    recording_requests: bool = typer.Option(
+        False,
+        "--recording-requests",
+        help="Generate Recording Requests for changed and added role lines.",
+    ),
+    apply_id_updates: bool = typer.Option(
+        False,
+        "--apply-id-updates",
+        help="Apply recommended revision ids before publishing changed reused ids.",
+    ),
+    allow_id_reuse: bool = typer.Option(
+        False,
+        "--allow-id-reuse",
+        help="Publish changed text under reused production ids.",
+    ),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Show changes without publishing."),
+) -> None:
+    """Publish working production.md as a new production version."""
+    try:
+        context = _resolve_context(play=play, workspace=workspace, production_source="working")
+        publisher = ProductionPublisher(paths_config=context.path_config)
+        diff = publisher.diff_with_versions()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    current_label = diff.current_version.label if diff.current_version is not None else "none"
+    typer.echo(_render_context(context))
+    typer.echo(render_production_change_report(diff.change_report, base_label=current_label if diff.current_version else None))
+    if dry_run:
+        typer.echo("Dry run: no production version was published.")
+        return
+    summary = (change_summary or "").strip()
+    if not summary and not allow_empty_summary:
+        raise click.ClickException("Publishing requires --change-summary or --allow-empty-summary.")
+    try:
+        result = publisher.publish(
+            apply_id_updates=apply_id_updates,
+            allow_id_reuse=allow_id_reuse,
+            recording_requests=recording_requests,
+            change_summary=summary,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Published production {result.version.label}.")
+    if result.id_updates:
+        typer.echo("Applied id updates:" if apply_id_updates else "Recommended id updates:")
+        for old_id, new_id in sorted(result.id_updates.items()):
+            typer.echo(f"  {old_id} -> {new_id}")
+    if result.recording_request_paths:
+        typer.echo("Generated Recording Requests:")
+        for request_path in result.recording_request_paths:
+            typer.echo(f"  {request_path.relative_to(context.workspace_root).as_posix()}")
+
+
+@app.command("next")
+def next_step(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    production_source: ProductionSourceOption = "working",
+) -> None:
+    """Show the next recommended producer action."""
+    try:
+        context = _resolve_context(play=play, workspace=workspace, production_source=production_source)
+        status_model = _production_status(context)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+    if status_model.has_unpublished_changes:
+        _render_recommendation("publish", "production.md has unpublished changes", context, "quince publish")
+    elif status_model.unassigned_roles:
+        _render_recommendation("cast", "some roles are not assigned", context, "quince cast show")
+    elif status_model.missing_source_recording_roles:
+        role = status_model.missing_source_recording_roles[0]
+        _render_recommendation(
+            "record whole role",
+            f"{role} is configured for whole-role recording and has no source recording",
+            context,
+            f"add a source recording for {role}, then run quince split-recordings --role {role}",
+        )
+    elif status_model.missing_recording_count:
+        _render_recommendation(
+            "send requests",
+            "some canonical segment recordings are missing",
+            context,
+            "quince send-requests",
+        )
+    elif status_model.playbook.exists and status_model.playbook.matches_current_published_version is False:
+        _render_recommendation(
+            "build playbook",
+            "the current Playbook does not match the published production version",
+            context,
+            "quince build-playbook",
+        )
+    elif not status_model.playbook.exists:
+        _render_recommendation("build playbook", "no Playbook has been built", context, "quince build-playbook")
+    else:
+        _render_recommendation("ready", "no immediate blocking action was found", context, "quince status")
+
+
+def _resolve_context(*, play: str | None, workspace: Path | None, production_source: str) -> QuinceContext:
+    if production_source not in ("working", "published", "auto"):
+        raise RuntimeError("production source must be working, published, or auto")
+    return QuinceContextResolver(workspace=workspace).resolve(
+        play_id=play,
+        production_source=production_source,
+    )
+
+
+def _production_status(context: QuinceContext):
+    cfg = context.path_config
+    if context.production_source != "working":
+        ProductionSourceResolver(cfg).apply_to(context.production_source)
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    return ProductionStatusService(paths_config=cfg, play=play).build()
+
+
+def _render_context(context: QuinceContext) -> str:
+    return "\n".join(
+        [
+            f"Workspace: {context.workspace_root.as_posix()}",
+            f"Production: {context.play_id} ({context.selection_source})",
+            f"Source mode: {context.production_source}",
+            "",
+        ]
+    )
+
+
+def _render_recommendation(action: str, reason: str, context: QuinceContext, command: str) -> None:
+    typer.echo(f"Production: {context.play_id} ({context.selection_source})")
+    typer.echo(f"Next: {action}")
+    typer.echo(f"Reason: {reason}.")
+    if command.startswith("quince "):
+        command = f"{command} --play {context.play_id}"
+    typer.echo(f"Command: {command}")
+
+
+def main_cli() -> None:
+    app()
+
+
+if __name__ == "__main__":
+    main_cli()
