@@ -299,6 +299,40 @@ cast_profiles:
     assert [transform.type for transform in resolved.transforms] == ["highpass", "pitch"]
 
 
+def test_voice_profile_resolver_expands_builtin_presets_deterministically(tmp_path: Path) -> None:
+    config = _parse(
+        tmp_path,
+        """
+version: 1
+actors:
+  phil:
+    baseline:
+      pitch_center_hz: 115
+role_targets:
+  GOD:
+    target:
+      pitch_center_hz: 95
+      preset: godlike_hall
+cast_profiles:
+  phil@GOD:
+    actor: phil
+    role: GOD
+    mode: computed
+""",
+    )
+
+    resolved = VoiceProfileResolver(config).resolve("GOD")
+
+    assert resolved is not None
+    assert [transform.type for transform in resolved.transforms] == [
+        "filter_curve",
+        "reverb",
+        "compressor",
+        "pitch",
+    ]
+    assert resolved.transforms[1].params == {"delay_ms": 90, "decay": 0.45}
+
+
 def _parse(tmp_path: Path, content: str):
     path = tmp_path / "voice_profiles.yaml"
     path.write_text(content, encoding="utf-8")

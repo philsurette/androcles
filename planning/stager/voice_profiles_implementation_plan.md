@@ -209,40 +209,40 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 10: Recording Package And Actor Metadata
 
-- [ ] Treat recording-package actor metadata as a follow-on enhancement unless MVP actor selection proves insufficient.
-- [ ] Decide whether Recording Requests need actor ids after the explicit `--actor` and single-profile inference workflow is exercised.
-- [ ] If needed, update [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
-- [ ] Preserve actor id through LineRecorder project state and `role_recordings` exports if added.
-- [ ] Keep voice effects out of LineRecorder recording/export behavior.
-- [ ] Add Stager import tests for actor metadata if added.
-- [ ] Add LineRecorder validation tests if package contracts change.
+- [x] Treat recording-package actor metadata as a follow-on enhancement unless MVP actor selection proves insufficient.
+- [x] Decide whether Recording Requests need actor ids after the explicit `--actor` and single-profile inference workflow is exercised.
+- [x] If needed, update [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
+- [x] Preserve actor id through LineRecorder project state and `role_recordings` exports if added.
+- [x] Keep voice effects out of LineRecorder recording/export behavior.
+- [x] Add Stager import tests for actor metadata if added.
+- [x] Add LineRecorder validation tests if package contracts change.
 
 ## Phase 11: Presets
 
-- [ ] Add built-in preset registry.
-- [ ] Add producer-defined presets in `voice_profiles.yaml`.
-- [ ] Implement `female_bright` from the existing Audacity macro shape.
-- [ ] Add `female_bright_subtle`.
-- [ ] Add `male_warm`.
-- [ ] Add `godlike_hall`.
-- [ ] Add `ghostly_small_room`.
-- [ ] Add tests that presets expand deterministically.
-- [ ] Document initial presets in the spec or a linked preset reference.
+- [x] Add built-in preset registry.
+- [x] Add producer-defined presets in `voice_profiles.yaml`.
+- [x] Implement `female_bright` from the existing Audacity macro shape.
+- [x] Add `female_bright_subtle`.
+- [x] Add `male_warm`.
+- [x] Add `godlike_hall`.
+- [x] Add `ghostly_small_room`.
+- [x] Add tests that presets expand deterministically.
+- [x] Document initial presets in the spec or a linked preset reference.
 
 ## Phase 12: Optional Analysis
 
-- [ ] Add `./main voice-analyze`.
-- [ ] Estimate pitch center from a supplied reference WAV or selected role recordings.
-- [ ] Estimate observed speech-active duration from selected role recordings.
-- [ ] Estimate approximate actor-role speaking rate from represented text and speech-active duration.
-- [ ] Require enough speech-active audio, words, and segments before marking tempo confidence usable.
-- [ ] Mark sparse-role tempo estimates as low confidence.
-- [ ] Write observed metrics that pitch-strategy resolution can consume.
-- [ ] Feed observed tempo into pitch-strategy resolution without normalizing tempo.
-- [ ] Write analysis output as suggestions, not automatic config changes by default.
+- [x] Add `./main voice-analyze`.
+- [x] Estimate pitch center from a supplied reference WAV or selected role recordings.
+- [x] Estimate observed speech-active duration from selected role recordings.
+- [x] Estimate approximate actor-role speaking rate from represented text and speech-active duration.
+- [x] Require enough speech-active audio, words, and segments before marking tempo confidence usable.
+- [x] Mark sparse-role tempo estimates as low confidence.
+- [x] Write observed metrics that pitch-strategy resolution can consume.
+- [x] Feed observed tempo into pitch-strategy resolution without normalizing tempo.
+- [x] Write analysis output as suggestions, not automatic config changes by default.
 - [ ] Add `--write-baseline` only after diagnostics are trustworthy.
-- [ ] Add tests using generated synthetic audio fixtures.
-- [ ] Add tests that tempo analysis affects pitch strategy but does not create a speed-normalization transform.
+- [x] Add tests using generated synthetic audio fixtures.
+- [x] Add tests that tempo analysis affects pitch strategy but does not create a speed-normalization transform.
 
 ## Phase 13: Performance Optimization
 

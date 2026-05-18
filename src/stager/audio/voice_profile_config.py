@@ -148,7 +148,8 @@ class VoiceProfileConfigParser:
 
         actors = self._parse_actors(raw.get("actors", {}), path)
         role_targets = self._parse_role_targets(raw.get("role_targets", {}), path)
-        presets = self._parse_presets(raw.get("presets", {}), path)
+        presets = built_in_presets()
+        presets.update(self._parse_presets(raw.get("presets", {}), path))
         observed_metrics = self._parse_observed_metrics(raw.get("observed_metrics", {}), actors, role_targets, path)
         cast_profiles = self._parse_cast_profiles(raw.get("cast_profiles", {}), actors, role_targets, path)
         role_actors = self._parse_role_actors(raw.get("role_actors", {}), actors, role_targets, path)
@@ -492,3 +493,78 @@ class VoiceProfileConfigParser:
 
 def actor_role_key(actor: str, role: str) -> str:
     return f"{actor}@{role}"
+
+
+def built_in_presets() -> dict[str, VoicePreset]:
+    return {
+        "female_bright": VoicePreset(
+            name="female_bright",
+            transforms=(
+                VoiceTransform(type="highpass", params={"frequency_hz": 120}),
+                VoiceTransform(
+                    type="compressor",
+                    params={"threshold_db": -18, "ratio": 2.5, "attack_ms": 5, "release_ms": 80},
+                ),
+                VoiceTransform(
+                    type="filter_curve",
+                    params={"points": [[120, -6], [250, -3], [3000, 3], [6000, 4]]},
+                ),
+                VoiceTransform(
+                    type="compressor",
+                    params={"threshold_db": -16, "ratio": 2, "attack_ms": 5, "release_ms": 80},
+                ),
+            ),
+        ),
+        "female_bright_subtle": VoicePreset(
+            name="female_bright_subtle",
+            transforms=(
+                VoiceTransform(type="highpass", params={"frequency_hz": 100}),
+                VoiceTransform(
+                    type="filter_curve",
+                    params={"points": [[180, -3], [3000, 2], [6000, 2]]},
+                ),
+                VoiceTransform(
+                    type="compressor",
+                    params={"threshold_db": -18, "ratio": 1.8, "attack_ms": 8, "release_ms": 90},
+                ),
+            ),
+        ),
+        "male_warm": VoicePreset(
+            name="male_warm",
+            transforms=(
+                VoiceTransform(
+                    type="filter_curve",
+                    params={"points": [[150, 2], [350, 2], [4500, -2]]},
+                ),
+                VoiceTransform(
+                    type="compressor",
+                    params={"threshold_db": -20, "ratio": 2, "attack_ms": 10, "release_ms": 120},
+                ),
+            ),
+        ),
+        "godlike_hall": VoicePreset(
+            name="godlike_hall",
+            transforms=(
+                VoiceTransform(
+                    type="filter_curve",
+                    params={"points": [[120, 3], [300, 2], [5000, -2]]},
+                ),
+                VoiceTransform(type="reverb", params={"delay_ms": 90, "decay": 0.45}),
+                VoiceTransform(
+                    type="compressor",
+                    params={"threshold_db": -18, "ratio": 2.2, "attack_ms": 12, "release_ms": 160},
+                ),
+            ),
+        ),
+        "ghostly_small_room": VoicePreset(
+            name="ghostly_small_room",
+            transforms=(
+                VoiceTransform(type="highpass", params={"frequency_hz": 160}),
+                VoiceTransform(
+                    type="filter_curve",
+                    params={"points": [[240, -3], [2500, 3], [7000, 2]]},
+                ),
+                VoiceTransform(type="delay", params={"delay_ms": 70, "decay": 0.28}),
+            ),
+        ),
+    }

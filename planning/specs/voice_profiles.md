@@ -420,6 +420,16 @@ presets:
 
 Stager should keep the preset language abstract enough that a later renderer can improve implementation details without changing the producer-facing profile.
 
+## Built-In Presets
+
+The first implementation provides these built-in presets. A producer can override any built-in preset by defining the same preset name in `voice_profiles.yaml`.
+
+- `female_bright`: high-pass filtering, clarity compression, a bright EQ curve, and a second compressor pass based on the existing Audacity macro shape.
+- `female_bright_subtle`: lighter high-pass, presence lift, and gentle compression.
+- `male_warm`: lower-mid warmth, reduced upper brightness, and moderate compression.
+- `godlike_hall`: low/low-mid weight, hall-like echo, and compression for size.
+- `ghostly_small_room`: high-pass filtering, presence lift, and a short room echo.
+
 ## Rendering Strategy
 
 ### Per-Segment Rendering

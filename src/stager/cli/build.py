@@ -66,6 +66,7 @@ from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.audio_cleanup_service import AudioCleanupService
 from stager.audio.cleaned_audio_selector import AUDIO_SOURCE_CANONICAL, CleanedAudioSelector, SUPPORTED_AUDIO_SOURCES
 from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_analyzer import VoiceAnalysisReport, VoiceProfileAnalyzer
 from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
 from stager.audio.voice_profile_resolver import ResolvedVoiceProfile, VoiceProfileResolver
 from stager.audio.voice_render_cache import VoiceRenderCache, VoiceRenderSegment, VoiceRenderSource
@@ -1272,6 +1273,29 @@ def voice_render(
     _echo_voice_render_results(results)
 
 
+@app.command("voice-analyze", rich_help_panel="build")
+def voice_analyze(
+    actor: str = typer.Option(..., "--actor", help="Actor id for the observed metrics key"),
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit analysis to one role"),
+    play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
+) -> None:
+    """Analyze accepted role recordings and write voice-profile metric suggestions."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    apply_production_source(cfg, production_source)
+    try:
+        report = run_voice_analyze(actor=actor, role=role, paths_config=cfg)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Analyzed {len(report.results)} voice-profile role(s).")
+    typer.echo(paths.display_path(report.json_path))
+    for result in report.results:
+        rate = f"{result.speaking_rate_wpm:.2f} wpm" if result.speaking_rate_wpm is not None else "unknown wpm"
+        pitch = f"{result.pitch_center_hz:.2f} Hz" if result.pitch_center_hz is not None else "unknown pitch"
+        typer.echo(f"{result.actor}@{result.role}: {rate}, {pitch}, confidence={result.confidence:g}")
+
+
 @audio_cleanup_app.command("doctor")
 def audio_cleanup_doctor(play: str | None = PLAY_OPTION) -> None:
     """Report FFmpeg capabilities for audio cleanup."""
@@ -1962,6 +1986,17 @@ def run_voice_render(
             )
         )
     return tuple(results)
+
+
+def run_voice_analyze(
+    *,
+    actor: str,
+    role: str | None = None,
+    paths_config: paths.PathConfig | None = None,
+) -> VoiceAnalysisReport:
+    cfg = paths_config or paths.current()
+    play = load_production_play(cfg)
+    return VoiceProfileAnalyzer(paths_config=cfg, play=play).analyze(actor=actor, role=role)
 
 
 def _resolve_voice_profiles(

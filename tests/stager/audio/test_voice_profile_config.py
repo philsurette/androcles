@@ -69,6 +69,47 @@ cast_profiles:
     assert config.cast_profiles["phil@MEGAERA"].overrides["pitch_shift_semitones"] == 5.5
 
 
+def test_voice_profile_config_includes_builtin_presets(tmp_path: Path) -> None:
+    config_path = tmp_path / "voice_profiles.yaml"
+    config_path.write_text("version: 1\n", encoding="utf-8")
+
+    config = VoiceProfileConfigParser().parse(config_path)
+
+    assert set(config.presets) >= {
+        "female_bright",
+        "female_bright_subtle",
+        "male_warm",
+        "godlike_hall",
+        "ghostly_small_room",
+    }
+    assert [transform.type for transform in config.presets["female_bright"].transforms] == [
+        "highpass",
+        "compressor",
+        "filter_curve",
+        "compressor",
+    ]
+
+
+def test_voice_profile_config_allows_producer_preset_override(tmp_path: Path) -> None:
+    config_path = tmp_path / "voice_profiles.yaml"
+    config_path.write_text(
+        """
+version: 1
+presets:
+  female_bright:
+    transforms:
+      - type: highpass
+        frequency_hz: 140
+""",
+        encoding="utf-8",
+    )
+
+    config = VoiceProfileConfigParser().parse(config_path)
+
+    assert config.presets["female_bright"].transforms[0].params["frequency_hz"] == 140
+    assert len(config.presets["female_bright"].transforms) == 1
+
+
 def test_voice_profile_config_rejects_legacy_pitch_preserve_tempo_flag(tmp_path: Path) -> None:
     config_path = tmp_path / "voice_profiles.yaml"
     config_path.write_text(
