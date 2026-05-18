@@ -194,18 +194,18 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 9: Playbook Integration
 
-- [ ] Add `--voice-profiles/--no-voice-profiles` to `./main playbook`.
-- [ ] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
-- [ ] Use rendered audio for response assets when enabled.
+- [x] Add `--voice-profiles/--no-voice-profiles` to `./main playbook`.
+- [x] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
+- [x] Use rendered audio for response assets when enabled.
 - [ ] Decide and implement first cue policy:
-  - [ ] rendered cues,
+  - [x] rendered cues,
   - [ ] canonical cues,
   - [ ] CLI option if both are implemented.
-- [ ] Preserve strict required-audio behavior.
+- [x] Preserve strict required-audio behavior.
 - [ ] Add profile/render metadata to Playbook manifests only after updating [../specs/playbook_manifest.md](../specs/playbook_manifest.md).
 - [ ] Add Cuemaster validation/normalization updates if manifest metadata changes.
-- [ ] Add Playbook builder tests for rendered response audio.
-- [ ] Add Playbook builder tests for cue policy.
+- [x] Add Playbook builder tests for rendered response audio.
+- [x] Add Playbook builder tests for cue policy.
 
 ## Phase 10: Recording Package And Actor Metadata
 

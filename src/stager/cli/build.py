@@ -996,6 +996,8 @@ def playbook(
         "--audio-source",
         help="Segment audio source: auto, canonical, or cleaned",
     ),
+    voice_profiles: bool = typer.Option(False, "--voice-profiles/--no-voice-profiles", help="Use rendered voice-profile audio"),
+    voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -1003,8 +1005,7 @@ def playbook(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
-    if audio_format == "mp3":
-        require_audio_tools()
+    ffmpeg_installation = require_audio_tools() if audio_format == "mp3" or voice_profiles else None
     with rich_progress() as progress:
         try:
             run_playbook(
@@ -1012,6 +1013,9 @@ def playbook(
                 build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
                 audio_format=audio_format,
                 audio_source=audio_source,
+                voice_profiles=voice_profiles,
+                voice_actor=voice_actor,
+                ffmpeg_installation=ffmpeg_installation,
                 progress_reporter=RichPlaybookProgressReporter(progress),
             )
         except RuntimeError as exc:
@@ -1658,6 +1662,9 @@ def run_playbook(
     build_type: str | None = None,
     audio_format: str = "wav",
     audio_source: str = "auto",
+    voice_profiles: bool = False,
+    voice_actor: str | None = None,
+    ffmpeg_installation=None,
     progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
@@ -1670,12 +1677,21 @@ def run_playbook(
         explicit_build_type=build_type,
     ).resolve()
     play = load_production_play(cfg)
+    if voice_profiles:
+        run_voice_render(
+            actor=voice_actor,
+            audio_source=audio_source,
+            paths_config=cfg,
+            installation=ffmpeg_installation,
+        )
     builder = PlaybookBuilder(
         play=play,
         paths=cfg,
         build_type=effective_build_type,
         audio_format=audio_format,
         audio_source=audio_source,
+        voice_profiles=voice_profiles,
+        voice_actor=voice_actor,
         progress_reporter=progress_reporter,
     )
     return builder.build()

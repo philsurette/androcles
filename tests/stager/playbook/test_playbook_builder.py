@@ -16,6 +16,9 @@ from stager.domain.segment_id import SegmentId
 from stager.playbook.app_cue_start_offset import AppCueStartOffset
 from stager.playbook.playbook_audio_packager import PackagedAudio
 from stager.playbook.playbook_builder import PlaybookBuilder
+from stager.audio.voice_profile_config import VoiceProfileConfigParser
+from stager.audio.voice_profile_resolver import VoiceProfileResolver
+from stager.audio.voice_render_cache import VoiceRenderCache
 from stager.production_publication.production_publisher import ProductionPublisher
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader
@@ -198,6 +201,57 @@ def _write_cleanup_review(cfg: paths.PathConfig, *, entries: list[tuple[str, str
     )
 
 
+def _write_voice_profiles(cfg: paths.PathConfig, *, roles: tuple[str, ...] = ("MEGAERA",)) -> None:
+    cfg.play_dir.mkdir(parents=True, exist_ok=True)
+    role_targets = "\n".join(
+        f"""
+  {role}:
+    target:
+      pitch_center_hz: 130
+"""
+        for role in roles
+    )
+    cast_profiles = "\n".join(
+        f"""
+  phil@{role}:
+    actor: phil
+    role: {role}
+    mode: explicit
+    transforms:
+      - type: pitch
+        semitones: 1.5
+        strategy: preserve_tempo
+"""
+        for role in roles
+    )
+    (cfg.play_dir / "voice_profiles.yaml").write_text(
+        f"""
+version: 1
+actors:
+  phil:
+    baseline:
+      pitch_center_hz: 115
+role_targets:
+{role_targets}
+cast_profiles:
+{cast_profiles}
+""",
+        encoding="utf-8",
+    )
+
+
+def _rendered_voice_path(cfg: paths.PathConfig, *, role: str, segment_id: str) -> Path:
+    config = VoiceProfileConfigParser().parse(cfg.play_dir / "voice_profiles.yaml")
+    resolved = VoiceProfileResolver(config).resolve(role)
+    assert resolved is not None
+    cache = VoiceRenderCache(cfg)
+    return cache.output_path(
+        render_profile_id=cache.render_profile_id(resolved),
+        role=role,
+        segment_id=segment_id,
+    )
+
+
 def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
@@ -264,6 +318,56 @@ def test_playbook_builder_can_select_reviewed_cleaned_audio(tmp_path: Path) -> N
         cleaned_androcles,
         cleaned_megaera,
     }
+
+
+def test_playbook_builder_can_select_rendered_voice_profile_response_audio(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    _write_voice_profiles(cfg, roles=("MEGAERA",))
+    rendered_megaera = _rendered_voice_path(cfg, role="MEGAERA", segment_id="0_2_1")
+    _write_wav(rendered_megaera)
+
+    work_items = PlaybookBuilder(play=play, paths=cfg, voice_profiles=True).plan_audio_work()
+
+    assert rendered_megaera in {item.source_path for item in work_items}
+    assert cfg.segments_dir / "ANDROCLES" / "0_1_1.wav" in {item.source_path for item in work_items}
+
+
+def test_playbook_builder_can_select_rendered_voice_profile_cue_audio(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    _write_voice_profiles(cfg, roles=("ANDROCLES",))
+    rendered_androcles = _rendered_voice_path(cfg, role="ANDROCLES", segment_id="0_1_1")
+    _write_wav(rendered_androcles)
+
+    work_items = PlaybookBuilder(play=play, paths=cfg, voice_profiles=True).plan_audio_work()
+
+    assert rendered_androcles in {item.source_path for item in work_items}
+    assert cfg.segments_dir / "MEGAERA" / "0_2_1.wav" in {item.source_path for item in work_items}
+
+
+def test_playbook_builder_requires_rendered_voice_profile_audio_when_enabled(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    _write_voice_profiles(cfg, roles=("MEGAERA",))
+
+    with pytest.raises(RuntimeError, match="Voice-profile audio missing"):
+        PlaybookBuilder(play=play, paths=cfg, voice_profiles=True).plan_audio_work()
 
 
 def test_playbook_builder_fails_when_cleaned_audio_is_incomplete(tmp_path: Path) -> None:

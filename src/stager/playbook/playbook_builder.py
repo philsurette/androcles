@@ -14,6 +14,8 @@ from stager.domain.block import BlockingBlock, DescriptionBlock, DirectionBlock,
 from stager.domain.play import Play
 from stager.domain.segment import BlockingSegment, DirectionSegment, SimultaneousSegment, SpeechSegment
 from stager.audio.cleaned_audio_selector import CleanedAudioSelector
+from stager.audio.voice_profile_audio_selector import VoiceProfileAudioSelector
+from stager.audio.voice_profile_config import VoiceProfileConfig
 from stager.playbook.app_audio_asset import AppAudioAsset
 from stager.playbook.app_blocking import AppBlocking
 from stager.playbook.app_context_block import AppContextBlock
@@ -53,6 +55,8 @@ class PlaybookBuilder:
     audio_packager: PlaybookAudioPackager | None = None
     progress_reporter: PlaybookProgressReporter | None = None
     audio_source: str = "auto"
+    voice_profiles: bool = False
+    voice_actor: str | None = None
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
@@ -61,7 +65,16 @@ class PlaybookBuilder:
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
-        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
+        base_audio_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
+        if self.voice_profiles:
+            self.audio_selector = VoiceProfileAudioSelector(
+                paths_config=self.paths,
+                base_selector=base_audio_selector,
+                config=VoiceProfileConfig.load(self.paths),
+                actor=self.voice_actor,
+            )
+        else:
+            self.audio_selector = base_audio_selector
         if self.selector is None:
             self.selector = PlaybookCueSelector(play=self.play, paths=self.paths, audio_selector=self.audio_selector)
         if self.cue_start_offset_analyzer is None:
