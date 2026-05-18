@@ -157,7 +157,7 @@ roles:
     recording: whole-role
 ```
 
-Use `recording: linerecorder` for the normal actor-facing package workflow. Use `recording: whole-role` when the producer records or imports a full-role audio file and uses Stager splitting. Both paths converge into the same canonical segment audio before verification, cleanup, Playbook, and audioplay builds.
+Use `recording: linerecorder` for the normal actor-facing package workflow. Use `recording: whole-role` when the producer records or imports a full-role audio file and uses Stager splitting. Both paths converge into the same canonical segment audio under `build/<play_id>/audio/segments/` before verification, cleanup, Playbook, and audioplay builds.
 
 Common cases:
 
@@ -177,6 +177,11 @@ Check cast and recording readiness at any point:
 ```sh
 ./main production-status --play <play_id>
 ```
+
+For `recording: whole-role` roles, `production-status` reports two different gaps:
+
+- missing whole-role source recordings, which means `./main segments` has nothing to split yet;
+- missing segment recordings, which means the canonical segment audio needed by downstream builds is not complete yet.
 
 ## 5. Send Recording Requests
 
@@ -252,13 +257,32 @@ Use transcription-backed verification when appropriate:
 
 Fix missing, stale, or incorrect recordings before building a final Playbook. Playbook generation is strict: every rehearsable non-meta role line must have required cue audio and response audio.
 
-If recordings are still managed from full-role audio files or Audacity exports, split them into segments:
+If recordings are still managed from full-role audio files or Audacity exports, split them into canonical segment files:
 
 ```sh
 ./main segments --play <play_id>
 ```
 
-LineRecorder packages already contain segment-aware recordings, so the import flow is usually the cleaner path for actor-recorded lines.
+Use role and part filters when you only need to refresh one area:
+
+```sh
+./main segments --play <play_id> --role <ROLE>
+./main segments --play <play_id> --part <PART_ID>
+```
+
+LineRecorder packages already contain segment-aware recordings, so the import flow is usually the cleaner path for actor-recorded lines. After a LineRecorder import or a whole-role split, the downstream path is the same: Stager reads canonical segment audio from `build/<play_id>/audio/segments/<ROLE>/<segment_id>.wav`. Cleanup, voice rendering, Playbook generation, cue generation, verification, and audioplay builds should not care whether a segment came from LineRecorder or from splitting a full-role source.
+
+Use the whole-role path when:
+
+- the producer is recording a role directly and prefers one long take;
+- an actor has already supplied a full-role recording or Audacity export;
+- silence-based splitting is acceptable and can be verified after the split.
+
+Use LineRecorder when:
+
+- actors are recording remotely;
+- the production needs per-line prompts, room-tone capture, and segment-aware package exports;
+- only selected changed/problem segments need to be requested.
 
 ## 8. Clean Up Audio
 

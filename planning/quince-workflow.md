@@ -95,11 +95,19 @@ Stager imports accepted WAV files into the play's segment-audio area and writes 
 
 ## 4. Prepare And Verify Audio
 
-Stager's audio build works from segment recordings. If recordings are being managed through full-role source files or Audacity exports, split them into per-segment files:
+Stager's audio build works from canonical segment recordings. If recordings are being managed through full-role source files or Audacity exports, split them into per-segment files:
 
 ```sh
 ./main segments --play <play_id>
 ```
+
+LineRecorder imports and whole-role splitting converge at the same output path:
+
+```text
+build/<play_id>/audio/segments/<ROLE>/<segment_id>.wav
+```
+
+Downstream verification, cleanup, voice rendering, Playbook generation, cue generation, and audioplay builds consume that canonical segment layer. Keep `./main segments` as the only whole-role splitting path; do not add a parallel full-role-only downstream build path.
 
 Then verify that split audio matches the production script closely enough for the next build:
 

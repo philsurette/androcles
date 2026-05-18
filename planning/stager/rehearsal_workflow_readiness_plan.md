@@ -120,9 +120,9 @@ Checklist:
 
 - [x] Represent whole-role recording choice in `cast.yaml`.
 - [x] Make `production-status` report missing full-role source recordings separately from missing segment files.
-- [ ] Keep `./main segments` as the convergence point from whole-role source audio into canonical segment audio.
-- [ ] Ensure all downstream steps consume canonical segments identically regardless of whether audio came from LineRecorder or splitting.
-- [ ] Document when to use LineRecorder versus whole-role recording.
+- [x] Keep `./main segments` as the convergence point from whole-role source audio into canonical segment audio.
+- [x] Ensure all downstream steps consume canonical segments identically regardless of whether audio came from LineRecorder or splitting.
+- [x] Document when to use LineRecorder versus whole-role recording.
 
 ## Acceptance Criteria
 
@@ -130,5 +130,5 @@ Checklist:
 - [ ] A cast file can drive role ownership without duplicating role/actor choices in multiple places.
 - [ ] Actors can see which production version is installed in Cuemaster.
 - [ ] Importing a replacement Playbook is explicit when version lineage is risky.
-- [ ] Blocking-only updates produce updated rehearsal material without unnecessary recording requests.
-- [ ] Whole-role recording remains available but does not create a second downstream pipeline.
+- [x] Blocking-only updates produce updated rehearsal material without unnecessary recording requests.
+- [x] Whole-role recording remains available but does not create a second downstream pipeline.
