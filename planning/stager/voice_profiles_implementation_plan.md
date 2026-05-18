@@ -60,6 +60,28 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 
 ## Phase 4: FFmpeg Filter Graph Compiler
 
+- [ ] Add FFmpeg capability detection for required and optional filters.
+- [ ] Check required filters:
+  - `aresample`,
+  - `asetrate`,
+  - `atempo`,
+  - `highpass`,
+  - `lowpass`,
+  - `equalizer`,
+  - `acompressor`,
+  - `volume`,
+  - `alimiter`,
+  - `aecho`,
+  - `atrim`,
+  - `asetpts`,
+  - `concat`,
+  - `loudnorm`.
+- [ ] Check optional filters:
+  - `rubberband`,
+  - `firequalizer`,
+  - `afir`.
+- [ ] Fail render preflight when required filters are missing.
+- [ ] Warn when optional filters are missing and a fallback exists.
 - [ ] Add `src/stager/audio/ffmpeg_filter_graph.py`.
 - [ ] Compile `highpass`.
 - [ ] Compile `lowpass`.
@@ -112,6 +134,7 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 ## Phase 7: CLI
 
 - [ ] Add `./main voice-render`.
+- [ ] Add `./main voice-profiles doctor` or equivalent FFmpeg capability diagnostic.
 - [ ] Support `--play/-p`.
 - [ ] Support `--role`.
 - [ ] Support `--actor` when actor metadata is available.
@@ -187,7 +210,8 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 
 - [ ] Update [playbook_usage.md](playbook_usage.md) with voice-profile options.
 - [ ] Update [../quince-workflow.md](../quince-workflow.md) with producer workflow guidance.
-- [ ] Add troubleshooting notes for missing FFmpeg filters.
+- [ ] Update [install.md](install.md) with voice-profile FFmpeg install and verification instructions.
+- [ ] Add troubleshooting notes for missing FFmpeg filters and optional `rubberband` support.
 - [ ] Add examples for one actor reading multiple roles.
 - [ ] Add examples for two actors reading the same role.
 - [ ] Run targeted Stager audio/profile tests.
@@ -214,4 +238,3 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - [ ] Playbook/audioplay builds can opt into rendered voice-profile audio.
 - [ ] Verification remains based on canonical segment audio unless explicitly requested otherwise.
 - [ ] Tests do not require real recordings, network access, or downloaded models.
-

@@ -15,6 +15,62 @@ Install ffmpeg separately:
 
 Stager checks for `ffmpeg` and `ffprobe` before commands that need them.
 
+## FFmpeg For Voice Profiles
+
+Voice-profile rendering will use FFmpeg filters. Quince/Stager will not bundle FFmpeg, so showrunners need an FFmpeg build with the required filters available.
+
+Verify the installed commands:
+
+```sh
+ffmpeg -version
+ffprobe -version
+```
+
+List available filters:
+
+```sh
+ffmpeg -hide_banner -filters
+```
+
+Required filters for the planned portable voice-profile renderer:
+
+- `aresample`
+- `asetrate`
+- `atempo`
+- `highpass`
+- `lowpass`
+- `equalizer`
+- `acompressor`
+- `volume`
+- `alimiter`
+- `aecho`
+- `atrim`
+- `asetpts`
+- `concat`
+- `loudnorm`
+
+Optional filters that improve quality or future effects:
+
+- `rubberband`: better pitch shifting and formant-aware voice presentation shifts.
+- `firequalizer`: smoother filter-curve implementation.
+- `afir`: convolution reverb if impulse responses are added later.
+
+The first voice-profile implementation should work without optional quality filters. If `rubberband` is missing, Stager should use the portable `asetrate`/`aresample`/`atempo` pitch-shift fallback and warn that quality may be lower. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
+
+Check for optional `rubberband` support:
+
+```sh
+ffmpeg -hide_banner -filters | grep rubberband
+```
+
+On Windows PowerShell:
+
+```powershell
+ffmpeg -hide_banner -filters | Select-String rubberband
+```
+
+If a required filter is missing, install a fuller FFmpeg build from a trusted distribution. If only optional filters are missing, voice-profile rendering should still work with fallbacks.
+
 ## Build A Wheel
 
 From the repository root:

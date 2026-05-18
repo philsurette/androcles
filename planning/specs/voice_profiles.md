@@ -203,7 +203,7 @@ Initial transform types should be small and FFmpeg-native:
 - `reverb`: room or hall effect.
 - `delay`: echo/delay effect.
 - `gain`: level adjustment.
-- `loudnorm`: optional final loudness normalization.
+- `loudnorm`: required final loudness normalization.
 - `preset`: expand to a named transform chain.
 
 Presets should compile to ordinary transforms. Presets are convenience names, not a separate rendering system.
@@ -228,6 +228,45 @@ Useful components for a more masculine presentation:
 - compression tuned to preserve weight.
 
 High-quality transformation often requires formant-aware processing. FFmpeg's portable baseline can approximate this with pitch, EQ, and compression. If the installed FFmpeg supports the `rubberband` filter, Stager may use it for better pitch shifting and formant handling. The first implementation should detect support and fall back to portable filters.
+
+## FFmpeg Capabilities
+
+Quince will not include FFmpeg. Users must install FFmpeg and FFprobe separately, and Stager must verify required filters before rendering.
+
+The first voice-profile implementation should require only filters that are normally present in mainstream FFmpeg builds:
+
+- `aresample`: resample after pitch operations.
+- `asetrate`: portable pitch-shift building block.
+- `atempo`: restore tempo after `asetrate` pitch shifts and implement speed changes.
+- `highpass`: low-frequency cleanup.
+- `lowpass`: high-frequency shaping.
+- `equalizer`: parametric EQ bands and filter-curve approximation.
+- `acompressor`: dynamics compression.
+- `volume`: gain changes.
+- `alimiter`: final clipping protection.
+- `aecho`: portable first-pass echo/reverb style effects.
+- `atrim` and `asetpts`: tail handling, padding workflows, and future batch rendering.
+- `concat`: future batch rendering and test fixtures.
+- `loudnorm`: required final loudness normalization so rendered voices have consistent perceived level.
+
+Optional quality filters and compile-time features:
+
+- `rubberband`: preferred for higher-quality pitch shifting and formant-aware gender-presentation transforms when available.
+- `firequalizer`: useful for smoother filter-curve support, but not required because `equalizer` chains can approximate curves.
+- `afir`: useful for convolution reverb with impulse responses, but not required for the first implementation.
+- `ladspa` or `lv2`: plugin-host filters; explicitly out of scope for the first implementation because they make installation and support much harder.
+- `arnndn`: neural denoising; out of scope for voice profiles and should not be required because it depends on model files.
+
+Stager should provide a capability diagnostic command or render preflight that reports:
+
+- FFmpeg path,
+- FFmpeg version,
+- FFprobe path,
+- required filters present or missing,
+- optional filters present or missing,
+- whether pitch rendering will use `rubberband` or the portable fallback.
+
+The renderer should fail when required filters are missing. It should warn, not fail, when optional filters are missing and a fallback exists.
 
 ## Audacity Macro Mapping
 
@@ -404,4 +443,3 @@ LineRecorder should not apply voice profiles during recording. It may eventually
 - export baseline analysis hints if they were measured locally.
 
 Those are later workflow improvements. The first implementation should keep voice rendering in Stager.
-
