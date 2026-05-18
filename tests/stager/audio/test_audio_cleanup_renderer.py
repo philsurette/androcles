@@ -59,6 +59,36 @@ def test_cleanup_renderer_reports_cache_hit_on_second_prepare(tmp_path: Path) ->
     assert second_result.cache_hit is True
 
 
+def test_cleanup_renderer_cache_key_includes_floor_noise(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    floor_noise = tmp_path / "floor.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    _write_wav(floor_noise, samples=[0, 1, -1, 0])
+    renderer = AudioCleanupRenderer(paths_config=cfg)
+    first_result = renderer.prepare_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup-floor-1",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("afftdn=nr=6:nf=-50",),
+        floor_noise_path=floor_noise,
+    )
+    _write_wav(floor_noise, samples=[0, 2, -2, 0])
+
+    second_result = renderer.prepare_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup-floor-1",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("afftdn=nr=6:nf=-50",),
+        floor_noise_path=floor_noise,
+    )
+
+    assert first_result.manifest.cache_key != second_result.manifest.cache_key
+    assert second_result.cache_hit is False
+
+
 def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
@@ -101,6 +131,31 @@ def test_cleanup_renderer_rejects_duration_changing_filter_output(tmp_path: Path
         assert "duration changed unexpectedly" in str(exc)
     else:
         raise AssertionError("Expected duration-changing output to fail")
+
+
+def test_cleanup_renderer_uses_floor_noise_for_afftdn(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    floor_noise = tmp_path / "floor.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    _write_wav(floor_noise, samples=[0, 0, 10, -10])
+    runner = CopyingRunner()
+
+    AudioCleanupRenderer(paths_config=cfg, command_runner=runner).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup-floor-1",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("afftdn=nr=6:nf=-50",),
+        floor_noise_path=floor_noise,
+    )
+
+    command = runner.commands[0]
+    assert "-filter_complex" in command
+    filter_spec = command[command.index("-filter_complex") + 1]
+    assert "asendcmd=0.0 afftdn sn start" in filter_spec
+    assert "afftdn=nr=6:nf=-50" in filter_spec
+    assert "atrim=start=" in filter_spec
 
 
 def test_cleanup_renderer_rejects_silent_cleaned_segment(tmp_path: Path) -> None:
@@ -172,7 +227,10 @@ class CopyingRunner:
 
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
         self.commands.append(command)
-        shutil.copy2(command[3], command[-1])
+        input_index = command.index("-i") + 1
+        if "-filter_complex" in command:
+            input_index = command.index("-i", input_index + 1) + 1
+        shutil.copy2(command[input_index], command[-1])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
 
@@ -190,6 +248,5 @@ class SilentRunner:
 
 class ClippedRunner:
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
-        shutil.copy2(command[3], command[-1])
         _write_wav(Path(command[-1]), samples=[32767, 32767, 32767, 32767])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")

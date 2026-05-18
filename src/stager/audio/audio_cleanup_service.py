@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from pathlib import Path
 
 from stager.audio.audio_cleanup_analyzer import AudioCleanupAnalysisStore, AudioCleanupAnalyzer
@@ -181,29 +182,28 @@ class AudioCleanupService:
         for entry in plan.entries:
             if entry.resolution == "none":
                 continue
-            segment_paths = self._segment_paths(entry.role)
-            if not segment_paths:
-                continue
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
-            batch_id = self._batch_id(entry)
-            prepared = renderer.prepare_batch(
-                batch_id=batch_id,
-                segment_paths=segment_paths,
-                padding_seconds=plan.batch_padding_seconds,
-                boundary_warning_ms=plan.boundary_warning_ms,
-                resolved_filters=entry.filters,
-            )
-            warning_count = sum(1 for boundary in prepared.manifest.cleaned_boundaries if boundary.warnings)
-            results.append(
-                PreparedAudioCleanupBatchResult(
+            for group in self._segment_groups(entry.role):
+                batch_id = self._batch_id(entry, floor_noise_id=group.floor_noise_id)
+                prepared = renderer.prepare_batch(
                     batch_id=batch_id,
-                    manifest_path=prepared.manifest_path,
-                    segment_count=len(prepared.manifest.segments),
-                    cache_hit=prepared.cache_hit,
-                    warning_count=warning_count,
+                    segment_paths=group.segment_paths,
+                    padding_seconds=plan.batch_padding_seconds,
+                    boundary_warning_ms=plan.boundary_warning_ms,
+                    resolved_filters=entry.filters,
+                    floor_noise_path=group.floor_noise_path,
                 )
-            )
+                warning_count = sum(1 for boundary in prepared.manifest.cleaned_boundaries if boundary.warnings)
+                results.append(
+                    PreparedAudioCleanupBatchResult(
+                        batch_id=batch_id,
+                        manifest_path=prepared.manifest_path,
+                        segment_count=len(prepared.manifest.segments),
+                        cache_hit=prepared.cache_hit,
+                        warning_count=warning_count,
+                    )
+                )
         return tuple(results)
 
     def render(
@@ -219,27 +219,26 @@ class AudioCleanupService:
         for entry in plan.entries:
             if entry.resolution == "none":
                 continue
-            segment_paths = self._segment_paths(entry.role)
-            if not segment_paths:
-                continue
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
-            batch_id = self._batch_id(entry)
-            rendered = renderer.render_batch(
-                batch_id=batch_id,
-                segment_paths=segment_paths,
-                padding_seconds=plan.batch_padding_seconds,
-                boundary_warning_ms=plan.boundary_warning_ms,
-                resolved_filters=entry.filters,
-            )
-            results.append(
-                RenderedAudioCleanupBatchResult(
+            for group in self._segment_groups(entry.role):
+                batch_id = self._batch_id(entry, floor_noise_id=group.floor_noise_id)
+                rendered = renderer.render_batch(
                     batch_id=batch_id,
-                    manifest_path=rendered.manifest_path,
-                    rendered_count=rendered.rendered_count,
-                    warning_count=rendered.warning_count,
+                    segment_paths=group.segment_paths,
+                    padding_seconds=plan.batch_padding_seconds,
+                    boundary_warning_ms=plan.boundary_warning_ms,
+                    resolved_filters=entry.filters,
+                    floor_noise_path=group.floor_noise_path,
                 )
-            )
+                results.append(
+                    RenderedAudioCleanupBatchResult(
+                        batch_id=batch_id,
+                        manifest_path=rendered.manifest_path,
+                        rendered_count=rendered.rendered_count,
+                        warning_count=rendered.warning_count,
+                    )
+                )
         return tuple(results)
 
     def _installation(self) -> FfmpegInstallation:
@@ -256,6 +255,67 @@ class AudioCleanupService:
         role_dir = self.paths_config.segments_dir / role
         return sorted(role_dir.glob("*.wav")) if role_dir.exists() else []
 
-    def _batch_id(self, entry: AudioCleanupPlanEntry) -> str:
+    def _segment_groups(self, role: str) -> tuple["AudioCleanupSegmentGroup", ...]:
+        floor_noise = self._floor_noise_index()
+        groups: dict[tuple[str | None, Path | None], list[Path]] = {}
+        for segment_path in self._segment_paths(role):
+            key = floor_noise.get((role, segment_path.stem), (None, None))
+            groups.setdefault(key, []).append(segment_path)
+        return tuple(
+            AudioCleanupSegmentGroup(
+                floor_noise_id=floor_noise_id,
+                floor_noise_path=floor_noise_path,
+                segment_paths=tuple(sorted(segment_paths)),
+            )
+            for (floor_noise_id, floor_noise_path), segment_paths in sorted(
+                groups.items(),
+                key=lambda item: item[0][0] or "",
+            )
+        )
+
+    def _floor_noise_index(self) -> dict[tuple[str, str], tuple[str | None, Path | None]]:
+        imports_dir = self.paths_config.build_dir / "linerecorder" / "imports"
+        if not imports_dir.exists():
+            return {}
+        index: dict[tuple[str, str], tuple[str | None, Path | None]] = {}
+        for import_json in sorted(imports_dir.glob("*/import.json")):
+            try:
+                data = json.loads(import_json.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            role = data.get("role_id")
+            if not isinstance(role, str):
+                continue
+            for imported in data.get("imported", []):
+                if not isinstance(imported, dict):
+                    continue
+                segment_id = imported.get("segment_id")
+                if not isinstance(segment_id, str):
+                    continue
+                floor_noise_id = imported.get("floor_noise_id")
+                floor_noise_path = (
+                    self._floor_noise_path(import_json.parent, floor_noise_id)
+                    if isinstance(floor_noise_id, str)
+                    else None
+                )
+                index[(role, segment_id)] = (floor_noise_id if isinstance(floor_noise_id, str) else None, floor_noise_path)
+        return index
+
+    def _floor_noise_path(self, transaction_dir: Path, floor_noise_id: str) -> Path | None:
+        floor_noise_dir = transaction_dir / "floor_noise"
+        if not floor_noise_dir.exists():
+            return None
+        candidates = sorted(floor_noise_dir.rglob(f"{floor_noise_id}.wav"))
+        return candidates[-1] if candidates else None
+
+    def _batch_id(self, entry: AudioCleanupPlanEntry, *, floor_noise_id: str | None = None) -> str:
         profile = entry.profile or entry.resolution
-        return f"{entry.role}-{profile}".replace("/", "_").replace(" ", "_")
+        floor_noise_suffix = f"-{floor_noise_id}" if floor_noise_id else ""
+        return f"{entry.role}-{profile}{floor_noise_suffix}".replace("/", "_").replace(" ", "_")
+
+
+@dataclass(frozen=True)
+class AudioCleanupSegmentGroup:
+    floor_noise_id: str | None
+    floor_noise_path: Path | None
+    segment_paths: tuple[Path, ...]

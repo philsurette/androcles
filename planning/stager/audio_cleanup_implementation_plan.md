@@ -79,7 +79,8 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Add `src/stager/audio/audio_cleanup_analyzer.py`.
 - [x] Load accepted segment audio for the selected play/role.
 - [x] Load LineRecorder floor-noise metadata when present.
-- [ ] Resolve each recording's floor-noise sample by explicit id or timestamp association.
+- [x] Resolve each recording's floor-noise sample by explicit id.
+- [ ] Resolve each recording's floor-noise sample by timestamp association.
 - [ ] Estimate broadband noise floor from floor-noise samples.
 - [ ] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
 - [ ] Mark fallback noise estimates as lower confidence.
@@ -107,7 +108,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
   build/<play_id>/audio/cleaned/<batch_id>/<ROLE>/<segment_id>.wav
   ```
 
-- [x] Compute batch cache keys from grouped source audio fingerprints, resolved cleanup chain, and boundary settings.
+- [x] Compute batch cache keys from grouped source audio fingerprints, floor-noise fingerprint, resolved cleanup chain, and boundary settings.
 - [x] Include source segment hashes and original sample ranges in cache inputs.
 - [x] Write cleanup batch manifest JSON.
 - [x] Skip unchanged manifest preparation.
@@ -117,13 +118,14 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 - [x] Add `src/stager/audio/audio_cleanup_renderer.py`.
 - [x] Add `src/stager/audio/audio_cleanup_batch.py`.
-- [ ] Group segments by play, role or recording package/session, cleanup profile or analysis recommendation, floor-noise id, and normalized sample rate.
+- [x] Group segments by role, cleanup profile or analysis recommendation, and floor-noise id.
+- [ ] Group segments by recording package/session and normalized sample rate.
 - [ ] Normalize source segments to a common sample rate before batch construction.
 - [x] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
 - [x] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
 - [x] Render each batch with FFmpeg.
 - [x] Preserve source files unchanged.
-- [ ] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
+- [x] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
 - [x] Forbid global silence removal during batch cleanup.
 - [x] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
 - [x] Use batch rendering only for duration-preserving filter chains.

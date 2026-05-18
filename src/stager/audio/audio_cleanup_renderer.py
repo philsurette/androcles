@@ -51,6 +51,7 @@ class AudioCleanupRenderer:
         padding_seconds: float,
         boundary_warning_ms: int,
         resolved_filters: tuple[str, ...],
+        floor_noise_path: Path | None = None,
     ) -> PreparedCleanupBatch:
         builder = AudioCleanupBatchBuilder(sample_rate_hz=self.sample_rate_hz)
         manifest = builder.build(
@@ -78,6 +79,7 @@ class AudioCleanupRenderer:
             manifest=manifest,
             resolved_filters=resolved_filters,
             boundary_warning_ms=boundary_warning_ms,
+            floor_noise_hash=cache.file_hash(floor_noise_path) if floor_noise_path is not None else None,
         )
         manifest = manifest.with_cache_key(cache_key)
         cache_hit = cache.is_hit(manifest)
@@ -92,6 +94,7 @@ class AudioCleanupRenderer:
         padding_seconds: float,
         boundary_warning_ms: int,
         resolved_filters: tuple[str, ...],
+        floor_noise_path: Path | None = None,
     ) -> RenderedCleanupBatch:
         prepared = self.prepare_batch(
             batch_id=batch_id,
@@ -99,6 +102,7 @@ class AudioCleanupRenderer:
             padding_seconds=padding_seconds,
             boundary_warning_ms=boundary_warning_ms,
             resolved_filters=resolved_filters,
+            floor_noise_path=floor_noise_path,
         )
         batch_dir = prepared.manifest_path.parent
         input_path = batch_dir / "batch_input.wav"
@@ -108,6 +112,7 @@ class AudioCleanupRenderer:
             input_path=input_path,
             output_path=cleaned_path,
             resolved_filters=resolved_filters,
+            floor_noise_path=floor_noise_path,
         )
         cleaned_samples = self._read_samples(cleaned_path)
         if abs(len(cleaned_samples) - prepared.manifest.total_samples) > 1:
@@ -204,25 +209,54 @@ class AudioCleanupRenderer:
         input_path: Path,
         output_path: Path,
         resolved_filters: tuple[str, ...],
+        floor_noise_path: Path | None,
     ) -> None:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         if not resolved_filters:
             shutil.copy2(input_path, output_path)
             return
-        command = [
-            "ffmpeg",
-            "-y",
-            "-i",
-            str(input_path),
-            "-af",
-            ",".join(resolved_filters),
-            str(output_path),
-        ]
+        if floor_noise_path is not None and any(filter_spec.startswith("afftdn") for filter_spec in resolved_filters):
+            floor_noise_seconds = self._duration_seconds(floor_noise_path)
+            filter_spec = (
+                f"[0:a][1:a]concat=n=2:v=0:a=1,"
+                f"asendcmd=0.0 afftdn sn start,"
+                f"asendcmd={floor_noise_seconds:.3f} afftdn sn stop,"
+                f"{','.join(resolved_filters)},"
+                f"atrim=start={floor_noise_seconds:.3f},asetpts=PTS-STARTPTS"
+            )
+            command = [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(floor_noise_path),
+                "-i",
+                str(input_path),
+                "-filter_complex",
+                filter_spec,
+                str(output_path),
+            ]
+        else:
+            command = [
+                "ffmpeg",
+                "-y",
+                "-i",
+                str(input_path),
+                "-af",
+                ",".join(resolved_filters),
+                str(output_path),
+            ]
         result = self.command_runner(command, capture_output=True, text=True)
         if result.returncode != 0:
             detail = (result.stderr or "").strip()
             suffix = f": {detail}" if detail else ""
             raise RuntimeError(f"Failed to render audio cleanup batch with ffmpeg{suffix}")
+
+    def _duration_seconds(self, path: Path) -> float:
+        with wave.open(str(path), "rb") as wav:
+            sample_rate = wav.getframerate()
+            if sample_rate <= 0:
+                raise RuntimeError(f"Invalid floor-noise sample rate: {paths.display_path(path)}")
+            return wav.getnframes() / sample_rate
 
     def _validate_output(self, path: Path) -> dict:
         if not path.exists():

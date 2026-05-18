@@ -240,12 +240,14 @@ class AudioCleanupBatchCache:
         manifest: CleanupBatchManifest,
         resolved_filters: tuple[str, ...],
         boundary_warning_ms: int,
+        floor_noise_hash: str | None = None,
     ) -> str:
         payload = {
             "sample_rate_hz": manifest.sample_rate_hz,
             "padding_seconds": manifest.padding_seconds,
             "boundary_warning_ms": boundary_warning_ms,
             "resolved_filters": list(resolved_filters),
+            "floor_noise_hash": floor_noise_hash,
             "segments": [
                 {
                     "role": segment.role,
@@ -260,6 +262,13 @@ class AudioCleanupBatchCache:
         }
         encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         return hashlib.sha256(encoded).hexdigest()
+
+    def file_hash(self, path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
 
     def manifest_path(self, batch_id: str) -> Path:
         return self.paths_config.audio_out_dir / "cleaned" / batch_id / "batch_manifest.json"
