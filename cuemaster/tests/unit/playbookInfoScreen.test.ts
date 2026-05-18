@@ -12,6 +12,10 @@ describe("PlaybookInfoScreen", () => {
     expect(screen.getByText("published")).toBeInTheDocument();
     expect(screen.getByText("Production version")).toBeInTheDocument();
     expect(screen.getByText("1@k9f4p2x8m1qd")).toBeInTheDocument();
+    expect(screen.getByText("Production change")).toBeInTheDocument();
+    expect(screen.getByText("Adjusted opening blocking.")).toBeInTheDocument();
+    expect(screen.getByText("Blocking changes")).toBeInTheDocument();
+    expect(screen.getByText("I-1:b1")).toBeInTheDocument();
   });
 });
 
@@ -25,7 +29,9 @@ function playbook(): Playbook {
       version: "1@k9f4p2x8m1qd",
       sequence: 1,
       publicationId: "k9f4p2x8m1qd",
-      publishedAt: "2026-05-10T13:00:00Z"
+      publishedAt: "2026-05-10T13:00:00Z",
+      changeSummary: "Adjusted opening blocking.",
+      blockingChanges: ["I-1:b1"]
     },
     schemaVersion: 1,
     sections: [],
@@ -33,4 +39,3 @@ function playbook(): Playbook {
     roles: []
   };
 }
-

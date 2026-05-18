@@ -35,10 +35,10 @@ class ProductionChangeAnalyzer:
             old_line = previous_by_id.get(line_id)
             new_line = current_by_id.get(line_id)
             if old_line is None and new_line is not None:
-                changes.append(ProductionChange(kind="added", line_id=line_id, current=new_line))
+                changes.append(ProductionChange(kind=self._added_kind(new_line), line_id=line_id, current=new_line))
                 continue
             if old_line is not None and new_line is None:
-                changes.append(ProductionChange(kind="removed", line_id=line_id, previous=old_line))
+                changes.append(ProductionChange(kind=self._removed_kind(old_line), line_id=line_id, previous=old_line))
                 continue
             if old_line is None or new_line is None:
                 continue
@@ -56,7 +56,7 @@ class ProductionChangeAnalyzer:
             elif old_line.content_hash != new_line.content_hash:
                 changes.append(
                     ProductionChange(
-                        kind="context_changed",
+                        kind=self._context_change_kind(old_line, new_line),
                         line_id=line_id,
                         previous=old_line,
                         current=new_line,
@@ -64,8 +64,26 @@ class ProductionChangeAnalyzer:
                 )
         return ProductionChangeReport(base_version=previous.version, changes=tuple(changes))
 
+    def _added_kind(self, line: PublishedLine) -> str:
+        return "blocking_added" if line.kind == "blocking" else "added"
+
+    def _removed_kind(self, line: PublishedLine) -> str:
+        return "blocking_removed" if line.kind == "blocking" else "removed"
+
+    def _context_change_kind(self, old_line: PublishedLine, new_line: PublishedLine) -> str:
+        if old_line.kind == "blocking" or new_line.kind == "blocking":
+            return "blocking_changed"
+        if self._inline_blocking_text(old_line.text) != self._inline_blocking_text(new_line.text):
+            return "blocking_changed"
+        return "context_changed"
+
     def _recording_hash(self, line: PublishedLine) -> str:
+        if line.kind == "blocking":
+            return ""
         return line.speech_hash or line.content_hash
+
+    def _inline_blocking_text(self, text: str) -> tuple[str, ...]:
+        return tuple(match.group(1).strip() for match in re.finditer(r"\(_/([^_]*?)_\)", text))
 
     def _next_revision_id(self, production_id: str, used_ids: set[str]) -> str:
         base_id, current_suffix = self._revision_base(production_id)

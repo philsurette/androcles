@@ -21,3 +21,13 @@ class ProductionChange:
             **({"current": self.current.to_dict()} if self.current else {}),
             **({"previous": self.previous.to_dict()} if self.previous else {}),
         }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProductionChange":
+        return cls(
+            kind=data["kind"],
+            line_id=data["line_id"],
+            current=PublishedLine.from_dict(data["current"]) if data.get("current") else None,
+            previous=PublishedLine.from_dict(data["previous"]) if data.get("previous") else None,
+            recommended_id=data.get("recommended_id"),
+        )

@@ -37,6 +37,8 @@ from stager.playbook.playbook_audio_work_item import PlaybookAudioWorkItem
 from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
+from stager.production_publication.published_version import PublishedVersion
+from stager.production_publication.production_change_report import ProductionChangeReport
 from stager.production_publication.production_version import ProductionVersion
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright.production_script_parser import ProductionScriptParser
@@ -136,14 +138,19 @@ class PlaybookBuilder:
         production_version = self._parse_production_version(metadata.get("production_version"))
         parent_version = metadata.get("parent_production_version")
         normalized_parent = None if parent_version in (None, "none") else parent_version
-        published_at = self._published_at(production_version, source)
+        published_version = self._published_version(production_version, source)
+        change_report = self._published_change_report(production_version, source)
         return AppProduction(
             source=source,
             version=str(production_version) if production_version is not None else None,
             sequence=production_version.sequence if production_version is not None else None,
             publication_id=production_version.publication_id if production_version is not None else None,
             parent_version=normalized_parent,
-            published_at=published_at,
+            published_at=published_version.published_at if published_version is not None else None,
+            change_summary=published_version.change_summary if published_version is not None else None,
+            blocking_changes=tuple(change.line_id for change in change_report.blocking_changed)
+            if change_report is not None
+            else (),
         )
 
     def _production_source(self, source_path: Path) -> str:
@@ -157,10 +164,19 @@ class PlaybookBuilder:
             return None
         return ProductionVersion.parse(value)
 
-    def _published_at(self, production_version: ProductionVersion | None, source: str) -> str | None:
+    def _published_version(self, production_version: ProductionVersion | None, source: str) -> PublishedVersion | None:
         if production_version is None or source != "published":
             return None
-        return ProductionVersionStore(self.paths).load_version(str(production_version)).published_at
+        return ProductionVersionStore(self.paths).load_version(str(production_version))
+
+    def _published_change_report(
+        self,
+        production_version: ProductionVersion | None,
+        source: str,
+    ) -> ProductionChangeReport | None:
+        if production_version is None or source != "published":
+            return None
+        return ProductionVersionStore(self.paths).load_change_report(str(production_version))
 
     def _manifest_build_id(self) -> str:
         return self.build_id or uuid4().hex

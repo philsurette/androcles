@@ -20,7 +20,9 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
       sequence: manifest.production.sequence,
       publicationId: manifest.production.publication_id,
       parentVersion: manifest.production.parent_version,
-      publishedAt: manifest.production.published_at
+      publishedAt: manifest.production.published_at,
+      changeSummary: manifest.production.change_summary,
+      blockingChanges: manifest.production.blocking_changes
     },
     authors: manifest.play.authors,
     source: manifest.play.source,

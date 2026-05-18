@@ -9,6 +9,8 @@ export type PlaybookManifest = {
     publication_id?: string;
     parent_version?: string;
     published_at?: string;
+    change_summary?: string;
+    blocking_changes?: string[];
   };
   build: {
     buildId: string;

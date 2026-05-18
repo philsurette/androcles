@@ -113,6 +113,18 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
               <dd>{formatLocalBuildTime(playbook.production.publishedAt)}</dd>
             </div>
           ) : null}
+          {playbook.production.changeSummary ? (
+            <div>
+              <dt>Production change</dt>
+              <dd>{playbook.production.changeSummary}</dd>
+            </div>
+          ) : null}
+          {playbook.production.blockingChanges?.length ? (
+            <div>
+              <dt>Blocking changes</dt>
+              <dd>{playbook.production.blockingChanges.join(", ")}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Sections</dt>
             <dd>{playbook.sections.length}</dd>

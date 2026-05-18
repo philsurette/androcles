@@ -195,6 +195,30 @@ P-1 LILLIAN: Please (_sitting_) do.""",
     result = _publisher(cfg, "z8n3d5q1w6te").publish(recording_requests=True)
 
     assert [change.kind for change in result.change_report.changes] == ["context_changed"]
+    assert result.change_report.blocking_changed == ()
+    assert result.recording_request_paths == ()
+
+
+def test_publish_classifies_standalone_blocking_changes_without_recording_requests(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+/LILLIAN: Cross left.""",
+    )
+    _publisher(cfg, "k9f4p2x8m1qd").publish()
+    _replace_production_body(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Please do.
+/LILLIAN: Cross right.""",
+    )
+
+    result = _publisher(cfg, "z8n3d5q1w6te").publish(recording_requests=True)
+
+    assert [change.kind for change in result.change_report.changes] == ["blocking_changed"]
+    assert [change.line_id for change in result.change_report.blocking_changed] == ["P-1:b1"]
     assert result.recording_request_paths == ()
 
 
@@ -214,7 +238,8 @@ P-1 LILLIAN: Please (_/CHRISTINE: sits_) do.""",
 
     result = _publisher(cfg, "z8n3d5q1w6te").publish(recording_requests=True)
 
-    assert [change.kind for change in result.change_report.changes] == ["context_changed"]
+    assert [change.kind for change in result.change_report.changes] == ["blocking_changed"]
+    assert [change.line_id for change in result.change_report.blocking_changed] == ["P-1"]
     assert result.recording_request_paths == ()
 
 

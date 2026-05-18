@@ -12,6 +12,8 @@ class AppProduction:
     publication_id: str | None = None
     parent_version: str | None = None
     published_at: str | None = None
+    change_summary: str | None = None
+    blocking_changes: tuple[str, ...] = ()
 
     def to_dict(self) -> dict[str, Any]:
         data: dict[str, Any] = {"source": self.source}
@@ -25,5 +27,8 @@ class AppProduction:
             data["parent_version"] = self.parent_version
         if self.published_at is not None:
             data["published_at"] = self.published_at
+        if self.change_summary is not None:
+            data["change_summary"] = self.change_summary
+        if self.blocking_changes:
+            data["blocking_changes"] = list(self.blocking_changes)
         return data
-

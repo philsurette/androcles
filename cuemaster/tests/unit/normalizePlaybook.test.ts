@@ -45,7 +45,14 @@ describe("normalizePlaybook", () => {
       schema_version: 1,
       format_version: "1.0.0",
       package_type: "playbook",
-      production: { source: "published", version: "1@k9f4p2x8m1qd", sequence: 1, publication_id: "k9f4p2x8m1qd" },
+      production: {
+        source: "published",
+        version: "1@k9f4p2x8m1qd",
+        sequence: 1,
+        publication_id: "k9f4p2x8m1qd",
+        change_summary: "Adjusted opening blocking.",
+        blocking_changes: ["I-1:b1"]
+      },
       build: {
         buildId: "build-1",
         buildTimestamp: "2026-05-10T10:00:00Z"
@@ -125,6 +132,8 @@ describe("normalizePlaybook", () => {
       }
     ]);
     expect(normalizePlaybook(manifest).roles[0].lines[0].cue.kind).toBe("direction");
+    expect(normalizePlaybook(manifest).production.changeSummary).toBe("Adjusted opening blocking.");
+    expect(normalizePlaybook(manifest).production.blockingChanges).toEqual(["I-1:b1"]);
   });
 
   it("preserves blocking context and line blocking", () => {

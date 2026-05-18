@@ -44,6 +44,18 @@ class ProductionVersionStore:
         manifest_path = self._version_dir(production_version) / "manifest.json"
         return PublishedVersion.from_dict(json.loads(manifest_path.read_text(encoding="utf-8")))
 
+    def load_change_report(self, version: int | str) -> ProductionChangeReport | None:
+        published = self.load_version(version)
+        if published.parent_production_version is None:
+            return None
+        report_path = (
+            self._version_dir(published.production_version)
+            / f"changes_from_{published.parent_production_version.history_directory_name}.json"
+        )
+        if not report_path.exists():
+            return None
+        return ProductionChangeReport.from_dict(json.loads(report_path.read_text(encoding="utf-8")))
+
     def list_versions(self) -> list[PublishedVersion]:
         if not self.versions_dir.exists():
             return []

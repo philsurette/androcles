@@ -1802,6 +1802,16 @@ def render_production_status(status: ProductionStatus) -> str:
         lines.extend(["", "Unassigned roles: " + ", ".join(status.unassigned_roles)])
     if status.missing_recording_count:
         lines.extend(["", f"Missing segment recordings: {status.missing_recording_count}"])
+    if status.missing_source_recording_roles:
+        lines.extend(
+            [
+                "",
+                "Missing whole-role source recordings: " + ", ".join(status.missing_source_recording_roles),
+            ]
+        )
+    if status.blocking_changes:
+        lines.extend(["", f"Blocking changes needing Playbook rebuild: {len(status.blocking_changes)}"])
+        lines.append("  " + ", ".join(status.blocking_changes))
     lines.extend(
         [
             "",

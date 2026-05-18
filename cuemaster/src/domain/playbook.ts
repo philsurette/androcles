@@ -30,6 +30,8 @@ export type PlaybookProduction = {
   publicationId?: string;
   parentVersion?: string;
   publishedAt?: string;
+  changeSummary?: string;
+  blockingChanges?: string[];
 };
 
 export type PlaybookImportMetadata = {

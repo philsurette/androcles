@@ -72,6 +72,7 @@ class ProductionStatus:
     roles: tuple[RoleProductionStatus, ...]
     cast_configured: bool
     playbook: PlaybookProductionStatus
+    blocking_changes: tuple[str, ...] = ()
 
     @property
     def missing_recording_count(self) -> int:
@@ -80,6 +81,14 @@ class ProductionStatus:
     @property
     def unassigned_roles(self) -> tuple[str, ...]:
         return tuple(role.role for role in self.roles if not role.assigned)
+
+    @property
+    def missing_source_recording_roles(self) -> tuple[str, ...]:
+        return tuple(
+            role.role
+            for role in self.roles
+            if role.recording == "whole-role" and role.source_recording_exists is False
+        )
 
     def to_dict(self) -> dict:
         return {
@@ -91,6 +100,8 @@ class ProductionStatus:
             "cast_configured": self.cast_configured,
             "missing_recording_count": self.missing_recording_count,
             "unassigned_roles": list(self.unassigned_roles),
+            "missing_source_recording_roles": list(self.missing_source_recording_roles),
+            "blocking_changes": list(self.blocking_changes),
             "roles": [role.to_dict() for role in self.roles],
             "playbook": self.playbook.to_dict(),
         }
@@ -107,6 +118,7 @@ class ProductionStatusService:
         diff = ProductionPublisher(paths_config=self.paths_config).diff_with_versions()
         current_version = diff.current_version.production_version if diff.current_version is not None else None
         current_version_text = str(current_version) if current_version is not None else None
+        blocking_changes = tuple(change.line_id for change in diff.change_report.blocking_changed)
         role_statuses = tuple(
             self._role_status(role, cast_config.assignment_for_role(role.name))
             for role in self.play.roles
@@ -123,6 +135,7 @@ class ProductionStatusService:
             roles=role_statuses,
             cast_configured=bool(cast_config.actors or cast_config.roles),
             playbook=self._playbook_status(current_version_text),
+            blocking_changes=blocking_changes,
         )
 
     def _role_status(self, role: Role, assignment: CastRoleAssignment | None) -> RoleProductionStatus:

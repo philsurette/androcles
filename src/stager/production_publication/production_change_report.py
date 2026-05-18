@@ -27,6 +27,14 @@ class ProductionChangeReport:
         return tuple(change for change in self.changes if change.kind == "context_changed")
 
     @property
+    def blocking_changed(self) -> tuple[ProductionChange, ...]:
+        return tuple(
+            change
+            for change in self.changes
+            if change.kind in ("blocking_added", "blocking_removed", "blocking_changed")
+        )
+
+    @property
     def changed_or_added_role_line_ids(self) -> set[str]:
         ids: set[str] = set()
         for change in self.added:
@@ -42,3 +50,10 @@ class ProductionChangeReport:
             "base_version": self.base_version,
             "changes": [change.to_dict() for change in self.changes],
         }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ProductionChangeReport":
+        return cls(
+            base_version=data.get("base_version"),
+            changes=tuple(ProductionChange.from_dict(change) for change in data.get("changes", [])),
+        )

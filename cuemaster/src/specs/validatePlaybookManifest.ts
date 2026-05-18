@@ -101,7 +101,9 @@ const manifestSchema = z.object({
     sequence: z.number().int().positive().optional(),
     publication_id: z.string().min(1).optional(),
     parent_version: z.string().optional(),
-    published_at: z.string().optional()
+    published_at: z.string().optional(),
+    change_summary: z.string().optional(),
+    blocking_changes: z.array(z.string().min(1)).optional()
   }),
   build: z.object({
     buildId: z.string().min(1),

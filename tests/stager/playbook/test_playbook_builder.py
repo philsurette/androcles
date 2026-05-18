@@ -760,7 +760,50 @@ def test_playbook_manifest_includes_published_production_metadata(tmp_path: Path
         "sequence": 1,
         "publication_id": "k9f4p2x8m1qd",
         "published_at": "2026-05-10T13:00:00Z",
+        "change_summary": "Initial publish.",
     }
+
+
+def test_playbook_manifest_includes_published_blocking_changes(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# I-0 ACT I
+I-1 ANDROCLES: Well, dear, do you want to see one?
+/ANDROCLES: Cross left.
+I-2 MEGAERA: I won't go another step.
+""",
+        encoding="utf-8",
+    )
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("k9f4p2x8m1qd"),
+        published_at_provider=lambda: "2026-05-10T13:00:00Z",
+    ).publish(change_summary="Initial publish.")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8").replace("Cross left", "Cross right"),
+        encoding="utf-8",
+    )
+    ProductionPublisher(
+        cfg,
+        publication_id_generator=_PublicationIds("z8n3d5q1w6te"),
+        published_at_provider=lambda: "2026-05-11T13:00:00Z",
+    ).publish(change_summary="Updated blocking.")
+    published_path = ProductionVersionStore(cfg).current_production_path()
+    assert published_path is not None
+    cfg.production_markdown = published_path
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_production_playbook_audio(cfg)
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert data["production"]["change_summary"] == "Updated blocking."
+    assert data["production"]["blocking_changes"] == ["I-2:b1"]
 
 
 def test_playbook_manifest_marks_working_source_production_metadata(tmp_path: Path) -> None:

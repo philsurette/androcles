@@ -78,6 +78,12 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
       await loadPlaybooks();
       setMessage(
         `${replacementDecision ? "Replaced" : "Imported"} ${playbook.title} (${formatBytes(file.size)}) in ${elapsedSeconds.toFixed(1)}s.${
+          playbook.production.changeSummary ? ` Production change: ${playbook.production.changeSummary}` : ""
+        }${
+          playbook.production.blockingChanges?.length
+            ? ` Blocking updates: ${playbook.production.blockingChanges.length}.`
+            : ""
+        }${
           persistence === null ? "" : persistence ? " Persistent storage is enabled." : " Persistent storage was not granted."
         }`
       );

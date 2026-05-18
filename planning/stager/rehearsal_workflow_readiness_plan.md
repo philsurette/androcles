@@ -96,7 +96,7 @@ Checklist:
 - [x] Before replacing an installed Playbook, compare old/new production metadata.
 - [x] Confirm replacement when the new package is older, from a different production fork, or from a working source.
 - [x] Preserve role selection, session cursor, timing attempts, and bookmarks when replacing with a successor version where line ids still match.
-- [ ] Show "what changed" after import when the Playbook carries production change metadata.
+- [x] Show "what changed" after import when the Playbook carries production change metadata.
 - [ ] Add tests for same-version rebuild, newer version replacement, older version warning, and fork warning.
 
 ## Phase 4: Blocking-Only Update Workflow
@@ -105,12 +105,12 @@ Blocking changes should update actor rehearsal material without creating unneces
 
 Checklist:
 
-- [ ] Ensure publication reports classify blocking-only changes separately from speech changes.
-- [ ] Ensure `publish-production --recording-requests` skips blocking-only changes.
-- [ ] Include blocking-change summaries in `production-status`.
-- [ ] Include blocking changes in Playbook build metadata or a companion changelog.
-- [ ] Surface changed blocking clearly in Cuemaster after Playbook replacement.
-- [ ] Add tests that blocking-only publication creates no Recording Requests but does mark Playbook rebuild needed.
+- [x] Ensure publication reports classify blocking-only changes separately from speech changes.
+- [x] Ensure `publish-production --recording-requests` skips blocking-only changes.
+- [x] Include blocking-change summaries in `production-status`.
+- [x] Include blocking changes in Playbook build metadata or a companion changelog.
+- [x] Surface changed blocking clearly in Cuemaster after Playbook replacement.
+- [x] Add tests that blocking-only publication creates no Recording Requests but does mark Playbook rebuild needed.
 
 ## Phase 5: Whole-Role Recording Path Preservation
 
@@ -118,8 +118,8 @@ Whole-role recording and splitting remains supported as an advanced producer wor
 
 Checklist:
 
-- [ ] Represent whole-role recording choice in `cast.yaml`.
-- [ ] Make `production-status` report missing full-role source recordings separately from missing segment files.
+- [x] Represent whole-role recording choice in `cast.yaml`.
+- [x] Make `production-status` report missing full-role source recordings separately from missing segment files.
 - [ ] Keep `./main segments` as the convergence point from whole-role source audio into canonical segment audio.
 - [ ] Ensure all downstream steps consume canonical segments identically regardless of whether audio came from LineRecorder or splitting.
 - [ ] Document when to use LineRecorder versus whole-role recording.

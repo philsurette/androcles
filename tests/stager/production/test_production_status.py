@@ -49,6 +49,34 @@ roles:
     assert status.roles[0].source_recording_exists is True
 
 
+def test_production_status_reports_missing_whole_role_sources_separately(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    (cfg.play_dir / "cast.yaml").write_text(
+        """
+version: 1
+actors:
+  phil:
+    display_name: Phil
+roles:
+  CAPTAIN:
+    actor: phil
+    recording: whole-role
+""",
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    status = ProductionStatusService(paths_config=cfg, play=play).build()
+
+    assert status.missing_source_recording_roles == ("CAPTAIN",)
+    _patch_path_config(monkeypatch, cfg)
+    result = CliRunner().invoke(build.app, ["production-status", "--play", "test"])
+    assert result.exit_code == 0
+    assert "Missing segment recordings: 1" in result.output
+    assert "Missing whole-role source recordings: CAPTAIN" in result.output
+
+
 def test_production_status_cli_renders_basic_readiness(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     ScriptWright(paths_config=cfg).write_locked()
@@ -120,6 +148,36 @@ def test_production_status_reports_playbook_version_freshness(tmp_path: Path) ->
     assert status.playbook.production_version == str(published.version.production_version)
     assert status.playbook.build_id == "build-1"
     assert status.playbook.matches_current_published_version is True
+
+
+def test_production_status_reports_unpublished_blocking_changes(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# P-0 PROLOGUE
+P-1 CAPTAIN: Stand fast.
+/CAPTAIN: Cross left.
+""",
+        encoding="utf-8",
+    )
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8").replace("Cross left", "Cross right"),
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    status = ProductionStatusService(paths_config=cfg, play=play).build()
+
+    assert status.blocking_changes == ("P-1:b1",)
+    _patch_path_config(monkeypatch, cfg)
+    result = CliRunner().invoke(build.app, ["production-status", "--play", "test", "--production-source", "working"])
+    assert result.exit_code == 0
+    assert "Blocking changes needing Playbook rebuild: 1" in result.output
+    assert "P-1:b1" in result.output
 
 
 def test_production_status_cli_can_render_yaml(tmp_path: Path, monkeypatch) -> None:
