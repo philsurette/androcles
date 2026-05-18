@@ -15,6 +15,8 @@ Install ffmpeg separately:
 
 Stager checks for `ffmpeg` and `ffprobe` before commands that need them.
 
+Quince/Stager does not bundle FFmpeg. Required Stager audio features must work with a normal LGPL-compatible FFmpeg installation. GPL-enabled FFmpeg builds are optional user-managed tools only.
+
 ## FFmpeg For Voice Profiles
 
 Voice-profile rendering will use FFmpeg filters. Quince/Stager will not bundle FFmpeg, so showrunners need an FFmpeg build with the required filters available.
@@ -51,7 +53,7 @@ Required filters for the planned portable voice-profile renderer:
 
 Optional filters that improve quality or future effects:
 
-- `rubberband`: better pitch shifting and formant-aware voice presentation shifts.
+- `rubberband`: better pitch shifting and formant-aware voice presentation shifts. This usually requires a GPL-enabled FFmpeg build, such as Homebrew `ffmpeg-full`, and must remain optional.
 - `firequalizer`: smoother filter-curve implementation.
 - `afir`: convolution reverb if impulse responses are added later.
 
@@ -70,6 +72,8 @@ ffmpeg -hide_banner -filters | Select-String rubberband
 ```
 
 If a required filter is missing, install a fuller FFmpeg build from a trusted distribution. If only optional filters are missing, voice-profile rendering should still work with fallbacks.
+
+Do not treat `ffmpeg-full` or Rubber Band as a Quince dependency. If a user chooses to install a GPL-enabled FFmpeg build, Quince may integrate with it when configured, but the standard FFmpeg install remains the supported baseline.
 
 ## Build A Wheel
 

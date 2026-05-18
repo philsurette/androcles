@@ -60,8 +60,8 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 
 ## Phase 4: FFmpeg Filter Graph Compiler
 
-- [ ] Add FFmpeg capability detection for required and optional filters.
-- [ ] Check required filters:
+- [x] Add FFmpeg capability detection for required and optional filters.
+- [x] Check required filters:
   - `aresample`,
   - `asetrate`,
   - `atempo`,
@@ -76,12 +76,15 @@ This is a resumable implementation plan for Stager voice profiles. The design so
   - `asetpts`,
   - `concat`,
   - `loudnorm`.
-- [ ] Check optional filters:
+- [x] Check optional filters:
   - `rubberband`,
   - `firequalizer`,
   - `afir`.
 - [ ] Fail render preflight when required filters are missing.
-- [ ] Warn when optional filters are missing and a fallback exists.
+- [x] Warn when optional filters are missing and a fallback exists.
+- [ ] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
+- [x] Treat GPL-enabled `rubberband` support as optional user-provided integration only.
+- [x] Add diagnostics that clearly say `rubberband` is optional and requires a compatible user-installed FFmpeg build.
 - [ ] Add `src/stager/audio/ffmpeg_filter_graph.py`.
 - [ ] Compile `highpass`.
 - [ ] Compile `lowpass`.

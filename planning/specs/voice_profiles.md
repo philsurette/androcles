@@ -227,11 +227,11 @@ Useful components for a more masculine presentation:
 - reduced high-frequency brightness when needed,
 - compression tuned to preserve weight.
 
-High-quality transformation often requires formant-aware processing. FFmpeg's portable baseline can approximate this with pitch, EQ, and compression. If the installed FFmpeg supports the `rubberband` filter, Stager may use it for better pitch shifting and formant handling. The first implementation should detect support and fall back to portable filters.
+High-quality transformation often requires formant-aware processing. FFmpeg's portable baseline can approximate this with pitch, EQ, and compression. If the user has separately installed and configured an FFmpeg build that supports the `rubberband` filter, Stager may use it for better pitch shifting and formant handling. The first implementation should detect support and fall back to portable filters.
 
 ## FFmpeg Capabilities
 
-Quince will not include FFmpeg. Users must install FFmpeg and FFprobe separately, and Stager must verify required filters before rendering.
+Quince will not include FFmpeg. Users must install FFmpeg and FFprobe separately, and Stager must verify required filters before rendering. Required voice-profile rendering must work with a normal LGPL-compatible FFmpeg installation.
 
 The first voice-profile implementation should require only filters that are normally present in mainstream FFmpeg builds:
 
@@ -251,11 +251,13 @@ The first voice-profile implementation should require only filters that are norm
 
 Optional quality filters and compile-time features:
 
-- `rubberband`: preferred for higher-quality pitch shifting and formant-aware gender-presentation transforms when available.
+- `rubberband`: preferred for higher-quality pitch shifting and formant-aware gender-presentation transforms when available. This requires a user-provided GPL-enabled FFmpeg build, such as Homebrew `ffmpeg-full`, and must not be required by Quince.
 - `firequalizer`: useful for smoother filter-curve support, but not required because `equalizer` chains can approximate curves.
 - `afir`: useful for convolution reverb with impulse responses, but not required for the first implementation.
 - `ladspa` or `lv2`: plugin-host filters; explicitly out of scope for the first implementation because they make installation and support much harder.
 - `arnndn`: neural denoising; out of scope for voice profiles and should not be required because it depends on model files.
+
+Quince must not bundle GPL-enabled FFmpeg or Rubber Band. The integration model is optional detection of a user-managed FFmpeg binary that happens to provide `rubberband`. If `rubberband` is unavailable, Quince should use the portable FFmpeg fallback or disable only the optional higher-quality pitch mode.
 
 Stager should provide a capability diagnostic command or render preflight that reports:
 
