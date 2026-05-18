@@ -1,5 +1,7 @@
 # Blocking Notes Implementation Plan
 
+> Superseded by [../blocking/README.md](../blocking/README.md). The earlier blocking-note implementation was only exercised by test data and does not need to be preserved for real productions. Future work should replace the implementation with the staging DSL under `planning/blocking/`, while still considering whether the inline `(_/action: ..._)` authoring shape is the best producer-facing syntax for line-local action.
+
 ## Purpose
 
 Blocking is production-specific movement information that actors need to learn alongside their lines. It changes more often than spoken text, may apply to actors who are not speaking, and should have a central source of truth in `production.md`.
