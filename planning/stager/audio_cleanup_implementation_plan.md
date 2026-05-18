@@ -183,14 +183,14 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 11: Documentation And Verification
 
-- [ ] Update [install.md](install.md) with audio cleanup filter notes.
-- [ ] Update [../quince-workflow.md](../quince-workflow.md) with cleanup workflow guidance.
-- [ ] Cross-link [../linerecorder/floor_noise_reduction_plan.md](../linerecorder/floor_noise_reduction_plan.md) from cleanup docs.
-- [ ] Add examples for noisy recording cleanup.
-- [ ] Add examples for click-heavy recording cleanup.
-- [ ] Add examples for floor-noise-backed denoising.
-- [ ] Run targeted Stager audio cleanup tests.
-- [ ] Run full Python suite:
+- [x] Update [install.md](install.md) with audio cleanup filter notes.
+- [x] Update [../quince-workflow.md](../quince-workflow.md) with cleanup workflow guidance.
+- [x] Cross-link [../linerecorder/floor_noise_reduction_plan.md](../linerecorder/floor_noise_reduction_plan.md) from cleanup docs.
+- [x] Add examples for noisy recording cleanup.
+- [x] Add examples for click-heavy recording cleanup.
+- [x] Add examples for floor-noise-backed denoising.
+- [x] Run targeted Stager audio cleanup tests.
+- [x] Run full Python suite:
 
   ```sh
   .venv/bin/python run_tests.py
@@ -198,16 +198,16 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Acceptance Criteria
 
-- [ ] Cleanup works with a normal LGPL-compatible FFmpeg installation.
-- [ ] Missing optional cleanup filters produce clear warnings.
-- [ ] Original LineRecorder package content is never modified.
-- [ ] Canonical segment audio is not overwritten by default.
-- [ ] Cleaned audio is cacheable and inspectable.
-- [ ] Built-in gentle presets work without a config file.
-- [ ] Analysis can recommend cleanup settings from LineRecorder floor-noise samples.
-- [ ] Analysis can make lower-confidence recommendations without floor-noise samples.
-- [ ] Batch rendering is the preferred renderer for duration-preserving cleanup chains.
-- [ ] Batch manifests preserve original center anchors and original/cleaned ranges.
-- [ ] Suspicious boundary shifts are warned and reviewable.
-- [ ] Per-segment rendering remains available as a fallback.
-- [ ] Playbook/audioplay can opt into cleaned audio later.
+- [x] Cleanup works with a normal LGPL-compatible FFmpeg installation.
+- [x] Missing optional cleanup filters produce clear warnings.
+- [x] Original LineRecorder package content is never modified.
+- [x] Canonical segment audio is not overwritten by default.
+- [x] Cleaned audio is cacheable and inspectable.
+- [x] Built-in gentle presets work without a config file.
+- [x] Analysis can recommend cleanup settings from LineRecorder floor-noise samples.
+- [x] Analysis can make lower-confidence recommendations without floor-noise samples.
+- [x] Batch rendering is the preferred renderer for duration-preserving cleanup chains.
+- [x] Batch manifests preserve original center anchors and original/cleaned ranges.
+- [x] Suspicious boundary shifts are warned and reviewable.
+- [x] Per-segment rendering remains available as a fallback.
+- [x] Playbook/audioplay can opt into cleaned audio later.

@@ -116,7 +116,68 @@ Use deeper audio verification when transcription-based checks are appropriate fo
 
 Fix missing, extra, stale, or badly split recordings before building a Playbook. Playbook generation is strict: every rehearsable non-meta role line must have required cue audio and response audio.
 
-## 5. Build Cues
+## 5. Clean Up Recordings
+
+Audio cleanup is optional, but when cleanup output exists Stager can use it automatically for Playbook and audioplay builds. Cleanup is for recording-quality repair such as light denoising, click cleanup, de-essing, boundary review, and loudness normalization. It is separate from creative voice effects.
+
+Run the doctor command first when setting up a machine:
+
+```sh
+./main audio-cleanup doctor --play <play_id>
+```
+
+Then analyze the current segment audio:
+
+```sh
+./main audio-cleanup analyze --play <play_id>
+```
+
+The analysis report is written under:
+
+```text
+build/<play_id>/audio/cleanup_analysis/
+```
+
+Render cleaned audio into generated cleanup artifacts:
+
+```sh
+./main audio-cleanup render --play <play_id>
+```
+
+This writes cleaned segment files, batch manifests, and a review report under:
+
+```text
+build/<play_id>/audio/cleaned/
+```
+
+Generated cleanup output does not overwrite canonical segment audio. The default Playbook and audioplay audio source is `auto`: if no cleanup review exists, Stager uses canonical segment audio; if a complete cleanup review exists, Stager uses reviewed cleaned audio; if a review exists but is incomplete or stale, Stager fails instead of silently mixing cleaned and canonical segments.
+
+Force a specific audio source when needed:
+
+```sh
+./main playbook --play <play_id> --audio-source canonical
+./main playbook --play <play_id> --audio-source cleaned
+./main audioplay --play <play_id> --audio-source canonical
+./main audioplay --play <play_id> --audio-source cleaned
+```
+
+Promote cleaned output into canonical segment storage only after review:
+
+```sh
+./main audio-cleanup promote --play <play_id> --confirm
+```
+
+Promotion writes a transaction with backups under `build/<play_id>/audio/cleaned/promotions/`. Promotion is never automatic.
+
+Examples:
+
+- For generally noisy recordings, start with the default flow: `audio-cleanup analyze`, then `audio-cleanup render`, then listen through `audioplay --audio-source cleaned`.
+- For click-heavy recordings, add or select a profile with medium declicking in `plays/<play_id>/audio_cleanup.yaml`, then render with `--profile <profile_name>` for a focused pass.
+- For floor-noise-backed denoising, capture room tone in LineRecorder before recording or whenever the room changes, import the package, then run analysis and render. Stager associates each segment with the applicable room-tone sample from the LineRecorder import metadata.
+
+LineRecorder room-tone capture and recording-package metadata are described in [linerecorder/floor_noise_reduction_plan.md](linerecorder/floor_noise_reduction_plan.md).
+
+## 6. Build Cues
 
 Cuemaster rehearsal depends on cue audio as well as response audio. Build cue files from the prepared segment audio:
 
@@ -126,7 +187,7 @@ Cuemaster rehearsal depends on cue audio as well as response audio. Build cue fi
 
 Cue selection rules and cue-window behavior are described in [cuemaster/cue_generation.md](cuemaster/cue_generation.md). This workflow only describes when cue assets are produced.
 
-## 6. Build The Playbook
+## 7. Build The Playbook
 
 Build the Cuemaster Playbook after text, segments, and cue audio are ready:
 
@@ -161,7 +222,7 @@ It is best thought of as a sibling output of the same prepared script and segmen
 
 A production may build an audioplay for review, publication, or quality control before or after building the Playbook. When `audioplay` is run with preparation enabled, it may also refresh text and segment artifacts that the Playbook workflow needs.
 
-## 7. Distribute To Actors
+## 8. Distribute To Actors
 
 Actors receive different package types for different jobs:
 
@@ -171,7 +232,7 @@ Actors receive different package types for different jobs:
 
 This separation matters because Playbooks are complete rehearsal artifacts with required cue and response audio, while Recording Requests are work orders that may cover a full role or only selected lines.
 
-## 8. Update The Production
+## 9. Update The Production
 
 Production changes usually fall into one of three categories:
 
