@@ -8,6 +8,7 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 
 ## Production Workflow
 
+- [quince_production_guide.md](quince_production_guide.md): Showrunner-facing end-to-end production guide from initial `production.md` through Recording Requests, returned recordings, cleanup, voice profiles, Playbooks, audioplays, and revisions.
 - [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
 - [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.
 - [static_actor_app_deployment.md](static_actor_app_deployment.md): Build and deploy Cuemaster and LineRecorder as static web apps.
