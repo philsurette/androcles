@@ -145,6 +145,71 @@ def test_quince_cast_assign_rejects_unknown_role(tmp_path: Path, monkeypatch) ->
     assert "Unknown rehearsable role: GHOST" in result.output
 
 
+def test_quince_send_requests_builds_recording_request(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["send-requests", "--role", "CAPTAIN"])
+
+    assert result.exit_code == 0
+    assert "Generated Recording Requests:" in result.output
+    assert "CAPTAIN: 1 items, full_role" in result.output
+    assert (cfg.build_dir / "linerecorder" / "CAPTAIN.recording-request.zip").exists()
+
+
+def test_quince_send_requests_reports_skipped_whole_role(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    (cfg.play_dir / "cast.yaml").write_text(
+        """
+version: 1
+roles:
+  CAPTAIN:
+    recording: whole-role
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["send-requests"])
+
+    assert result.exit_code == 0
+    assert "No Recording Requests generated." in result.output
+    assert "Skipped whole-role roles: CAPTAIN" in result.output
+
+
+def test_quince_split_recordings_dispatches_whole_role_roles(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    (cfg.play_dir / "cast.yaml").write_text(
+        """
+version: 1
+roles:
+  CAPTAIN:
+    recording: whole-role
+""",
+        encoding="utf-8",
+    )
+    calls = []
+
+    class FakeSegmentBuildService:
+        def __init__(self, *, paths):
+            self.paths = paths
+
+        def build(self, **kwargs):
+            calls.append(kwargs)
+
+    monkeypatch.setattr(
+        "stager.production.recording_workflow_service.SegmentBuildService",
+        FakeSegmentBuildService,
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["split-recordings"])
+
+    assert result.exit_code == 0
+    assert "Split recordings for: CAPTAIN" in result.output
+    assert calls[0]["role"] == "CAPTAIN"
+
+
 def _workspace(root: Path, *play_ids: str) -> None:
     (root / "plays").mkdir(exist_ok=True)
     (root / "pyproject.toml").write_text("[project]\nname = 'test'\n", encoding="utf-8")

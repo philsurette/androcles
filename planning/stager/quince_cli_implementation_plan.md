@@ -108,15 +108,15 @@ Wrap request/import/splitting workflows in producer terms.
 
 Checklist:
 
-- [ ] Implement `quince send-requests`.
-- [ ] Use cast assignments for actor-facing metadata when available.
-- [ ] Skip `recording: whole-role` roles by default.
-- [ ] Support `--role`, `--actor`, `--changed-only`, and `--missing-only`.
-- [ ] Implement `quince receive-recordings <package.zip>`.
-- [ ] Print the import transaction path and post-import role status.
-- [ ] Implement `quince split-recordings`.
-- [ ] Restrict split workflow to `recording: whole-role` roles unless explicitly overridden.
-- [ ] Add tests for LineRecorder role requests, changed-only requests, package import dispatch, and whole-role split dispatch.
+- [x] Implement `quince send-requests`.
+- [x] Use cast assignments for actor-facing metadata when available.
+- [x] Skip `recording: whole-role` roles by default.
+- [x] Support `--role`, `--actor`, `--changed-only`, and `--missing-only`.
+- [x] Implement `quince receive-recordings <package.zip>`.
+- [x] Print the import transaction path and post-import role status.
+- [x] Implement `quince split-recordings`.
+- [x] Restrict split workflow to `recording: whole-role` roles unless explicitly overridden.
+- [x] Add tests for LineRecorder role requests, changed-only requests, package import dispatch, and whole-role split dispatch.
 
 ## Phase 8: Audio And Output Builders
 

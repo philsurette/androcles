@@ -19,6 +19,7 @@ from stager.production.production_renderers import (
 )
 from stager.production.production_status import ProductionStatusService
 from stager.production.quince_context import QuinceContext, QuinceContextResolver, QuinceWorkspaceConfig
+from stager.production.recording_workflow_service import RecordingWorkflowService
 from stager.production_publication.production_source_resolver import ProductionSourceResolver
 from stager.production_publication.production_publisher import ProductionPublisher
 from stager.scriptwright import ProductionPlayLoader
@@ -230,6 +231,112 @@ def publish(
             typer.echo(f"  {request_path.relative_to(context.workspace_root).as_posix()}")
 
 
+@app.command("send-requests")
+def send_requests(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit requests to one role."),
+    actor: str | None = typer.Option(None, "--actor", help="Limit requests to roles assigned to this actor id."),
+    changed_only: bool = typer.Option(False, "--changed-only", help="Request only changed or added production lines."),
+    missing_only: bool = typer.Option(False, "--missing-only", help="Request only segments that are missing audio."),
+    notes: str | None = typer.Option(None, "--notes", help="Optional notes included in each Recording Request."),
+) -> None:
+    """Build LineRecorder Recording Request packages."""
+    try:
+        context, service = _recording_service(play=play, workspace=workspace)
+        result = service.send_requests(
+            role=role,
+            actor=actor,
+            changed_only=changed_only,
+            missing_only=missing_only,
+            notes=notes,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    if result.requests:
+        typer.echo("Generated Recording Requests:")
+        for request in result.requests:
+            actor_text = f", actor {request.actor}" if request.actor is not None else ""
+            typer.echo(
+                "  "
+                f"{request.role}: {request.item_count} items, {request.request_kind}{actor_text} -> "
+                f"{request.path.relative_to(context.workspace_root).as_posix()}"
+            )
+    else:
+        typer.echo("No Recording Requests generated.")
+    if result.skipped_whole_role_roles:
+        typer.echo("Skipped whole-role roles: " + ", ".join(result.skipped_whole_role_roles))
+
+
+@app.command("receive-recordings")
+def receive_recordings(
+    package: Path = typer.Argument(..., help="LineRecorder role recordings zip to import."),
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    denoise: bool = typer.Option(False, "--denoise", help="Use included floor-noise recordings for import-time denoising."),
+    trim_silence: bool = typer.Option(False, "--trim-silence", help="Trim leading and trailing silence during import."),
+) -> None:
+    """Import a LineRecorder role recordings package."""
+    try:
+        context, service = _recording_service(play=play, workspace=workspace)
+        result = service.receive_recordings(package_path=package, denoise=denoise, trim_silence=trim_silence)
+        status_model = ProductionStatusService(paths_config=context.path_config, play=service.play).build()
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    status = "complete" if result.complete else "partial"
+    typer.echo(render_quince_context(context))
+    typer.echo(f"Imported {result.imported_count} {status} recordings for {result.role}.")
+    if result.missing_segment_ids:
+        typer.echo("Missing segments: " + ", ".join(result.missing_segment_ids))
+    for issue in result.issues:
+        typer.echo(f"Warning [{issue.code}]: {issue.message}")
+    typer.echo(f"Import transaction: {result.transaction_manifest_path.relative_to(context.workspace_root).as_posix()}")
+    role_status = next((candidate for candidate in status_model.roles if candidate.role == result.role), None)
+    if role_status is not None:
+        typer.echo(
+            f"{role_status.role}: {role_status.recorded_segments}/{role_status.expected_segments} segments, "
+            f"{len(role_status.missing_segments)} missing"
+        )
+
+
+@app.command("split-recordings")
+def split_recordings(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit splitting to one role."),
+    include_linerecorder: bool = typer.Option(
+        False,
+        "--include-linerecorder",
+        help="Allow splitting roles configured for LineRecorder instead of only whole-role roles.",
+    ),
+    silence_thresh: int = typer.Option(-60, "--silence-thresh", help="Silence threshold in dBFS."),
+    separator_len_ms: int = typer.Option(1700, "--separator-len-ms", help="Minimum separator silence length in ms."),
+    chunk_size: int = typer.Option(50, "--chunk-size", help="Number of snippets per split chunk."),
+    force: bool = typer.Option(False, "--force", help="Overwrite existing exported recordings and segments."),
+) -> None:
+    """Split whole-role source recordings into segment audio."""
+    try:
+        context, service = _recording_service(play=play, workspace=workspace)
+        result = service.split_recordings(
+            role=role,
+            include_linerecorder=include_linerecorder,
+            silence_thresh=silence_thresh,
+            separator_len_ms=separator_len_ms,
+            chunk_size=chunk_size,
+            force=force,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    if result.roles:
+        typer.echo("Split recordings for: " + ", ".join(result.roles))
+    else:
+        typer.echo("No whole-role recordings selected for splitting.")
+    if result.skipped_linerecorder_roles:
+        typer.echo("Skipped LineRecorder roles: " + ", ".join(result.skipped_linerecorder_roles))
+
+
 @cast_app.command("show")
 def cast_show(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
     """Show cast assignments for the selected production."""
@@ -317,6 +424,12 @@ def _cast_service(*, play: str | None, workspace: Path | None) -> tuple[QuinceCo
     context = _resolve_context(play=play, workspace=workspace, production_source="working")
     loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
     return context, CastConfigService(paths_config=context.path_config, play=loaded_play)
+
+
+def _recording_service(*, play: str | None, workspace: Path | None) -> tuple[QuinceContext, RecordingWorkflowService]:
+    context = _resolve_context(play=play, workspace=workspace, production_source="working")
+    loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
+    return context, RecordingWorkflowService(paths_config=context.path_config, play=loaded_play)
 
 
 def main_cli() -> None:
