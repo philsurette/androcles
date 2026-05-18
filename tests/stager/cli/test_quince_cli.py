@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 from typer.testing import CliRunner
 
 from stager.cli.quince import app
+from stager.production_publication.production_publisher import ProductionPublisher
 from stager.shared import paths
 
 
@@ -208,6 +210,103 @@ roles:
     assert result.exit_code == 0
     assert "Split recordings for: CAPTAIN" in result.output
     assert calls[0]["role"] == "CAPTAIN"
+
+
+def test_quince_prepare_audio_dry_run_reports_readiness(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    class FakeAudioOutputWorkflowService:
+        def __init__(self, *, paths_config, play):
+            self.paths_config = paths_config
+            self.play = play
+
+        def prepare_audio(self, **kwargs):
+            assert kwargs["run"] is False
+            return SimpleNamespace(
+                dry_run=True,
+                status=SimpleNamespace(missing_recording_count=1),
+                cleanup_plan=SimpleNamespace(entries=(object(),)),
+                cleanup_analysis=None,
+                prepared_batches=(),
+                rendered_batches=(),
+                voice_profile_count=0,
+                voice_results=(),
+            )
+
+    monkeypatch.setattr("stager.cli.quince.AudioOutputWorkflowService", FakeAudioOutputWorkflowService)
+
+    result = CliRunner().invoke(app, ["prepare-audio", "--dry-run"])
+
+    assert result.exit_code == 0
+    assert "Dry run audio preparation." in result.output
+    assert "Missing canonical segment recordings: 1" in result.output
+
+
+def test_quince_build_playbook_rejects_working_source_without_confirmation(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["build-playbook"])
+
+    assert result.exit_code != 0
+    assert "Building from working production.md requires --allow-working-source" in result.output
+
+
+def test_quince_build_playbook_reports_output_path(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    monkeypatch.chdir(cfg.play_dir)
+
+    class FakeAudioOutputWorkflowService:
+        def __init__(self, *, paths_config, play):
+            self.paths_config = paths_config
+            self.play = play
+
+        def build_playbook(self, **kwargs):
+            assert kwargs["audio_format"] == "wav"
+            return SimpleNamespace(
+                paths=(cfg.build_dir / "androcles.playbook.zip",),
+                production_version="1@test",
+                production_source="published",
+                audio_source=kwargs["audio_source"],
+            )
+
+    monkeypatch.setattr("stager.cli.quince.AudioOutputWorkflowService", FakeAudioOutputWorkflowService)
+
+    result = CliRunner().invoke(app, ["build-playbook"])
+
+    assert result.exit_code == 0
+    assert "Built Playbook from published source." in result.output
+    assert "build/androcles/androcles.playbook.zip" in result.output
+
+
+def test_quince_build_audioplay_reports_output_path(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    monkeypatch.chdir(cfg.play_dir)
+
+    class FakeAudioOutputWorkflowService:
+        def __init__(self, *, paths_config, play):
+            self.paths_config = paths_config
+            self.play = play
+
+        def build_audioplay(self, **kwargs):
+            assert kwargs["audio_format"] == "mp3"
+            return SimpleNamespace(
+                paths=(cfg.build_dir / "audio" / "androcles.mp3",),
+                production_version="1@test",
+                production_source=None,
+                audio_source=kwargs["audio_source"],
+            )
+
+    monkeypatch.setattr("stager.cli.quince.AudioOutputWorkflowService", FakeAudioOutputWorkflowService)
+
+    result = CliRunner().invoke(app, ["build-audioplay", "--audio-format", "mp3"])
+
+    assert result.exit_code == 0
+    assert "Built audioplay from published source." in result.output
+    assert "build/androcles/audio/androcles.mp3" in result.output
 
 
 def _workspace(root: Path, *play_ids: str) -> None:

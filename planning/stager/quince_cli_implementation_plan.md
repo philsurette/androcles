@@ -124,14 +124,14 @@ Add producer-facing wrappers over cleanup, voice, Playbook, and audioplay output
 
 Checklist:
 
-- [ ] Implement `quince prepare-audio --dry-run`.
-- [ ] Report verify, cleanup, and voice-profile readiness without doing destructive promotion.
-- [ ] Implement safe `quince prepare-audio --run` steps for analysis/rendering where unambiguous.
-- [ ] Implement `quince build-playbook`.
-- [ ] Warn or require confirmation when building a Playbook from working source.
-- [ ] Implement `quince build-audioplay`.
-- [ ] Report output paths, production version, and selected audio source.
-- [ ] Add tests for strict missing-audio failures and successful build wrappers with mocked builders.
+- [x] Implement `quince prepare-audio --dry-run`.
+- [x] Report verify, cleanup, and voice-profile readiness without doing destructive promotion.
+- [x] Implement safe `quince prepare-audio --run` steps for analysis/rendering where unambiguous.
+- [x] Implement `quince build-playbook`.
+- [x] Warn or require confirmation when building a Playbook from working source.
+- [x] Implement `quince build-audioplay`.
+- [x] Report output paths, production version, and selected audio source.
+- [x] Add tests for strict missing-audio failures and successful build wrappers with mocked builders.
 
 ## Phase 9: Documentation And Migration
 
@@ -139,11 +139,11 @@ Make the new CLI the documented default.
 
 Checklist:
 
-- [ ] Update [../quince_production_guide.md](../quince_production_guide.md) to lead with `quince` commands.
-- [ ] Keep expert `./main` commands in an appendix or troubleshooting section.
-- [ ] Add examples for managing multiple productions from workspace root and from inside `plays/<play_id>/`.
-- [ ] Add a short migration note: "`./main` remains supported; `quince` is the producer workflow CLI."
-- [ ] Update `planning/README.md`.
+- [x] Update [../quince_production_guide.md](../quince_production_guide.md) to lead with `quince` commands.
+- [x] Keep expert `./main` commands in an appendix or troubleshooting section.
+- [x] Add examples for managing multiple productions from workspace root and from inside `plays/<play_id>/`.
+- [x] Add a short migration note: "`./main` remains supported; `quince` is the producer workflow CLI."
+- [x] Update `planning/README.md`.
 
 ## Acceptance Criteria
 

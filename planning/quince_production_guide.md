@@ -9,6 +9,8 @@ Quince is the overall production suite. In the current workflow:
 - **LineRecorder** is the actor-facing recording tool for Recording Requests.
 - **Cuemaster** is the actor-facing rehearsal app for Playbooks.
 
+The producer-facing command is `quince`. It is current-directory aware, so from inside a single-production workspace or `plays/<play_id>/` you can usually omit `--play`. The older `./main` Stager CLI remains supported as the expert interface for low-level commands and troubleshooting.
+
 This document is operational. File contracts live in the shared specs:
 
 - Recording Request and recording package contract: [specs/recording_package_manifest.md](specs/recording_package_manifest.md)
@@ -58,6 +60,22 @@ The typical production loop is:
 13. Build an audioplay for review or release.
 14. Repeat the loop when script text, recordings, cleanup, or voice choices change.
 
+At any point, ask Quince what it thinks the next producer action is:
+
+```sh
+quince status --play <play_id>
+quince next --play <play_id>
+```
+
+For a workspace with multiple productions:
+
+```sh
+quince list
+quince use <play_id>
+```
+
+After `quince use <play_id>`, commands run from the workspace root use that production unless `--play` overrides it.
+
 ## 1. Create The Initial Production
 
 Start with a play directory:
@@ -87,7 +105,7 @@ Use `production.md` as the showrunner-edited manuscript once the production has 
 When `production.md` is ready to become the baseline for recording or rehearsal, publish it:
 
 ```sh
-./main publish-production --play <play_id> --change-summary "Initial published manuscript."
+quince publish --play <play_id> --change-summary "Initial published manuscript."
 ```
 
 Publishing:
@@ -106,8 +124,8 @@ Initial published manuscript.
 For later revisions:
 
 ```sh
-./main production-diff --play <play_id>
-./main publish-production --play <play_id> --change-summary "Cut two MEGAERA lines and revised Act II entrance."
+quince changes --play <play_id>
+quince publish --play <play_id> --change-summary "Cut two MEGAERA lines and revised Act II entrance."
 ```
 
 If Stager reports that the working production is based on an older published version, stop and resolve the lineage issue before publishing. Two producers editing from the same parent version can create a fork; the structured production version exists to make that visible.
@@ -168,19 +186,20 @@ Common cases:
 If a role can be recorded by more than one actor, use clear actor names consistently in `voice_profiles.yaml` and command options. For example:
 
 ```sh
-./main voice-render --play <play_id> --role MEGAERA --actor phil
-./main playbook --play <play_id> --voice-profiles --voice-actor phil
+quince prepare-audio --play <play_id> --run --role MEGAERA --voice-actor phil
+quince build-playbook --play <play_id> --voice-profiles --voice-actor phil
 ```
 
 Check cast and recording readiness at any point:
 
 ```sh
-./main production-status --play <play_id>
+quince cast show --play <play_id>
+quince status --play <play_id>
 ```
 
 For `recording: whole-role` roles, `production-status` reports two different gaps:
 
-- missing whole-role source recordings, which means `./main segments` has nothing to split yet;
+- missing whole-role source recordings, which means `quince split-recordings` has nothing to split yet;
 - missing segment recordings, which means the canonical segment audio needed by downstream builds is not complete yet.
 
 ## 5. Send Recording Requests
@@ -188,25 +207,26 @@ For `recording: whole-role` roles, `production-status` reports two different gap
 Create a Recording Request for each role that needs actor audio:
 
 ```sh
-./main recording-request --play <play_id> --role <ROLE>
+quince send-requests --play <play_id> --role <ROLE>
 ```
 
-For a selected re-recording request:
+For requests scoped to missing or changed lines:
 
 ```sh
-./main recording-request --play <play_id> --role <ROLE> --item <ITEM_ID> --reason director_request
+quince send-requests --play <play_id> --missing-only
+quince send-requests --play <play_id> --changed-only
 ```
 
-Repeat `--item` for multiple targeted items:
+For a single actor:
 
 ```sh
-./main recording-request --play <play_id> --role <ROLE> --item <ID_1> --item <ID_2> --reason script_changed
+quince send-requests --play <play_id> --actor <actor_id>
 ```
 
 Add actor-facing notes when useful:
 
 ```sh
-./main recording-request --play <play_id> --role <ROLE> --notes "Please keep the tempo brisk and leave a beat before the final phrase."
+quince send-requests --play <play_id> --role <ROLE> --notes "Please keep the tempo brisk and leave a beat before the final phrase."
 ```
 
 Send the generated zip to the actor. The actor imports it into LineRecorder, records requested lines, accepts usable takes, records room tone when the room changes, and exports a recording package.
@@ -218,7 +238,7 @@ Recording Requests are work orders, not rehearsal packages. They include text an
 When an actor returns a LineRecorder recording package, import it:
 
 ```sh
-./main recording-import --play <play_id> path/to/<ROLE>-recordings.zip
+quince receive-recordings --play <play_id> path/to/<ROLE>-recordings.zip
 ```
 
 Stager imports accepted segment WAV files into the play's segment area and writes an import transaction manifest. Keep the transaction path from the command output.
@@ -260,14 +280,13 @@ Fix missing, stale, or incorrect recordings before building a final Playbook. Pl
 If recordings are still managed from full-role audio files or Audacity exports, split them into canonical segment files:
 
 ```sh
-./main segments --play <play_id>
+quince split-recordings --play <play_id>
 ```
 
-Use role and part filters when you only need to refresh one area:
+Use a role filter when you only need to refresh one role:
 
 ```sh
-./main segments --play <play_id> --role <ROLE>
-./main segments --play <play_id> --part <PART_ID>
+quince split-recordings --play <play_id> --role <ROLE>
 ```
 
 LineRecorder packages already contain segment-aware recordings, so the import flow is usually the cleaner path for actor-recorded lines. After a LineRecorder import or a whole-role split, the downstream path is the same: Stager reads canonical segment audio from `build/<play_id>/audio/segments/<ROLE>/<segment_id>.wav`. Cleanup, voice rendering, Playbook generation, cue generation, verification, and audioplay builds should not care whether a segment came from LineRecorder or from splitting a full-role source.
@@ -288,28 +307,22 @@ Use LineRecorder when:
 
 Audio cleanup is optional and non-destructive. Use it for recording-quality repair: denoise, declick, de-ess, light gating, boundary review, and loudness normalization. Do not use cleanup for character voices; that is the voice-profile layer.
 
-Check FFmpeg support:
+Plan audio preparation without writing cleaned or rendered audio:
 
 ```sh
-./main audio-cleanup doctor --play <play_id>
+quince prepare-audio --play <play_id> --dry-run
 ```
 
-Plan the cleanup pass:
+Run the non-destructive preparation steps:
 
 ```sh
-./main audio-cleanup plan --play <play_id>
+quince prepare-audio --play <play_id> --run
 ```
 
-Analyze current segment audio:
+Use cleanup analysis recommendations when desired:
 
 ```sh
-./main audio-cleanup analyze --play <play_id>
-```
-
-Render cleaned audio:
-
-```sh
-./main audio-cleanup render --play <play_id>
+quince prepare-audio --play <play_id> --run --use-analysis
 ```
 
 Cleanup output is generated under:
@@ -323,10 +336,10 @@ It does not overwrite canonical segment audio. By default, Playbook and audiopla
 Force a source when reviewing:
 
 ```sh
-./main playbook --play <play_id> --audio-source canonical
-./main playbook --play <play_id> --audio-source cleaned
-./main audioplay --play <play_id> --audio-source canonical
-./main audioplay --play <play_id> --audio-source cleaned
+quince build-playbook --play <play_id> --audio-source canonical
+quince build-playbook --play <play_id> --audio-source cleaned
+quince build-audioplay --play <play_id> --audio-source canonical
+quince build-audioplay --play <play_id> --audio-source cleaned
 ```
 
 Promote cleaned audio only after listening and review:
@@ -445,9 +458,9 @@ Voice-profile tuning is iterative:
 Useful render commands:
 
 ```sh
-./main voice-render --play <play_id> --role <ROLE> --actor <actor_name>
-./main audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
-./main playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince prepare-audio --play <play_id> --run --role <ROLE> --voice-actor <actor_name>
+quince build-audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince build-playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
 ```
 
 Guidelines:
@@ -475,26 +488,26 @@ Cuemaster cue-selection behavior is described in [cuemaster/cue_generation.md](c
 Build a Cuemaster Playbook:
 
 ```sh
-./main playbook --play <play_id>
+quince build-playbook --play <play_id>
 ```
 
 Build a smaller MP3 Playbook:
 
 ```sh
-./main playbook --play <play_id> --audio-format mp3
+quince build-playbook --play <play_id> --audio-format mp3
 ```
 
 Build using reviewed cleaned audio when available:
 
 ```sh
-./main playbook --play <play_id> --audio-source auto
+quince build-playbook --play <play_id> --audio-source auto
 ```
 
 Build using voice-profile rendered audio:
 
 ```sh
-./main playbook --play <play_id> --voice-profiles
-./main playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince build-playbook --play <play_id> --voice-profiles
+quince build-playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
 ```
 
 Stager writes:
@@ -511,20 +524,20 @@ Send the `.playbook.zip` to actors for Cuemaster rehearsal.
 Build an assembled audioplay for review or release:
 
 ```sh
-./main audioplay --play <play_id>
+quince build-audioplay --play <play_id>
 ```
 
 Review cleaned audio:
 
 ```sh
-./main audioplay --play <play_id> --audio-source cleaned
+quince build-audioplay --play <play_id> --audio-source cleaned
 ```
 
 Review rendered voice profiles:
 
 ```sh
-./main audioplay --play <play_id> --voice-profiles
-./main audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince build-audioplay --play <play_id> --voice-profiles
+quince build-audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
 ```
 
 The audioplay is a sibling artifact of the Playbook, not the source for Playbook generation. Playbooks use the shared play model and segment assets directly.
@@ -543,27 +556,27 @@ When the manuscript changes:
 Recommended command sequence:
 
 ```sh
-./main production-diff --play <play_id>
-./main publish-production --play <play_id> --change-summary "Describe the change."
+quince changes --play <play_id>
+quince publish --play <play_id> --change-summary "Describe the change."
 ./main text --play <play_id>
 ```
 
 If you want Stager to generate Recording Requests for changed and added role lines during publication:
 
 ```sh
-./main publish-production --play <play_id> --recording-requests --change-summary "Describe the change."
+quince publish --play <play_id> --recording-requests --change-summary "Describe the change."
 ```
 
 For manual targeted requests:
 
 ```sh
-./main recording-request --play <play_id> --role <ROLE> --item <ITEM_ID> --reason script_changed
+quince send-requests --play <play_id> --role <ROLE> --changed-only
 ```
 
 If publishing recommends production-id updates because spoken text changed under reused ids, review the recommendations. When they make sense:
 
 ```sh
-./main publish-production --play <play_id> --apply-id-updates --change-summary "Describe the change."
+quince publish --play <play_id> --apply-id-updates --change-summary "Describe the change."
 ```
 
 Avoid `--allow-id-reuse` unless you are deliberately keeping changed text under the same ids and understand the downstream recording implications.
@@ -619,7 +632,7 @@ Do not use a Playbook as a recording request. Do not use a Recording Request as 
 
 If Recording Requests do not match the current script:
 
-- run `./main production-diff --play <play_id>`,
+- run `quince changes --play <play_id>`,
 - publish the current manuscript if needed,
 - rebuild the Recording Request.
 
@@ -654,28 +667,45 @@ If a progress indicator looks incomplete but the command succeeded:
 - rerun after the progress reporter fix is present,
 - check the command output and generated artifact path before rerunning expensive audio work.
 
+## Expert Stager CLI Appendix
+
+`./main` remains supported. Use it when you need a lower-level command that the producer CLI does not wrap yet, or when debugging a specific Stager build step.
+
+Common producer command equivalents:
+
+| Producer command | Expert command |
+| --- | --- |
+| `quince status --play <play_id>` | `./main production-status --play <play_id>` |
+| `quince changes --play <play_id>` | `./main production-diff --play <play_id>` |
+| `quince publish --play <play_id>` | `./main publish-production --play <play_id>` |
+| `quince send-requests --play <play_id> --role <ROLE>` | `./main recording-request --play <play_id> --role <ROLE>` |
+| `quince receive-recordings --play <play_id> package.zip` | `./main recording-import --play <play_id> package.zip` |
+| `quince split-recordings --play <play_id> --role <ROLE>` | `./main segments --play <play_id> --role <ROLE>` |
+| `quince prepare-audio --play <play_id> --run` | `./main audio-cleanup render --play <play_id>` plus optional voice rendering |
+| `quince build-playbook --play <play_id>` | `./main playbook --play <play_id>` |
+| `quince build-audioplay --play <play_id>` | `./main audioplay --play <play_id>` |
+
 ## Recommended First Production Pass
 
 For a first complete pass on a new play:
 
 ```sh
 ./main scriptwright lock --play <play_id>
-./main publish-production --play <play_id> --change-summary "Initial published manuscript."
+quince publish --play <play_id> --change-summary "Initial published manuscript."
 ./main text --play <play_id>
-./main recording-request --play <play_id> --role <ROLE>
+quince send-requests --play <play_id> --role <ROLE>
 ```
 
 After actors return recordings:
 
 ```sh
-./main recording-import --play <play_id> path/to/<ROLE>-recordings.zip
+quince receive-recordings --play <play_id> path/to/<ROLE>-recordings.zip
 ./main verify --play <play_id>
 ./main check-recording --play <play_id>
-./main audio-cleanup doctor --play <play_id>
-./main audio-cleanup analyze --play <play_id>
-./main audio-cleanup render --play <play_id>
-./main playbook --play <play_id> --audio-format mp3
-./main audioplay --play <play_id>
+quince prepare-audio --play <play_id> --dry-run
+quince prepare-audio --play <play_id> --run --use-analysis
+quince build-playbook --play <play_id> --audio-format mp3
+quince build-audioplay --play <play_id>
 ```
 
 When the production wants creative role voices:
@@ -683,7 +713,7 @@ When the production wants creative role voices:
 ```sh
 ./main voice-profiles doctor --play <play_id>
 ./main voice-analyze --play <play_id> --actor <actor_name> --role <ROLE>
-./main voice-render --play <play_id> --role <ROLE> --actor <actor_name>
-./main audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
-./main playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince prepare-audio --play <play_id> --run --role <ROLE> --voice-actor <actor_name>
+quince build-audioplay --play <play_id> --voice-profiles --voice-actor <actor_name>
+quince build-playbook --play <play_id> --voice-profiles --voice-actor <actor_name>
 ```

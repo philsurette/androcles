@@ -8,7 +8,7 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 
 ## Production Workflow
 
-- [quince_production_guide.md](quince_production_guide.md): Showrunner-facing end-to-end production guide from initial `production.md` through Recording Requests, returned recordings, cleanup, voice profiles, Playbooks, audioplays, and revisions.
+- [quince_production_guide.md](quince_production_guide.md): Showrunner-facing end-to-end production guide from initial `production.md` through Recording Requests, returned recordings, cleanup, voice profiles, Playbooks, audioplays, and revisions. This is the default user-facing workflow and leads with the producer `quince` CLI; `./main` remains the expert Stager CLI.
 - [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
 - [quince_cli_design.md](quince_cli_design.md): Producer-first CLI design for Quince, including multi-production workspace and current-directory behavior.
 - [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.

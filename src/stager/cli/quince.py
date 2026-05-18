@@ -9,6 +9,7 @@ import typer
 from ruamel.yaml import YAML
 
 from stager.production.cast_config_service import CastConfigService
+from stager.production.audio_output_workflow_service import AudioOutputWorkflowService
 from stager.production.production_recommendation import ProductionRecommendationService
 from stager.production.production_renderers import (
     render_cast_config,
@@ -337,6 +338,136 @@ def split_recordings(
         typer.echo("Skipped LineRecorder roles: " + ", ".join(result.skipped_linerecorder_roles))
 
 
+@app.command("prepare-audio")
+def prepare_audio(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit preparation to one role."),
+    profile: str | None = typer.Option(None, "--profile", help="Override the resolved cleanup profile."),
+    use_analysis: bool = typer.Option(False, "--use-analysis", help="Use cleanup analysis recommendations."),
+    run: bool = typer.Option(False, "--run", help="Run safe preparation/rendering steps."),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Plan without rendering audio."),
+    force: bool = typer.Option(False, "--force", help="Re-render even when caches are current."),
+    audio_source: str = typer.Option("auto", "--audio-source", help="Voice source audio: auto, canonical, or cleaned."),
+    voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering."),
+) -> None:
+    """Plan or render non-destructive audio preparation."""
+    try:
+        context, service = _audio_output_service(play=play, workspace=workspace, production_source="working")
+        result = service.prepare_audio(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            run=run and not dry_run,
+            force=force,
+            audio_source=audio_source,
+            voice_actor=voice_actor,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    mode = "Dry run" if result.dry_run else "Prepared"
+    typer.echo(f"{mode} audio preparation.")
+    typer.echo(f"Missing canonical segment recordings: {result.status.missing_recording_count}")
+    typer.echo(f"Cleanup profiles: {len(result.cleanup_plan.entries)} planned entries")
+    typer.echo(f"Voice profiles: {result.voice_profile_count} configured")
+    if result.cleanup_analysis is not None:
+        typer.echo(f"Cleanup analysis: {result.cleanup_analysis.entry_count} segments")
+        typer.echo(_relative(context, result.cleanup_analysis.markdown_path))
+    if result.prepared_batches:
+        typer.echo(f"Prepared cleanup batches: {len(result.prepared_batches)}")
+    if result.rendered_batches:
+        rendered_segments = sum(batch.rendered_count for batch in result.rendered_batches)
+        typer.echo(f"Rendered cleaned segments: {rendered_segments}")
+    if result.voice_results:
+        rendered_voice = sum(1 for item in result.voice_results if item.rendered)
+        typer.echo(f"Rendered voice-profile segments: {rendered_voice}")
+
+
+@app.command("build-playbook")
+def build_playbook(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    production_source: ProductionSourceOption = "auto",
+    allow_working_source: bool = typer.Option(
+        False,
+        "--allow-working-source",
+        help="Allow building from an unpublished working production.md.",
+    ),
+    audio_format: str = typer.Option("wav", "--audio-format", help="Playbook audio format: wav or mp3."),
+    audio_source: str = typer.Option("auto", "--audio-source", help="Segment audio source: auto, canonical, or cleaned."),
+    voice_profiles: bool = typer.Option(False, "--voice-profiles/--no-voice-profiles", help="Use rendered voice-profile audio."),
+    voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering."),
+    build_type: str | None = typer.Option(None, "--build-type", help="Override configured build type."),
+) -> None:
+    """Build a Cuemaster Playbook package."""
+    try:
+        context, service, source_kind = _audio_output_service_for_build(
+            play=play,
+            workspace=workspace,
+            production_source=production_source,
+            allow_working_source=allow_working_source,
+        )
+        result = service.build_playbook(
+            build_type=build_type,
+            audio_format=audio_format,
+            audio_source=audio_source,
+            voice_profiles=voice_profiles,
+            voice_actor=voice_actor,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    typer.echo(f"Built Playbook from {source_kind} source.")
+    typer.echo(f"Audio source: {result.audio_source}")
+    for output_path in result.paths:
+        typer.echo(_relative(context, output_path))
+
+
+@app.command("build-audioplay")
+def build_audioplay(
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    production_source: ProductionSourceOption = "auto",
+    allow_working_source: bool = typer.Option(
+        False,
+        "--allow-working-source",
+        help="Allow building from an unpublished working production.md.",
+    ),
+    part: str | None = typer.Option(None, "--part", help="Part number to assemble."),
+    audio_format: str = typer.Option("mp4", "--audio-format", help="Output format: mp4, mp3, or wav."),
+    audio_source: str = typer.Option("auto", "--audio-source", help="Segment audio source: auto, canonical, or cleaned."),
+    voice_profiles: bool = typer.Option(False, "--voice-profiles/--no-voice-profiles", help="Use rendered voice-profile audio."),
+    voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering."),
+    normalize_output: bool = typer.Option(True, "--normalize/--no-normalize", help="Normalize generated audioplay output."),
+    prepare: bool = typer.Option(True, "--prepare/--no-prepare", help="Prepare text artifacts and segments before building."),
+) -> None:
+    """Build assembled audioplay output."""
+    try:
+        context, service, source_kind = _audio_output_service_for_build(
+            play=play,
+            workspace=workspace,
+            production_source=production_source,
+            allow_working_source=allow_working_source,
+        )
+        result = service.build_audioplay(
+            part=part,
+            audio_format=audio_format,
+            audio_source=audio_source,
+            voice_profiles=voice_profiles,
+            voice_actor=voice_actor,
+            normalize_output=normalize_output,
+            prepare=prepare,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    typer.echo(f"Built audioplay from {source_kind} source.")
+    typer.echo(f"Audio source: {result.audio_source}")
+    for output_path in result.paths:
+        typer.echo(_relative(context, output_path))
+
+
 @cast_app.command("show")
 def cast_show(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
     """Show cast assignments for the selected production."""
@@ -430,6 +561,45 @@ def _recording_service(*, play: str | None, workspace: Path | None) -> tuple[Qui
     context = _resolve_context(play=play, workspace=workspace, production_source="working")
     loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
     return context, RecordingWorkflowService(paths_config=context.path_config, play=loaded_play)
+
+
+def _audio_output_service(
+    *,
+    play: str | None,
+    workspace: Path | None,
+    production_source: str,
+) -> tuple[QuinceContext, AudioOutputWorkflowService]:
+    context = _resolve_context(play=play, workspace=workspace, production_source=production_source)
+    loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
+    return context, AudioOutputWorkflowService(paths_config=context.path_config, play=loaded_play)
+
+
+def _audio_output_service_for_build(
+    *,
+    play: str | None,
+    workspace: Path | None,
+    production_source: str,
+    allow_working_source: bool,
+) -> tuple[QuinceContext, AudioOutputWorkflowService, str]:
+    context = _resolve_context(play=play, workspace=workspace, production_source=production_source)
+    resolver = ProductionSourceResolver(context.path_config)
+    resolved_source = resolver.resolve(production_source)
+    if resolved_source.kind == "working" and not allow_working_source:
+        raise RuntimeError("Building from working production.md requires --allow-working-source.")
+    context.path_config.production_markdown = resolved_source.path
+    loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
+    return (
+        context,
+        AudioOutputWorkflowService(paths_config=context.path_config, play=loaded_play),
+        resolved_source.kind,
+    )
+
+
+def _relative(context: QuinceContext, path: Path) -> str:
+    try:
+        return path.relative_to(context.workspace_root).as_posix()
+    except ValueError:
+        return path.as_posix()
 
 
 def main_cli() -> None:
