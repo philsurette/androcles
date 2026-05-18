@@ -127,9 +127,13 @@ class AudioCleanupRenderer:
             )
             output_path = batch_dir / segment.role / f"{segment.segment_id}.wav"
             self._write_wav(output_path, cleaned_samples[detection.cleaned_start_sample : detection.cleaned_end_sample])
+            validation = self._validate_output(output_path)
             rendered_count += 1
             boundaries.append(
-                CleanupBatchBoundaryEntry.from_detection(segment=segment, detection=detection).with_output_path(output_path)
+                CleanupBatchBoundaryEntry.from_detection(segment=segment, detection=detection).with_output(
+                    output_path=output_path,
+                    validation=validation,
+                )
             )
         manifest = prepared.manifest.with_cleaned_boundaries(tuple(boundaries))
         manifest = manifest.with_cache_key(prepared.manifest.cache_key or "")
@@ -219,3 +223,23 @@ class AudioCleanupRenderer:
             detail = (result.stderr or "").strip()
             suffix = f": {detail}" if detail else ""
             raise RuntimeError(f"Failed to render audio cleanup batch with ffmpeg{suffix}")
+
+    def _validate_output(self, path: Path) -> dict:
+        if not path.exists():
+            raise RuntimeError(f"Audio cleanup output missing: {paths.display_path(path)}")
+        samples = self._read_samples(path)
+        if not samples:
+            raise RuntimeError(f"Audio cleanup output is empty: {paths.display_path(path)}")
+        peak = max(abs(sample) for sample in samples)
+        rms = (sum(sample * sample for sample in samples) / len(samples)) ** 0.5
+        clipped_ratio = sum(1 for sample in samples if abs(sample) >= 0.999) / len(samples)
+        if peak <= 0.0001:
+            raise RuntimeError(f"Audio cleanup output is silent: {paths.display_path(path)}")
+        if clipped_ratio >= 0.01:
+            raise RuntimeError(f"Audio cleanup output appears clipped: {paths.display_path(path)}")
+        return {
+            "duration_samples": len(samples),
+            "peak": round(peak, 6),
+            "rms": round(rms, 6),
+            "clipped_ratio": round(clipped_ratio, 6),
+        }

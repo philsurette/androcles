@@ -19,6 +19,7 @@ class AudioCleanupPlanEntry:
     profile: str | None
     filters: tuple[str, ...]
     missing_optional_filters: tuple[str, ...]
+    duration_preserving: bool = True
 
 
 @dataclass(frozen=True)
@@ -105,6 +106,7 @@ class AudioCleanupService:
                 profile_name = None
                 filters: tuple[str, ...] = ()
                 missing: tuple[str, ...] = ()
+                duration_preserving = True
             elif profile is not None:
                 selected_profile = config.profiles.get(profile)
                 if selected_profile is None:
@@ -114,17 +116,20 @@ class AudioCleanupService:
                 profile_name = selected_profile.name
                 filters = compiled.filters
                 missing = compiled.missing_optional_filters
+                duration_preserving = compiled.duration_preserving
             elif resolution.uses_analysis:
                 analysis_store.require_role(role_name)
                 resolution_name = "analysis"
                 profile_name = None
                 filters = ()
                 missing = ()
+                duration_preserving = True
             elif resolution.disabled:
                 resolution_name = "none"
                 profile_name = None
                 filters = ()
                 missing = ()
+                duration_preserving = True
             else:
                 if resolution.profile is None:
                     raise RuntimeError(f"Role {role_name} did not resolve to a cleanup profile")
@@ -133,6 +138,7 @@ class AudioCleanupService:
                 profile_name = resolution.profile.name
                 filters = compiled.filters
                 missing = compiled.missing_optional_filters
+                duration_preserving = compiled.duration_preserving
             entries.append(
                 AudioCleanupPlanEntry(
                     role=role_name,
@@ -140,6 +146,7 @@ class AudioCleanupService:
                     profile=profile_name,
                     filters=filters,
                     missing_optional_filters=missing,
+                    duration_preserving=duration_preserving,
                 )
             )
         return AudioCleanupPlan(
@@ -177,6 +184,8 @@ class AudioCleanupService:
             segment_paths = self._segment_paths(entry.role)
             if not segment_paths:
                 continue
+            if not entry.duration_preserving:
+                raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
             batch_id = self._batch_id(entry)
             prepared = renderer.prepare_batch(
                 batch_id=batch_id,
@@ -213,6 +222,8 @@ class AudioCleanupService:
             segment_paths = self._segment_paths(entry.role)
             if not segment_paths:
                 continue
+            if not entry.duration_preserving:
+                raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
             batch_id = self._batch_id(entry)
             rendered = renderer.render_batch(
                 batch_id=batch_id,

@@ -27,6 +27,13 @@ def test_cleanup_filter_graph_compiles_conservative_filters() -> None:
         "agate=threshold=0.02:ratio=1.5:attack=20:release=250",
     )
     assert compiled.missing_optional_filters == ()
+    assert compiled.duration_preserving is True
+    assert compiled.filter_safety == {
+        "adeclick": True,
+        "deesser": True,
+        "afftdn": True,
+        "agate": True,
+    }
 
 
 def test_cleanup_filter_graph_disables_missing_optional_filters() -> None:

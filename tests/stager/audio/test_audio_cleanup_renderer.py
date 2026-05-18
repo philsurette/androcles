@@ -78,6 +78,7 @@ def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path
     assert runner.commands[0][0] == "ffmpeg"
     assert output_path.exists()
     assert data["cleaned_boundaries"][0]["output_path"].endswith("MEGAERA/0_1_1.wav")
+    assert data["cleaned_boundaries"][0]["validation"]["peak"] > 0
     assert result.rendered_count == 1
 
 
@@ -100,6 +101,48 @@ def test_cleanup_renderer_rejects_duration_changing_filter_output(tmp_path: Path
         assert "duration changed unexpectedly" in str(exc)
     else:
         raise AssertionError("Expected duration-changing output to fail")
+
+
+def test_cleanup_renderer_rejects_silent_cleaned_segment(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+
+    renderer = AudioCleanupRenderer(paths_config=cfg, command_runner=SilentRunner())
+
+    try:
+        renderer.render_batch(
+            batch_id="MEGAERA-gentle_voice_cleanup",
+            segment_paths=[first],
+            padding_seconds=3.0,
+            boundary_warning_ms=500,
+            resolved_filters=("adeclick",),
+        )
+    except RuntimeError as exc:
+        assert "output is silent" in str(exc)
+    else:
+        raise AssertionError("Expected silent output to fail")
+
+
+def test_cleanup_renderer_rejects_clipped_cleaned_segment(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+
+    renderer = AudioCleanupRenderer(paths_config=cfg, command_runner=ClippedRunner())
+
+    try:
+        renderer.render_batch(
+            batch_id="MEGAERA-gentle_voice_cleanup",
+            segment_paths=[first],
+            padding_seconds=3.0,
+            boundary_warning_ms=500,
+            resolved_filters=("adeclick",),
+        )
+    except RuntimeError as exc:
+        assert "output appears clipped" in str(exc)
+    else:
+        raise AssertionError("Expected clipped output to fail")
 
 
 def _config(tmp_path: Path) -> paths.PathConfig:
@@ -136,4 +179,17 @@ class CopyingRunner:
 class ShorteningRunner:
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
         _write_wav(Path(command[-1]), samples=[0])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class SilentRunner:
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        _write_wav(Path(command[-1]), samples=[0, 0, 0, 0])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class ClippedRunner:
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        shutil.copy2(command[3], command[-1])
+        _write_wav(Path(command[-1]), samples=[32767, 32767, 32767, 32767])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")

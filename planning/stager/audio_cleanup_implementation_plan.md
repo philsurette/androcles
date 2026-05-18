@@ -124,9 +124,9 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Render each batch with FFmpeg.
 - [x] Preserve source files unchanged.
 - [ ] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
-- [ ] Forbid global silence removal during batch cleanup.
-- [ ] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
-- [ ] Use batch rendering only for duration-preserving filter chains.
+- [x] Forbid global silence removal during batch cleanup.
+- [x] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
+- [x] Use batch rendering only for duration-preserving filter chains.
 - [x] After cleanup, detect cleaned speech start/end inside each segment's padded window.
 - [x] Use original center sample as the boundary detection anchor.
 - [x] Write cleaned segment WAV output from detected boundaries.
@@ -138,7 +138,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Store original and cleaned ranges in the batch manifest.
 - [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [ ] Run loudnorm as the final step.
-- [ ] Validate output exists, is non-silent, and does not clip.
+- [x] Validate output exists, is non-silent, and does not clip.
 - [x] Add tests with fake FFmpeg runner.
 - [x] Add tests for sample-accurate batch manifest construction.
 - [x] Add tests for post-cleanup boundary detection.
