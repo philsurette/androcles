@@ -70,7 +70,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Compile `denoise_light` to conservative `afftdn`.
 - [x] Support `afwtdn` and `anlmdn` as explicit alternates.
 - [x] Compile optional gating to conservative `agate`.
-- [ ] Integrate existing two-pass `stager.loudnorm`.
+- [x] Integrate existing two-pass `stager.loudnorm`.
 - [x] Add tests for filter graph construction.
 - [x] Add tests for missing filter diagnostics.
 
@@ -108,7 +108,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
   build/<play_id>/audio/cleaned/<batch_id>/<ROLE>/<segment_id>.wav
   ```
 
-- [x] Compute batch cache keys from grouped source audio fingerprints, floor-noise fingerprint, resolved cleanup chain, and boundary settings.
+- [x] Compute batch cache keys from grouped source audio fingerprints, floor-noise fingerprint, resolved cleanup chain, loudnorm profile, and boundary settings.
 - [x] Include source segment hashes and original sample ranges in cache inputs.
 - [x] Write cleanup batch manifest JSON.
 - [x] Skip unchanged manifest preparation.
@@ -139,7 +139,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Treat empty detected ranges as severe review items.
 - [x] Store original and cleaned ranges in the batch manifest.
 - [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
-- [ ] Run loudnorm as the final step.
+- [x] Run loudnorm as the final step after splitting cleaned batches back into segments.
 - [x] Validate output exists, is non-silent, and does not clip.
 - [x] Add tests with fake FFmpeg runner.
 - [x] Add tests for sample-accurate batch manifest construction.

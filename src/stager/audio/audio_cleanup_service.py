@@ -19,6 +19,7 @@ class AudioCleanupPlanEntry:
     resolution: str
     profile: str | None
     filters: tuple[str, ...]
+    loudnorm_profile: str
     missing_optional_filters: tuple[str, ...]
     duration_preserving: bool = True
 
@@ -106,6 +107,7 @@ class AudioCleanupService:
                 resolution_name = "analysis"
                 profile_name = None
                 filters: tuple[str, ...] = ()
+                loudnorm_profile = "none"
                 missing: tuple[str, ...] = ()
                 duration_preserving = True
             elif profile is not None:
@@ -116,6 +118,7 @@ class AudioCleanupService:
                 resolution_name = "profile"
                 profile_name = selected_profile.name
                 filters = compiled.filters
+                loudnorm_profile = selected_profile.loudnorm
                 missing = compiled.missing_optional_filters
                 duration_preserving = compiled.duration_preserving
             elif resolution.uses_analysis:
@@ -123,12 +126,14 @@ class AudioCleanupService:
                 resolution_name = "analysis"
                 profile_name = None
                 filters = ()
+                loudnorm_profile = "none"
                 missing = ()
                 duration_preserving = True
             elif resolution.disabled:
                 resolution_name = "none"
                 profile_name = None
                 filters = ()
+                loudnorm_profile = "none"
                 missing = ()
                 duration_preserving = True
             else:
@@ -138,6 +143,7 @@ class AudioCleanupService:
                 resolution_name = "profile"
                 profile_name = resolution.profile.name
                 filters = compiled.filters
+                loudnorm_profile = resolution.profile.loudnorm
                 missing = compiled.missing_optional_filters
                 duration_preserving = compiled.duration_preserving
             entries.append(
@@ -146,6 +152,7 @@ class AudioCleanupService:
                     resolution=resolution_name,
                     profile=profile_name,
                     filters=filters,
+                    loudnorm_profile=loudnorm_profile,
                     missing_optional_filters=missing,
                     duration_preserving=duration_preserving,
                 )
@@ -192,6 +199,7 @@ class AudioCleanupService:
                     padding_seconds=plan.batch_padding_seconds,
                     boundary_warning_ms=plan.boundary_warning_ms,
                     resolved_filters=entry.filters,
+                    loudnorm_profile=entry.loudnorm_profile,
                     floor_noise_path=group.floor_noise_path,
                 )
                 warning_count = sum(1 for boundary in prepared.manifest.cleaned_boundaries if boundary.warnings)
@@ -229,6 +237,7 @@ class AudioCleanupService:
                     padding_seconds=plan.batch_padding_seconds,
                     boundary_warning_ms=plan.boundary_warning_ms,
                     resolved_filters=entry.filters,
+                    loudnorm_profile=entry.loudnorm_profile,
                     floor_noise_path=group.floor_noise_path,
                 )
                 results.append(

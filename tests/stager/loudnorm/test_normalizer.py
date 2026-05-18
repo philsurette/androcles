@@ -79,6 +79,14 @@ def test_normalizer_preserves_mp3_bitrate_and_metadata() -> None:
     assert runner.commands[1][-5:] == ["-b:a", "128k", "-map_metadata", "0", "output.mp3"]
 
 
+def test_normalizer_accepts_output_sample_rate_override() -> None:
+    runner = FakeRunner(_completed(INPUT_SUMMARY), _completed(OUTPUT_SUMMARY))
+
+    Normalizer(command_runner=runner, output_sample_rate_hz=48_000).normalize("input.wav", "output.wav")
+
+    assert runner.commands[1][runner.commands[1].index("-ar") + 1] == "48000"
+
+
 def test_normalizer_raises_when_measure_command_fails() -> None:
     runner = FakeRunner(_completed("ffmpeg exploded", returncode=1))
 

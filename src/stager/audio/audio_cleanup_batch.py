@@ -239,6 +239,7 @@ class AudioCleanupBatchCache:
         *,
         manifest: CleanupBatchManifest,
         resolved_filters: tuple[str, ...],
+        loudnorm_profile: str,
         boundary_warning_ms: int,
         floor_noise_hash: str | None = None,
     ) -> str:
@@ -247,6 +248,7 @@ class AudioCleanupBatchCache:
             "padding_seconds": manifest.padding_seconds,
             "boundary_warning_ms": boundary_warning_ms,
             "resolved_filters": list(resolved_filters),
+            "loudnorm_profile": loudnorm_profile,
             "floor_noise_hash": floor_noise_hash,
             "segments": [
                 {

@@ -169,6 +169,7 @@ Batch construction should use anchor-based boundaries:
 6. After cleanup, search inside each segment's padded window to detect the cleaned speech start/end.
 7. Use the original center sample as an anchor so detection does not grab neighboring audio.
 8. Split cleaned output using the detected boundaries.
+9. Apply loudness normalization as a final per-segment step after the cleaned batch has been split, so loudness does not affect boundary detection and each exported segment has its own measured normalization pass.
 
 The renderer should treat duration-preserving cleanup as the normal batch contract. Filters such as denoise, declick, de-ess, EQ, compression, limiting, and loudness normalization are expected to preserve timeline length. If a filter chain is not duration-preserving, it should not be batch-rendered unless it can emit reliable edit-decision metadata.
 
@@ -191,7 +192,7 @@ Generated batch manifests should be inspectable:
 build/<play_id>/audio/cleaned/<batch_id>/batch_manifest.json
 ```
 
-Each manifest entry should include both original and cleaned ranges so later review can explain exactly why a segment became shorter or longer.
+Each manifest entry should include both original and cleaned ranges so later review can explain exactly why a segment became shorter or longer. The render cache key should include source hashes, original ranges, floor-noise hash when present, resolved cleanup filters, selected loudnorm profile, padding, and boundary warning settings.
 
 ## Licensing
 

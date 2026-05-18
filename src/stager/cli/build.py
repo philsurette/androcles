@@ -1218,7 +1218,7 @@ def audio_cleanup_plan(
     for entry in plan.entries:
         if entry.resolution == "profile":
             filter_spec = ",".join(entry.filters) if entry.filters else "none"
-            typer.echo(f"{entry.role}: profile {entry.profile} filters={filter_spec}")
+            typer.echo(f"{entry.role}: profile {entry.profile} filters={filter_spec} loudnorm={entry.loudnorm_profile}")
             if entry.missing_optional_filters:
                 typer.echo(f"{entry.role}: missing optional filters {', '.join(entry.missing_optional_filters)}")
         else:

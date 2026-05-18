@@ -25,6 +25,7 @@ class CommandRunner(Protocol):
 class Normalizer:
     metrics: Metrics = field(default_factory=Metrics)
     command_runner: CommandRunner = subprocess.run
+    output_sample_rate_hz: int = 44100
     measures_parser: MeasurementsParser = field(init=False)
 
     def __post_init__(self):
@@ -76,7 +77,7 @@ class Normalizer:
             "-i", input_file,
             "-map_metadata",
             "0",
-            "-ar", "44100",
+            "-ar", str(self.output_sample_rate_hz),
             "-af", #audio format
             filter_spec,
         ]

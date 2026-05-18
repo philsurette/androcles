@@ -89,6 +89,32 @@ def test_cleanup_renderer_cache_key_includes_floor_noise(tmp_path: Path) -> None
     assert second_result.cache_hit is False
 
 
+def test_cleanup_renderer_cache_key_includes_loudnorm_profile(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    renderer = AudioCleanupRenderer(paths_config=cfg)
+
+    first_result = renderer.prepare_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+        loudnorm_profile="none",
+    )
+    second_result = renderer.prepare_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+        loudnorm_profile="librivox",
+    )
+
+    assert first_result.manifest.cache_key != second_result.manifest.cache_key
+
+
 def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
@@ -110,6 +136,34 @@ def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path
     assert data["cleaned_boundaries"][0]["output_path"].endswith("MEGAERA/0_1_1.wav")
     assert data["cleaned_boundaries"][0]["validation"]["peak"] > 0
     assert result.rendered_count == 1
+
+
+def test_cleanup_renderer_applies_loudnorm_after_splitting_segments(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    second = cfg.segments_dir / "MEGAERA" / "0_1_2.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    _write_wav(second, samples=[0, 1500, -1500, 0])
+    runner = CopyingRunner()
+    factory = RecordingNormalizerFactory()
+
+    result = AudioCleanupRenderer(
+        paths_config=cfg,
+        command_runner=runner,
+        normalizer_factory=factory,
+    ).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first, second],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+        loudnorm_profile="librivox",
+    )
+
+    assert result.rendered_count == 2
+    assert factory.calls == [("librivox", 48_000), ("librivox", 48_000)]
+    assert len(factory.normalizers[0].normalized) == 1
+    assert len(factory.normalizers[1].normalized) == 1
 
 
 def test_cleanup_renderer_rejects_duration_changing_filter_output(tmp_path: Path) -> None:
@@ -250,3 +304,26 @@ class ClippedRunner:
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
         _write_wav(Path(command[-1]), samples=[32767, 32767, 32767, 32767])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class RecordingNormalizerFactory:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, int]] = []
+        self.normalizers: list[RecordingNormalizer] = []
+
+    def __call__(self, profile_name: str, *, sample_rate_hz: int) -> "RecordingNormalizer":
+        self.calls.append((profile_name, sample_rate_hz))
+        normalizer = RecordingNormalizer()
+        self.normalizers.append(normalizer)
+        return normalizer
+
+
+class RecordingNormalizer:
+    def __init__(self) -> None:
+        self.normalized: list[tuple[str, str]] = []
+
+    def normalize(self, input_file: str, output_file: str | None = None):
+        if output_file is None:
+            raise RuntimeError("Expected explicit loudnorm output path")
+        self.normalized.append((input_file, output_file))
+        shutil.copy2(input_file, output_file)

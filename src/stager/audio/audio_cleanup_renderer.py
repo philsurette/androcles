@@ -14,6 +14,8 @@ from stager.audio.audio_cleanup_batch import (
     CleanupBatchManifest,
 )
 from stager.audio.audio_cleanup_boundaries import AudioCleanupBoundaryDetector
+from stager.loudnorm.metric import LoudnessProfile, Metrics
+from stager.loudnorm.normalizer import Normalizer
 from stager.shared import paths
 
 
@@ -26,6 +28,16 @@ class PreparedCleanupBatch:
 
 class CommandRunner(Protocol):
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        ...
+
+
+class SegmentNormalizer(Protocol):
+    def normalize(self, input_file: str, output_file: str | None = None):
+        ...
+
+
+class NormalizerFactory(Protocol):
+    def __call__(self, profile_name: str, *, sample_rate_hz: int) -> SegmentNormalizer:
         ...
 
 
@@ -42,6 +54,7 @@ class AudioCleanupRenderer:
     paths_config: paths.PathConfig
     sample_rate_hz: int = 48_000
     command_runner: CommandRunner = subprocess.run
+    normalizer_factory: NormalizerFactory | None = None
 
     def prepare_batch(
         self,
@@ -51,6 +64,7 @@ class AudioCleanupRenderer:
         padding_seconds: float,
         boundary_warning_ms: int,
         resolved_filters: tuple[str, ...],
+        loudnorm_profile: str = "none",
         floor_noise_path: Path | None = None,
     ) -> PreparedCleanupBatch:
         builder = AudioCleanupBatchBuilder(sample_rate_hz=self.sample_rate_hz)
@@ -78,6 +92,7 @@ class AudioCleanupRenderer:
         cache_key = cache.cache_key(
             manifest=manifest,
             resolved_filters=resolved_filters,
+            loudnorm_profile=loudnorm_profile,
             boundary_warning_ms=boundary_warning_ms,
             floor_noise_hash=cache.file_hash(floor_noise_path) if floor_noise_path is not None else None,
         )
@@ -94,6 +109,7 @@ class AudioCleanupRenderer:
         padding_seconds: float,
         boundary_warning_ms: int,
         resolved_filters: tuple[str, ...],
+        loudnorm_profile: str = "none",
         floor_noise_path: Path | None = None,
     ) -> RenderedCleanupBatch:
         prepared = self.prepare_batch(
@@ -102,6 +118,7 @@ class AudioCleanupRenderer:
             padding_seconds=padding_seconds,
             boundary_warning_ms=boundary_warning_ms,
             resolved_filters=resolved_filters,
+            loudnorm_profile=loudnorm_profile,
             floor_noise_path=floor_noise_path,
         )
         batch_dir = prepared.manifest_path.parent
@@ -132,6 +149,7 @@ class AudioCleanupRenderer:
             )
             output_path = batch_dir / segment.role / f"{segment.segment_id}.wav"
             self._write_wav(output_path, cleaned_samples[detection.cleaned_start_sample : detection.cleaned_end_sample])
+            self._apply_loudnorm(output_path, loudnorm_profile)
             validation = self._validate_output(output_path)
             rendered_count += 1
             boundaries.append(
@@ -250,6 +268,34 @@ class AudioCleanupRenderer:
             detail = (result.stderr or "").strip()
             suffix = f": {detail}" if detail else ""
             raise RuntimeError(f"Failed to render audio cleanup batch with ffmpeg{suffix}")
+
+    def _apply_loudnorm(self, path: Path, profile_name: str) -> None:
+        if profile_name == "none":
+            return
+        normalizer = self._normalizer(profile_name)
+        temporary_path = path.with_name(f"{path.stem}.loudnorm.tmp{path.suffix}")
+        try:
+            normalizer.normalize(str(path), str(temporary_path))
+            temporary_path.replace(path)
+        finally:
+            if temporary_path.exists():
+                temporary_path.unlink()
+
+    def _normalizer(self, profile_name: str) -> SegmentNormalizer:
+        if self.normalizer_factory is not None:
+            return self.normalizer_factory(profile_name, sample_rate_hz=self.sample_rate_hz)
+        return Normalizer(
+            metrics=Metrics.for_profile(self._loudness_profile(profile_name)),
+            command_runner=self.command_runner,
+            output_sample_rate_hz=self.sample_rate_hz,
+        )
+
+    def _loudness_profile(self, profile_name: str) -> LoudnessProfile:
+        if profile_name == "librivox":
+            return LoudnessProfile.librivox()
+        if profile_name == "podcast":
+            return LoudnessProfile.podcast()
+        raise RuntimeError(f"Unsupported loudnorm profile {profile_name!r}")
 
     def _duration_seconds(self, path: Path) -> float:
         with wave.open(str(path), "rb") as wav:
