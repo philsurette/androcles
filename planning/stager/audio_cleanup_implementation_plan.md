@@ -31,91 +31,160 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
   - `afwtdn`,
   - `anlmdn`,
   - `agate`.
-- [ ] Add cleanup-specific capability report rendering.
-- [ ] Ensure missing optional cleanup filters disable only affected presets.
+- [x] Add cleanup-specific capability report rendering.
+- [x] Ensure missing optional cleanup filters disable only affected presets.
 
 ## Phase 3: Config And Presets
 
-- [ ] Add `src/stager/audio/audio_cleanup_config.py`.
-- [ ] Load optional `plays/<play_id>/audio_cleanup.yaml`.
-- [ ] Provide built-in defaults when no config exists.
-- [ ] Add dataclasses for cleanup profile and role override.
-- [ ] Validate profile names and role ids.
-- [ ] Add built-in presets:
+- [x] Add `src/stager/audio/audio_cleanup_config.py`.
+- [x] Load optional `plays/<play_id>/audio_cleanup.yaml`.
+- [x] Provide built-in defaults when no config exists.
+- [x] Add dataclasses for cleanup profile and role override.
+- [x] Support `cleanup_approach: profile-based`.
+- [x] Support `cleanup_approach: analysis-based`.
+- [x] Default omitted `cleanup_approach` to `profile-based`.
+- [x] Support `batch_padding_seconds`, defaulting to `3.0`.
+- [x] Support `boundary_warning_ms`, defaulting to `500`.
+- [x] Resolve a play-level `default_profile` for roles without overrides.
+- [x] Treat omitted `default_profile` as built-in `gentle_voice_cleanup`.
+- [x] Support role-level `profile: none` to disable cleanup.
+- [x] Support role-level named profile overrides for exceptional recordings.
+- [x] Support role-level `analysis: true` override in profile-based productions.
+- [x] Support role-level `analysis: false` override in analysis-based productions.
+- [ ] Fail clearly when analysis-based cleanup is requested without an accepted analysis report.
+- [x] Validate profile names.
+- [ ] Validate role ids.
+- [x] Add built-in presets:
   - `declick_gentle`,
   - `declick_medium`,
   - `deesser_gentle`,
   - `denoise_light`,
   - `voice_cleanup_gentle`.
-- [ ] Add parser and preset tests.
+- [x] Add parser and preset tests.
 
 ## Phase 4: FFmpeg Cleanup Compiler
 
-- [ ] Add `src/stager/audio/audio_cleanup_filter_graph.py`.
-- [ ] Compile `declick` to `adeclick`.
-- [ ] Compile `deesser` to `deesser`.
-- [ ] Compile `denoise_light` to conservative `afftdn`.
-- [ ] Support `afwtdn` and `anlmdn` as explicit alternates.
-- [ ] Compile optional gating to conservative `agate`.
+- [x] Add `src/stager/audio/audio_cleanup_filter_graph.py`.
+- [x] Compile `declick` to `adeclick`.
+- [x] Compile `deesser` to `deesser`.
+- [x] Compile `denoise_light` to conservative `afftdn`.
+- [x] Support `afwtdn` and `anlmdn` as explicit alternates.
+- [x] Compile optional gating to conservative `agate`.
 - [ ] Integrate existing two-pass `stager.loudnorm`.
-- [ ] Add tests for filter graph construction.
-- [ ] Add tests for missing filter diagnostics.
+- [x] Add tests for filter graph construction.
+- [x] Add tests for missing filter diagnostics.
 
-## Phase 5: Render Cache
+## Phase 5: Cleanup Analysis
 
-- [ ] Add cleanup output root:
+- [ ] Add `src/stager/audio/audio_cleanup_analyzer.py`.
+- [ ] Load accepted segment audio for the selected play/role.
+- [ ] Load LineRecorder floor-noise metadata when present.
+- [ ] Resolve each recording's floor-noise sample by explicit id or timestamp association.
+- [ ] Estimate broadband noise floor from floor-noise samples.
+- [ ] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
+- [ ] Mark fallback noise estimates as lower confidence.
+- [ ] Estimate suggested denoise strength.
+- [ ] Estimate click density or impulsive-noise likelihood.
+- [ ] Estimate sibilance risk and suggested de-essing strength.
+- [ ] Identify conservative leading/trailing silence trim candidates.
+- [ ] Detect clipping or near-clipping risk.
+- [ ] Estimate loudness normalization feasibility and expected gain change.
+- [ ] Group analysis by role, recording package/session, floor-noise id, and source characteristics.
+- [ ] Recommend a cleanup profile or explicit parameter set per role/session/recording group.
+- [ ] Flag per-segment outliers for review.
+- [ ] Write machine-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.json`.
+- [ ] Write human-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.md`.
+- [ ] Add tests for floor-noise-backed analysis.
+- [ ] Add tests for fallback analysis without floor-noise samples.
+- [ ] Add tests that aggressive recommendations require explicit opt-in.
+
+## Phase 6: Render Cache
+
+- [ ] Add cleanup output roots:
 
   ```text
-  build/<play_id>/audio/cleaned/<profile_id>/<ROLE>/<segment_id>.wav
+  build/<play_id>/audio/cleaned/<batch_id>/batch_manifest.json
+  build/<play_id>/audio/cleaned/<batch_id>/<ROLE>/<segment_id>.wav
   ```
 
-- [ ] Compute cache keys from source audio fingerprint and resolved cleanup chain.
-- [ ] Write cleanup manifest JSON.
+- [ ] Compute batch cache keys from grouped source audio fingerprints, floor-noise fingerprint, resolved cleanup chain, and boundary settings.
+- [ ] Include source segment hashes and original sample ranges in cache inputs.
+- [ ] Write cleanup batch manifest JSON.
 - [ ] Skip unchanged renders.
 - [ ] Add cache hit/miss tests without invoking FFmpeg.
 
-## Phase 6: Renderer
+## Phase 7: Anchor-Based Batch Renderer
 
 - [ ] Add `src/stager/audio/audio_cleanup_renderer.py`.
-- [ ] Render one segment with FFmpeg.
+- [ ] Add `src/stager/audio/audio_cleanup_batch.py`.
+- [ ] Group segments by play, role or recording package/session, cleanup profile or analysis recommendation, floor-noise id, and normalized sample rate.
+- [ ] Normalize source segments to a common sample rate before batch construction.
+- [ ] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
+- [ ] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
+- [ ] Render each batch with FFmpeg.
 - [ ] Preserve source files unchanged.
-- [ ] Write cleaned WAV output.
+- [ ] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
+- [ ] Forbid global silence removal during batch cleanup.
+- [ ] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
+- [ ] Use batch rendering only for duration-preserving filter chains.
+- [ ] After cleanup, detect cleaned speech start/end inside each segment's padded window.
+- [ ] Use original center sample as the boundary detection anchor.
+- [ ] Write cleaned segment WAV output from detected boundaries.
+- [ ] Warn when cleaned start/end moves more than `boundary_warning_ms`.
+- [ ] Warn when cleaned duration changes by more than 20%.
+- [ ] Warn when detected speech no longer contains the original center anchor.
+- [ ] Warn when detected range approaches or crosses padding midpoint toward a neighboring segment.
+- [ ] Treat empty detected ranges as severe review items.
+- [ ] Store original and cleaned ranges in the batch manifest.
+- [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [ ] Run loudnorm as the final step.
 - [ ] Validate output exists, is non-silent, and does not clip.
 - [ ] Add tests with fake FFmpeg runner.
+- [ ] Add tests for sample-accurate batch manifest construction.
+- [ ] Add tests for post-cleanup boundary detection.
+- [ ] Add tests for suspicious boundary warnings.
+- [ ] Add tests for per-segment fallback when batch validation fails.
 
-## Phase 7: CLI
+## Phase 8: CLI
 
-- [ ] Add `./main audio-cleanup`.
-- [ ] Add `./main audio-cleanup doctor`.
-- [ ] Support `--play/-p`.
-- [ ] Support `--role`.
-- [ ] Support `--profile`.
+- [x] Add `./main audio-cleanup`.
+- [ ] Add `./main audio-cleanup analyze`.
+- [x] Add `./main audio-cleanup doctor`.
+- [x] Support `--play/-p`.
+- [x] Support `--role`.
+- [x] Support `--profile`.
+- [ ] Support `--use-analysis` to render using analysis recommendations.
 - [ ] Support `--force`.
 - [ ] Support `--dry-run`.
+- [ ] Print analysis report locations.
 - [ ] Print rendered/skipped/missing-filter summary.
-- [ ] Add CLI tests.
+- [x] Add CLI tests.
 
-## Phase 8: Review And Promotion
+## Phase 9: Review And Promotion
 
 - [ ] Add generated comparison manifest.
 - [ ] Add optional report listing source, cleaned output, profile, and duration delta.
+- [ ] Include analysis recommendation ids in comparison output when analysis was used.
+- [ ] Include batch id and original/cleaned sample ranges in comparison output.
+- [ ] Include boundary-shift warnings in comparison output.
 - [ ] Decide whether a promote command is needed for canonical segment audio.
 - [ ] If added, require explicit confirmation or option before overwriting canonical segment audio.
 
-## Phase 9: Integration
+## Phase 10: Integration
 
 - [ ] Let Playbook generation optionally use cleaned audio.
 - [ ] Let audioplay generation optionally use cleaned audio.
 - [ ] Keep verification on canonical segment audio unless explicitly requested.
 - [ ] Add tests for cleaned-audio selection.
 
-## Phase 10: Documentation And Verification
+## Phase 11: Documentation And Verification
 
 - [ ] Update [install.md](install.md) with audio cleanup filter notes.
 - [ ] Update [../quince-workflow.md](../quince-workflow.md) with cleanup workflow guidance.
+- [ ] Cross-link [../linerecorder/floor_noise_reduction_plan.md](../linerecorder/floor_noise_reduction_plan.md) from cleanup docs.
 - [ ] Add examples for noisy recording cleanup.
 - [ ] Add examples for click-heavy recording cleanup.
+- [ ] Add examples for floor-noise-backed denoising.
 - [ ] Run targeted Stager audio cleanup tests.
 - [ ] Run full Python suite:
 
@@ -131,5 +200,10 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [ ] Canonical segment audio is not overwritten by default.
 - [ ] Cleaned audio is cacheable and inspectable.
 - [ ] Built-in gentle presets work without a config file.
+- [ ] Analysis can recommend cleanup settings from LineRecorder floor-noise samples.
+- [ ] Analysis can make lower-confidence recommendations without floor-noise samples.
+- [ ] Batch rendering is the preferred renderer for duration-preserving cleanup chains.
+- [ ] Batch manifests preserve original center anchors and original/cleaned ranges.
+- [ ] Suspicious boundary shifts are warned and reviewable.
+- [ ] Per-segment rendering remains available as a fallback.
 - [ ] Playbook/audioplay can opt into cleaned audio later.
-

@@ -62,6 +62,7 @@ from stager.transcription.whisper_cache_cleaner import WhisperCacheCleaner
 from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
+from stager.audio.audio_cleanup_service import AudioCleanupService
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.progress_reporter import ProgressReporter
@@ -88,9 +89,15 @@ scriptwright_app = typer.Typer(
     help="Convert source scripts into locked production.md",
     pretty_exceptions_enable=False,
 )
+audio_cleanup_app = typer.Typer(
+    add_completion=False,
+    help="Analyze and render cleaned recording audio",
+    pretty_exceptions_enable=False,
+)
 app.add_typer(text_app, name="text", rich_help_panel="build")
 app.add_typer(whisper_app, name="whisper", rich_help_panel="utility")
 app.add_typer(scriptwright_app, name="scriptwright", rich_help_panel="build")
+app.add_typer(audio_cleanup_app, name="audio-cleanup", rich_help_panel="build")
 PLAY_OPTION = typer.Option(
     None,
     "--play",
@@ -1172,6 +1179,52 @@ def recording_import_undo(
     )
 
 
+@audio_cleanup_app.command("doctor")
+def audio_cleanup_doctor(play: str | None = PLAY_OPTION) -> None:
+    """Report FFmpeg capabilities for audio cleanup."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        for line in run_audio_cleanup_doctor(paths_config=cfg):
+            typer.echo(line)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@audio_cleanup_app.command("plan")
+def audio_cleanup_plan(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit cleanup planning to one role"),
+    profile: str | None = typer.Option(None, "--profile", help="Override the resolved cleanup profile"),
+    use_analysis: bool = typer.Option(False, "--use-analysis", help="Plan using analysis recommendations"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Show resolved cleanup settings without rendering audio."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        plan = run_audio_cleanup_plan(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            paths_config=cfg,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"config: {plan.config_path}")
+    typer.echo(f"cleanup approach: {plan.cleanup_approach}")
+    typer.echo(f"default profile: {plan.default_profile}")
+    typer.echo(f"batch padding seconds: {plan.batch_padding_seconds:g}")
+    typer.echo(f"boundary warning ms: {plan.boundary_warning_ms}")
+    for entry in plan.entries:
+        if entry.resolution == "profile":
+            filter_spec = ",".join(entry.filters) if entry.filters else "none"
+            typer.echo(f"{entry.role}: profile {entry.profile} filters={filter_spec}")
+            if entry.missing_optional_filters:
+                typer.echo(f"{entry.role}: missing optional filters {', '.join(entry.missing_optional_filters)}")
+        else:
+            typer.echo(f"{entry.role}: {entry.resolution}")
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -1453,6 +1506,26 @@ def run_recording_import_undo(
 ):
     cfg = paths_config or paths.current()
     return RoleRecordingsImporter(paths=cfg).undo_import(transaction_path)
+
+
+def run_audio_cleanup_doctor(*, paths_config: paths.PathConfig | None = None) -> list[str]:
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).capability_report()
+
+
+def run_audio_cleanup_plan(
+    *,
+    role: str | None = None,
+    profile: str | None = None,
+    use_analysis: bool = False,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).build_plan(
+        role=role,
+        profile=profile,
+        use_analysis=use_analysis,
+    )
 
 
 def _is_segment_id(value: str) -> bool:
