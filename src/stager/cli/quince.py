@@ -8,7 +8,13 @@ import click
 import typer
 from ruamel.yaml import YAML
 
-from stager.cli.build import render_production_change_report, render_production_status
+from stager.production.production_recommendation import ProductionRecommendationService
+from stager.production.production_renderers import (
+    render_production_change_report,
+    render_production_recommendation,
+    render_production_status,
+    render_quince_context,
+)
 from stager.production.production_status import ProductionStatusService
 from stager.production.quince_context import QuinceContext, QuinceContextResolver, QuinceWorkspaceConfig
 from stager.production_publication.production_source_resolver import ProductionSourceResolver
@@ -112,7 +118,7 @@ def status(
         yaml.dump(payload, output)
         typer.echo(output.getvalue())
     else:
-        typer.echo(_render_context(context))
+        typer.echo(render_quince_context(context))
         typer.echo(render_production_status(status_model))
 
 
@@ -126,7 +132,7 @@ def changes(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
         raise click.ClickException(str(exc)) from exc
     current_label = result.current_version.label if result.current_version is not None else "none"
     working_label = str(result.working_production_version) if result.working_production_version is not None else "unpublished"
-    typer.echo(_render_context(context))
+    typer.echo(render_quince_context(context))
     typer.echo(f"Current published production: {current_label}")
     typer.echo(f"Working production version: {working_label}")
     typer.echo(f"Working source has unpublished changes: {'yes' if result.change_report.changes else 'no'}")
@@ -188,7 +194,7 @@ def publish(
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
     current_label = diff.current_version.label if diff.current_version is not None else "none"
-    typer.echo(_render_context(context))
+    typer.echo(render_quince_context(context))
     typer.echo(render_production_change_report(diff.change_report, base_label=current_label if diff.current_version else None))
     if dry_run:
         typer.echo("Dry run: no production version was published.")
@@ -229,36 +235,8 @@ def next_step(
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
 
-    if status_model.has_unpublished_changes:
-        _render_recommendation("publish", "production.md has unpublished changes", context, "quince publish")
-    elif status_model.unassigned_roles:
-        _render_recommendation("cast", "some roles are not assigned", context, "quince cast show")
-    elif status_model.missing_source_recording_roles:
-        role = status_model.missing_source_recording_roles[0]
-        _render_recommendation(
-            "record whole role",
-            f"{role} is configured for whole-role recording and has no source recording",
-            context,
-            f"add a source recording for {role}, then run quince split-recordings --role {role}",
-        )
-    elif status_model.missing_recording_count:
-        _render_recommendation(
-            "send requests",
-            "some canonical segment recordings are missing",
-            context,
-            "quince send-requests",
-        )
-    elif status_model.playbook.exists and status_model.playbook.matches_current_published_version is False:
-        _render_recommendation(
-            "build playbook",
-            "the current Playbook does not match the published production version",
-            context,
-            "quince build-playbook",
-        )
-    elif not status_model.playbook.exists:
-        _render_recommendation("build playbook", "no Playbook has been built", context, "quince build-playbook")
-    else:
-        _render_recommendation("ready", "no immediate blocking action was found", context, "quince status")
+    recommendation = ProductionRecommendationService().recommend(status=status_model, play_id=context.play_id)
+    typer.echo(render_production_recommendation(recommendation=recommendation, context=context))
 
 
 def _resolve_context(*, play: str | None, workspace: Path | None, production_source: str) -> QuinceContext:
@@ -276,26 +254,6 @@ def _production_status(context: QuinceContext):
         ProductionSourceResolver(cfg).apply_to(context.production_source)
     play = ProductionPlayLoader(paths_config=cfg).load()
     return ProductionStatusService(paths_config=cfg, play=play).build()
-
-
-def _render_context(context: QuinceContext) -> str:
-    return "\n".join(
-        [
-            f"Workspace: {context.workspace_root.as_posix()}",
-            f"Production: {context.play_id} ({context.selection_source})",
-            f"Source mode: {context.production_source}",
-            "",
-        ]
-    )
-
-
-def _render_recommendation(action: str, reason: str, context: QuinceContext, command: str) -> None:
-    typer.echo(f"Production: {context.play_id} ({context.selection_source})")
-    typer.echo(f"Next: {action}")
-    typer.echo(f"Reason: {reason}.")
-    if command.startswith("quince "):
-        command = f"{command} --play {context.play_id}"
-    typer.echo(f"Command: {command}")
 
 
 def main_cli() -> None:

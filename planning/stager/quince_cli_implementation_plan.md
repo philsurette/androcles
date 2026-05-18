@@ -64,15 +64,15 @@ Make the CLI answer "what should I do next?"
 
 Checklist:
 
-- [ ] Add a `ProductionRecommendationService` or equivalent structured model.
-- [ ] Recommend publish when working `production.md` differs from the current published version.
-- [ ] Recommend cast setup when rehearsable roles are unassigned.
-- [ ] Recommend recording requests when roles are missing LineRecorder segment audio.
-- [ ] Recommend whole-role splitting when `recording: whole-role` roles have source audio but missing canonical segments.
+- [x] Add a `ProductionRecommendationService` or equivalent structured model.
+- [x] Recommend publish when working `production.md` differs from the current published version.
+- [x] Recommend cast setup when rehearsable roles are unassigned.
+- [x] Recommend recording requests when roles are missing LineRecorder segment audio.
+- [x] Recommend whole-role splitting when `recording: whole-role` roles have source audio but missing canonical segments.
 - [ ] Recommend receiving/importing recordings only as explanatory guidance, not as an automatic action.
-- [ ] Recommend Playbook rebuild when Playbook version is stale or blocking-only changes are present.
+- [x] Recommend Playbook rebuild when Playbook version is stale or blocking-only changes are present.
 - [x] Implement `quince next`.
-- [ ] Add tests for recommendation priority and rendered command text.
+- [x] Add tests for recommendation priority and rendered command text.
 
 ## Phase 5: Publish And Changes
 

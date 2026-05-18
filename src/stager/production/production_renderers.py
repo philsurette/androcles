@@ -1,0 +1,121 @@
+from __future__ import annotations
+
+from io import StringIO
+
+from ruamel.yaml import YAML
+
+from stager.production.production_recommendation import ProductionRecommendation
+from stager.production.production_status import ProductionStatus
+from stager.production.quince_context import QuinceContext
+
+
+def render_quince_context(context: QuinceContext) -> str:
+    return "\n".join(
+        [
+            f"Workspace: {context.workspace_root.as_posix()}",
+            f"Production: {context.play_id} ({context.selection_source})",
+            f"Source mode: {context.production_source}",
+            "",
+        ]
+    )
+
+
+def render_production_recommendation(
+    *,
+    recommendation: ProductionRecommendation,
+    context: QuinceContext,
+) -> str:
+    return "\n".join(
+        [
+            f"Production: {context.play_id} ({context.selection_source})",
+            f"Next: {recommendation.action}",
+            f"Reason: {recommendation.reason}.",
+            f"Command: {recommendation.command}",
+        ]
+    )
+
+
+def render_production_change_report(report, base_label: str | None = None) -> str:
+    if report.base_version is None:
+        return "No prior published production version."
+    base = base_label or f"production sequence {report.base_version}"
+    if not report.changes:
+        return f"No production changes since {base}."
+    lines = [f"Production changes since {base}:"]
+    for change in report.changes:
+        if change.kind == "changed_id_reuse":
+            lines.append(f"  changed id reused: {change.line_id} -> {change.recommended_id}")
+            if change.previous is not None:
+                lines.append(f"    old: {change.previous.text}")
+            if change.current is not None:
+                lines.append(f"    new: {change.current.text}")
+        elif change.kind == "added" and change.current is not None:
+            lines.append(f"  added: {change.line_id} {change.current.text}")
+        elif change.kind == "removed" and change.previous is not None:
+            lines.append(f"  removed: {change.line_id} {change.previous.text}")
+        elif change.kind == "context_changed" and change.current is not None:
+            lines.append(f"  context changed: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_changed" and change.current is not None:
+            lines.append(f"  blocking changed: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_added" and change.current is not None:
+            lines.append(f"  blocking added: {change.line_id} {change.current.text}")
+        elif change.kind == "blocking_removed" and change.previous is not None:
+            lines.append(f"  blocking removed: {change.line_id} {change.previous.text}")
+    return "\n".join(lines)
+
+
+def render_production_status(status: ProductionStatus) -> str:
+    lines = [
+        f"Production status for {status.play_id}: {status.play_title}",
+        f"Current published version: {status.current_published_version or 'none'}",
+        f"Working production version: {status.working_production_version or 'unpublished'}",
+        f"Unpublished manuscript changes: {'yes' if status.has_unpublished_changes else 'no'}",
+        f"Cast config: {'found' if status.cast_configured else 'missing'}",
+        "",
+        "Roles:",
+    ]
+    for role in status.roles:
+        actor = role.actor or "unassigned"
+        voice_profile = f", voice {role.voice_profile}" if role.voice_profile else ""
+        missing = f", {len(role.missing_segments)} missing" if role.missing_segments else ""
+        lines.append(
+            f"  {role.role}: {actor}, {role.recording}, "
+            f"{role.recorded_segments}/{role.expected_segments} segments{missing}{voice_profile}"
+        )
+    if status.unassigned_roles:
+        lines.extend(["", "Unassigned roles: " + ", ".join(status.unassigned_roles)])
+    if status.missing_recording_count:
+        lines.extend(["", f"Missing segment recordings: {status.missing_recording_count}"])
+    if status.missing_source_recording_roles:
+        lines.extend(
+            [
+                "",
+                "Missing whole-role source recordings: " + ", ".join(status.missing_source_recording_roles),
+            ]
+        )
+    if status.blocking_changes:
+        lines.extend(["", f"Blocking changes needing Playbook rebuild: {len(status.blocking_changes)}"])
+        lines.append("  " + ", ".join(status.blocking_changes))
+    lines.extend(
+        [
+            "",
+            "Playbook:",
+            f"  exists: {'yes' if status.playbook.exists else 'no'}",
+        ]
+    )
+    if status.playbook.exists:
+        lines.append(f"  production version: {status.playbook.production_version or 'unknown'}")
+        lines.append(f"  build id: {status.playbook.build_id or 'unknown'}")
+        if status.playbook.matches_current_published_version is not None:
+            lines.append(
+                "  matches current published version: "
+                + ("yes" if status.playbook.matches_current_published_version else "no")
+            )
+    return "\n".join(lines)
+
+
+def render_production_status_yaml(status: ProductionStatus) -> str:
+    yaml = YAML()
+    output = StringIO()
+    yaml.dump(status.to_dict(), output)
+    return output.getvalue().rstrip()
