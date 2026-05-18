@@ -45,6 +45,7 @@ from stager.scriptwright import ProductionPlayLoader, ScriptWright
 from stager.scriptwright.scriptwright import PRODUCTION_MARKDOWN_FORMATS
 from stager.linerecorder.recording_request_builder import RecordingRequestBuilder
 from stager.linerecorder.role_recordings_importer import RecordingImportProcessingOptions, RoleRecordingsImporter
+from stager.production.production_status import ProductionStatus, ProductionStatusService
 from stager.production_publication.production_publisher import ProductionPublisher
 from stager.production_publication.production_source_resolver import ProductionSourceResolver
 from stager.production_publication.production_version_store import ProductionVersionStore
@@ -1161,6 +1162,19 @@ def production_diff(play: str | None = PLAY_OPTION) -> None:
     )
 
 
+@app.command("production-status", rich_help_panel="build")
+def production_status(
+    play: str | None = PLAY_OPTION,
+    production_source: str = PRODUCTION_SOURCE_OPTION,
+) -> None:
+    """Report production version, cast assignment, and recording readiness."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    apply_production_source(cfg, production_source)
+    status = run_production_status(paths_config=cfg)
+    typer.echo(render_production_status(status))
+
+
 @app.command("production-history", rich_help_panel="build")
 def production_history(play: str | None = PLAY_OPTION) -> None:
     """List Stager-managed published production versions."""
@@ -1753,6 +1767,37 @@ def run_recording_request(
         notes=notes,
     )
     return builder.build()
+
+
+def run_production_status(*, paths_config: paths.PathConfig | None = None) -> ProductionStatus:
+    cfg = paths_config or paths.current()
+    play = load_production_play(cfg)
+    return ProductionStatusService(paths_config=cfg, play=play).build()
+
+
+def render_production_status(status: ProductionStatus) -> str:
+    lines = [
+        f"Production status for {status.play_id}: {status.play_title}",
+        f"Current published version: {status.current_published_version or 'none'}",
+        f"Working production version: {status.working_production_version or 'unpublished'}",
+        f"Unpublished manuscript changes: {'yes' if status.has_unpublished_changes else 'no'}",
+        f"Cast config: {'found' if status.cast_configured else 'missing'}",
+        "",
+        "Roles:",
+    ]
+    for role in status.roles:
+        actor = role.actor or "unassigned"
+        voice_profile = f", voice {role.voice_profile}" if role.voice_profile else ""
+        missing = f", {len(role.missing_segments)} missing" if role.missing_segments else ""
+        lines.append(
+            f"  {role.role}: {actor}, {role.recording}, "
+            f"{role.recorded_segments}/{role.expected_segments} segments{missing}{voice_profile}"
+        )
+    if status.unassigned_roles:
+        lines.extend(["", "Unassigned roles: " + ", ".join(status.unassigned_roles)])
+    if status.missing_recording_count:
+        lines.extend(["", f"Missing segment recordings: {status.missing_recording_count}"])
+    return "\n".join(lines)
 
 
 def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str | None, str | None]:

@@ -131,7 +131,33 @@ These artifacts help review role files, narrator/caller/announcer output, and pr
 
 ## 4. Assign Actors To Roles
 
-At the production level, keep a simple cast plan outside generated output. The current Stager flow can create Recording Requests by role, and voice profiles can disambiguate multiple actors for the same role with `--voice-actor`.
+At the production level, keep cast assignment in:
+
+```text
+plays/<play_id>/cast.yaml
+```
+
+This file connects roles to actors, the expected recording path, and optional voice-profile ids.
+
+Example:
+
+```yaml
+version: 1
+actors:
+  phil:
+    display_name: Phil
+    email: phil@example.com
+roles:
+  MEGAERA:
+    actor: phil
+    recording: linerecorder
+    voice_profile: phil@MEGAERA
+  ANDROCLES:
+    actor: phil
+    recording: whole-role
+```
+
+Use `recording: linerecorder` for the normal actor-facing package workflow. Use `recording: whole-role` when the producer records or imports a full-role audio file and uses Stager splitting. Both paths converge into the same canonical segment audio before verification, cleanup, Playbook, and audioplay builds.
 
 Common cases:
 
@@ -144,6 +170,12 @@ If a role can be recorded by more than one actor, use clear actor names consiste
 ```sh
 ./main voice-render --play <play_id> --role MEGAERA --actor phil
 ./main playbook --play <play_id> --voice-profiles --voice-actor phil
+```
+
+Check cast and recording readiness at any point:
+
+```sh
+./main production-status --play <play_id>
 ```
 
 ## 5. Send Recording Requests

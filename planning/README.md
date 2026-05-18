@@ -35,6 +35,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/blocking_notes_implementation_plan.md](stager/blocking_notes_implementation_plan.md): Design and implementation plan for production blocking notes in `production.md`, publication diffs, actor artifacts, and Playbooks.
 - [stager/audio_cleanup_implementation_plan.md](stager/audio_cleanup_implementation_plan.md): Resumable implementation plan for denoise, declick, de-ess, light gating, and loudness cleanup.
 - [stager/voice_profiles_implementation_plan.md](stager/voice_profiles_implementation_plan.md): Resumable implementation plan for actor/role voice profiles, FFmpeg transforms, rendered audio caching, and Playbook/audioplay integration.
+- [stager/rehearsal_workflow_readiness_plan.md](stager/rehearsal_workflow_readiness_plan.md): Resumable plan for cast configuration, production status, Cuemaster Playbook update UX, and blocking-only rehearsal updates.
 - [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
 - [stager/standalone_bundle.md](stager/standalone_bundle.md): PyInstaller-based CLI bundle plan, ffmpeg policy, and signing/distribution notes.
 - Future Stager docs belong in `planning/stager/`.
