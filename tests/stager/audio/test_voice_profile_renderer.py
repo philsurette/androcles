@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -103,6 +104,37 @@ def test_voice_profile_renderer_force_ignores_cache_hit(tmp_path: Path) -> None:
     renderer.render_segment(resolved_profile=resolved, source=source, segment_id="0_1_1", force=True)
 
     assert len(runner.commands) == 2
+
+
+def test_voice_profile_renderer_preserves_existing_manifest_segments(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    first_path = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    second_path = cfg.segments_dir / "MEGAERA" / "0_1_2.wav"
+    first_path.parent.mkdir(parents=True)
+    first_path.write_bytes(b"first")
+    second_path.write_bytes(b"second")
+    resolved = _resolved(tmp_path)
+    cache = VoiceRenderCache(cfg)
+    runner = CopyingRunner()
+    renderer = VoiceProfileRenderer(
+        paths_config=cfg,
+        installation=_installation(tmp_path),
+        command_runner=runner,
+    )
+
+    first = renderer.render_segment(
+        resolved_profile=resolved,
+        source=cache.source_identity(layer="canonical", path=first_path),
+        segment_id="0_1_1",
+    )
+    renderer.render_segment(
+        resolved_profile=resolved,
+        source=cache.source_identity(layer="canonical", path=second_path),
+        segment_id="0_1_2",
+    )
+
+    data = json.loads(first.manifest_path.read_text(encoding="utf-8"))
+    assert [entry["segment_id"] for entry in data["segments"]] == ["0_1_1", "0_1_2"]
 
 
 def test_voice_profile_renderer_pads_effect_tails(tmp_path: Path) -> None:

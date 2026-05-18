@@ -171,16 +171,16 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 7: CLI
 
-- [ ] Add `./main voice-render`.
-- [ ] Add `./main voice-profiles doctor` or equivalent FFmpeg capability diagnostic.
-- [ ] Support `--play/-p`.
-- [ ] Support `--role`.
-- [ ] Support `--actor` as the MVP explicit actor selector.
-- [ ] Support `--audio-source auto|canonical|cleaned`.
-- [ ] Support `--force` to ignore cache.
-- [ ] Support `--dry-run` to print planned renders and cache hits.
-- [ ] Print a summary of rendered, skipped, and failed segments.
-- [ ] Add CLI tests for missing config, valid config, invalid config, and dry-run output.
+- [x] Add `./main voice-render`.
+- [x] Add `./main voice-profiles doctor` or equivalent FFmpeg capability diagnostic.
+- [x] Support `--play/-p`.
+- [x] Support `--role`.
+- [x] Support `--actor` as the MVP explicit actor selector.
+- [x] Support `--audio-source auto|canonical|cleaned`.
+- [x] Support `--force` to ignore cache.
+- [x] Support `--dry-run` to print planned renders and cache hits.
+- [x] Print a summary of rendered, skipped, and failed segments.
+- [x] Add CLI tests for missing config, valid config, invalid config, and dry-run output.
 
 ## Phase 8: Audioplay Integration
 

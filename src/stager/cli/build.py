@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Build text artifacts, split audio segments, verify splits, and check recordings."""
 from pathlib import Path
+from dataclasses import dataclass
 import logging
 import sys
 import shlex
@@ -63,7 +64,11 @@ from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.audio_cleanup_service import AudioCleanupService
-from stager.audio.cleaned_audio_selector import SUPPORTED_AUDIO_SOURCES
+from stager.audio.cleaned_audio_selector import AUDIO_SOURCE_CANONICAL, CleanedAudioSelector, SUPPORTED_AUDIO_SOURCES
+from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
+from stager.audio.voice_profile_resolver import ResolvedVoiceProfile, VoiceProfileResolver
+from stager.audio.voice_render_cache import VoiceRenderCache, VoiceRenderSegment, VoiceRenderSource
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.progress_reporter import ProgressReporter
@@ -95,10 +100,16 @@ audio_cleanup_app = typer.Typer(
     help="Analyze and render cleaned recording audio",
     pretty_exceptions_enable=False,
 )
+voice_profiles_app = typer.Typer(
+    add_completion=False,
+    help="Render actor/role voice-profile audio",
+    pretty_exceptions_enable=False,
+)
 app.add_typer(text_app, name="text", rich_help_panel="build")
 app.add_typer(whisper_app, name="whisper", rich_help_panel="utility")
 app.add_typer(scriptwright_app, name="scriptwright", rich_help_panel="build")
 app.add_typer(audio_cleanup_app, name="audio-cleanup", rich_help_panel="build")
+app.add_typer(voice_profiles_app, name="voice-profiles", rich_help_panel="build")
 PLAY_OPTION = typer.Option(
     None,
     "--play",
@@ -121,6 +132,20 @@ MODEL_NAME_MAP = {
 }
 AUDIO_TOOL_CHECKER = ExternalToolChecker()
 SUMMARY_FORMATS = {"text", "yaml"}
+
+
+@dataclass(frozen=True)
+class VoiceRenderPlanEntry:
+    resolved_profile: ResolvedVoiceProfile
+    source: VoiceRenderSource
+    segment_id: str
+    segment: VoiceRenderSegment
+    cache_hit: bool
+
+
+@dataclass(frozen=True)
+class VoiceRenderPlan:
+    entries: tuple[VoiceRenderPlanEntry, ...]
 
 
 class RichPlaybookProgressReporter:
@@ -1192,6 +1217,52 @@ def recording_import_undo(
     )
 
 
+@voice_profiles_app.command("doctor")
+def voice_profiles_doctor(play: str | None = PLAY_OPTION) -> None:
+    """Report FFmpeg capabilities for voice-profile rendering."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        for line in run_voice_profiles_doctor(paths_config=cfg):
+            typer.echo(line)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+
+
+@app.command("voice-render", rich_help_panel="build")
+def voice_render(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit voice rendering to one role"),
+    actor: str | None = typer.Option(None, "--actor", help="Select actor when a role has multiple cast profiles"),
+    audio_source: str = typer.Option("auto", "--audio-source", help="Source audio: auto, canonical, or cleaned"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Resolve renders and cache hits without writing audio"),
+    force: bool = typer.Option(False, "--force", help="Re-render even when a rendered cache hit exists"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Render voice-profile audio for segment recordings."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        if dry_run:
+            plan = run_voice_render_plan(
+                role=role,
+                actor=actor,
+                audio_source=audio_source,
+                paths_config=cfg,
+            )
+            _echo_voice_render_plan(plan, prefix="Dry run")
+            return
+        results = run_voice_render(
+            role=role,
+            actor=actor,
+            audio_source=audio_source,
+            force=force,
+            paths_config=cfg,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    _echo_voice_render_results(results)
+
+
 @audio_cleanup_app.command("doctor")
 def audio_cleanup_doctor(play: str | None = PLAY_OPTION) -> None:
     """Report FFmpeg capabilities for audio cleanup."""
@@ -1747,6 +1818,185 @@ def run_audio_cleanup_promote(
         confirm=confirm,
         include_warnings=include_warnings,
     )
+
+
+def run_voice_profiles_doctor(*, paths_config: paths.PathConfig | None = None) -> list[str]:
+    cfg = paths_config or paths.current()
+    installation = AUDIO_TOOL_CHECKER.require_audio_tools()
+    required_missing = installation.missing_required_voice_profile_filters()
+    optional = installation.optional_voice_profile_filter_report()
+    lines = [
+        f"ffmpeg: {paths.display_path(installation.ffmpeg_path)}",
+        f"ffprobe: {paths.display_path(installation.ffprobe_path)}",
+        f"source: {installation.source}",
+        f"config: {paths.display_path(installation.config_path) if installation.config_path else 'none'}",
+        "required voice-profile filters: "
+        + ("missing " + ", ".join(required_missing) if required_missing else "found"),
+    ]
+    found_optional = [name for name, found in optional.items() if found]
+    missing_optional = [name for name, found in optional.items() if not found]
+    lines.append(
+        "optional voice-profile filters found: "
+        + (", ".join(found_optional) if found_optional else "none")
+    )
+    lines.append(
+        "optional voice-profile filters missing: "
+        + (", ".join(missing_optional) if missing_optional else "none")
+    )
+    if cfg.play_dir.exists():
+        lines.append(f"play: {cfg.play_name}")
+    return lines
+
+
+def run_voice_render_plan(
+    *,
+    role: str | None = None,
+    actor: str | None = None,
+    audio_source: str = "auto",
+    paths_config: paths.PathConfig | None = None,
+    installation=None,
+) -> VoiceRenderPlan:
+    cfg = paths_config or paths.current()
+    if audio_source not in SUPPORTED_AUDIO_SOURCES:
+        raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
+    config = VoiceProfileConfig.load(cfg)
+    if not config.cast_profiles:
+        return VoiceRenderPlan(entries=())
+    resolved_profiles = _resolve_voice_profiles(config=config, role=role, actor=actor)
+    selected = CleanedAudioSelector(paths_config=cfg, audio_source=audio_source)
+    cache = VoiceRenderCache(cfg)
+    active_installation = installation or AUDIO_TOOL_CHECKER.require_audio_tools()
+    missing = active_installation.missing_required_voice_profile_filters()
+    if missing:
+        raise RuntimeError(f"Missing required FFmpeg voice-profile filter(s): {', '.join(missing)}")
+    renderer_capabilities = {name: active_installation.has_filter(name) for name in sorted(active_installation.filters)}
+    entries: list[VoiceRenderPlanEntry] = []
+    for resolved_profile in resolved_profiles:
+        for source in _voice_render_sources(
+            paths_config=cfg,
+            selector=selected,
+            role=resolved_profile.role,
+            audio_source=audio_source,
+        ):
+            segment = cache.segment(
+                resolved_profile=resolved_profile,
+                source=source,
+                segment_id=source.path.stem,
+                renderer_backend="ffmpeg",
+                renderer_capabilities=renderer_capabilities,
+            )
+            entries.append(
+                VoiceRenderPlanEntry(
+                    resolved_profile=resolved_profile,
+                    source=source,
+                    segment_id=source.path.stem,
+                    segment=segment,
+                    cache_hit=cache.is_hit(segment),
+                )
+            )
+    return VoiceRenderPlan(entries=tuple(entries))
+
+
+def run_voice_render(
+    *,
+    role: str | None = None,
+    actor: str | None = None,
+    audio_source: str = "auto",
+    force: bool = False,
+    paths_config: paths.PathConfig | None = None,
+    installation=None,
+    command_runner: CommandRunner | None = None,
+) -> tuple[VoiceRenderResult, ...]:
+    cfg = paths_config or paths.current()
+    plan = run_voice_render_plan(
+        role=role,
+        actor=actor,
+        audio_source=audio_source,
+        paths_config=cfg,
+        installation=installation,
+    )
+    active_installation = installation or AUDIO_TOOL_CHECKER.require_audio_tools()
+    renderer = VoiceProfileRenderer(
+        paths_config=cfg,
+        installation=active_installation,
+        **({"command_runner": command_runner} if command_runner is not None else {}),
+    )
+    results = []
+    for entry in plan.entries:
+        results.append(
+            renderer.render_segment(
+                resolved_profile=entry.resolved_profile,
+                source=entry.source,
+                segment_id=entry.segment_id,
+                force=force,
+            )
+        )
+    return tuple(results)
+
+
+def _resolve_voice_profiles(
+    *,
+    config: VoiceProfileConfig,
+    role: str | None,
+    actor: str | None,
+) -> tuple[ResolvedVoiceProfile, ...]:
+    resolver = VoiceProfileResolver(config)
+    roles = [role] if role is not None else sorted({profile.role for profile in config.cast_profiles.values()})
+    resolved = []
+    for candidate_role in roles:
+        candidate = resolver.resolve(candidate_role, actor=actor)
+        if candidate is not None:
+            resolved.append(candidate)
+    return tuple(resolved)
+
+
+def _voice_render_sources(
+    *,
+    paths_config: paths.PathConfig,
+    selector: CleanedAudioSelector,
+    role: str,
+    audio_source: str,
+) -> tuple[VoiceRenderSource, ...]:
+    role_dir = paths_config.segments_dir / role
+    if not role_dir.exists():
+        return ()
+    cache = VoiceRenderCache(paths_config)
+    sources = []
+    review_path = paths_config.audio_out_dir / "cleaned" / "cleanup_review.json"
+    for canonical_path in sorted(role_dir.glob("*.wav")):
+        selected_path = selector.segment_path(role, canonical_path.stem)
+        is_cleaned = selected_path != canonical_path and audio_source != AUDIO_SOURCE_CANONICAL
+        sources.append(
+            cache.source_identity(
+                layer="cleaned" if is_cleaned else "canonical",
+                path=selected_path,
+                cleanup_review_id="cleanup_review" if is_cleaned else None,
+                cleanup_review_path=review_path if is_cleaned else None,
+            )
+        )
+    return tuple(sources)
+
+
+def _echo_voice_render_plan(plan: VoiceRenderPlan, *, prefix: str) -> None:
+    cache_hits = sum(1 for entry in plan.entries if entry.cache_hit)
+    typer.echo(f"{prefix} voice render: {len(plan.entries)} segments, {cache_hits} cache hits.")
+    for entry in plan.entries:
+        state = "cache hit" if entry.cache_hit else "render needed"
+        typer.echo(
+            f"{entry.resolved_profile.actor}@{entry.resolved_profile.role} "
+            f"{entry.segment_id}: {state} from {entry.source.layer}"
+        )
+        typer.echo(paths.display_path(entry.segment.output_path))
+
+
+def _echo_voice_render_results(results: tuple[VoiceRenderResult, ...]) -> None:
+    rendered = sum(1 for result in results if result.rendered)
+    skipped = sum(1 for result in results if result.cache_hit)
+    typer.echo(f"Rendered {rendered} voice-profile segments; skipped {skipped} cache hits.")
+    for result in results:
+        state = "skipped cache hit" if result.cache_hit else "rendered"
+        typer.echo(f"{result.segment.role}/{result.segment.segment_id}: {state}")
+        typer.echo(paths.display_path(result.segment.output_path))
 
 
 def _echo_audio_cleanup_prepare_summary(results, *, prefix: str = "Prepared") -> None:

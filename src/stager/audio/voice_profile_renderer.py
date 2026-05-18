@@ -86,11 +86,11 @@ class VoiceProfileRenderer:
             raise RuntimeError(f"Voice profile FFmpeg render failed for {paths.display_path(source.path)}{suffix}")
         if not segment.output_path.exists():
             raise RuntimeError(f"Voice profile render did not create {paths.display_path(segment.output_path)}")
-        manifest_path = cache.write_manifest(
+        manifest_path = cache.write_segment_manifest(
             resolved_profile=resolved_profile,
             renderer_backend="ffmpeg",
             renderer_capabilities=renderer_capabilities,
-            segments=(segment,),
+            segment=segment,
             output_format=output_format,
         )
         logger.info("Rendered voice-profile audio: %s", paths.display_path(segment.output_path))

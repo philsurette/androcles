@@ -232,6 +232,47 @@ class VoiceRenderCache:
         path.write_text(json.dumps(manifest.to_dict(), indent=2) + "\n", encoding="utf-8")
         return path
 
+    def write_segment_manifest(
+        self,
+        *,
+        resolved_profile: ResolvedVoiceProfile,
+        renderer_backend: str,
+        renderer_capabilities: dict[str, bool],
+        segment: VoiceRenderSegment,
+        output_format: str = "wav",
+    ) -> Path:
+        render_profile_id = self.render_profile_id(resolved_profile)
+        path = self.manifest_path(render_profile_id)
+        existing_segments = []
+        if path.exists():
+            try:
+                existing = json.loads(path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                existing = {}
+            raw_segments = existing.get("segments", []) if isinstance(existing, dict) else []
+            if isinstance(raw_segments, list):
+                existing_segments = [
+                    raw
+                    for raw in raw_segments
+                    if isinstance(raw, dict)
+                    and not (raw.get("role") == segment.role and raw.get("segment_id") == segment.segment_id)
+                ]
+        data = VoiceRenderManifest(
+            render_profile_id=render_profile_id,
+            resolved_profile_id=resolved_profile.stable_id,
+            actor=resolved_profile.actor,
+            role=resolved_profile.role,
+            selected_pitch_strategy=resolved_profile.selected_pitch_strategy,
+            renderer_backend=renderer_backend,
+            renderer_capabilities=renderer_capabilities,
+            output_format=output_format,
+            segments=(),
+        ).to_dict()
+        data["segments"] = [*existing_segments, segment.to_dict()]
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+        return path
+
     def file_hash(self, path: Path) -> str:
         digest = hashlib.sha256()
         with path.open("rb") as source:
