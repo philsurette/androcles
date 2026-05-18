@@ -184,13 +184,13 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 8: Audioplay Integration
 
-- [ ] Add `--voice-profiles/--no-voice-profiles` to audioplay build commands that consume segment audio.
-- [ ] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
-- [ ] Resolve rendered audio for roles with active profiles.
-- [ ] Fall back to canonical segment audio for roles without profiles.
-- [ ] Ensure missing rendered audio triggers rendering or a clear diagnostic.
-- [ ] Preserve existing behavior when voice profiles are disabled.
-- [ ] Add tests that audioplay assembly chooses rendered audio when enabled.
+- [x] Add `--voice-profiles/--no-voice-profiles` to audioplay build commands that consume segment audio.
+- [x] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
+- [x] Resolve rendered audio for roles with active profiles.
+- [x] Fall back to canonical segment audio for roles without profiles.
+- [x] Ensure missing rendered audio triggers rendering or a clear diagnostic.
+- [x] Preserve existing behavior when voice profiles are disabled.
+- [x] Add tests that audioplay assembly chooses rendered audio when enabled.
 
 ## Phase 9: Playbook Integration
 

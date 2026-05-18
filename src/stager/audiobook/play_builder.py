@@ -28,6 +28,8 @@ class PlayBuilder:
     generate_captions: bool = True
     librivox: bool = False
     audio_source: str = "auto"
+    voice_profiles: bool = False
+    voice_actor: str | None = None
     play: Play = None
     paths: paths.PathConfig = field(default_factory=paths.current)
     audio_builder:PlayAudioBuilder = field(default_factory = PlayAudioBuilder)
@@ -57,6 +59,8 @@ class PlayBuilder:
             part_gap_ms=self.part_gap_ms,
             librivox=self.librivox,
             audio_source=self.audio_source,
+            voice_profiles=self.voice_profiles,
+            voice_actor=self.voice_actor,
         )
         plan = builder.build_audio_plan(part_no=part_no)
         plan_path = self.paths.build_dir / "audio_plan.txt"
@@ -117,6 +121,8 @@ class PlayBuilder:
                 part_gap_ms=0,
                 librivox=True,
                 audio_source=self.audio_source,
+                voice_profiles=self.voice_profiles,
+                voice_actor=self.voice_actor,
             )
             plan = builder.build_audio_plan(part_no=part_no)
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]

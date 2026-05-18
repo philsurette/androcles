@@ -11,6 +11,8 @@ from typing import Dict, List, Tuple, Union
 from pydub import AudioSegment
 
 from stager.audio.cleaned_audio_selector import CleanedAudioSelector
+from stager.audio.voice_profile_audio_selector import VoiceProfileAudioSelector
+from stager.audio.voice_profile_config import VoiceProfileConfig
 from stager.cues.callout_director import (
     CalloutDirector,
     NoCalloutDirector,
@@ -62,11 +64,22 @@ class PlayPlanBuilder:
     part_gap_ms: int = 0
     librivox: bool = False
     audio_source: str = "auto"
+    voice_profiles: bool = False
+    voice_actor: str | None = None
     length_cache: Dict[Path, int] = field(default_factory=dict)
     audio_plan: AudioPlan = field(init=False)
 
     def __post_init__(self) -> None:
-        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
+        base_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
+        if self.voice_profiles:
+            self.audio_selector = VoiceProfileAudioSelector(
+                paths_config=self.paths,
+                base_selector=base_selector,
+                config=VoiceProfileConfig.load(self.paths),
+                actor=self.voice_actor,
+            )
+        else:
+            self.audio_selector = base_selector
         if self.director is None:
             self.director = NoCalloutDirector(self.play, paths_config=self.paths)
         if self.chapters is None:

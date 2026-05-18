@@ -5,12 +5,17 @@ from dataclasses import dataclass
 import logging
 
 from stager.audio.segment_build_service import SegmentBuildService
+from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
+from stager.audio.voice_profile_resolver import VoiceProfileResolver
+from stager.audio.voice_render_cache import VoiceRenderCache
 from stager.audiobook.play_builder import PlayBuilder
 from stager.domain.play import Play
 from stager.loudnorm.normalizer import Normalizer
 from stager.scriptwright.production_play_loader import ProductionPlayLoader
 from stager.shared import paths as path_display
 from stager.shared.build_type_resolver import BuildTypeResolver
+from stager.shared.ffmpeg_probe import FfmpegInstallation
 from stager.shared.paths import PathConfig
 from stager.shared.progress_reporter import ProgressReporter
 from stager.text.text_artifact_builder import TextArtifactBuilder
@@ -25,6 +30,8 @@ class AudioPlayBuildService:
 
     paths: PathConfig
     progress_reporter: ProgressReporter | None = None
+    command_runner: CommandRunner | None = None
+    ffmpeg_installation: FfmpegInstallation | None = None
 
     def build(
         self,
@@ -41,6 +48,8 @@ class AudioPlayBuildService:
         normalize_output: bool = True,
         prepare: bool = True,
         audio_source: str = "auto",
+        voice_profiles: bool = False,
+        voice_actor: str | None = None,
     ):
         effective_build_type = BuildTypeResolver(
             paths_config=self.paths,
@@ -67,6 +76,13 @@ class AudioPlayBuildService:
             part_no = None
         else:
             part_no = int(part)
+        if voice_profiles:
+            self._render_voice_profiles(
+                play=play,
+                role=None,
+                actor=voice_actor,
+                audio_source=audio_source,
+            )
 
         builder = PlayBuilder(
             spacing_ms=segment_spacing_ms,
@@ -79,6 +95,8 @@ class AudioPlayBuildService:
             generate_captions=captions,
             librivox=effective_librivox,
             audio_source=audio_source,
+            voice_profiles=voice_profiles,
+            voice_actor=voice_actor,
             play=play,
             paths=self.paths,
             progress_reporter=self.progress_reporter,
@@ -99,6 +117,56 @@ class AudioPlayBuildService:
         if self.progress_reporter is not None:
             self.progress_reporter.finish("Built audioplay")
         return out_paths
+
+    def _render_voice_profiles(
+        self,
+        *,
+        play: Play,
+        role: str | None,
+        actor: str | None,
+        audio_source: str,
+    ) -> tuple[VoiceRenderResult, ...]:
+        from stager.audio.cleaned_audio_selector import CleanedAudioSelector, AUDIO_SOURCE_CANONICAL
+
+        config = VoiceProfileConfig.load(self.paths)
+        if not config.cast_profiles:
+            return ()
+        resolver = VoiceProfileResolver(config)
+        cache = VoiceRenderCache(self.paths)
+        selector = CleanedAudioSelector(paths_config=self.paths, audio_source=audio_source)
+        renderer = VoiceProfileRenderer(
+            paths_config=self.paths,
+            installation=self.ffmpeg_installation,
+            **({"command_runner": self.command_runner} if self.command_runner is not None else {}),
+        )
+        roles = [role] if role is not None else sorted({profile.role for profile in config.cast_profiles.values()})
+        results = []
+        for candidate_role in roles:
+            resolved = resolver.resolve(candidate_role, actor=actor)
+            if resolved is None:
+                continue
+            role_dir = self.paths.segments_dir / resolved.role
+            if not role_dir.exists():
+                continue
+            for canonical_path in sorted(role_dir.glob("*.wav")):
+                selected_path = selector.segment_path(resolved.role, canonical_path.stem)
+                is_cleaned = selected_path != canonical_path and audio_source != AUDIO_SOURCE_CANONICAL
+                source = cache.source_identity(
+                    layer="cleaned" if is_cleaned else "canonical",
+                    path=selected_path,
+                    cleanup_review_id="cleanup_review" if is_cleaned else None,
+                    cleanup_review_path=(
+                        self.paths.audio_out_dir / "cleaned" / "cleanup_review.json" if is_cleaned else None
+                    ),
+                )
+                results.append(
+                    renderer.render_segment(
+                        resolved_profile=resolved,
+                        source=source,
+                        segment_id=canonical_path.stem,
+                    )
+                )
+        return tuple(results)
 
     def _output_count(self, play: Play, *, part: str | None, librivox: bool) -> int:
         if librivox:

@@ -207,9 +207,9 @@ def rich_progress() -> Progress:
     )
 
 
-def require_audio_tools() -> None:
+def require_audio_tools():
     try:
-        AUDIO_TOOL_CHECKER.require_audio_tools()
+        return AUDIO_TOOL_CHECKER.require_audio_tools()
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
 
@@ -393,7 +393,7 @@ def segments(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
-    require_audio_tools()
+    ffmpeg_installation = require_audio_tools()
     if role:
         play_obj = load_production_play(cfg)
         valid_roles = {r.name for r in play_obj.roles} | {"_NARRATOR", "_CALLER", "_ANNOUNCER"}
@@ -892,6 +892,8 @@ def audioplay(
         "--audio-source",
         help="Segment audio source: auto, canonical, or cleaned",
     ),
+    voice_profiles: bool = typer.Option(False, "--voice-profiles/--no-voice-profiles", help="Use rendered voice-profile audio"),
+    voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -926,6 +928,9 @@ def audioplay(
             audio_format=audio_format,
             normalize_output=normalize_output,
             audio_source=audio_source,
+            voice_profiles=voice_profiles,
+            voice_actor=voice_actor,
+            ffmpeg_installation=ffmpeg_installation,
             paths_config=cfg,
             prepare=prepare,
             progress_reporter=RichProgressReporter(progress),
@@ -1585,6 +1590,9 @@ def run_audioplay(
     normalize_output: bool = True,
     prepare: bool = True,
     audio_source: str = "auto",
+    voice_profiles: bool = False,
+    voice_actor: str | None = None,
+    ffmpeg_installation=None,
     paths_config: paths.PathConfig | None = None,
     progress_reporter: ProgressReporter | None = None,
 ):
@@ -1593,7 +1601,11 @@ def run_audioplay(
     if audio_source not in SUPPORTED_AUDIO_SOURCES:
         raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
     cfg = paths_config or paths.current()
-    return AudioPlayBuildService(paths=cfg, progress_reporter=progress_reporter).build(
+    return AudioPlayBuildService(
+        paths=cfg,
+        progress_reporter=progress_reporter,
+        ffmpeg_installation=ffmpeg_installation,
+    ).build(
         part=part,
         segment_spacing_ms=segment_spacing_ms,
         callouts=callouts,
@@ -1606,6 +1618,8 @@ def run_audioplay(
         normalize_output=normalize_output,
         prepare=prepare,
         audio_source=audio_source,
+        voice_profiles=voice_profiles,
+        voice_actor=voice_actor,
     )
 
 
