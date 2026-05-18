@@ -65,7 +65,7 @@ Stager should treat audio in layers:
 
 Voice effects belong in layer 3 unless a future command explicitly creates a new canonical recording.
 
-Recording-quality cleanup is a separate concern defined in [audio_cleanup.md](audio_cleanup.md). Voice profiles may consume cleaned audio when a build opts into cleanup, but this spec owns only creative actor/role voice rendering.
+Recording-quality cleanup is a separate concern defined in [audio_cleanup.md](audio_cleanup.md). Voice profiles may consume canonical or reviewed cleaned segment audio according to the build's selected audio source policy. This spec owns only creative actor/role voice rendering, but rendered voice manifests and cache keys must record the selected source layer, source path, and source content hash so profile output can be reproduced and invalidated correctly.
 
 ## Profile File
 
@@ -76,6 +76,20 @@ plays/<play_id>/voice_profiles.yaml
 ```
 
 The file is optional. If it is absent, Stager uses canonical segment audio with no role voice rendering.
+
+## MVP Actor Selection
+
+The first implementation must not depend on new LineRecorder actor metadata. Stager can support useful voice rendering before recording packages know which human recorded a role.
+
+For each render, the active actor for a role should be selected by this precedence:
+
+1. An explicit CLI or build option, such as `--actor phil`.
+2. A single `cast_profiles` entry for the role.
+3. A play-level actor mapping if one is added to `voice_profiles.yaml`.
+
+If multiple cast profiles match a role and no actor is selected, Stager must fail with an ambiguity diagnostic. If no cast profile matches a role, Stager should use unrendered source audio for that role.
+
+Recording package actor metadata can be added later to remove the need for explicit selection in common workflows, but it is not required for the MVP.
 
 ## Example
 
@@ -89,6 +103,12 @@ actors:
       pitch_center_hz: 115
       speaking_rate_wpm: 155
       brightness: neutral
+  alex:
+    display_name: Alex
+    baseline:
+      pitch_center_hz: 180
+      speaking_rate_wpm: 150
+      brightness: bright
 
 role_targets:
   ANDROCLES:
@@ -129,6 +149,12 @@ role_targets:
         acceptable_range_wpm: [80, 135]
         max_linked_speed_change: 0.04
 
+observed_metrics:
+  phil@MEGAERA:
+    speaking_rate_wpm: 178
+    confidence: 0.82
+    source: manual
+
 cast_profiles:
   phil@ANDROCLES:
     actor: phil
@@ -141,7 +167,6 @@ cast_profiles:
     mode: computed
     overrides:
       pitch_shift_semitones: 5.5
-      speed_factor: 1.02
 
   alex@MEGAERA:
     actor: alex
@@ -150,7 +175,7 @@ cast_profiles:
     transforms:
       - type: pitch
         semitones: 1.5
-        preserve_tempo: true
+        strategy: preserve_tempo
       - type: preset
         name: female_bright_subtle
 ```
@@ -199,7 +224,22 @@ Useful `tempo_policy` fields:
 Useful `pitch_strategy` fields:
 
 - `prefer_linked_speed_pitch_when_safe`: use a linked pitch/speed transform when the resulting tempo stays within policy.
-- `fallback`: `preserve_tempo` by default, meaning preserve recorded timing if linked pitch/speed would violate tempo policy.
+- `fallback`: `preserve_tempo` by default, meaning preserve recorded timing if linked pitch/speed would violate tempo policy. Allowed values are `preserve_tempo` and `linked_speed`.
+
+## Observed Metrics
+
+Observed metrics describe how a particular actor-role recording set was actually performed. They are render inputs for transform selection and must not be treated as commands to normalize a performance.
+
+Useful observed metric fields:
+
+- `speaking_rate_wpm`: estimated or producer-authored speech rate for the accepted actor-role recordings.
+- `confidence`: value from `0.0` to `1.0` indicating whether the metric is reliable enough for automatic strategy selection.
+- `source`: `manual`, `analysis`, or another producer-authored label.
+- `speech_active_seconds`: optional analyzed speech-active duration.
+- `word_count`: optional represented text word count used for tempo estimation.
+- `notes`: optional producer note.
+
+Manual observed metrics are enough for the MVP. A later `voice-analyze` command may generate suggested observed metrics, but it should not silently rewrite producer-authored values.
 
 ## Cast Profiles
 
@@ -234,7 +274,7 @@ is it safe to use a linked speed/pitch transform, or must the renderer preserve 
 
 For a computed profile, the resolver should:
 
-1. Estimate or load observed speech rate for the actor-role recording set when available.
+1. Load observed speech rate for the actor-role recording set when available.
 2. Compute the pitch shift needed to move from source baseline toward role target.
 3. Compute the speed factor implied by a linked pitch/speed transform.
 4. Predict the post-transform speech rate.
@@ -265,7 +305,9 @@ Predicted tempo: 199 WPM
 Decision: preserve tempo and use the independent pitch path.
 ```
 
-For small roles or sparse recordings, the observed tempo estimate should be low confidence. In that case the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
+Observed tempo may be producer-authored in `voice_profiles.yaml`, loaded from generated analysis output, or absent. The first implementation may use manual observed metrics and does not need to implement analysis before tempo-aware pitch selection. If observed tempo is absent or low confidence, the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
+
+For small roles or sparse recordings, generated tempo estimates should be low confidence. In that case the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
 
 ## Transform Types
 
@@ -317,7 +359,7 @@ The first voice-profile implementation should require only filters that are norm
 
 - `aresample`: resample after pitch operations.
 - `asetrate`: portable pitch-shift building block.
-  - `atempo`: restore tempo after `asetrate` pitch shifts, implement speed changes, and preserve tempo when linked speed/pitch is unsafe.
+- `atempo`: restore tempo after `asetrate` pitch shifts, implement speed changes, and preserve tempo when linked speed/pitch is unsafe.
 - `highpass`: low-frequency shaping.
 - `lowpass`: high-frequency shaping.
 - `equalizer`: parametric EQ bands and filter-curve approximation.
@@ -326,11 +368,11 @@ The first voice-profile implementation should require only filters that are norm
 - `alimiter`: final clipping protection.
 - `aecho`: portable first-pass echo/reverb style effects.
 - `atrim` and `asetpts`: tail handling, padding workflows, and future batch rendering.
-- `concat`: future batch rendering and test fixtures.
 - `loudnorm`: required final loudness normalization so rendered voices have consistent perceived level.
 
 Optional quality filters and compile-time features:
 
+- `concat`: useful for future role-batch rendering and some integration fixtures, but not required for per-segment MVP rendering.
 - `firequalizer`: useful for smoother filter-curve support, but not required because `equalizer` chains can approximate curves.
 - `afir`: useful for convolution reverb with impulse responses, but not required for the first implementation.
 - `ladspa` or `lv2`: plugin-host filters; explicitly out of scope for the first implementation because they make installation and support much harder.
@@ -433,12 +475,17 @@ build/<play_id>/audio/rendered/<render_profile_id>/<ROLE>/<segment_id>.wav
 The cache key should include:
 
 - source audio content hash or stable file fingerprint,
+- selected source audio layer, such as `canonical` or `cleaned`,
+- selected source audio path,
+- cleanup review identity, path, and content hash when reviewed cleaned audio is used,
 - source segment id,
 - production segment id and content hash when available,
 - actor id,
 - role id,
 - resolved render profile id,
 - resolved transform chain,
+- observed metrics used by transform resolution,
+- selected pitch strategy,
 - renderer backend and relevant FFmpeg capabilities,
 - output format.
 
@@ -457,9 +504,19 @@ Voice profile rendering should be opt-in at first:
 ```sh
 ./main voice-render --play <play_id>
 ./main voice-render --play <play_id> --role MEGAERA
+./main voice-render --play <play_id> --role MEGAERA --actor phil
+./main voice-render --play <play_id> --audio-source auto
 ./main audioplay --play <play_id> --voice-profiles
 ./main playbook --play <play_id> --voice-profiles
 ```
+
+`voice-render`, `audioplay`, and `playbook` should share the same source-audio selection semantics:
+
+- `--audio-source auto`: use reviewed cleaned audio when available and current, otherwise canonical segment audio.
+- `--audio-source canonical`: always use canonical segment audio.
+- `--audio-source cleaned`: require reviewed cleaned audio and fail when it is unavailable or stale.
+
+Voice rendering must resolve source audio before applying creative transforms and must include the selected source layer and source fingerprint in render manifests.
 
 Eventually, if `voice_profiles.yaml` exists, release-oriented commands may enable profiles by default with an explicit escape hatch:
 

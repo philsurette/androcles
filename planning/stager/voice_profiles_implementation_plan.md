@@ -13,6 +13,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - Start with explicit transforms and manual baseline values.
 - Add computed pitch transforms from actor baseline to role target.
 - Use observed actor-role tempo as a pitch-strategy constraint, not as tempo normalization.
+- Support MVP actor selection without requiring LineRecorder actor metadata.
+- Respect canonical/cleaned source-audio selection before creative voice rendering.
 - Use FFmpeg as the first renderer, with portable filters as the baseline.
 - Keep performance acceptable with caching before attempting role-batch rendering.
 - Keep creative voice effects separate from recording-quality cleanup.
@@ -23,6 +25,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [x] Document actor baselines, role targets, and actor-role cast profiles.
 - [x] Document explicit and computed transform modes.
 - [x] Document tempo-aware pitch strategy selection.
+- [x] Document MVP actor selection.
+- [x] Document source-audio selection and cache identity.
 - [x] Document per-segment, role-batch, and full-source rendering tradeoffs.
 - [x] Document cache and generated-artifact policy.
 - [x] Add this implementation plan.
@@ -44,6 +48,9 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Load `plays/<play_id>/voice_profiles.yaml` when present.
 - [ ] Treat a missing profile file as an empty config.
 - [ ] Validate `version: 1`.
+- [ ] Parse optional manual observed actor-role metrics for tempo-aware pitch strategy selection.
+- [ ] Parse pitch transforms with `strategy: auto|linked_speed|preserve_tempo`.
+- [ ] Reject legacy `preserve_tempo` boolean pitch-transform fields.
 - [ ] Validate actor ids, role ids, cast profile ids, and duplicate `actor@role` bindings.
 - [ ] Validate transform parameters with clear diagnostics.
 - [ ] Reject unknown transform types.
@@ -56,6 +63,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 ## Phase 3: Transform Resolution
 
 - [ ] Add `src/stager/audio/voice_profile_resolver.py`.
+- [ ] Resolve the active actor from explicit `--actor`, a single matching cast profile, or a play-level actor mapping if added.
+- [ ] Fail when multiple cast profiles match a role and no actor can be selected.
 - [ ] Resolve the active profile for a role and actor.
 - [ ] Support `mode: none`.
 - [ ] Support `mode: explicit`.
@@ -63,7 +72,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Compute pitch shift with `12 * log2(target / baseline)`.
 - [ ] Clamp computed pitch shift with `max_pitch_shift_semitones`.
 - [ ] Compute the speed factor implied by linked speed/pitch.
-- [ ] Use observed actor-role tempo to predict post-transform WPM.
+- [ ] Use observed actor-role tempo to predict post-transform WPM when metrics are present and confident.
+- [ ] Preserve tempo when observed metrics are absent.
 - [ ] Select linked speed/pitch only when role tempo policy allows it.
 - [ ] Select preserve-tempo pitch when linked speed/pitch would violate tempo policy.
 - [ ] Select preserve-tempo pitch when observed tempo confidence is too low.
@@ -72,8 +82,10 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Apply computed-profile overrides.
 - [ ] Expand `preset` transforms into concrete transform chains.
 - [ ] Preserve a stable resolved-profile id for cache keys.
+- [ ] Do not require `voice-analyze` output for transform resolution.
 - [ ] Add unit tests for one actor reading multiple roles.
 - [ ] Add unit tests for two actors reading the same role.
+- [ ] Add unit tests for ambiguous actor selection.
 - [ ] Add unit tests for pitch clamping and overrides.
 - [ ] Add unit tests for linked speed/pitch selection when predicted WPM is within policy.
 - [ ] Add unit tests for preserve-tempo fallback when predicted WPM is outside policy.
@@ -95,9 +107,9 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   - `aecho`,
   - `atrim`,
   - `asetpts`,
-  - `concat`,
   - `loudnorm`.
 - [x] Check optional filters:
+  - `concat`,
   - `firequalizer`,
   - `afir`.
 - [ ] Fail render preflight when required filters are missing.
@@ -133,8 +145,11 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   ```
 
 - [ ] Compute source audio fingerprints.
+- [ ] Include selected source audio layer, path, and content hash in cache keys.
+- [ ] Include cleanup review identity, path, and content hash when cleaned source audio is used.
 - [ ] Include resolved transform chain in cache key.
 - [ ] Include actor id, role id, segment id, production id, and content hash where available.
+- [ ] Include observed metrics used by resolution and the selected pitch strategy.
 - [ ] Include renderer backend and relevant FFmpeg capability flags.
 - [ ] Write render manifest JSON for each rendered profile.
 - [ ] Skip rendering when cache key and output file match.
@@ -160,7 +175,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Add `./main voice-profiles doctor` or equivalent FFmpeg capability diagnostic.
 - [ ] Support `--play/-p`.
 - [ ] Support `--role`.
-- [ ] Support `--actor` when actor metadata is available.
+- [ ] Support `--actor` as the MVP explicit actor selector.
+- [ ] Support `--audio-source auto|canonical|cleaned`.
 - [ ] Support `--force` to ignore cache.
 - [ ] Support `--dry-run` to print planned renders and cache hits.
 - [ ] Print a summary of rendered, skipped, and failed segments.
@@ -169,6 +185,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 ## Phase 8: Audioplay Integration
 
 - [ ] Add `--voice-profiles/--no-voice-profiles` to audioplay build commands that consume segment audio.
+- [ ] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
 - [ ] Resolve rendered audio for roles with active profiles.
 - [ ] Fall back to canonical segment audio for roles without profiles.
 - [ ] Ensure missing rendered audio triggers rendering or a clear diagnostic.
@@ -178,6 +195,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 ## Phase 9: Playbook Integration
 
 - [ ] Add `--voice-profiles/--no-voice-profiles` to `./main playbook`.
+- [ ] Propagate `--audio-source auto|canonical|cleaned` into voice rendering when profiles are enabled.
 - [ ] Use rendered audio for response assets when enabled.
 - [ ] Decide and implement first cue policy:
   - [ ] rendered cues,
@@ -191,7 +209,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 10: Recording Package And Actor Metadata
 
-- [ ] Decide whether Recording Requests need actor ids in the first implementation.
+- [ ] Treat recording-package actor metadata as a follow-on enhancement unless MVP actor selection proves insufficient.
+- [ ] Decide whether Recording Requests need actor ids after the explicit `--actor` and single-profile inference workflow is exercised.
 - [ ] If needed, update [../specs/recording_package_manifest.md](../specs/recording_package_manifest.md).
 - [ ] Preserve actor id through LineRecorder project state and `role_recordings` exports if added.
 - [ ] Keep voice effects out of LineRecorder recording/export behavior.
@@ -218,6 +237,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Estimate approximate actor-role speaking rate from represented text and speech-active duration.
 - [ ] Require enough speech-active audio, words, and segments before marking tempo confidence usable.
 - [ ] Mark sparse-role tempo estimates as low confidence.
+- [ ] Write observed metrics that pitch-strategy resolution can consume.
 - [ ] Feed observed tempo into pitch-strategy resolution without normalizing tempo.
 - [ ] Write analysis output as suggestions, not automatic config changes by default.
 - [ ] Add `--write-baseline` only after diagnostics are trustworthy.
@@ -274,6 +294,9 @@ Rubber Band integration is explicitly out of scope for the MVP. The MVP must use
 - [ ] Explicit transform mode works.
 - [ ] Computed pitch mode works and clamps large shifts.
 - [ ] Computed pitch strategy uses linked speed/pitch only when role tempo policy allows it.
+- [ ] Missing or low-confidence observed tempo preserves recorded timing.
+- [ ] Actor selection is explicit or unambiguous, and ambiguity fails before rendering.
+- [ ] Render cache keys distinguish canonical source audio from reviewed cleaned source audio.
 - [ ] Voice analysis can estimate observed speaking rate with confidence and does not normalize tempo.
 - [ ] Built-in presets expand to deterministic FFmpeg transform chains.
 - [ ] Rendered audio is cached and rebuilt only when relevant inputs change.
