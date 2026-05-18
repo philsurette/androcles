@@ -81,23 +81,23 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Load LineRecorder floor-noise metadata when present.
 - [x] Resolve each recording's floor-noise sample by explicit id.
 - [x] Resolve each recording's floor-noise sample by timestamp association.
-- [ ] Estimate broadband noise floor from floor-noise samples.
-- [ ] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
-- [ ] Mark fallback noise estimates as lower confidence.
-- [ ] Estimate suggested denoise strength.
-- [ ] Estimate click density or impulsive-noise likelihood.
-- [ ] Estimate sibilance risk and suggested de-essing strength.
-- [ ] Identify conservative leading/trailing silence trim candidates.
+- [x] Estimate broadband noise floor from floor-noise samples.
+- [x] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
+- [x] Mark fallback noise estimates as lower confidence.
+- [x] Estimate suggested denoise strength.
+- [x] Estimate click density or impulsive-noise likelihood.
+- [x] Estimate sibilance risk and suggested de-essing strength.
+- [x] Identify conservative leading/trailing silence trim candidates.
 - [x] Detect clipping or near-clipping risk.
-- [ ] Estimate loudness normalization feasibility and expected gain change.
-- [ ] Group analysis by role, recording package/session, floor-noise id, and source characteristics.
+- [x] Estimate loudness normalization feasibility and expected gain change.
+- [x] Group analysis by role, recording package/session, floor-noise id, and source characteristics.
 - [x] Recommend a first-pass cleanup profile per recording.
 - [x] Flag per-segment outliers for review.
 - [x] Write machine-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.json`.
 - [x] Write human-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.md`.
-- [ ] Add tests for floor-noise-backed signal analysis.
-- [ ] Add tests for fallback analysis without floor-noise samples.
-- [ ] Add tests that aggressive recommendations require explicit opt-in.
+- [x] Add tests for floor-noise-backed signal analysis.
+- [x] Add tests for fallback analysis without floor-noise samples.
+- [x] Add tests that aggressive recommendations require explicit opt-in.
 
 ## Phase 6: Render Cache
 
@@ -168,7 +168,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 - [x] Add generated comparison manifest.
 - [x] Add optional report listing source, cleaned output, profile, and duration delta.
-- [ ] Include analysis recommendation ids in comparison output when analysis was used.
+- [x] Include analysis recommendation ids in comparison output when analysis was used.
 - [x] Include batch id and original/cleaned sample ranges in comparison output.
 - [x] Include boundary-shift warnings in comparison output.
 - [ ] Decide whether a promote command is needed for canonical segment audio.

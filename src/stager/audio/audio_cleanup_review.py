@@ -19,6 +19,7 @@ class AudioCleanupReviewWriter:
     paths_config: paths.PathConfig
 
     def write(self, manifest_paths: tuple[Path, ...]) -> AudioCleanupReviewResult:
+        recommendation_ids = self._analysis_recommendation_ids()
         entries = []
         for manifest_path in manifest_paths:
             data = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -40,6 +41,9 @@ class AudioCleanupReviewWriter:
                         "batch_id": batch_id,
                         "role": boundary["role"],
                         "segment_id": boundary["segment_id"],
+                        "analysis_recommendation_id": recommendation_ids.get(
+                            (boundary["role"], boundary["segment_id"])
+                        ),
                         "source_path": segment.get("source_path"),
                         "output_path": boundary.get("output_path"),
                         "original_start_sample": boundary["original_start_sample"],
@@ -68,6 +72,28 @@ class AudioCleanupReviewWriter:
             entry_count=len(entries),
         )
 
+    def _analysis_recommendation_ids(self) -> dict[tuple[str, str], str]:
+        report_path = self.paths_config.audio_out_dir / "cleanup_analysis" / "report.json"
+        if not report_path.exists():
+            return {}
+        try:
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+        recommendation_ids = {}
+        for entry in report.get("entries", []):
+            if not isinstance(entry, dict):
+                continue
+            role = entry.get("role")
+            segment_id = entry.get("segment_id")
+            recommendation = entry.get("recommendation")
+            if not isinstance(role, str) or not isinstance(segment_id, str) or not isinstance(recommendation, dict):
+                continue
+            recommendation_id = recommendation.get("id")
+            if isinstance(recommendation_id, str):
+                recommendation_ids[(role, segment_id)] = recommendation_id
+        return recommendation_ids
+
     def _markdown(self, entries: list[dict]) -> str:
         lines = [
             "# Audio Cleanup Review",
@@ -75,15 +101,16 @@ class AudioCleanupReviewWriter:
             f"- Play: `{self.paths_config.play_name}`",
             f"- Segments: {len(entries)}",
             "",
-            "| Batch | Role | Segment | Delta Samples | Warnings | Fallback | Output |",
-            "| --- | --- | --- | ---: | --- | --- | --- |",
+            "| Batch | Role | Segment | Recommendation | Delta Samples | Warnings | Fallback | Output |",
+            "| --- | --- | --- | --- | ---: | --- | --- | --- |",
         ]
         for entry in entries:
             warnings = ", ".join(entry["warnings"]) if entry["warnings"] else "none"
             fallback = entry["fallback_reason"] if entry["fallback"] else "no"
             output_path = entry["output_path"] or ""
+            recommendation_id = entry["analysis_recommendation_id"] or "none"
             lines.append(
-                f"| {entry['batch_id']} | {entry['role']} | {entry['segment_id']} | "
+                f"| {entry['batch_id']} | {entry['role']} | {entry['segment_id']} | {recommendation_id} | "
                 f"{entry['duration_delta_samples']} | {warnings} | {fallback} | {output_path} |"
             )
         return "\n".join(lines) + "\n"

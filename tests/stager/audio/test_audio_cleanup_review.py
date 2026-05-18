@@ -41,15 +41,33 @@ def test_audio_cleanup_review_writer_summarizes_rendered_manifests(tmp_path: Pat
         encoding="utf-8",
     )
 
+    analysis_dir = cfg.audio_out_dir / "cleanup_analysis"
+    analysis_dir.mkdir(parents=True)
+    (analysis_dir / "report.json").write_text(
+        json.dumps(
+            {
+                "entries": [
+                    {
+                        "role": "MEGAERA",
+                        "segment_id": "0_1_1",
+                        "recommendation": {"id": "MEGAERA/0_1_1/cleanup-analysis-v1"},
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
     result = AudioCleanupReviewWriter(paths_config=cfg).write((manifest_path,))
 
     data = json.loads(result.json_path.read_text(encoding="utf-8"))
     assert result.entry_count == 1
     assert data["entries"][0]["batch_id"] == "MEGAERA-gentle_voice_cleanup"
+    assert data["entries"][0]["analysis_recommendation_id"] == "MEGAERA/0_1_1/cleanup-analysis-v1"
     assert data["entries"][0]["duration_delta_samples"] == -10
     assert data["entries"][0]["fallback_reason"] == "batch_duration_changed"
     markdown = result.markdown_path.read_text(encoding="utf-8")
-    assert "| MEGAERA-gentle_voice_cleanup | MEGAERA | 0_1_1 | -10 |" in markdown
+    assert "| MEGAERA-gentle_voice_cleanup | MEGAERA | 0_1_1 | MEGAERA/0_1_1/cleanup-analysis-v1 | -10 |" in markdown
 
 
 def _config(tmp_path: Path) -> paths.PathConfig:
