@@ -2,21 +2,26 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import platform
-import shutil
+from pathlib import Path
+
+from stager.shared.ffmpeg_probe import FfmpegInstallation, FfmpegProbe
 
 
 @dataclass(frozen=True)
 class ExternalToolChecker:
-    tools: tuple[str, ...] = ("ffmpeg", "ffprobe")
+    working_dir: Path | None = None
+    probe: FfmpegProbe | None = None
 
-    def require_audio_tools(self) -> None:
-        missing = [tool for tool in self.tools if shutil.which(tool) is None]
-        if missing:
+    def require_audio_tools(self) -> FfmpegInstallation:
+        try:
+            probe = self.probe or FfmpegProbe(working_dir=self.working_dir or Path.cwd())
+            return probe.find_installation()
+        except RuntimeError as exc:
             raise RuntimeError(
-                "Missing required audio tool(s): "
-                f"{', '.join(missing)}. Install ffmpeg and make sure ffmpeg and ffprobe are on PATH.\n"
+                f"{exc}. Install ffmpeg and make sure ffmpeg and ffprobe are available through "
+                "a Quince ffmpeg.conf file or on PATH.\n"
                 f"{self._install_hint()}"
-            )
+            ) from exc
 
     def _install_hint(self) -> str:
         system = platform.system()
