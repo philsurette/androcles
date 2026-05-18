@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 import wave
 
+import pytest
+
 from stager.audio.audio_cleanup_service import AudioCleanupService
 from stager.shared import paths
 from stager.shared.ffmpeg_probe import FfmpegInstallation
@@ -114,6 +116,84 @@ def test_audio_cleanup_service_groups_segments_by_import_session(tmp_path: Path)
         "MEGAERA-gentle_voice_cleanup-session-a",
         "MEGAERA-gentle_voice_cleanup-session-b",
     }
+
+
+def test_audio_cleanup_service_rejects_unknown_config_role_override(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    (cfg.play_dir / "audio_cleanup.yaml").write_text(
+        """
+version: 1
+roles:
+  MEGAERA_TYPO:
+    profile: gentle_voice_cleanup
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Unknown audio cleanup role override\\(s\\): MEGAERA_TYPO"):
+        AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).build_plan()
+
+
+def test_audio_cleanup_service_rejects_unknown_requested_role(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+
+    with pytest.raises(RuntimeError, match="Unknown audio cleanup role: GOD"):
+        AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).build_plan(role="GOD")
+
+
+def test_audio_cleanup_service_uses_analysis_recommended_profiles(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_2.wav", samples=[0, 1300, -1300, 0])
+    analysis_dir = cfg.audio_out_dir / "cleanup_analysis"
+    analysis_dir.mkdir(parents=True)
+    (analysis_dir / "report.json").write_text(
+        json.dumps(
+            {
+                "status": "accepted",
+                "entries": [
+                    {
+                        "role": "MEGAERA",
+                        "segment_id": "0_1_1",
+                        "recommendation": {"profile": "declick_gentle"},
+                    },
+                    {
+                        "role": "MEGAERA",
+                        "segment_id": "0_1_2",
+                        "recommendation": {"profile": "gentle_voice_cleanup"},
+                    },
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).prepare(
+        role="MEGAERA",
+        use_analysis=True,
+    )
+
+    assert {item.batch_id for item in result} == {
+        "MEGAERA-declick_gentle",
+        "MEGAERA-gentle_voice_cleanup",
+    }
+    assert {item.segment_count for item in result} == {1}
+
+
+def test_audio_cleanup_service_writes_review_report_after_render(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+
+    result = AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).render(
+        role="MEGAERA",
+        profile="none",
+    )
+
+    assert len(result) == 1
+    assert (cfg.audio_out_dir / "cleaned" / "cleanup_review.json").exists()
+    assert (cfg.audio_out_dir / "cleaned" / "cleanup_review.md").exists()
 
 
 def _config(tmp_path: Path) -> paths.PathConfig:

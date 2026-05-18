@@ -1221,6 +1221,15 @@ def audio_cleanup_plan(
             typer.echo(f"{entry.role}: profile {entry.profile} filters={filter_spec} loudnorm={entry.loudnorm_profile}")
             if entry.missing_optional_filters:
                 typer.echo(f"{entry.role}: missing optional filters {', '.join(entry.missing_optional_filters)}")
+        elif entry.resolution == "analysis":
+            filter_spec = ",".join(entry.filters) if entry.filters else "none"
+            segment_count = len(entry.segment_ids)
+            typer.echo(
+                f"{entry.role}: analysis profile {entry.profile} "
+                f"segments={segment_count} filters={filter_spec} loudnorm={entry.loudnorm_profile}"
+            )
+            if entry.missing_optional_filters:
+                typer.echo(f"{entry.role}: missing optional filters {', '.join(entry.missing_optional_filters)}")
         else:
             typer.echo(f"{entry.role}: {entry.resolution}")
 

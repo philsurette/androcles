@@ -233,12 +233,17 @@ class AudioCleanupAnalysisStore:
         return json.loads(self.report_path.read_text(encoding="utf-8"))
 
     def require_role(self, role: str) -> None:
+        self.recommendations_for_role(role)
+
+    def recommendations_for_role(self, role: str) -> tuple[dict, ...]:
         report = self.load()
         if report.get("status") != "accepted":
             raise RuntimeError(f"Audio cleanup analysis report is not accepted: {paths.display_path(self.report_path)}")
         entries = report.get("entries", [])
-        if not any(entry.get("role") == role for entry in entries if isinstance(entry, dict)):
+        role_entries = tuple(entry for entry in entries if isinstance(entry, dict) and entry.get("role") == role)
+        if not role_entries:
             raise RuntimeError(
                 f"Analysis-based audio cleanup has no recommendation for role {role}: "
                 f"{paths.display_path(self.report_path)}"
             )
+        return role_entries

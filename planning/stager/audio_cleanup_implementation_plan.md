@@ -53,7 +53,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Support role-level `analysis: false` override in analysis-based productions.
 - [x] Fail clearly when analysis-based cleanup is requested without an accepted analysis report.
 - [x] Validate profile names.
-- [ ] Validate role ids.
+- [x] Validate role ids.
 - [x] Add built-in presets:
   - `declick_gentle`,
   - `declick_medium`,
@@ -156,7 +156,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Support `--play/-p`.
 - [x] Support `--role`.
 - [x] Support `--profile`.
-- [ ] Support `--use-analysis` to render using analysis recommendations.
+- [x] Support `--use-analysis` to render using analysis recommendations.
 - [x] Support `--force`.
 - [x] Support `--dry-run`.
 - [x] Print analysis report locations.
@@ -166,11 +166,11 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 9: Review And Promotion
 
-- [ ] Add generated comparison manifest.
-- [ ] Add optional report listing source, cleaned output, profile, and duration delta.
+- [x] Add generated comparison manifest.
+- [x] Add optional report listing source, cleaned output, profile, and duration delta.
 - [ ] Include analysis recommendation ids in comparison output when analysis was used.
-- [ ] Include batch id and original/cleaned sample ranges in comparison output.
-- [ ] Include boundary-shift warnings in comparison output.
+- [x] Include batch id and original/cleaned sample ranges in comparison output.
+- [x] Include boundary-shift warnings in comparison output.
 - [ ] Decide whether a promote command is needed for canonical segment audio.
 - [ ] If added, require explicit confirmation or option before overwriting canonical segment audio.
 

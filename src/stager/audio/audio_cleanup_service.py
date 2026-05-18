@@ -8,6 +8,7 @@ from stager.audio.audio_cleanup_analyzer import AudioCleanupAnalysisStore, Audio
 from stager.audio.audio_cleanup_config import AudioCleanupConfig
 from stager.audio.audio_cleanup_filter_graph import AudioCleanupFilterGraphCompiler
 from stager.audio.audio_cleanup_renderer import AudioCleanupRenderer
+from stager.audio.audio_cleanup_review import AudioCleanupReviewWriter
 from stager.shared import paths
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.ffmpeg_probe import FfmpegInstallation
@@ -21,6 +22,7 @@ class AudioCleanupPlanEntry:
     filters: tuple[str, ...]
     loudnorm_profile: str
     missing_optional_filters: tuple[str, ...]
+    segment_ids: tuple[str, ...] = ()
     duration_preserving: bool = True
 
 
@@ -99,6 +101,7 @@ class AudioCleanupService:
         use_analysis: bool = False,
     ) -> AudioCleanupPlan:
         config = self.load_config()
+        self._validate_role_ids(config=config, role=role)
         roles = [role] if role else self._roles(config)
         installation = self._installation()
         compiler = AudioCleanupFilterGraphCompiler(available_filters=set(installation.filters))
@@ -107,13 +110,13 @@ class AudioCleanupService:
         for role_name in roles:
             resolution = config.resolve_role(role_name)
             if use_analysis:
-                analysis_store.require_role(role_name)
-                resolution_name = "analysis"
-                profile_name = None
-                filters: tuple[str, ...] = ()
-                loudnorm_profile = "none"
-                missing: tuple[str, ...] = ()
-                duration_preserving = True
+                entries.extend(self._analysis_plan_entries(
+                    role=role_name,
+                    config=config,
+                    compiler=compiler,
+                    analysis_store=analysis_store,
+                ))
+                continue
             elif profile is not None:
                 selected_profile = config.profiles.get(profile)
                 if selected_profile is None:
@@ -126,13 +129,13 @@ class AudioCleanupService:
                 missing = compiled.missing_optional_filters
                 duration_preserving = compiled.duration_preserving
             elif resolution.uses_analysis:
-                analysis_store.require_role(role_name)
-                resolution_name = "analysis"
-                profile_name = None
-                filters = ()
-                loudnorm_profile = "none"
-                missing = ()
-                duration_preserving = True
+                entries.extend(self._analysis_plan_entries(
+                    role=role_name,
+                    config=config,
+                    compiler=compiler,
+                    analysis_store=analysis_store,
+                ))
+                continue
             elif resolution.disabled:
                 resolution_name = "none"
                 profile_name = None
@@ -180,6 +183,63 @@ class AudioCleanupService:
             entry_count=len(report.entries),
         )
 
+    def _analysis_plan_entries(
+        self,
+        *,
+        role: str,
+        config: AudioCleanupConfig,
+        compiler: AudioCleanupFilterGraphCompiler,
+        analysis_store: AudioCleanupAnalysisStore,
+    ) -> list[AudioCleanupPlanEntry]:
+        recommendations = analysis_store.recommendations_for_role(role)
+        segment_ids_by_profile: dict[str, list[str]] = {}
+        for recommendation in recommendations:
+            segment_id = recommendation.get("segment_id")
+            recommendation_data = recommendation.get("recommendation")
+            if not isinstance(segment_id, str) or not isinstance(recommendation_data, dict):
+                raise RuntimeError(f"Invalid audio cleanup analysis recommendation for role {role}")
+            profile_name = recommendation_data.get("profile")
+            if not isinstance(profile_name, str):
+                raise RuntimeError(f"Invalid audio cleanup analysis profile for role {role} segment {segment_id}")
+            if profile_name not in config.profiles:
+                raise RuntimeError(
+                    f"Audio cleanup analysis recommends unknown profile {profile_name!r} "
+                    f"for role {role} segment {segment_id}"
+                )
+            segment_ids_by_profile.setdefault(profile_name, []).append(segment_id)
+
+        entries = []
+        for profile_name, segment_ids in sorted(segment_ids_by_profile.items()):
+            if profile_name == "none":
+                entries.append(
+                    AudioCleanupPlanEntry(
+                        role=role,
+                        resolution="none",
+                        profile=profile_name,
+                        filters=(),
+                        loudnorm_profile="none",
+                        missing_optional_filters=(),
+                        segment_ids=tuple(sorted(segment_ids)),
+                        duration_preserving=True,
+                    )
+                )
+                continue
+            profile = config.profiles[profile_name]
+            compiled = compiler.compile(profile)
+            entries.append(
+                AudioCleanupPlanEntry(
+                    role=role,
+                    resolution="analysis",
+                    profile=profile.name,
+                    filters=compiled.filters,
+                    loudnorm_profile=profile.loudnorm,
+                    missing_optional_filters=compiled.missing_optional_filters,
+                    segment_ids=tuple(sorted(segment_ids)),
+                    duration_preserving=compiled.duration_preserving,
+                )
+            )
+        return entries
+
     def prepare(
         self,
         *,
@@ -195,7 +255,7 @@ class AudioCleanupService:
                 continue
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
-            for group in self._segment_groups(entry.role):
+            for group in self._segment_groups(entry.role, segment_ids=entry.segment_ids):
                 batch_id = self._batch_id(
                     entry,
                     session_id=group.session_id,
@@ -238,7 +298,7 @@ class AudioCleanupService:
                 continue
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
-            for group in self._segment_groups(entry.role):
+            for group in self._segment_groups(entry.role, segment_ids=entry.segment_ids):
                 batch_id = self._batch_id(
                     entry,
                     session_id=group.session_id,
@@ -266,6 +326,10 @@ class AudioCleanupService:
                         fallback_count=rendered.fallback_count,
                     )
                 )
+        if results:
+            AudioCleanupReviewWriter(paths_config=self.paths_config).write(
+                tuple(result.manifest_path for result in results)
+            )
         return tuple(results)
 
     def _installation(self) -> FfmpegInstallation:
@@ -278,14 +342,32 @@ class AudioCleanupService:
             roles.update(path.name for path in self.paths_config.segments_dir.iterdir() if path.is_dir())
         return sorted(roles)
 
+    def _known_roles(self) -> set[str]:
+        if not self.paths_config.segments_dir.exists():
+            return set()
+        return {path.name for path in self.paths_config.segments_dir.iterdir() if path.is_dir()}
+
+    def _validate_role_ids(self, *, config: AudioCleanupConfig, role: str | None) -> None:
+        known_roles = self._known_roles()
+        if not known_roles:
+            return
+        unknown_config_roles = sorted(set(config.roles) - known_roles)
+        if unknown_config_roles:
+            raise RuntimeError(f"Unknown audio cleanup role override(s): {', '.join(unknown_config_roles)}")
+        if role is not None and role not in known_roles:
+            raise RuntimeError(f"Unknown audio cleanup role: {role}")
+
     def _segment_paths(self, role: str) -> list[Path]:
         role_dir = self.paths_config.segments_dir / role
         return sorted(role_dir.glob("*.wav")) if role_dir.exists() else []
 
-    def _segment_groups(self, role: str) -> tuple["AudioCleanupSegmentGroup", ...]:
+    def _segment_groups(self, role: str, *, segment_ids: tuple[str, ...] = ()) -> tuple["AudioCleanupSegmentGroup", ...]:
         import_index = self._segment_import_index()
         groups: dict[tuple[str | None, str | None, Path | None], list[Path]] = {}
+        selected_segment_ids = set(segment_ids)
         for segment_path in self._segment_paths(role):
+            if selected_segment_ids and segment_path.stem not in selected_segment_ids:
+                continue
             context = import_index.get((role, segment_path.stem))
             if context is None:
                 key = (None, None, None)
