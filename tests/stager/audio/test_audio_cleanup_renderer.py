@@ -115,6 +115,29 @@ def test_cleanup_renderer_cache_key_includes_loudnorm_profile(tmp_path: Path) ->
     assert first_result.manifest.cache_key != second_result.manifest.cache_key
 
 
+def test_cleanup_renderer_normalizes_mismatched_sample_rate_before_batching(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0], sample_rate=44_100)
+    runner = ResamplingRunner()
+
+    result = AudioCleanupRenderer(paths_config=cfg, command_runner=runner).prepare_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+    )
+
+    assert runner.commands[0][0] == "ffmpeg"
+    assert runner.commands[0][runner.commands[0].index("-ar") + 1] == "48000"
+    assert result.manifest.segments[0].role == "MEGAERA"
+    assert result.manifest.segments[0].segment_id == "0_1_1"
+    assert result.manifest.segments[0].source_sample_rate_hz == 48_000
+    assert "normalized" in result.manifest.segments[0].source_path.parts
+    assert first.exists()
+
+
 def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
@@ -212,6 +235,28 @@ def test_cleanup_renderer_uses_floor_noise_for_afftdn(tmp_path: Path) -> None:
     assert "atrim=start=" in filter_spec
 
 
+def test_cleanup_renderer_normalizes_floor_noise_before_afftdn(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    floor_noise = tmp_path / "floor.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    _write_wav(floor_noise, samples=[0, 0, 10, -10], sample_rate=44_100)
+    runner = ResamplingRunner()
+
+    AudioCleanupRenderer(paths_config=cfg, command_runner=runner).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup-floor-1",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("afftdn=nr=6:nf=-50",),
+        floor_noise_path=floor_noise,
+    )
+
+    cleanup_command = runner.commands[-1]
+    assert "-filter_complex" in cleanup_command
+    assert "normalized/floor_noise" in Path(cleanup_command[cleanup_command.index("-i") + 1]).as_posix()
+
+
 def test_cleanup_renderer_rejects_silent_cleaned_segment(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
@@ -285,6 +330,23 @@ class CopyingRunner:
         if "-filter_complex" in command:
             input_index = command.index("-i", input_index + 1) + 1
         shutil.copy2(command[input_index], command[-1])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class ResamplingRunner:
+    def __init__(self) -> None:
+        self.commands: list[list[str]] = []
+
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        self.commands.append(command)
+        if "-ar" not in command:
+            input_index = command.index("-i") + 1
+            if "-filter_complex" in command:
+                input_index = command.index("-i", input_index + 1) + 1
+            shutil.copy2(command[input_index], command[-1])
+            return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+        sample_rate = int(command[command.index("-ar") + 1])
+        _write_wav(Path(command[-1]), samples=[0, 1200, -1200, 0], sample_rate=sample_rate)
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
 

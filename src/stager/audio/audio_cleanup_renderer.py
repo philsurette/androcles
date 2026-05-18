@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 import shutil
 import subprocess
@@ -49,6 +50,13 @@ class RenderedCleanupBatch:
     warning_count: int
 
 
+@dataclass(frozen=True)
+class _AudioMetadata:
+    sample_rate_hz: int
+    channels: int
+    frames: int
+
+
 @dataclass
 class AudioCleanupRenderer:
     paths_config: paths.PathConfig
@@ -67,10 +75,15 @@ class AudioCleanupRenderer:
         loudnorm_profile: str = "none",
         floor_noise_path: Path | None = None,
     ) -> PreparedCleanupBatch:
+        normalized_segment_paths, normalized_floor_noise_path = self._normalize_inputs(
+            batch_id=batch_id,
+            segment_paths=segment_paths,
+            floor_noise_path=floor_noise_path,
+        )
         builder = AudioCleanupBatchBuilder(sample_rate_hz=self.sample_rate_hz)
         manifest = builder.build(
             batch_id=batch_id,
-            segment_paths=segment_paths,
+            segment_paths=normalized_segment_paths,
             padding_seconds=padding_seconds,
         )
         samples = self._concatenated_samples(manifest)
@@ -94,7 +107,9 @@ class AudioCleanupRenderer:
             resolved_filters=resolved_filters,
             loudnorm_profile=loudnorm_profile,
             boundary_warning_ms=boundary_warning_ms,
-            floor_noise_hash=cache.file_hash(floor_noise_path) if floor_noise_path is not None else None,
+            floor_noise_hash=(
+                cache.file_hash(normalized_floor_noise_path) if normalized_floor_noise_path is not None else None
+            ),
         )
         manifest = manifest.with_cache_key(cache_key)
         cache_hit = cache.is_hit(manifest)
@@ -121,6 +136,15 @@ class AudioCleanupRenderer:
             loudnorm_profile=loudnorm_profile,
             floor_noise_path=floor_noise_path,
         )
+        normalized_floor_noise_path = (
+            self._normalized_audio_path(
+                batch_id=batch_id,
+                source_path=floor_noise_path,
+                kind="floor_noise",
+            )
+            if floor_noise_path is not None
+            else None
+        )
         batch_dir = prepared.manifest_path.parent
         input_path = batch_dir / "batch_input.wav"
         cleaned_path = batch_dir / "batch_cleaned.wav"
@@ -129,7 +153,7 @@ class AudioCleanupRenderer:
             input_path=input_path,
             output_path=cleaned_path,
             resolved_filters=resolved_filters,
-            floor_noise_path=floor_noise_path,
+            floor_noise_path=normalized_floor_noise_path,
         )
         cleaned_samples = self._read_samples(cleaned_path)
         if abs(len(cleaned_samples) - prepared.manifest.total_samples) > 1:
@@ -268,6 +292,93 @@ class AudioCleanupRenderer:
             detail = (result.stderr or "").strip()
             suffix = f": {detail}" if detail else ""
             raise RuntimeError(f"Failed to render audio cleanup batch with ffmpeg{suffix}")
+
+    def _normalize_inputs(
+        self,
+        *,
+        batch_id: str,
+        segment_paths: list[Path],
+        floor_noise_path: Path | None,
+    ) -> tuple[list[Path], Path | None]:
+        normalized_segments = [
+            self._normalized_audio_path(batch_id=batch_id, source_path=segment_path, kind="segments")
+            for segment_path in segment_paths
+        ]
+        normalized_floor_noise_path = (
+            self._normalized_audio_path(batch_id=batch_id, source_path=floor_noise_path, kind="floor_noise")
+            if floor_noise_path is not None
+            else None
+        )
+        return normalized_segments, normalized_floor_noise_path
+
+    def _normalized_audio_path(self, *, batch_id: str, source_path: Path, kind: str) -> Path:
+        metadata = self._metadata(source_path)
+        if metadata.sample_rate_hz == self.sample_rate_hz and metadata.channels == 1:
+            return source_path
+        digest = self._file_hash(source_path)[:16]
+        if kind == "segments":
+            output_path = (
+                self.paths_config.audio_out_dir
+                / "cleaned"
+                / batch_id
+                / "normalized"
+                / f"{digest}-{self.sample_rate_hz}hz"
+                / source_path.parent.name
+                / source_path.name
+            )
+        elif kind == "floor_noise":
+            output_path = (
+                self.paths_config.audio_out_dir
+                / "cleaned"
+                / batch_id
+                / "normalized"
+                / "floor_noise"
+                / f"{source_path.stem}-{digest}-{self.sample_rate_hz}hz.wav"
+            )
+        else:
+            raise RuntimeError(f"Unknown audio normalization kind {kind!r}")
+        if output_path.exists():
+            normalized_metadata = self._metadata(output_path)
+            if normalized_metadata.sample_rate_hz == self.sample_rate_hz and normalized_metadata.channels == 1:
+                return output_path
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        command = [
+            "ffmpeg",
+            "-y",
+            "-i",
+            str(source_path),
+            "-ac",
+            "1",
+            "-ar",
+            str(self.sample_rate_hz),
+            str(output_path),
+        ]
+        result = self.command_runner(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            detail = (result.stderr or "").strip()
+            suffix = f": {detail}" if detail else ""
+            raise RuntimeError(f"Failed to normalize audio cleanup input with ffmpeg{suffix}")
+        normalized_metadata = self._metadata(output_path)
+        if normalized_metadata.sample_rate_hz != self.sample_rate_hz or normalized_metadata.channels != 1:
+            raise RuntimeError(
+                f"Normalized audio cleanup input has invalid format: {paths.display_path(output_path)}"
+            )
+        return output_path
+
+    def _metadata(self, path: Path) -> "_AudioMetadata":
+        with wave.open(str(path), "rb") as wav:
+            return _AudioMetadata(
+                sample_rate_hz=wav.getframerate(),
+                channels=wav.getnchannels(),
+                frames=wav.getnframes(),
+            )
+
+    def _file_hash(self, path: Path) -> str:
+        digest = hashlib.sha256()
+        with path.open("rb") as source:
+            for chunk in iter(lambda: source.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
 
     def _apply_loudnorm(self, path: Path, profile_name: str) -> None:
         if profile_name == "none":
