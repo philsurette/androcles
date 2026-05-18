@@ -195,6 +195,36 @@ def test_audio_cleanup_render_skips_rendered_cache_hits_unless_forced(tmp_path: 
     assert "Rendered 1 cleanup batches; skipped 0 cache hits" in forced.output
 
 
+def test_audio_cleanup_promote_requires_confirm(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_cleanup_review(cfg)
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "promote", "--play", "test"])
+
+    assert result.exit_code != 0
+    assert "requires --confirm" in result.output
+
+
+def test_audio_cleanup_promote_copies_cleaned_audio(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    target_path = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    cleaned_path = cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "MEGAERA" / "0_1_1.wav"
+    target_path.parent.mkdir(parents=True)
+    target_path.write_bytes(b"canonical")
+    cleaned_path.parent.mkdir(parents=True)
+    cleaned_path.write_bytes(b"cleaned")
+    _write_cleanup_review(cfg, output_path=cleaned_path)
+    _patch_path_config(monkeypatch, cfg)
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "promote", "--play", "test", "--confirm"])
+
+    assert result.exit_code == 0
+    assert "Promoted 1 cleaned segments" in result.output
+    assert "build/test/audio/cleaned/promotions/" in result.output
+    assert target_path.read_bytes() == b"cleaned"
+
+
 def _config(tmp_path: Path) -> paths.PathConfig:
     cfg = paths.PathConfig(
         play_name="test",
@@ -239,3 +269,28 @@ def _write_wav(path: Path, *, samples: list[int], sample_rate: int = 48_000) -> 
         wav.setsampwidth(2)
         wav.setframerate(sample_rate)
         wav.writeframes(b"".join(sample.to_bytes(2, "little", signed=True) for sample in samples))
+
+
+def _write_cleanup_review(cfg: paths.PathConfig, *, output_path: Path | None = None) -> None:
+    path = cfg.audio_out_dir / "cleaned" / "cleanup_review.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        """
+{
+  "play_id": "test",
+  "entries": [
+    {
+      "batch_id": "MEGAERA-none",
+      "role": "MEGAERA",
+      "segment_id": "0_1_1",
+      "analysis_recommendation_id": null,
+      "output_path": "%s",
+      "warnings": [],
+      "fallback": false
+    }
+  ]
+}
+"""
+        % ((output_path or Path("/tmp/cleaned.wav")).as_posix()),
+        encoding="utf-8",
+    )

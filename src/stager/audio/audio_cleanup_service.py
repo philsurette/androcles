@@ -7,6 +7,7 @@ from pathlib import Path
 from stager.audio.audio_cleanup_analyzer import AudioCleanupAnalysisStore, AudioCleanupAnalyzer
 from stager.audio.audio_cleanup_config import AudioCleanupConfig
 from stager.audio.audio_cleanup_filter_graph import AudioCleanupFilterGraphCompiler
+from stager.audio.audio_cleanup_promoter import AudioCleanupPromoter, AudioCleanupPromotionResult
 from stager.audio.audio_cleanup_renderer import AudioCleanupRenderer
 from stager.audio.audio_cleanup_review import AudioCleanupReviewWriter
 from stager.shared import paths
@@ -331,6 +332,19 @@ class AudioCleanupService:
                 tuple(result.manifest_path for result in results)
             )
         return tuple(results)
+
+    def promote(
+        self,
+        *,
+        confirm: bool,
+        include_warnings: bool = False,
+        role: str | None = None,
+    ) -> AudioCleanupPromotionResult:
+        return AudioCleanupPromoter(paths_config=self.paths_config).promote(
+            confirm=confirm,
+            include_warnings=include_warnings,
+            role=role,
+        )
 
     def _installation(self) -> FfmpegInstallation:
         checker = self.tool_checker or ExternalToolChecker()

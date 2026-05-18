@@ -171,8 +171,8 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Include analysis recommendation ids in comparison output when analysis was used.
 - [x] Include batch id and original/cleaned sample ranges in comparison output.
 - [x] Include boundary-shift warnings in comparison output.
-- [ ] Decide whether a promote command is needed for canonical segment audio.
-- [ ] If added, require explicit confirmation or option before overwriting canonical segment audio.
+- [x] Decide whether a promote command is needed for canonical segment audio.
+- [x] If added, require explicit confirmation or option before overwriting canonical segment audio.
 
 ## Phase 10: Integration
 

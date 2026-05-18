@@ -1339,6 +1339,36 @@ def audio_cleanup_render(
         typer.echo(paths.display_path(result.manifest_path))
 
 
+@audio_cleanup_app.command("promote")
+def audio_cleanup_promote(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit promotion to one role"),
+    confirm: bool = typer.Option(False, "--confirm", help="Confirm overwriting canonical segment audio"),
+    include_warnings: bool = typer.Option(
+        False,
+        "--include-warnings",
+        help="Promote reviewed outputs that contain cleanup warnings or fallbacks",
+    ),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Promote reviewed cleaned audio into canonical segment storage."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        result = run_audio_cleanup_promote(
+            role=role,
+            confirm=confirm,
+            include_warnings=include_warnings,
+            paths_config=cfg,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(
+        f"Promoted {result.promoted_count} cleaned segments "
+        f"({result.skipped_count} review entries skipped)."
+    )
+    typer.echo(paths.display_path(result.transaction_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -1680,6 +1710,21 @@ def run_audio_cleanup_render(
         profile=profile,
         use_analysis=use_analysis,
         force=force,
+    )
+
+
+def run_audio_cleanup_promote(
+    *,
+    role: str | None = None,
+    confirm: bool = False,
+    include_warnings: bool = False,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).promote(
+        role=role,
+        confirm=confirm,
+        include_warnings=include_warnings,
     )
 
 
