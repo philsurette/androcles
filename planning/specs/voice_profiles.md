@@ -268,6 +268,8 @@ Stager should provide a capability diagnostic command or render preflight that r
 
 The renderer should fail when required filters are missing. It should warn, not fail, when optional filters are missing and a fallback exists.
 
+Stager already contains a Lorick-derived `stager.loudnorm` package that performs two-pass FFmpeg loudness normalization: first measuring input loudness, true peak, loudness range, and threshold, then passing those measured values back into `loudnorm` during normalization. Voice-profile rendering should reuse that package rather than inventing a single-pass `loudnorm` filter string. Before it becomes part of the voice-profile pipeline, the package should be hardened with tests, explicit target presets, and clearer failure handling for unnormalizable audio.
+
 ## Audacity Macro Mapping
 
 Existing Audacity macros should be represented as named presets. For example, a producer's "female voice" macro with high-pass, filter curve, and compression can become:

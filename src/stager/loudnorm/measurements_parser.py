@@ -47,7 +47,7 @@ class MeasurementsParser:
 ^Input LRA:\s+(?P<loudness_range>[-+]?\d*(?:\.\d+)?)\s+LU$
 ^Input Threshold:\s+(?P<loudness_threshold>[-+]?\d*(?:\.\d+)?)\s+LUFS$
         """
-        float_pattern = r"(?:[-+]?\d*(?:\.\d+)?|-inf)" #(?:) is for non-capturing group
+        float_pattern = r"(?:[-+]?\d*(?:\.\d+)?|[-+]inf)" #(?:) is for non-capturing group
         # efforts to get this to work with re.VERBOSE did not meet with success...
         metric_patterns = []
         for metric in self.metrics.list():#self.targets.list_metrics():

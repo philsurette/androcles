@@ -1,9 +1,39 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import List
 from stager.loudnorm.target import Target
 from stager.loudnorm.result import Result
-    
+
+
+@dataclass(frozen=True)
+class LoudnessProfile:
+    lufs: Target
+    true_peak: Target
+    loudness_range: Target
+    loudness_threshold: Target
+
+    @classmethod
+    def librivox(cls) -> "LoudnessProfile":
+        return cls(
+            lufs=Target(too_low=-27, low=-23, high=-21, too_high=-17, target=-21),
+            true_peak=Target(target=-1, too_low=-3, low=-2, high=-1, too_high=0),
+            loudness_range=Target(target=10, too_low=5, low=7, high=12, too_high=15),
+            loudness_threshold=Target(target=-40, too_low=-90, low=-40, high=-25, too_high=-20),
+        )
+
+    @classmethod
+    def podcast(cls) -> "LoudnessProfile":
+        return cls(
+            lufs=Target(too_low=-20, low=-16, high=-14, too_high=-10, target=-14),
+            true_peak=Target(target=-1, too_low=-3, low=-2, high=-1, too_high=0),
+            loudness_range=Target(target=10, too_low=5, low=7, high=12, too_high=15),
+            loudness_threshold=Target(target=-40, too_low=-90, low=-40, high=-25, too_high=-20),
+        )
+
+    @classmethod
+    def voice_profile(cls) -> "LoudnessProfile":
+        return cls.librivox()
+
+
 @dataclass
 class Metric:
     name: str # identifier with no meaning in ffmpeg
@@ -23,9 +53,15 @@ class Metric:
     def __str__(self):
         return self.abbrev
 
+@dataclass
 class Metrics:
+    profile: LoudnessProfile = field(default_factory=LoudnessProfile.librivox)
+
     @classmethod
-    def _create_metrics(cls) -> List[Metric]:
+    def for_profile(cls, profile: LoudnessProfile) -> "Metrics":
+        return cls(profile=profile)
+
+    def _create_metrics(self) -> list[Metric]:
         return [
             Metric(
                 name="lufs",
@@ -34,23 +70,7 @@ class Metrics:
                 output_unit="LUFS",
                 option='i',  
                 is_controllable=True,
-                # original settings
-            # target_range=Target(
-                #     too_low=-20, 
-                #     low=-16, 
-                #     high=-14, 
-                #     too_high=-10, 
-                #     target=-14
-                # )
-                
-                # 5db quieter for librivox 
-                target_range=Target(
-                    too_low=-27, 
-                    low=-23, 
-                    high=-21, 
-                    too_high=-17, 
-                    target=-21
-                )
+                target_range=self.profile.lufs,
             ),
             Metric(
                 name="true_peak",
@@ -59,13 +79,7 @@ class Metrics:
                 output_unit="dBTP",
                 option='tp',
                 is_controllable=True,
-                target_range=Target(
-                    target=-1, 
-                    too_low=-3, 
-                    low=-2, 
-                    high=-1, 
-                    too_high=0 
-                )
+                target_range=self.profile.true_peak,
             ), 
             Metric(
                 name="loudness_range",
@@ -74,13 +88,7 @@ class Metrics:
                 output_unit="LU",
                 option='lra',
                 is_controllable=True,
-                target_range=Target(
-                    target = 10,
-                    too_low=5, 
-                    low=7, 
-                    high=12, 
-                    too_high=15 
-                ) 
+                target_range=self.profile.loudness_range,
             ), 
             Metric(
                 name="loudness_threshold",
@@ -89,23 +97,17 @@ class Metrics:
                 output_unit="LUFS",
                 option='thresh',
                 is_controllable=False,
-                target_range=Target(
-                    target = -40,
-                    too_low=-90, 
-                    low=-40, 
-                    high=-25, 
-                    too_high=-20,
-                )
+                target_range=self.profile.loudness_threshold,
             )
         ]
 
-    def __init__(self):
-        self.metrics = Metrics._create_metrics()
+    def __post_init__(self):
+        self.metrics = self._create_metrics()
     
     def for_name(self, name: str) -> Metric:
         return next(m for m in self.metrics if (m.name == name or m.abbrev == name))
     
-    def list(self) -> List[Metric]:
+    def list(self) -> list[Metric]:
         return self.metrics
     
     def controllable_metrics(self):

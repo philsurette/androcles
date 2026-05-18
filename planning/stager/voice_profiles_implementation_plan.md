@@ -90,6 +90,9 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - [ ] Compile `compressor` to `acompressor`.
 - [ ] Compile `gain`.
 - [ ] Compile `loudnorm`.
+- [x] Reuse the existing Lorick-derived `stager.loudnorm` two-pass normalizer for final loudness normalization.
+- [x] Add tests around `stager.loudnorm` parsing, command construction, and unnormalizable audio handling before using it in voice rendering.
+- [x] Make loudness targets explicit presets instead of hard-coded podcast/Librivox assumptions.
 - [ ] Compile baseline portable `pitch`.
 - [ ] Compile baseline portable `speed`.
 - [ ] Compile initial `reverb` using FFmpeg-native filters.

@@ -2,8 +2,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import subprocess
 import logging
-import argparse
 import shutil
+from typing import Protocol
 
 from stager.loudnorm.measurements_parser import MeasurementsParser
 from stager.loudnorm.measurements import Measurements, Phase
@@ -15,15 +15,22 @@ logger = logging.getLogger(__name__)
 EXECUTABLE="ffmpeg"
 FILTER="loudnorm"
 
+
+class CommandRunner(Protocol):
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        ...
+
+
 @dataclass
 class Normalizer:
     metrics: Metrics = field(default_factory=Metrics)
+    command_runner: CommandRunner = subprocess.run
     measures_parser: MeasurementsParser = field(init=False)
 
     def __post_init__(self):
         self.measures_parser = MeasurementsParser(metrics = self.metrics)
 
-    def measure(self, input_file) -> Measurements:
+    def measure(self, input_file: str) -> Measurements:
         options = [
             f"{FILTER}=print_format=summary",
         ]
@@ -39,7 +46,7 @@ class Normalizer:
         ]
 
         logger.info(F"{' '.join(measure_command)}")
-        measure_process = subprocess.run(measure_command, capture_output=True, text=True)
+        measure_process = self._run_command(measure_command, "measure loudness")
         output = measure_process.stderr  # ffmpeg outputs loudness info to stderr
         logger.debug(output)
 
@@ -47,8 +54,8 @@ class Normalizer:
 
 
     def _normalize_audio(self,
-                        input_file, 
-                        output_file, 
+                        input_file: str, 
+                        output_file: str, 
                         measurements: Measurements) -> Measurements:
         if not measurements.normalizable:
             unmeasurable = Measurements()
@@ -81,12 +88,20 @@ class Normalizer:
         normalize_command.append(output_file)
         logger.info(F"{' '.join(normalize_command)}")
 
-        normalize_process = subprocess.run(normalize_command, capture_output=True, text=True)
+        normalize_process = self._run_command(normalize_command, "normalize loudness")
         output = normalize_process.stderr  # ffmpeg outputs loudness info to stderr
         logger.debug(output)
         output_measures: Measurements = self.measures_parser.get_measurements(
             output, Phase.OUTPUT)
         return output_measures
+
+    def _run_command(self, command: list[str], action: str) -> subprocess.CompletedProcess[str]:
+        result = self.command_runner(command, capture_output=True, text=True)
+        if result.returncode != 0:
+            stderr = (result.stderr or "").strip()
+            detail = f": {stderr}" if stderr else ""
+            raise RuntimeError(f"Failed to {action} with ffmpeg{detail}")
+        return result
     
     def normalize(self, input_file: str, output_file:str=None) -> NormalizationResult:
         if not output_file:
