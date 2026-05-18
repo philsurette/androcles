@@ -36,7 +36,7 @@ class ProductionRecommendationService:
         if status.missing_recording_count:
             return ProductionRecommendation(
                 action="send requests",
-                reason="some canonical segment recordings are missing",
+                reason="some canonical segment recordings are missing; send requests or import returned recordings",
                 command=f"quince send-requests --play {play_id}",
             )
         if status.playbook.exists and status.playbook.matches_current_published_version is False:

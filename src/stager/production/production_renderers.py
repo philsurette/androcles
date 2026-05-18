@@ -68,26 +68,52 @@ def render_production_change_report(report, base_label: str | None = None) -> st
     if not report.changes:
         return f"No production changes since {base}."
     lines = [f"Production changes since {base}:"]
-    for change in report.changes:
-        if change.kind == "changed_id_reuse":
-            lines.append(f"  changed id reused: {change.line_id} -> {change.recommended_id}")
-            if change.previous is not None:
-                lines.append(f"    old: {change.previous.text}")
-            if change.current is not None:
-                lines.append(f"    new: {change.current.text}")
-        elif change.kind == "added" and change.current is not None:
-            lines.append(f"  added: {change.line_id} {change.current.text}")
-        elif change.kind == "removed" and change.previous is not None:
-            lines.append(f"  removed: {change.line_id} {change.previous.text}")
-        elif change.kind == "context_changed" and change.current is not None:
-            lines.append(f"  context changed: {change.line_id} {change.current.text}")
-        elif change.kind == "blocking_changed" and change.current is not None:
-            lines.append(f"  blocking changed: {change.line_id} {change.current.text}")
-        elif change.kind == "blocking_added" and change.current is not None:
-            lines.append(f"  blocking added: {change.line_id} {change.current.text}")
-        elif change.kind == "blocking_removed" and change.previous is not None:
-            lines.append(f"  blocking removed: {change.line_id} {change.previous.text}")
+    groups = [
+        ("Needs recording", [change for change in report.changes if _needs_recording(change)]),
+        ("Blocking only", list(report.blocking_changed)),
+        ("Context only", list(report.context_changed)),
+        ("Added", [change for change in report.added if not _needs_recording(change)]),
+        ("Removed", list(report.removed)),
+        ("Id issues", list(report.changed_id_reuse)),
+    ]
+    for heading, changes in groups:
+        if not changes:
+            continue
+        lines.append(f"  {heading}:")
+        for change in changes:
+            lines.extend(f"    {line}" for line in _render_change_lines(change))
     return "\n".join(lines)
+
+
+def _needs_recording(change) -> bool:
+    return (
+        change.current is not None
+        and bool(change.current.roles)
+        and change.kind in ("added", "changed_id_reuse")
+    )
+
+
+def _render_change_lines(change) -> list[str]:
+    if change.kind == "changed_id_reuse":
+        lines = [f"changed speech under reused id: {change.line_id} -> {change.recommended_id}"]
+        if change.previous is not None:
+            lines.append(f"old: {change.previous.text}")
+        if change.current is not None:
+            lines.append(f"new: {change.current.text}")
+        return lines
+    if change.kind == "added" and change.current is not None:
+        return [f"added: {change.line_id} {change.current.text}"]
+    if change.kind == "removed" and change.previous is not None:
+        return [f"removed: {change.line_id} {change.previous.text}"]
+    if change.kind == "context_changed" and change.current is not None:
+        return [f"context changed: {change.line_id} {change.current.text}"]
+    if change.kind == "blocking_changed" and change.current is not None:
+        return [f"blocking changed: {change.line_id} {change.current.text}"]
+    if change.kind == "blocking_added" and change.current is not None:
+        return [f"blocking added: {change.line_id} {change.current.text}"]
+    if change.kind == "blocking_removed" and change.previous is not None:
+        return [f"blocking removed: {change.line_id} {change.previous.text}"]
+    return [f"{change.kind}: {change.line_id}"]
 
 
 def render_production_status(status: ProductionStatus) -> str:

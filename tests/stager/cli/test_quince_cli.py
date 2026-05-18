@@ -96,10 +96,22 @@ def test_quince_publish_requires_summary(tmp_path: Path, monkeypatch) -> None:
     cfg = _scriptwright_workspace(tmp_path, "androcles")
     monkeypatch.chdir(cfg.play_dir)
 
-    result = CliRunner().invoke(app, ["publish"])
+    result = CliRunner().invoke(app, ["publish"], input="\n")
 
     assert result.exit_code != 0
     assert "Publishing requires --change-summary or --allow-empty-summary" in result.output
+
+
+def test_quince_publish_prompts_for_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["publish"], input="Prompted summary.\n")
+
+    assert result.exit_code == 0
+    assert "Change summary" in result.output
+    assert "Published production" in result.output
+    assert "// production_note: Prompted summary." in cfg.production_markdown.read_text(encoding="utf-8")
 
 
 def test_quince_publish_writes_new_production_version(tmp_path: Path, monkeypatch) -> None:
@@ -111,6 +123,78 @@ def test_quince_publish_writes_new_production_version(tmp_path: Path, monkeypatc
     assert result.exit_code == 0
     assert "Published production" in result.output
     assert "// production_version:" in cfg.production_markdown.read_text(encoding="utf-8")
+
+
+def test_quince_changes_groups_changed_speech_and_blocking(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8").replace(
+            "I-1 CAPTAIN: Stand fast.",
+            "I-1 CAPTAIN: Stand very fast.\n/CAPTAIN: Cross left.",
+        ),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["changes"])
+
+    assert result.exit_code == 0
+    assert "Needs recording:" in result.output
+    assert "changed speech under reused id: I-1 -> I-1a" in result.output
+    assert "Blocking only:" in result.output
+
+
+def test_quince_publish_reports_id_reuse_error_in_producer_terms(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8").replace("Stand fast.", "Stand very fast."),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["publish", "--change-summary", "Changed line."])
+
+    assert result.exit_code != 0
+    assert "Changed production ids were reused" in result.output
+    assert "I-1 -> I-1a" in result.output
+
+
+def test_quince_publish_can_apply_id_updates_for_speech_change(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8").replace("Stand fast.", "Stand very fast."),
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(
+        app,
+        ["publish", "--apply-id-updates", "--change-summary", "Changed line."],
+    )
+
+    assert result.exit_code == 0
+    assert "Rewrote changed spoken lines to fresh production ids:" in result.output
+    assert "I-1 -> I-1a" in result.output
+    assert "I-1a CAPTAIN: Stand very fast." in cfg.production_markdown.read_text(encoding="utf-8")
+
+
+def test_quince_publish_allows_blocking_only_change(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    cfg.production_markdown.write_text(
+        cfg.production_markdown.read_text(encoding="utf-8") + "/CAPTAIN: Cross left.\n",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["publish", "--change-summary", "Blocking note."])
+
+    assert result.exit_code == 0
+    assert "Blocking only:" in result.output
+    assert "Published production" in result.output
 
 
 def test_quince_cast_show_reports_unassigned_roles(tmp_path: Path, monkeypatch) -> None:

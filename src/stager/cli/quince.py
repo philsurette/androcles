@@ -187,12 +187,12 @@ def publish(
     apply_id_updates: bool = typer.Option(
         False,
         "--apply-id-updates",
-        help="Apply recommended revision ids before publishing changed reused ids.",
+        help="Rewrite changed spoken lines to fresh recommended ids before publishing.",
     ),
     allow_id_reuse: bool = typer.Option(
         False,
         "--allow-id-reuse",
-        help="Publish changed text under reused production ids.",
+        help="Keep changed spoken text under the same production ids; use only when downstream recordings should be treated as reusable.",
     ),
     dry_run: bool = typer.Option(False, "--dry-run", help="Show changes without publishing."),
 ) -> None:
@@ -211,6 +211,8 @@ def publish(
         return
     summary = (change_summary or "").strip()
     if not summary and not allow_empty_summary:
+        summary = typer.prompt("Change summary", default="", show_default=False).strip()
+    if not summary and not allow_empty_summary:
         raise click.ClickException("Publishing requires --change-summary or --allow-empty-summary.")
     try:
         result = publisher.publish(
@@ -223,7 +225,11 @@ def publish(
         raise click.ClickException(str(exc)) from exc
     typer.echo(f"Published production {result.version.label}.")
     if result.id_updates:
-        typer.echo("Applied id updates:" if apply_id_updates else "Recommended id updates:")
+        typer.echo(
+            "Rewrote changed spoken lines to fresh production ids:"
+            if apply_id_updates
+            else "Changed spoken lines need fresh production ids before publishing:"
+        )
         for old_id, new_id in sorted(result.id_updates.items()):
             typer.echo(f"  {old_id} -> {new_id}")
     if result.recording_request_paths:

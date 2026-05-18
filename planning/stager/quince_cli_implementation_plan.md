@@ -69,7 +69,7 @@ Checklist:
 - [x] Recommend cast setup when rehearsable roles are unassigned.
 - [x] Recommend recording requests when roles are missing LineRecorder segment audio.
 - [x] Recommend whole-role splitting when `recording: whole-role` roles have source audio but missing canonical segments.
-- [ ] Recommend receiving/importing recordings only as explanatory guidance, not as an automatic action.
+- [x] Recommend receiving/importing recordings only as explanatory guidance, not as an automatic action.
 - [x] Recommend Playbook rebuild when Playbook version is stale or blocking-only changes are present.
 - [x] Implement `quince next`.
 - [x] Add tests for recommendation priority and rendered command text.
@@ -81,13 +81,13 @@ Wrap production publication in producer language.
 Checklist:
 
 - [x] Implement `quince changes` from production diff data.
-- [ ] Group changes as "needs recording", "blocking-only", "context-only", "added", "removed", and "id issue".
+- [x] Group changes as "needs recording", "blocking-only", "context-only", "added", "removed", and "id issue".
 - [x] Implement `quince publish`.
-- [ ] Prompt for change summary when interactive and not provided.
+- [x] Prompt for change summary when interactive and not provided.
 - [x] Support `--dry-run`.
 - [x] Support `--recording-requests` while skipping blocking-only updates.
-- [ ] Preserve expert id-update controls but explain them in producer-facing wording.
-- [ ] Add tests for clean publish, missing summary, blocking-only publish, speech-change publish, and id-reuse errors.
+- [x] Preserve expert id-update controls but explain them in producer-facing wording.
+- [x] Add tests for clean publish, missing summary, blocking-only publish, speech-change publish, and id-reuse errors.
 
 ## Phase 6: Cast Helpers
 
