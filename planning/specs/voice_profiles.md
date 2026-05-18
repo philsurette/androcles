@@ -96,6 +96,10 @@ role_targets:
     target:
       pitch_center_hz: 130
       speaking_rate_wpm: 145
+      tempo_policy:
+        mode: preserve_performance
+        acceptable_range_wpm: [120, 165]
+        max_linked_speed_change: 0.06
       tone: warm
 
   MEGAERA:
@@ -103,9 +107,15 @@ role_targets:
     target:
       pitch_center_hz: 205
       speaking_rate_wpm: 165
+      tempo_policy:
+        mode: preserve_performance
+        acceptable_range_wpm: [145, 190]
+        max_linked_speed_change: 0.08
       tone: bright
       preset: female_bright
       max_pitch_shift_semitones: 6
+      pitch_strategy:
+        prefer_linked_speed_pitch_when_safe: true
 
   GOD:
     description: Deep, resonant, otherworldly.
@@ -114,6 +124,10 @@ role_targets:
       tone: dark
       preset: godlike_hall
       max_pitch_shift_semitones: 5
+      tempo_policy:
+        mode: preserve_performance
+        acceptable_range_wpm: [80, 135]
+        max_linked_speed_change: 0.04
 
 cast_profiles:
   phil@ANDROCLES:
@@ -167,9 +181,25 @@ Useful target fields:
 - `tone`
 - `preset`
 - `max_pitch_shift_semitones`
+- `tempo_policy`
+- `pitch_strategy`
 - `notes`
 
 The role target should be stable across casting changes. Actor-specific differences belong in `cast_profiles`.
+
+`speaking_rate_wpm` and `tempo_policy` are not tempo-normalization instructions. They describe the role's acceptable delivery range so the renderer can decide whether a pitch strategy that also changes speed is safe.
+
+Useful `tempo_policy` fields:
+
+- `mode`: initially `preserve_performance`. This means keep the actor's recorded timing unless a linked speed/pitch strategy stays within the role's tolerance.
+- `acceptable_range_wpm`: optional `[min, max]` range for the role's performed speech rate.
+- `max_linked_speed_change`: maximum speed factor delta that may be introduced by a linked pitch strategy, such as `0.08` for plus or minus 8%.
+- `min_confidence`: optional confidence threshold for using observed tempo analysis in automatic strategy selection.
+
+Useful `pitch_strategy` fields:
+
+- `prefer_linked_speed_pitch_when_safe`: use a linked pitch/speed transform when the resulting tempo stays within policy.
+- `fallback`: `preserve_tempo` by default, meaning preserve recorded timing if linked pitch/speed would violate tempo policy.
 
 ## Cast Profiles
 
@@ -191,11 +221,57 @@ The computed result must be clamped by `max_pitch_shift_semitones` when provided
 
 Overrides in a computed profile may replace or clamp computed values. This lets the producer start from a calculated value and tune by ear.
 
+### Tempo-Aware Pitch Strategy
+
+Some pitch-shift methods change both pitch and speed. FFmpeg's portable `asetrate`/`aresample` path can sound cleaner than preserving tempo because it avoids an additional time-stretch step, but it changes the actor's delivery timing. That is acceptable only when the resulting tempo remains within the role's tempo policy.
+
+Tempo analysis is therefore an input to transform selection, not a normalization target. Stager should not decide that a role is "too slow" or "too fast" and correct it automatically. It should answer a narrower question:
+
+```text
+Given the observed reading tempo and the pitch shift needed for this actor-role profile,
+is it safe to use a linked speed/pitch transform, or must the renderer preserve tempo?
+```
+
+For a computed profile, the resolver should:
+
+1. Estimate or load observed speech rate for the actor-role recording set when available.
+2. Compute the pitch shift needed to move from source baseline toward role target.
+3. Compute the speed factor implied by a linked pitch/speed transform.
+4. Predict the post-transform speech rate.
+5. Use linked speed/pitch only when:
+   - `prefer_linked_speed_pitch_when_safe` is enabled,
+   - the observed tempo estimate meets the configured confidence threshold,
+   - the speed change is within `max_linked_speed_change`, and
+   - the predicted speech rate stays within `acceptable_range_wpm` when that range is configured.
+6. Otherwise preserve the actor's recorded tempo and warn when the chosen pitch method may introduce artifacts.
+
+Example:
+
+```text
+Observed MEGAERA reading: 178 WPM
+Role acceptable range: 145-190 WPM
+Linked pitch strategy would speed by 6%
+Predicted tempo: 189 WPM
+Decision: linked speed/pitch is safe.
+```
+
+Counterexample:
+
+```text
+Observed MEGAERA reading: 178 WPM
+Role acceptable range: 145-190 WPM
+Linked pitch strategy would speed by 12%
+Predicted tempo: 199 WPM
+Decision: preserve tempo and use the independent pitch path.
+```
+
+For small roles or sparse recordings, the observed tempo estimate should be low confidence. In that case the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
+
 ## Transform Types
 
 Initial transform types should be small and FFmpeg-native:
 
-- `pitch`: shift pitch by semitones, optionally preserving tempo.
+- `pitch`: shift pitch by semitones with `strategy: auto`, `linked_speed`, or `preserve_tempo`.
 - `speed`: change duration by `speed_factor`.
 - `highpass`: remove low frequencies below a cutoff.
 - `lowpass`: remove high frequencies above a cutoff.
@@ -231,6 +307,8 @@ Useful components for a more masculine presentation:
 
 High-quality transformation often requires formant-aware processing. The MVP must use FFmpeg's portable LGPL-compatible baseline, approximating voice presentation with pitch, EQ, and compression. Rubber Band support is a follow-on feature, not part of the MVP.
 
+Gender-presentation presets should participate in tempo-aware pitch strategy selection. A "female bright" or "male warm" preset may suggest an upward or downward pitch shift, but the resolver should still decide whether the pitch shift can be linked with speed based on the actor-role recording's observed tempo and the role target's tempo policy. The goal is to preserve performance timing unless the cleaner linked pitch/speed path remains within the role's acceptable delivery range.
+
 ## FFmpeg Capabilities
 
 Quince will not include FFmpeg. Users must install FFmpeg and FFprobe separately, and Stager must verify required filters before rendering. Required voice-profile rendering must work with a normal LGPL-compatible FFmpeg installation.
@@ -239,7 +317,7 @@ The first voice-profile implementation should require only filters that are norm
 
 - `aresample`: resample after pitch operations.
 - `asetrate`: portable pitch-shift building block.
-- `atempo`: restore tempo after `asetrate` pitch shifts and implement speed changes.
+  - `atempo`: restore tempo after `asetrate` pitch shifts, implement speed changes, and preserve tempo when linked speed/pitch is unsafe.
 - `highpass`: low-frequency shaping.
 - `lowpass`: high-frequency shaping.
 - `equalizer`: parametric EQ bands and filter-curve approximation.
@@ -415,6 +493,22 @@ Rendered audio validation should focus on technical checks:
 - output path is safe,
 - render manifest matches the expected cache key.
 
+## Voice Analysis
+
+Voice-profile analysis may estimate actor and actor-role characteristics, but analysis results should be suggestions and render inputs, not automatic rewrites of producer-authored profile files.
+
+Pitch analysis should estimate a representative voiced pitch center when enough voiced material is available.
+
+Tempo analysis should estimate observed speech rate for the recording set that will be transformed. It should use speech-active duration where possible, not total file duration, because leading/trailing silence and cleanup padding would distort WPM. The text side can start with a simple word count. Later versions may use syllable or alignment-aware measures if needed.
+
+Tempo estimates should include confidence. Suggested first thresholds:
+
+- at least 60 seconds of speech-active audio, or
+- at least 150 words, and
+- enough segments that one dramatic line does not dominate the estimate.
+
+Below those thresholds, Stager should mark tempo as low confidence and avoid using it to choose linked speed/pitch automatically unless the producer explicitly opts in.
+
 ## Diagnostics
 
 Stager should fail for:
@@ -424,6 +518,7 @@ Stager should fail for:
 - unknown role ids,
 - duplicate actor-role cast profiles,
 - computed profiles missing required baseline or target pitch,
+- invalid tempo policies,
 - invalid transform parameters,
 - unsupported transform types,
 - unsafe output paths,
@@ -433,7 +528,8 @@ Stager should fail for:
 Stager may warn for:
 
 - large pitch shifts after clamping,
-- speed changes likely to affect acting timing,
+- linked speed/pitch rejected because it would move delivery outside the role tempo policy,
+- independent pitch selected because tempo confidence is too low for linked speed/pitch,
 - unavailable optional FFmpeg filters,
 - profile definitions that are not used by the current play.
 

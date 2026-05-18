@@ -81,7 +81,7 @@ The optional cleanup filters listed above are native FFmpeg filters. They do not
 
 `arnndn` is not part of the baseline cleanup feature. It requires an external model file, and model licenses must be reviewed separately before use.
 
-If a required filter is missing, install a fuller FFmpeg build from a trusted distribution. If only optional filters are missing, voice-profile rendering should still work with fallbacks.
+If a required filter is missing, install a fuller FFmpeg build from a trusted distribution. If only optional filters are missing, audio cleanup should still work with reduced presets or clear warnings.
 
 Do not treat `ffmpeg-full` or Rubber Band as a Quince dependency. Rubber Band is a follow-on feature and must stay outside the MVP.
 

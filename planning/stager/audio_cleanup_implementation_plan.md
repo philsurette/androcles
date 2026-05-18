@@ -167,7 +167,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 ## Phase 9: Review And Promotion
 
 - [x] Add generated comparison manifest.
-- [x] Add optional report listing source, cleaned output, profile, and duration delta.
+- [x] Add generated report listing source, cleaned output, batch, and duration delta.
 - [x] Include analysis recommendation ids in comparison output when analysis was used.
 - [x] Include batch id and original/cleaned sample ranges in comparison output.
 - [x] Include boundary-shift warnings in comparison output.
@@ -176,8 +176,8 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 10: Integration
 
-- [x] Let Playbook generation optionally use cleaned audio.
-- [x] Let audioplay generation optionally use cleaned audio.
+- [x] Let Playbook generation use `--audio-source auto|canonical|cleaned`.
+- [x] Let audioplay generation use `--audio-source auto|canonical|cleaned`.
 - [x] Keep verification on canonical segment audio unless explicitly requested.
 - [x] Add tests for cleaned-audio selection.
 
@@ -210,4 +210,4 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Batch manifests preserve original center anchors and original/cleaned ranges.
 - [x] Suspicious boundary shifts are warned and reviewable.
 - [x] Per-segment rendering remains available as a fallback.
-- [x] Playbook/audioplay can opt into cleaned audio later.
+- [x] Playbook/audioplay use reviewed cleaned audio automatically when complete and available.

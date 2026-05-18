@@ -30,11 +30,11 @@ Cleanup should preserve three layers:
 
 2. **Canonical segment audio**
    - Current accepted segment WAVs used by verification and normal builds.
-   - May be cleaned only by an explicit import/build option.
+   - Overwritten only by explicit cleanup promotion.
 
 3. **Cleaned rendered audio**
    - Generated artifacts that can be inspected, deleted, and rebuilt.
-   - Preferred MVP output for cleanup until we are confident enough to write cleaned audio into canonical segment storage.
+   - Used automatically by Playbook and audioplay builds when a complete cleanup review exists, unless the build explicitly requests canonical audio.
 
 ## MVP Configuration
 
@@ -216,13 +216,14 @@ Presets should be implemented as ordinary FFmpeg transform chains. They should n
 
 ## Build Integration
 
-Initial commands:
+Cleanup commands:
 
 ```sh
-./main audio-cleanup --play <play_id>
-./main audio-cleanup --play <play_id> --role MEGAERA
-./main audio-cleanup analyze --play <play_id>
 ./main audio-cleanup doctor
+./main audio-cleanup plan --play <play_id>
+./main audio-cleanup analyze --play <play_id>
+./main audio-cleanup render --play <play_id>
+./main audio-cleanup promote --play <play_id> --confirm
 ```
 
 The doctor command should report:
@@ -233,14 +234,22 @@ The doctor command should report:
 - required cleanup filters present/missing,
 - optional cleanup filters present/missing.
 
+Playbook and audioplay segment audio selection should use `--audio-source auto|canonical|cleaned`.
+
+- `auto` is the default. It uses canonical segment audio when no cleanup review exists. If a cleanup review exists, it uses cleaned audio and fails if any required segment is missing from the review.
+- `canonical` forces canonical segment audio.
+- `cleaned` requires a cleanup review and cleaned files.
+
+Verification remains canonical unless a future explicit verification option is added.
+
 ## Review Policy
 
 Cleanup should support review before adoption:
 
 - render cleaned files into a generated directory,
 - write a manifest with source path, output path, preset, and filter chain,
-- optionally generate a comparison report,
-- only promote cleaned output into canonical segment storage through an explicit command or option.
+- generate a comparison report,
+- promote cleaned output into canonical segment storage only through `audio-cleanup promote --confirm`.
 
 ## Relationship To Voice Profiles
 

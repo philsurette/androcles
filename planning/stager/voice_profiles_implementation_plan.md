@@ -12,6 +12,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - Support a different actor later reading the same role through actor-role cast profiles.
 - Start with explicit transforms and manual baseline values.
 - Add computed pitch transforms from actor baseline to role target.
+- Use observed actor-role tempo as a pitch-strategy constraint, not as tempo normalization.
 - Use FFmpeg as the first renderer, with portable filters as the baseline.
 - Keep performance acceptable with caching before attempting role-batch rendering.
 - Keep creative voice effects separate from recording-quality cleanup.
@@ -21,6 +22,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [x] Create [../specs/voice_profiles.md](../specs/voice_profiles.md).
 - [x] Document actor baselines, role targets, and actor-role cast profiles.
 - [x] Document explicit and computed transform modes.
+- [x] Document tempo-aware pitch strategy selection.
 - [x] Document per-segment, role-batch, and full-source rendering tradeoffs.
 - [x] Document cache and generated-artifact policy.
 - [x] Add this implementation plan.
@@ -34,6 +36,9 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   - `ActorVoiceBaseline`,
   - `RoleVoiceTarget`,
   - `CastVoiceProfile`,
+  - `RoleTempoPolicy`,
+  - `PitchStrategyPolicy`,
+  - `ObservedVoiceMetrics`,
   - `VoiceTransform`,
   - `VoicePreset`.
 - [ ] Load `plays/<play_id>/voice_profiles.yaml` when present.
@@ -43,6 +48,9 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Validate transform parameters with clear diagnostics.
 - [ ] Reject unknown transform types.
 - [ ] Reject computed profiles missing required baseline or target pitch.
+- [ ] Validate `tempo_policy` ranges and thresholds.
+- [ ] Validate `pitch_strategy` values.
+- [ ] Treat tempo-policy fields as constraints, not required target transforms.
 - [ ] Add parser tests using `tmp_path`.
 
 ## Phase 3: Transform Resolution
@@ -54,12 +62,22 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Support `mode: computed`.
 - [ ] Compute pitch shift with `12 * log2(target / baseline)`.
 - [ ] Clamp computed pitch shift with `max_pitch_shift_semitones`.
+- [ ] Compute the speed factor implied by linked speed/pitch.
+- [ ] Use observed actor-role tempo to predict post-transform WPM.
+- [ ] Select linked speed/pitch only when role tempo policy allows it.
+- [ ] Select preserve-tempo pitch when linked speed/pitch would violate tempo policy.
+- [ ] Select preserve-tempo pitch when observed tempo confidence is too low.
+- [ ] Record the selected pitch strategy in the resolved profile.
+- [ ] Warn when independent pitch is chosen because linked speed/pitch is unsafe and may produce artifacts.
 - [ ] Apply computed-profile overrides.
 - [ ] Expand `preset` transforms into concrete transform chains.
 - [ ] Preserve a stable resolved-profile id for cache keys.
 - [ ] Add unit tests for one actor reading multiple roles.
 - [ ] Add unit tests for two actors reading the same role.
 - [ ] Add unit tests for pitch clamping and overrides.
+- [ ] Add unit tests for linked speed/pitch selection when predicted WPM is within policy.
+- [ ] Add unit tests for preserve-tempo fallback when predicted WPM is outside policy.
+- [ ] Add unit tests for low-confidence tempo preserving performance timing.
 
 ## Phase 4: FFmpeg Filter Graph Compiler
 
@@ -96,7 +114,9 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [x] Reuse the existing Lorick-derived `stager.loudnorm` two-pass normalizer for final loudness normalization.
 - [x] Add tests around `stager.loudnorm` parsing, command construction, and unnormalizable audio handling before using it in voice rendering.
 - [x] Make loudness targets explicit presets instead of hard-coded podcast/Librivox assumptions.
-- [ ] Compile baseline portable `pitch`.
+- [ ] Compile baseline portable `pitch` with `strategy: linked_speed`.
+- [ ] Compile baseline portable `pitch` with `strategy: preserve_tempo`.
+- [ ] Compile baseline portable `pitch` with `strategy: auto` after resolution has selected a concrete strategy.
 - [ ] Compile baseline portable `speed`.
 - [ ] Compile initial `reverb` using FFmpeg-native filters.
 - [ ] Compile initial `delay` using FFmpeg-native filters.
@@ -194,10 +214,15 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 - [ ] Add `./main voice-analyze`.
 - [ ] Estimate pitch center from a supplied reference WAV or selected role recordings.
-- [ ] Estimate approximate speaking rate only when text alignment is reliable enough.
+- [ ] Estimate observed speech-active duration from selected role recordings.
+- [ ] Estimate approximate actor-role speaking rate from represented text and speech-active duration.
+- [ ] Require enough speech-active audio, words, and segments before marking tempo confidence usable.
+- [ ] Mark sparse-role tempo estimates as low confidence.
+- [ ] Feed observed tempo into pitch-strategy resolution without normalizing tempo.
 - [ ] Write analysis output as suggestions, not automatic config changes by default.
 - [ ] Add `--write-baseline` only after diagnostics are trustworthy.
 - [ ] Add tests using generated synthetic audio fixtures.
+- [ ] Add tests that tempo analysis affects pitch strategy but does not create a speed-normalization transform.
 
 ## Phase 13: Performance Optimization
 
@@ -248,6 +273,8 @@ Rubber Band integration is explicitly out of scope for the MVP. The MVP must use
 - [ ] Two actors can render toward the same role target with different transforms.
 - [ ] Explicit transform mode works.
 - [ ] Computed pitch mode works and clamps large shifts.
+- [ ] Computed pitch strategy uses linked speed/pitch only when role tempo policy allows it.
+- [ ] Voice analysis can estimate observed speaking rate with confidence and does not normalize tempo.
 - [ ] Built-in presets expand to deterministic FFmpeg transform chains.
 - [ ] Rendered audio is cached and rebuilt only when relevant inputs change.
 - [ ] Playbook/audioplay builds can opt into rendered voice-profile audio.
