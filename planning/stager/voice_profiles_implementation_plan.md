@@ -112,7 +112,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   - `concat`,
   - `firequalizer`,
   - `afir`.
-- [ ] Fail render preflight when required filters are missing.
+- [x] Fail render preflight when required filters are missing.
 - [x] Warn when optional filters are missing and a fallback exists.
 - [ ] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
 - [x] Add `src/stager/audio/ffmpeg_filter_graph.py`.
@@ -137,36 +137,36 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 5: Render Cache
 
-- [ ] Add `src/stager/audio/voice_render_cache.py`.
-- [ ] Choose generated output root:
+- [x] Add `src/stager/audio/voice_render_cache.py`.
+- [x] Choose generated output root:
 
   ```text
   build/<play_id>/audio/rendered/<render_profile_id>/<ROLE>/<segment_id>.wav
   ```
 
-- [ ] Compute source audio fingerprints.
-- [ ] Include selected source audio layer, path, and content hash in cache keys.
-- [ ] Include cleanup review identity, path, and content hash when cleaned source audio is used.
-- [ ] Include resolved transform chain in cache key.
-- [ ] Include actor id, role id, segment id, production id, and content hash where available.
-- [ ] Include observed metrics used by resolution and the selected pitch strategy.
-- [ ] Include renderer backend and relevant FFmpeg capability flags.
-- [ ] Write render manifest JSON for each rendered profile.
-- [ ] Skip rendering when cache key and output file match.
-- [ ] Invalidate cache when source audio changes.
-- [ ] Invalidate cache when transform parameters change.
-- [ ] Add unit tests for cache hit/miss behavior without invoking FFmpeg.
+- [x] Compute source audio fingerprints.
+- [x] Include selected source audio layer, path, and content hash in cache keys.
+- [x] Include cleanup review identity, path, and content hash when cleaned source audio is used.
+- [x] Include resolved transform chain in cache key.
+- [x] Include actor id, role id, segment id, production id, and content hash where available.
+- [x] Include observed metrics used by resolution and the selected pitch strategy.
+- [x] Include renderer backend and relevant FFmpeg capability flags.
+- [x] Write render manifest JSON for each rendered profile.
+- [x] Skip rendering when cache key and output file match.
+- [x] Invalidate cache when source audio changes.
+- [x] Invalidate cache when transform parameters change.
+- [x] Add unit tests for cache hit/miss behavior without invoking FFmpeg.
 
 ## Phase 6: Segment Renderer
 
-- [ ] Add `src/stager/audio/voice_profile_renderer.py`.
-- [ ] Render one segment with FFmpeg.
-- [ ] Preserve source files unchanged.
-- [ ] Write rendered WAV output.
-- [ ] Handle effect tails for reverb and delay.
-- [ ] Detect missing `ffmpeg` and `ffprobe` with existing external-tool diagnostics.
-- [ ] Log rendered and skipped files using `paths.display_path()`.
-- [ ] Add tests with a fake FFmpeg runner.
+- [x] Add `src/stager/audio/voice_profile_renderer.py`.
+- [x] Render one segment with FFmpeg.
+- [x] Preserve source files unchanged.
+- [x] Write rendered WAV output.
+- [x] Handle effect tails for reverb and delay.
+- [x] Detect missing `ffmpeg` and `ffprobe` with existing external-tool diagnostics.
+- [x] Log rendered and skipped files using `paths.display_path()`.
+- [x] Add tests with a fake FFmpeg runner.
 - [ ] Add a small generated-WAV integration test if it does not require nonstandard filters.
 
 ## Phase 7: CLI
