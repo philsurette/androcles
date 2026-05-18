@@ -114,7 +114,7 @@ def test_audioplay_plan_can_select_reviewed_cleaned_audio(
     )
     monkeypatch.setattr(PlayPlanBuilder, "get_audio_length_ms", staticmethod(_existing_audio_length))
 
-    builder = PlayPlanBuilder(play=play, paths=cfg, segment_spacing_ms=0, use_cleaned_audio=True)
+    builder = PlayPlanBuilder(play=play, paths=cfg, segment_spacing_ms=0)
     plan = builder.build_audio_plan(part_no=1)
 
     segment_paths = [item.path for item in plan if getattr(item, "kind", None) == "segment"]

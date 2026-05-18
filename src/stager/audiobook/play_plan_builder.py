@@ -61,12 +61,12 @@ class PlayPlanBuilder:
     minimal_callouts: bool = False
     part_gap_ms: int = 0
     librivox: bool = False
-    use_cleaned_audio: bool = False
+    audio_source: str = "auto"
     length_cache: Dict[Path, int] = field(default_factory=dict)
     audio_plan: AudioPlan = field(init=False)
 
     def __post_init__(self) -> None:
-        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, enabled=self.use_cleaned_audio)
+        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
         if self.director is None:
             self.director = NoCalloutDirector(self.play, paths_config=self.paths)
         if self.chapters is None:

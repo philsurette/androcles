@@ -63,6 +63,7 @@ from stager.audio.audio_check import AudioCheck
 from stager.audio.segment_audio_player import SegmentAudioPlayer
 from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.audio_cleanup_service import AudioCleanupService
+from stager.audio.cleaned_audio_selector import SUPPORTED_AUDIO_SOURCES
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.progress_reporter import ProgressReporter
@@ -861,7 +862,11 @@ def audioplay(
     audio_format: str = typer.Option("mp4", help="Output format: mp4 (default), mp3, or wav"),
     normalize_output: bool = typer.Option(True, help="Normalize the generated audioplay"),
     prepare: bool = typer.Option(True, help="Ensure text/scripts and split segments are up to date before building"),
-    use_cleaned_audio: bool = typer.Option(False, "--use-cleaned-audio", help="Use rendered audio cleanup outputs"),
+    audio_source: str = typer.Option(
+        "auto",
+        "--audio-source",
+        help="Segment audio source: auto, canonical, or cleaned",
+    ),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -895,7 +900,7 @@ def audioplay(
             librivox=librivox,
             audio_format=audio_format,
             normalize_output=normalize_output,
-            use_cleaned_audio=use_cleaned_audio,
+            audio_source=audio_source,
             paths_config=cfg,
             prepare=prepare,
             progress_reporter=RichProgressReporter(progress),
@@ -956,7 +961,11 @@ def cues(
 def playbook(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type metadata"),
     audio_format: str = typer.Option("wav", "--audio-format", help="Playbook audio format: wav or mp3"),
-    use_cleaned_audio: bool = typer.Option(False, "--use-cleaned-audio", help="Use rendered audio cleanup outputs"),
+    audio_source: str = typer.Option(
+        "auto",
+        "--audio-source",
+        help="Segment audio source: auto, canonical, or cleaned",
+    ),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
@@ -972,7 +981,7 @@ def playbook(
                 paths_config=cfg,
                 build_type=BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve(),
                 audio_format=audio_format,
-                use_cleaned_audio=use_cleaned_audio,
+                audio_source=audio_source,
                 progress_reporter=RichPlaybookProgressReporter(progress),
             )
         except RuntimeError as exc:
@@ -1504,12 +1513,14 @@ def run_audioplay(
     audio_format: str = "mp4",
     normalize_output: bool = True,
     prepare: bool = True,
-    use_cleaned_audio: bool = False,
+    audio_source: str = "auto",
     paths_config: paths.PathConfig | None = None,
     progress_reporter: ProgressReporter | None = None,
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
         raise typer.BadParameter("audio-format must be one of: mp4, mp3, wav")
+    if audio_source not in SUPPORTED_AUDIO_SOURCES:
+        raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
     cfg = paths_config or paths.current()
     return AudioPlayBuildService(paths=cfg, progress_reporter=progress_reporter).build(
         part=part,
@@ -1523,7 +1534,7 @@ def run_audioplay(
         audio_format=audio_format,
         normalize_output=normalize_output,
         prepare=prepare,
-        use_cleaned_audio=use_cleaned_audio,
+        audio_source=audio_source,
     )
 
 
@@ -1561,11 +1572,13 @@ def run_playbook(
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
     audio_format: str = "wav",
-    use_cleaned_audio: bool = False,
+    audio_source: str = "auto",
     progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
         raise typer.BadParameter("audio-format must be one of: wav, mp3")
+    if audio_source not in SUPPORTED_AUDIO_SOURCES:
+        raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
     cfg = paths_config or paths.current()
     effective_build_type = BuildTypeResolver(
         paths_config=cfg,
@@ -1577,7 +1590,7 @@ def run_playbook(
         paths=cfg,
         build_type=effective_build_type,
         audio_format=audio_format,
-        use_cleaned_audio=use_cleaned_audio,
+        audio_source=audio_source,
         progress_reporter=progress_reporter,
     )
     return builder.build()

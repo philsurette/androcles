@@ -27,7 +27,7 @@ class PlayBuilder:
     generate_audio: bool = True
     generate_captions: bool = True
     librivox: bool = False
-    use_cleaned_audio: bool = False
+    audio_source: str = "auto"
     play: Play = None
     paths: paths.PathConfig = field(default_factory=paths.current)
     audio_builder:PlayAudioBuilder = field(default_factory = PlayAudioBuilder)
@@ -56,7 +56,7 @@ class PlayBuilder:
             minimal_callouts=self.minimal_callouts,
             part_gap_ms=self.part_gap_ms,
             librivox=self.librivox,
-            use_cleaned_audio=self.use_cleaned_audio,
+            audio_source=self.audio_source,
         )
         plan = builder.build_audio_plan(part_no=part_no)
         plan_path = self.paths.build_dir / "audio_plan.txt"
@@ -116,7 +116,7 @@ class PlayBuilder:
                 callout_spacing_ms=self.callout_spacing_ms,
                 part_gap_ms=0,
                 librivox=True,
-                use_cleaned_audio=self.use_cleaned_audio,
+                audio_source=self.audio_source,
             )
             plan = builder.build_audio_plan(part_no=part_no)
             plan = [item for item in plan if item.__class__.__name__ != "Chapter"]

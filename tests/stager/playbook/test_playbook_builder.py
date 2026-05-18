@@ -257,7 +257,7 @@ def test_playbook_builder_can_select_reviewed_cleaned_audio(tmp_path: Path) -> N
         ],
     )
 
-    work_items = PlaybookBuilder(play=play, paths=cfg, use_cleaned_audio=True).plan_audio_work()
+    work_items = PlaybookBuilder(play=play, paths=cfg).plan_audio_work()
 
     assert {item.source_path for item in work_items} == {
         cleaned_narrator,
@@ -276,7 +276,21 @@ def test_playbook_builder_fails_when_cleaned_audio_is_incomplete(tmp_path: Path)
     _write_cleanup_review(cfg, entries=[("_NARRATOR", "0_0_1", cleaned_narrator)])
 
     with pytest.raises(RuntimeError, match="no cleanup review output exists for ANDROCLES/0_1_1"):
-        PlaybookBuilder(play=play, paths=cfg, use_cleaned_audio=True).plan_audio_work()
+        PlaybookBuilder(play=play, paths=cfg).plan_audio_work()
+
+
+def test_playbook_builder_can_force_canonical_audio_when_cleanup_review_exists(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    cleaned_narrator = cfg.audio_out_dir / "cleaned" / "batch" / "_NARRATOR" / "0_0_1.wav"
+    _write_wav(cleaned_narrator)
+    _write_cleanup_review(cfg, entries=[("_NARRATOR", "0_0_1", cleaned_narrator)])
+
+    work_items = PlaybookBuilder(play=play, paths=cfg, audio_source="canonical").plan_audio_work()
+
+    assert cfg.segments_dir / "_NARRATOR" / "0_0_1.wav" in {item.source_path for item in work_items}
 
 
 def test_playbook_builder_includes_callout_audio_when_present(tmp_path: Path) -> None:

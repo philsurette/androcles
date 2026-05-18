@@ -52,7 +52,7 @@ class PlaybookBuilder:
     cue_start_offset_analyzer: CueStartOffsetAnalyzer | None = None
     audio_packager: PlaybookAudioPackager | None = None
     progress_reporter: PlaybookProgressReporter | None = None
-    use_cleaned_audio: bool = False
+    audio_source: str = "auto"
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
@@ -61,7 +61,7 @@ class PlaybookBuilder:
 
     def __post_init__(self) -> None:
         self._logger = logging.getLogger(__name__)
-        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, enabled=self.use_cleaned_audio)
+        self.audio_selector = CleanedAudioSelector(paths_config=self.paths, audio_source=self.audio_source)
         if self.selector is None:
             self.selector = PlaybookCueSelector(play=self.play, paths=self.paths, audio_selector=self.audio_selector)
         if self.cue_start_offset_analyzer is None:
