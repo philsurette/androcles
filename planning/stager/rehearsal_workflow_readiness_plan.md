@@ -93,9 +93,9 @@ Checklist:
 
 - [x] Show production version/source in the Library row.
 - [ ] Show an "unpublished/working source" warning for non-published Playbooks.
-- [ ] Before replacing an installed Playbook, compare old/new production metadata.
-- [ ] Confirm replacement when the new package is older, from a different production fork, or from a working source.
-- [ ] Preserve role selection, session cursor, timing attempts, and bookmarks when replacing with a successor version where line ids still match.
+- [x] Before replacing an installed Playbook, compare old/new production metadata.
+- [x] Confirm replacement when the new package is older, from a different production fork, or from a working source.
+- [x] Preserve role selection, session cursor, timing attempts, and bookmarks when replacing with a successor version where line ids still match.
 - [ ] Show "what changed" after import when the Playbook carries production change metadata.
 - [ ] Add tests for same-version rebuild, newer version replacement, older version warning, and fork warning.
 

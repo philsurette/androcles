@@ -1,7 +1,7 @@
 import { type ChangeEvent, useEffect, useState } from "react";
 import type { Playbook } from "../../domain/playbook";
 import { estimateStorage, formatBytes, requestPersistentStorage, type StorageEstimate } from "../../platform/storageEstimate";
-import { installPlaybook } from "../../playbook/installPlaybook";
+import { installPlaybook, type PlaybookReplacementDecision } from "../../playbook/installPlaybook";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
 
@@ -55,6 +55,7 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
 
     try {
       const importStartedAt = performance.now();
+      let replacementDecision: PlaybookReplacementDecision | null = null;
       const playbook = await installPlaybook(file, {
         onProgress: (progress) => {
           if (progress.phase === "extracting") {
@@ -64,14 +65,19 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
           } else {
             setImportStatus("Saving Playbook...");
           }
-        }
+        },
+        onReplacementDecision: (decision) => {
+          replacementDecision = decision;
+          setImportStatus(decision.message);
+        },
+        confirmReplacement: (decision) => window.confirm(decision.message)
       });
       const elapsedSeconds = (performance.now() - importStartedAt) / 1000;
       const persistence = await requestPersistentStorage();
       await loadStorageEstimate();
       await loadPlaybooks();
       setMessage(
-        `Imported ${playbook.title} (${formatBytes(file.size)}) in ${elapsedSeconds.toFixed(1)}s.${
+        `${replacementDecision ? "Replaced" : "Imported"} ${playbook.title} (${formatBytes(file.size)}) in ${elapsedSeconds.toFixed(1)}s.${
           persistence === null ? "" : persistence ? " Persistent storage is enabled." : " Persistent storage was not granted."
         }`
       );
