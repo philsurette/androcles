@@ -153,8 +153,10 @@ class RichPlaybookProgressReporter:
     def __init__(self, progress: Progress) -> None:
         self.progress = progress
         self.task_id: TaskID | None = None
+        self.total = 0
 
     def start_audio_packaging(self, total: int) -> None:
+        self.total = total
         self.task_id = self.progress.add_task("Packaging Playbook audio", total=total)
 
     def audio_packaged(self, role: str, segment_id: str, category: str) -> None:
@@ -169,7 +171,7 @@ class RichPlaybookProgressReporter:
     def finish_audio_packaging(self) -> None:
         if self.task_id is None:
             return
-        self.progress.update(self.task_id, description="Packaged Playbook audio")
+        self.progress.update(self.task_id, description="Packaged Playbook audio", completed=self.total)
         self.progress.stop_task(self.task_id)
 
 
@@ -177,8 +179,10 @@ class RichProgressReporter:
     def __init__(self, progress: Progress) -> None:
         self.progress = progress
         self.task_id: TaskID | None = None
+        self.total = 0
 
     def start(self, total: int, description: str) -> None:
+        self.total = total
         self.task_id = self.progress.add_task(description, total=total)
 
     def advance(self, description: str | None = None) -> None:
@@ -192,8 +196,10 @@ class RichProgressReporter:
     def finish(self, description: str | None = None) -> None:
         if self.task_id is None:
             return
+        kwargs: dict[str, object] = {"completed": self.total}
         if description is not None:
-            self.progress.update(self.task_id, description=description)
+            kwargs["description"] = description
+        self.progress.update(self.task_id, **kwargs)
         self.progress.stop_task(self.task_id)
 
 
