@@ -47,7 +47,7 @@ Checklist:
 - [x] Treat missing `cast.yaml` as an empty config.
 - [x] Validate unknown top-level version and malformed actor/role entries.
 - [x] Expose role assignment lookup by role id.
-- [ ] Validate configured roles against the loaded `Play`.
+- [x] Validate configured roles against the loaded `Play`.
 - [ ] Validate configured actors against voice-profile actor ids when voice profiles are enabled.
 - [ ] Let Recording Request generation use cast assignments to include actor-facing metadata.
 - [ ] Let voice rendering use cast assignments as the default `--voice-actor` where unambiguous.
@@ -75,12 +75,12 @@ Checklist:
 - [x] Report current published version, working version, and unpublished-change flag.
 - [x] Report per-role cast assignment and basic segment audio coverage.
 - [x] Add CLI text output.
-- [ ] Add `--format yaml` for automation.
+- [x] Add `--format yaml` for automation.
 - [ ] Report stale recordings by content hash, not only missing files.
 - [ ] Report cleanup review status.
 - [ ] Report voice-profile rendered-audio status.
-- [ ] Report Playbook build metadata and whether it matches the current production version.
-- [ ] Report whole-role source recording presence for `recording: whole-role` roles.
+- [x] Report Playbook build metadata and whether it matches the current production version.
+- [x] Report whole-role source recording presence for `recording: whole-role` roles.
 - [ ] Add targeted rebuild recommendations.
 
 ## Phase 3: Cuemaster Playbook Update UX
@@ -91,7 +91,7 @@ Current issue: importing a Playbook with the same play id replaces the local one
 
 Checklist:
 
-- [ ] Show production version and published timestamp in the Library row.
+- [x] Show production version/source in the Library row.
 - [ ] Show an "unpublished/working source" warning for non-published Playbooks.
 - [ ] Before replacing an installed Playbook, compare old/new production metadata.
 - [ ] Confirm replacement when the new package is older, from a different production fork, or from a working source.

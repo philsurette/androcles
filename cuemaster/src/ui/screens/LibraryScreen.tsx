@@ -168,6 +168,7 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
                     <p>
                       {playbook.roles.length} role{playbook.roles.length === 1 ? "" : "s"}
                     </p>
+                    <p className="playbook-version-badge">{playbookProductionLabel(playbook)}</p>
                   </div>
                   <div className="row-actions">
                     <div className="row-action-group row-action-group-primary">
@@ -233,4 +234,11 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
       </section>
     </main>
   );
+}
+
+export function playbookProductionLabel(playbook: Playbook): string {
+  if (playbook.production.source === "working") {
+    return playbook.production.version ? `Working source ${playbook.production.version}` : "Working source";
+  }
+  return playbook.production.version ? `Published ${playbook.production.version}` : "Published version unknown";
 }

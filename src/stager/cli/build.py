@@ -2,6 +2,7 @@
 """Build text artifacts, split audio segments, verify splits, and check recordings."""
 from pathlib import Path
 from dataclasses import dataclass
+from io import StringIO
 import logging
 import sys
 import shlex
@@ -11,6 +12,7 @@ from datetime import datetime
 import time
 
 import click
+from ruamel.yaml import YAML
 
 warnings.filterwarnings(
     "ignore",
@@ -1164,15 +1166,18 @@ def production_diff(play: str | None = PLAY_OPTION) -> None:
 
 @app.command("production-status", rich_help_panel="build")
 def production_status(
+    output_format: str = typer.Option("text", "--format", help="Output format: text or yaml"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
 ) -> None:
     """Report production version, cast assignment, and recording readiness."""
+    if output_format not in SUMMARY_FORMATS:
+        raise typer.BadParameter("summary format must be text or yaml")
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
     status = run_production_status(paths_config=cfg)
-    typer.echo(render_production_status(status))
+    typer.echo(render_production_status_yaml(status) if output_format == "yaml" else render_production_status(status))
 
 
 @app.command("production-history", rich_help_panel="build")
@@ -1797,7 +1802,29 @@ def render_production_status(status: ProductionStatus) -> str:
         lines.extend(["", "Unassigned roles: " + ", ".join(status.unassigned_roles)])
     if status.missing_recording_count:
         lines.extend(["", f"Missing segment recordings: {status.missing_recording_count}"])
+    lines.extend(
+        [
+            "",
+            "Playbook:",
+            f"  exists: {'yes' if status.playbook.exists else 'no'}",
+        ]
+    )
+    if status.playbook.exists:
+        lines.append(f"  production version: {status.playbook.production_version or 'unknown'}")
+        lines.append(f"  build id: {status.playbook.build_id or 'unknown'}")
+        if status.playbook.matches_current_published_version is not None:
+            lines.append(
+                "  matches current published version: "
+                + ("yes" if status.playbook.matches_current_published_version else "no")
+            )
     return "\n".join(lines)
+
+
+def render_production_status_yaml(status: ProductionStatus) -> str:
+    yaml = YAML()
+    output = StringIO()
+    yaml.dump(status.to_dict(), output)
+    return output.getvalue().rstrip()
 
 
 def _read_playbook_build_metadata(paths_config: paths.PathConfig) -> tuple[str | None, str | None]:
