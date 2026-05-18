@@ -10,6 +10,7 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 
 - [quince_production_guide.md](quince_production_guide.md): Showrunner-facing end-to-end production guide from initial `production.md` through Recording Requests, returned recordings, cleanup, voice profiles, Playbooks, audioplays, and revisions.
 - [quince-workflow.md](quince-workflow.md): User-facing Quince production workflow from `production.md` through Recording Requests, Playbooks, updates, and audioplay output.
+- [quince_cli_design.md](quince_cli_design.md): Producer-first CLI design for Quince, including multi-production workspace and current-directory behavior.
 - [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.
 - [static_actor_app_deployment.md](static_actor_app_deployment.md): Build and deploy Cuemaster and LineRecorder as static web apps.
 - [deployment_quick_start.md](deployment_quick_start.md): Actor and showrunner quick-start guide for hosted LineRecorder, hosted Cuemaster, shared folders, and app publishing.
@@ -36,6 +37,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/audio_cleanup_implementation_plan.md](stager/audio_cleanup_implementation_plan.md): Resumable implementation plan for denoise, declick, de-ess, light gating, and loudness cleanup.
 - [stager/voice_profiles_implementation_plan.md](stager/voice_profiles_implementation_plan.md): Resumable implementation plan for actor/role voice profiles, FFmpeg transforms, rendered audio caching, and Playbook/audioplay integration.
 - [stager/rehearsal_workflow_readiness_plan.md](stager/rehearsal_workflow_readiness_plan.md): Resumable plan for cast configuration, production status, Cuemaster Playbook update UX, and blocking-only rehearsal updates.
+- [stager/quince_cli_implementation_plan.md](stager/quince_cli_implementation_plan.md): Resumable implementation plan for the producer-first `quince` CLI.
 - [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
 - [stager/standalone_bundle.md](stager/standalone_bundle.md): PyInstaller-based CLI bundle plan, ffmpeg policy, and signing/distribution notes.
 - Future Stager docs belong in `planning/stager/`.
