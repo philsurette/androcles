@@ -54,8 +54,12 @@ class PreparedAudioCleanupBatchResult:
 class RenderedAudioCleanupBatchResult:
     batch_id: str
     manifest_path: Path
+    segment_count: int
     rendered_count: int
+    skipped: bool
+    cache_hit: bool
     warning_count: int
+    fallback_count: int
 
 
 @dataclass
@@ -224,6 +228,7 @@ class AudioCleanupService:
         role: str | None = None,
         profile: str | None = None,
         use_analysis: bool = False,
+        force: bool = False,
     ) -> tuple[RenderedAudioCleanupBatchResult, ...]:
         plan = self.build_plan(role=role, profile=profile, use_analysis=use_analysis)
         renderer = AudioCleanupRenderer(paths_config=self.paths_config)
@@ -247,13 +252,18 @@ class AudioCleanupService:
                     resolved_filters=entry.filters,
                     loudnorm_profile=entry.loudnorm_profile,
                     floor_noise_path=group.floor_noise_path,
+                    force=force,
                 )
                 results.append(
                     RenderedAudioCleanupBatchResult(
                         batch_id=batch_id,
                         manifest_path=rendered.manifest_path,
+                        segment_count=rendered.segment_count,
                         rendered_count=rendered.rendered_count,
+                        skipped=rendered.skipped,
+                        cache_hit=rendered.cache_hit,
                         warning_count=rendered.warning_count,
+                        fallback_count=rendered.fallback_count,
                     )
                 )
         return tuple(results)

@@ -157,10 +157,11 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Support `--role`.
 - [x] Support `--profile`.
 - [ ] Support `--use-analysis` to render using analysis recommendations.
-- [ ] Support `--force`.
-- [ ] Support `--dry-run`.
+- [x] Support `--force`.
+- [x] Support `--dry-run`.
 - [x] Print analysis report locations.
-- [ ] Print rendered/skipped/missing-filter summary.
+- [x] Print rendered/skipped summary.
+- [ ] Print missing-filter summary.
 - [x] Add CLI tests.
 
 ## Phase 9: Review And Promotion

@@ -1261,14 +1261,7 @@ def audio_cleanup_prepare(
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
-    typer.echo(f"Prepared {len(results)} cleanup batches.")
-    for result in results:
-        cache_state = "cache hit" if result.cache_hit else "cache updated"
-        typer.echo(
-            f"{result.batch_id}: {result.segment_count} segments, "
-            f"{result.warning_count} boundary warnings, {cache_state}"
-        )
-        typer.echo(paths.display_path(result.manifest_path))
+    _echo_audio_cleanup_prepare_summary(results)
 
 
 @audio_cleanup_app.command("render")
@@ -1276,25 +1269,48 @@ def audio_cleanup_render(
     role: str | None = typer.Option(None, "--role", "-r", help="Limit cleanup rendering to one role"),
     profile: str | None = typer.Option(None, "--profile", help="Override the resolved cleanup profile"),
     use_analysis: bool = typer.Option(False, "--use-analysis", help="Render using analysis recommendations"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Prepare manifests and summaries without rendering audio"),
+    force: bool = typer.Option(False, "--force", help="Re-render even when a rendered cache hit exists"),
     play: str | None = PLAY_OPTION,
 ) -> None:
     """Render cleaned segment audio from cleanup batches."""
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     try:
+        if dry_run:
+            prepared = run_audio_cleanup_prepare(
+                role=role,
+                profile=profile,
+                use_analysis=use_analysis,
+                paths_config=cfg,
+            )
+            _echo_audio_cleanup_prepare_summary(prepared, prefix="Dry run prepared")
+            return
         results = run_audio_cleanup_render(
             role=role,
             profile=profile,
             use_analysis=use_analysis,
+            force=force,
             paths_config=cfg,
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
-    typer.echo(f"Rendered {len(results)} cleanup batches.")
+    rendered_batches = sum(1 for result in results if not result.skipped)
+    skipped_batches = sum(1 for result in results if result.skipped)
+    rendered_segments = sum(result.rendered_count for result in results)
+    total_segments = sum(result.segment_count for result in results)
+    warning_count = sum(result.warning_count for result in results)
+    fallback_count = sum(result.fallback_count for result in results)
+    typer.echo(
+        f"Rendered {rendered_batches} cleanup batches; skipped {skipped_batches} cache hits: "
+        f"{rendered_segments}/{total_segments} segments rendered, "
+        f"{warning_count} boundary warnings, {fallback_count} fallbacks."
+    )
     for result in results:
+        state = "skipped cache hit" if result.skipped else "rendered"
         typer.echo(
-            f"{result.batch_id}: {result.rendered_count} segments, "
-            f"{result.warning_count} boundary warnings"
+            f"{result.batch_id}: {state}, {result.rendered_count}/{result.segment_count} segments rendered, "
+            f"{result.warning_count} boundary warnings, {result.fallback_count} fallbacks"
         )
         typer.echo(paths.display_path(result.manifest_path))
 
@@ -1631,6 +1647,7 @@ def run_audio_cleanup_render(
     role: str | None = None,
     profile: str | None = None,
     use_analysis: bool = False,
+    force: bool = False,
     paths_config: paths.PathConfig | None = None,
 ):
     cfg = paths_config or paths.current()
@@ -1638,7 +1655,25 @@ def run_audio_cleanup_render(
         role=role,
         profile=profile,
         use_analysis=use_analysis,
+        force=force,
     )
+
+
+def _echo_audio_cleanup_prepare_summary(results, *, prefix: str = "Prepared") -> None:
+    segment_count = sum(result.segment_count for result in results)
+    cache_hits = sum(1 for result in results if result.cache_hit)
+    warning_count = sum(result.warning_count for result in results)
+    typer.echo(
+        f"{prefix} {len(results)} cleanup batches: "
+        f"{segment_count} segments, {cache_hits} cache hits, {warning_count} boundary warnings."
+    )
+    for result in results:
+        cache_state = "cache hit" if result.cache_hit else "cache updated"
+        typer.echo(
+            f"{result.batch_id}: {result.segment_count} segments, "
+            f"{result.warning_count} boundary warnings, {cache_state}"
+        )
+        typer.echo(paths.display_path(result.manifest_path))
 
 
 def _is_segment_id(value: str) -> bool:

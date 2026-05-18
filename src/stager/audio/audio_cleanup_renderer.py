@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import json
 from pathlib import Path
 import shutil
 import subprocess
@@ -46,8 +47,12 @@ class NormalizerFactory(Protocol):
 class RenderedCleanupBatch:
     manifest: CleanupBatchManifest
     manifest_path: Path
+    segment_count: int
     rendered_count: int
+    skipped: bool
+    cache_hit: bool
     warning_count: int
+    fallback_count: int
 
 
 @dataclass(frozen=True)
@@ -119,7 +124,9 @@ class AudioCleanupRenderer:
         )
         manifest = manifest.with_cache_key(cache_key)
         cache_hit = cache.is_hit(manifest)
-        manifest_path = cache.write_manifest(manifest)
+        manifest_path = cache.manifest_path(batch_id)
+        if not cache_hit:
+            manifest_path = cache.write_manifest(manifest)
         return PreparedCleanupBatch(manifest=manifest, manifest_path=manifest_path, cache_hit=cache_hit)
 
     def render_batch(
@@ -132,6 +139,7 @@ class AudioCleanupRenderer:
         resolved_filters: tuple[str, ...],
         loudnorm_profile: str = "none",
         floor_noise_path: Path | None = None,
+        force: bool = False,
     ) -> RenderedCleanupBatch:
         prepared = self.prepare_batch(
             batch_id=batch_id,
@@ -142,6 +150,10 @@ class AudioCleanupRenderer:
             loudnorm_profile=loudnorm_profile,
             floor_noise_path=floor_noise_path,
         )
+        if prepared.cache_hit and not force:
+            cached = self._cached_rendered_batch(prepared)
+            if cached is not None:
+                return cached
         normalized_floor_noise_path = (
             self._normalized_audio_path(
                 batch_id=batch_id,
@@ -214,11 +226,54 @@ class AudioCleanupRenderer:
         cache = AudioCleanupBatchCache(self.paths_config)
         manifest_path = cache.write_manifest(manifest)
         warning_count = sum(1 for boundary in boundaries if boundary.warnings)
+        fallback_count = sum(
+            1 for boundary in boundaries if boundary.validation and boundary.validation.get("fallback") is True
+        )
         return RenderedCleanupBatch(
             manifest=manifest,
             manifest_path=manifest_path,
+            segment_count=len(manifest.segments),
             rendered_count=rendered_count,
+            skipped=False,
+            cache_hit=prepared.cache_hit,
             warning_count=warning_count,
+            fallback_count=fallback_count,
+        )
+
+    def _cached_rendered_batch(self, prepared: PreparedCleanupBatch) -> RenderedCleanupBatch | None:
+        if not prepared.manifest_path.exists():
+            return None
+        try:
+            data = json.loads(prepared.manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+        boundaries = data.get("cleaned_boundaries")
+        if not isinstance(boundaries, list) or not boundaries:
+            return None
+        for boundary in boundaries:
+            if not isinstance(boundary, dict):
+                return None
+            output_path = boundary.get("output_path")
+            if not isinstance(output_path, str):
+                return None
+            resolved_output_path = self._artifact_path(output_path)
+            if not resolved_output_path.exists():
+                return None
+        fallback_count = sum(
+            1
+            for boundary in boundaries
+            if isinstance(boundary.get("validation"), dict) and boundary["validation"].get("fallback") is True
+        )
+        warning_count = sum(1 for boundary in boundaries if boundary.get("warnings"))
+        return RenderedCleanupBatch(
+            manifest=prepared.manifest,
+            manifest_path=prepared.manifest_path,
+            segment_count=len(prepared.manifest.segments),
+            rendered_count=0,
+            skipped=True,
+            cache_hit=True,
+            warning_count=warning_count,
+            fallback_count=fallback_count,
         )
 
     def _concatenated_samples(self, manifest: CleanupBatchManifest) -> list[float]:
@@ -448,6 +503,12 @@ class AudioCleanupRenderer:
             for chunk in iter(lambda: source.read(1024 * 1024), b""):
                 digest.update(chunk)
         return digest.hexdigest()
+
+    def _artifact_path(self, value: str) -> Path:
+        path = Path(value)
+        if path.is_absolute():
+            return path
+        return paths.project_root() / path
 
     def _apply_loudnorm(self, path: Path, profile_name: str) -> None:
         if profile_name == "none":

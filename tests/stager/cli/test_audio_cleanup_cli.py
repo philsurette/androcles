@@ -110,7 +110,7 @@ def test_audio_cleanup_prepare_writes_batch_manifest(tmp_path: Path, monkeypatch
     result = CliRunner().invoke(build.app, ["audio-cleanup", "prepare", "--play", "test"])
 
     assert result.exit_code == 0
-    assert "Prepared 1 cleanup batches." in result.output
+    assert "Prepared 1 cleanup batches: 1 segments, 0 cache hits" in result.output
     assert "MEGAERA-gentle_voice_cleanup" in result.output
     assert "build/test/audio/cleaned/MEGAERA-gentle_voice_cleanup/batch_manifest.json" in result.output
 
@@ -124,8 +124,46 @@ def test_audio_cleanup_render_writes_cleaned_segment_with_no_filter_profile(tmp_
     result = CliRunner().invoke(build.app, ["audio-cleanup", "render", "--play", "test", "--profile", "none"])
 
     assert result.exit_code == 0
-    assert "Rendered 1 cleanup batches." in result.output
+    assert "Rendered 1 cleanup batches; skipped 0 cache hits: 1/1 segments rendered" in result.output
     assert (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "MEGAERA" / "0_1_1.wav").exists()
+
+
+def test_audio_cleanup_render_dry_run_prepares_without_rendering_audio(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+
+    result = CliRunner().invoke(
+        build.app,
+        ["audio-cleanup", "render", "--play", "test", "--profile", "none", "--dry-run"],
+    )
+
+    assert result.exit_code == 0
+    assert "Dry run prepared 1 cleanup batches" in result.output
+    assert (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "batch_manifest.json").exists()
+    assert not (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "MEGAERA" / "0_1_1.wav").exists()
+
+
+def test_audio_cleanup_render_skips_rendered_cache_hits_unless_forced(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+    first = CliRunner().invoke(build.app, ["audio-cleanup", "render", "--play", "test", "--profile", "none"])
+    assert first.exit_code == 0
+
+    second = CliRunner().invoke(build.app, ["audio-cleanup", "render", "--play", "test", "--profile", "none"])
+    forced = CliRunner().invoke(
+        build.app,
+        ["audio-cleanup", "render", "--play", "test", "--profile", "none", "--force"],
+    )
+
+    assert second.exit_code == 0
+    assert "Rendered 0 cleanup batches; skipped 1 cache hits" in second.output
+    assert "MEGAERA-none: skipped cache hit" in second.output
+    assert forced.exit_code == 0
+    assert "Rendered 1 cleanup batches; skipped 0 cache hits" in forced.output
 
 
 def _config(tmp_path: Path) -> paths.PathConfig:
