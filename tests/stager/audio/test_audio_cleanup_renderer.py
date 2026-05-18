@@ -189,25 +189,45 @@ def test_cleanup_renderer_applies_loudnorm_after_splitting_segments(tmp_path: Pa
     assert len(factory.normalizers[1].normalized) == 1
 
 
-def test_cleanup_renderer_rejects_duration_changing_filter_output(tmp_path: Path) -> None:
+def test_cleanup_renderer_falls_back_per_segment_for_duration_changing_batch(tmp_path: Path) -> None:
     cfg = _config(tmp_path)
     first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
     _write_wav(first, samples=[0, 1200, -1200, 0])
 
-    renderer = AudioCleanupRenderer(paths_config=cfg, command_runner=ShorteningRunner())
+    result = AudioCleanupRenderer(paths_config=cfg, command_runner=BatchShorteningRunner()).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+    )
 
-    try:
-        renderer.render_batch(
-            batch_id="MEGAERA-gentle_voice_cleanup",
-            segment_paths=[first],
-            padding_seconds=3.0,
-            boundary_warning_ms=500,
-            resolved_filters=("adeclick",),
-        )
-    except RuntimeError as exc:
-        assert "duration changed unexpectedly" in str(exc)
-    else:
-        raise AssertionError("Expected duration-changing output to fail")
+    boundary = result.manifest.cleaned_boundaries[0]
+    assert boundary.warnings == ("per_segment_fallback",)
+    assert boundary.validation["fallback"] is True
+    assert boundary.validation["fallback_reason"] == "batch_duration_changed"
+
+
+def test_cleanup_renderer_falls_back_per_segment_for_unsafe_boundary(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    second = cfg.segments_dir / "MEGAERA" / "0_1_2.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    _write_wav(second, samples=[0, 1500, -1500, 0])
+
+    result = AudioCleanupRenderer(paths_config=cfg, command_runner=NeighborBleedRunner()).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first, second],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+    )
+
+    first_boundary = result.manifest.cleaned_boundaries[0]
+    assert "approaches_next_segment" in first_boundary.warnings
+    assert "per_segment_fallback" in first_boundary.warnings
+    assert first_boundary.validation["fallback"] is True
+    assert first_boundary.validation["fallback_reason"].startswith("boundary_warning:")
 
 
 def test_cleanup_renderer_uses_floor_noise_for_afftdn(tmp_path: Path) -> None:
@@ -350,9 +370,35 @@ class ResamplingRunner:
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
 
-class ShorteningRunner:
+class BatchShorteningRunner:
+    def __init__(self) -> None:
+        self.calls = 0
+
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
-        _write_wav(Path(command[-1]), samples=[0])
+        self.calls += 1
+        if self.calls == 1:
+            _write_wav(Path(command[-1]), samples=[0])
+        else:
+            shutil.copy2(command[command.index("-i") + 1], command[-1])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class NeighborBleedRunner:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        self.calls += 1
+        if self.calls == 1:
+            input_path = Path(command[command.index("-i") + 1])
+            frame_count = _frame_count(input_path)
+            samples = [0] * frame_count
+            samples[2] = 1200
+            samples[72_005] = 1200
+            samples[144_006] = 1500
+            _write_wav(Path(command[-1]), samples=samples)
+        else:
+            shutil.copy2(command[command.index("-i") + 1], command[-1])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
 
 
@@ -366,6 +412,11 @@ class ClippedRunner:
     def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
         _write_wav(Path(command[-1]), samples=[32767, 32767, 32767, 32767])
         return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+def _frame_count(path: Path) -> int:
+    with wave.open(str(path), "rb") as wav:
+        return wav.getnframes()
 
 
 class RecordingNormalizerFactory:

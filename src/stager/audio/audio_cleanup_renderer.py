@@ -63,6 +63,12 @@ class AudioCleanupRenderer:
     sample_rate_hz: int = 48_000
     command_runner: CommandRunner = subprocess.run
     normalizer_factory: NormalizerFactory | None = None
+    fallback_warning_codes: tuple[str, ...] = (
+        "empty_detected_range",
+        "center_anchor_missing",
+        "approaches_previous_segment",
+        "approaches_next_segment",
+    )
 
     def prepare_batch(
         self,
@@ -156,32 +162,53 @@ class AudioCleanupRenderer:
             floor_noise_path=normalized_floor_noise_path,
         )
         cleaned_samples = self._read_samples(cleaned_path)
+        batch_fallback_reason = None
         if abs(len(cleaned_samples) - prepared.manifest.total_samples) > 1:
-            raise RuntimeError(
-                f"Rendered cleanup batch duration changed unexpectedly for {batch_id}: "
-                f"expected {prepared.manifest.total_samples} samples, got {len(cleaned_samples)}"
-            )
+            batch_fallback_reason = "batch_duration_changed"
         boundary_warning_samples = round(boundary_warning_ms / 1000 * prepared.manifest.sample_rate_hz)
         detector = AudioCleanupBoundaryDetector()
         boundaries = []
         rendered_count = 0
         for segment in prepared.manifest.segments:
-            detection = detector.detect(
-                samples=cleaned_samples,
-                segment=segment,
-                boundary_warning_samples=boundary_warning_samples,
-            )
             output_path = batch_dir / segment.role / f"{segment.segment_id}.wav"
-            self._write_wav(output_path, cleaned_samples[detection.cleaned_start_sample : detection.cleaned_end_sample])
-            self._apply_loudnorm(output_path, loudnorm_profile)
-            validation = self._validate_output(output_path)
-            rendered_count += 1
-            boundaries.append(
-                CleanupBatchBoundaryEntry.from_detection(segment=segment, detection=detection).with_output(
+            if batch_fallback_reason is not None:
+                boundary = self._render_segment_fallback(
+                    segment=segment,
                     output_path=output_path,
-                    validation=validation,
+                    resolved_filters=resolved_filters,
+                    floor_noise_path=normalized_floor_noise_path,
+                    loudnorm_profile=loudnorm_profile,
+                    reason=batch_fallback_reason,
                 )
-            )
+            else:
+                detection = detector.detect(
+                    samples=cleaned_samples,
+                    segment=segment,
+                    boundary_warning_samples=boundary_warning_samples,
+                )
+                if self._requires_fallback(detection.warnings):
+                    boundary = self._render_segment_fallback(
+                        segment=segment,
+                        output_path=output_path,
+                        resolved_filters=resolved_filters,
+                        floor_noise_path=normalized_floor_noise_path,
+                        loudnorm_profile=loudnorm_profile,
+                        reason=f"boundary_warning:{','.join(detection.warnings)}",
+                        original_warnings=detection.warnings,
+                    )
+                else:
+                    self._write_wav(
+                        output_path,
+                        cleaned_samples[detection.cleaned_start_sample : detection.cleaned_end_sample],
+                    )
+                    self._apply_loudnorm(output_path, loudnorm_profile)
+                    validation = self._validate_output(output_path)
+                    boundary = CleanupBatchBoundaryEntry.from_detection(segment=segment, detection=detection).with_output(
+                        output_path=output_path,
+                        validation=validation,
+                    )
+            rendered_count += 1
+            boundaries.append(boundary)
         manifest = prepared.manifest.with_cleaned_boundaries(tuple(boundaries))
         manifest = manifest.with_cache_key(prepared.manifest.cache_key or "")
         cache = AudioCleanupBatchCache(self.paths_config)
@@ -292,6 +319,48 @@ class AudioCleanupRenderer:
             detail = (result.stderr or "").strip()
             suffix = f": {detail}" if detail else ""
             raise RuntimeError(f"Failed to render audio cleanup batch with ffmpeg{suffix}")
+
+    def _requires_fallback(self, warnings: tuple[str, ...]) -> bool:
+        return any(warning in self.fallback_warning_codes for warning in warnings)
+
+    def _render_segment_fallback(
+        self,
+        *,
+        segment,
+        output_path: Path,
+        resolved_filters: tuple[str, ...],
+        floor_noise_path: Path | None,
+        loudnorm_profile: str,
+        reason: str,
+        original_warnings: tuple[str, ...] = (),
+    ) -> CleanupBatchBoundaryEntry:
+        fallback_path = output_path.with_name(f"{output_path.stem}.fallback.tmp{output_path.suffix}")
+        self._render_with_ffmpeg(
+            input_path=segment.source_path,
+            output_path=fallback_path,
+            resolved_filters=resolved_filters,
+            floor_noise_path=floor_noise_path,
+        )
+        fallback_samples = self._read_samples(fallback_path)
+        self._write_wav(output_path, fallback_samples)
+        fallback_path.unlink(missing_ok=True)
+        self._apply_loudnorm(output_path, loudnorm_profile)
+        validation = self._validate_output(output_path)
+        validation["fallback"] = True
+        validation["fallback_reason"] = reason
+        warnings = tuple(dict.fromkeys((*original_warnings, "per_segment_fallback")))
+        return CleanupBatchBoundaryEntry(
+            role=segment.role,
+            segment_id=segment.segment_id,
+            original_start_sample=segment.batch_start_sample,
+            original_end_sample=segment.batch_end_sample,
+            original_center_sample=segment.center_sample,
+            cleaned_start_sample=segment.batch_start_sample,
+            cleaned_end_sample=segment.batch_start_sample + validation["duration_samples"],
+            warnings=warnings,
+            output_path=output_path,
+            validation=validation,
+        )
 
     def _normalize_inputs(
         self,

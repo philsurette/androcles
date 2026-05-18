@@ -139,14 +139,14 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Warn when detected range approaches or crosses padding midpoint toward a neighboring segment.
 - [x] Treat empty detected ranges as severe review items.
 - [x] Store original and cleaned ranges in the batch manifest.
-- [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
+- [x] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [x] Run loudnorm as the final step after splitting cleaned batches back into segments.
 - [x] Validate output exists, is non-silent, and does not clip.
 - [x] Add tests with fake FFmpeg runner.
 - [x] Add tests for sample-accurate batch manifest construction.
 - [x] Add tests for post-cleanup boundary detection.
 - [x] Add tests for suspicious boundary warnings.
-- [ ] Add tests for per-segment fallback when batch validation fails.
+- [x] Add tests for per-segment fallback when batch validation fails.
 
 ## Phase 8: CLI
 
