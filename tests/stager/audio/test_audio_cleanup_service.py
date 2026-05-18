@@ -33,8 +33,8 @@ def test_audio_cleanup_service_groups_segments_by_floor_noise(tmp_path: Path) ->
     result = AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).prepare(role="MEGAERA")
 
     assert {item.batch_id for item in result} == {
-        "MEGAERA-gentle_voice_cleanup",
-        "MEGAERA-gentle_voice_cleanup-floor-1",
+        "MEGAERA-gentle_voice_cleanup-20260518T010101Z",
+        "MEGAERA-gentle_voice_cleanup-20260518T010101Z-floor-1",
     }
 
 
@@ -76,8 +76,43 @@ def test_audio_cleanup_service_uses_timestamp_floor_noise_fallback(tmp_path: Pat
     result = AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).prepare(role="MEGAERA")
 
     assert {item.batch_id for item in result} == {
-        "MEGAERA-gentle_voice_cleanup-floor-1",
-        "MEGAERA-gentle_voice_cleanup-floor-2",
+        "MEGAERA-gentle_voice_cleanup-20260518T010101Z-floor-1",
+        "MEGAERA-gentle_voice_cleanup-20260518T010101Z-floor-2",
+    }
+
+
+def test_audio_cleanup_service_groups_segments_by_import_session(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_2.wav", samples=[0, 1300, -1300, 0])
+    first_import_dir = cfg.build_dir / "linerecorder" / "imports" / "session-a"
+    second_import_dir = cfg.build_dir / "linerecorder" / "imports" / "session-b"
+    first_import_dir.mkdir(parents=True, exist_ok=True)
+    second_import_dir.mkdir(parents=True, exist_ok=True)
+    (first_import_dir / "import.json").write_text(
+        json.dumps(
+            {
+                "role_id": "MEGAERA",
+                "imported": [{"segment_id": "0_1_1"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (second_import_dir / "import.json").write_text(
+        json.dumps(
+            {
+                "role_id": "MEGAERA",
+                "imported": [{"segment_id": "0_1_2"}],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    result = AudioCleanupService(paths_config=cfg, tool_checker=FakeAudioToolChecker()).prepare(role="MEGAERA")
+
+    assert {item.batch_id for item in result} == {
+        "MEGAERA-gentle_voice_cleanup-session-a",
+        "MEGAERA-gentle_voice_cleanup-session-b",
     }
 
 

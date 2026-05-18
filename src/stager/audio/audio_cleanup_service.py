@@ -192,7 +192,11 @@ class AudioCleanupService:
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
             for group in self._segment_groups(entry.role):
-                batch_id = self._batch_id(entry, floor_noise_id=group.floor_noise_id)
+                batch_id = self._batch_id(
+                    entry,
+                    session_id=group.session_id,
+                    floor_noise_id=group.floor_noise_id,
+                )
                 prepared = renderer.prepare_batch(
                     batch_id=batch_id,
                     segment_paths=group.segment_paths,
@@ -230,7 +234,11 @@ class AudioCleanupService:
             if not entry.duration_preserving:
                 raise RuntimeError(f"Audio cleanup batch {entry.role} uses a non-duration-preserving filter chain")
             for group in self._segment_groups(entry.role):
-                batch_id = self._batch_id(entry, floor_noise_id=group.floor_noise_id)
+                batch_id = self._batch_id(
+                    entry,
+                    session_id=group.session_id,
+                    floor_noise_id=group.floor_noise_id,
+                )
                 rendered = renderer.render_batch(
                     batch_id=batch_id,
                     segment_paths=group.segment_paths,
@@ -265,28 +273,33 @@ class AudioCleanupService:
         return sorted(role_dir.glob("*.wav")) if role_dir.exists() else []
 
     def _segment_groups(self, role: str) -> tuple["AudioCleanupSegmentGroup", ...]:
-        floor_noise = self._floor_noise_index()
-        groups: dict[tuple[str | None, Path | None], list[Path]] = {}
+        import_index = self._segment_import_index()
+        groups: dict[tuple[str | None, str | None, Path | None], list[Path]] = {}
         for segment_path in self._segment_paths(role):
-            key = floor_noise.get((role, segment_path.stem), (None, None))
+            context = import_index.get((role, segment_path.stem))
+            if context is None:
+                key = (None, None, None)
+            else:
+                key = (context.session_id, context.floor_noise_id, context.floor_noise_path)
             groups.setdefault(key, []).append(segment_path)
         return tuple(
             AudioCleanupSegmentGroup(
+                session_id=session_id,
                 floor_noise_id=floor_noise_id,
                 floor_noise_path=floor_noise_path,
                 segment_paths=tuple(sorted(segment_paths)),
             )
-            for (floor_noise_id, floor_noise_path), segment_paths in sorted(
+            for (session_id, floor_noise_id, floor_noise_path), segment_paths in sorted(
                 groups.items(),
-                key=lambda item: item[0][0] or "",
+                key=lambda item: (item[0][0] or "", item[0][1] or ""),
             )
         )
 
-    def _floor_noise_index(self) -> dict[tuple[str, str], tuple[str | None, Path | None]]:
+    def _segment_import_index(self) -> dict[tuple[str, str], "ImportedSegmentContext"]:
         imports_dir = self.paths_config.build_dir / "linerecorder" / "imports"
         if not imports_dir.exists():
             return {}
-        index: dict[tuple[str, str], tuple[str | None, Path | None]] = {}
+        index: dict[tuple[str, str], ImportedSegmentContext] = {}
         for import_json in sorted(imports_dir.glob("*/import.json")):
             try:
                 data = json.loads(import_json.read_text(encoding="utf-8"))
@@ -303,7 +316,11 @@ class AudioCleanupService:
                 if not isinstance(segment_id, str):
                     continue
                 floor_noise_id, floor_noise_path = self._resolve_floor_noise(imported, floor_noise_items)
-                index[(role, segment_id)] = (floor_noise_id, floor_noise_path)
+                index[(role, segment_id)] = ImportedSegmentContext(
+                    session_id=import_json.parent.name,
+                    floor_noise_id=floor_noise_id,
+                    floor_noise_path=floor_noise_path,
+                )
         return index
 
     def _floor_noise_items(
@@ -366,14 +383,22 @@ class AudioCleanupService:
         candidates = sorted(floor_noise_dir.rglob(f"{floor_noise_id}.wav"))
         return candidates[-1] if candidates else None
 
-    def _batch_id(self, entry: AudioCleanupPlanEntry, *, floor_noise_id: str | None = None) -> str:
+    def _batch_id(
+        self,
+        entry: AudioCleanupPlanEntry,
+        *,
+        session_id: str | None = None,
+        floor_noise_id: str | None = None,
+    ) -> str:
         profile = entry.profile or entry.resolution
+        session_suffix = f"-{session_id}" if session_id else ""
         floor_noise_suffix = f"-{floor_noise_id}" if floor_noise_id else ""
-        return f"{entry.role}-{profile}{floor_noise_suffix}".replace("/", "_").replace(" ", "_")
+        return f"{entry.role}-{profile}{session_suffix}{floor_noise_suffix}".replace("/", "_").replace(" ", "_")
 
 
 @dataclass(frozen=True)
 class AudioCleanupSegmentGroup:
+    session_id: str | None
     floor_noise_id: str | None
     floor_noise_path: Path | None
     segment_paths: tuple[Path, ...]
@@ -384,3 +409,10 @@ class ImportedFloorNoise:
     id: str
     recorded_at: str
     artifact_path: Path | None
+
+
+@dataclass(frozen=True)
+class ImportedSegmentContext:
+    session_id: str
+    floor_noise_id: str | None
+    floor_noise_path: Path | None

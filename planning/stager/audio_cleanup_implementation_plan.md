@@ -119,7 +119,8 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Add `src/stager/audio/audio_cleanup_renderer.py`.
 - [x] Add `src/stager/audio/audio_cleanup_batch.py`.
 - [x] Group segments by role, cleanup profile or analysis recommendation, and floor-noise id.
-- [ ] Group segments by recording package/session and normalized sample rate.
+- [x] Group segments by LineRecorder import transaction/session.
+- [ ] Group segments by normalized sample rate.
 - [ ] Normalize source segments to a common sample rate before batch construction.
 - [x] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
 - [x] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
