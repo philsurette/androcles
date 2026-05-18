@@ -25,7 +25,12 @@ Filters:
  ... asetpts           A->A       Set PTS for audio frames.
  ... concat            N->N       Concatenate audio and video streams.
  ... loudnorm          A->A       EBU R128 loudness normalization
- ... rubberband        A->A       Apply time-stretching and pitch-shifting.
+ ... adeclick          A->A       Remove impulsive noise from input audio.
+ ... deesser           A->A       Apply de-essing to input audio.
+ ... afftdn            A->A       Denoise audio samples with FFT.
+ ... afwtdn            A->A       Denoise audio stream using Wavelets.
+ ... anlmdn            A->A       Reduce broadband noise from stream.
+ ... agate             A->A       Audio gate.
 """
 
 
@@ -66,11 +71,10 @@ def test_probe_uses_project_config_and_prepends_path(
 
     assert installation.source == "config"
     assert installation.ffmpeg_path == bin_dir / "ffmpeg"
-    assert installation.has_filter("rubberband") is True
+    assert installation.has_filter("adeclick") is True
     assert installation.missing_required_voice_profile_filters() == []
     assert runner.commands == [[str(bin_dir / "ffmpeg"), "-hide_banner", "-filters"]]
     assert str(bin_dir) == __import__("os").environ["PATH"].split(__import__("os").pathsep)[0]
-    assert "FFmpeg optional filter rubberband: found" in caplog.text
 
 
 def test_probe_warns_and_falls_back_to_path_when_config_is_missing(
@@ -78,7 +82,7 @@ def test_probe_warns_and_falls_back_to_path_when_config_is_missing(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    runner = FakeRunner(stdout=FILTER_OUTPUT.replace(" ... rubberband        A->A       Apply time-stretching and pitch-shifting.\n", ""))
+    runner = FakeRunner(stdout=FILTER_OUTPUT.replace(" ... adeclick          A->A       Remove impulsive noise from input audio.\n", ""))
     monkeypatch.setattr("stager.shared.ffmpeg_probe.subprocess.run", runner)
     monkeypatch.setattr("stager.shared.ffmpeg_probe.shutil.which", lambda tool: f"/usr/bin/{tool}")
     caplog.set_level(logging.INFO)
@@ -87,9 +91,9 @@ def test_probe_warns_and_falls_back_to_path_when_config_is_missing(
 
     assert installation.source == "PATH"
     assert installation.ffmpeg_path == Path("/usr/bin/ffmpeg")
-    assert installation.has_filter("rubberband") is False
+    assert installation.has_filter("adeclick") is False
     assert "No Quince FFmpeg config file found" in caplog.text
-    assert "FFmpeg optional filter rubberband: not found" in caplog.text
+    assert "FFmpeg optional filter adeclick: not found" in caplog.text
 
 
 def test_probe_fails_when_no_config_or_path_tools(

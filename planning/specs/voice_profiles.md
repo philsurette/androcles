@@ -204,6 +204,9 @@ Initial transform types should be small and FFmpeg-native:
 - `delay`: echo/delay effect.
 - `gain`: level adjustment.
 - `loudnorm`: required final loudness normalization.
+- `declick`: optional click and mouth-click cleanup using FFmpeg `adeclick`.
+- `deesser`: optional sibilance cleanup using FFmpeg `deesser`.
+- `denoise`: optional speech cleanup using FFmpeg-native denoisers such as `afftdn`, `afwtdn`, or `anlmdn`.
 - `preset`: expand to a named transform chain.
 
 Presets should compile to ordinary transforms. Presets are convenience names, not a separate rendering system.
@@ -227,7 +230,24 @@ Useful components for a more masculine presentation:
 - reduced high-frequency brightness when needed,
 - compression tuned to preserve weight.
 
-High-quality transformation often requires formant-aware processing. FFmpeg's portable baseline can approximate this with pitch, EQ, and compression. If the user has separately installed and configured an FFmpeg build that supports the `rubberband` filter, Stager may use it for better pitch shifting and formant handling. The first implementation should detect support and fall back to portable filters.
+High-quality transformation often requires formant-aware processing. The MVP must use FFmpeg's portable LGPL-compatible baseline, approximating voice presentation with pitch, EQ, and compression. Rubber Band support is a follow-on feature, not part of the MVP.
+
+## Click And Mouth-Noise Cleanup
+
+FFmpeg can help with some speech cleanup, but Quince should not promise full mouth-noise removal. The practical goal is conservative, non-destructive cleanup of obvious clicks, harsh sibilance, and light background noise.
+
+Useful FFmpeg-native cleanup filters:
+
+- `adeclick`: first-choice filter for click and mouth-click cleanup. It targets short impulsive noise and should be exposed as `declick` presets such as `gentle` and `medium`.
+- `deesser`: useful for harsh sibilance. It does not remove clicks, but it can improve bright or close-mic speech.
+- `afftdn`: FFT denoiser useful for light room noise and hiss, especially when paired with captured floor noise in future workflows.
+- `afwtdn`: wavelet denoiser; useful as an alternative to `afftdn` when artifacts are more acceptable than the source noise.
+- `anlmdn`: non-local-means denoiser; potentially useful for broadband noise but more expensive and should be optional.
+- `agate`: can reduce low-level noises between phrases, but it will not remove mouth noise during speech and can sound unnatural if pushed.
+
+These cleanup filters should be optional voice/audio cleanup transforms. They should render to generated artifacts and never overwrite original LineRecorder exports or canonical segment audio. Presets should be conservative by default and should support A/B review because over-processing can dull consonants, damage speech transients, or create watery artifacts.
+
+`arnndn` is a different category. The FFmpeg filter itself may be available in normal FFmpeg builds, but it requires an external `.rnnn` model file. Quince should not require or bundle `arnndn` models. If `arnndn` is ever supported, each model's license must be reviewed separately and the feature should remain optional user-provided tooling.
 
 ## FFmpeg Capabilities
 
@@ -251,13 +271,20 @@ The first voice-profile implementation should require only filters that are norm
 
 Optional quality filters and compile-time features:
 
-- `rubberband`: preferred for higher-quality pitch shifting and formant-aware gender-presentation transforms when available. This requires a user-provided GPL-enabled FFmpeg build, such as Homebrew `ffmpeg-full`, and must not be required by Quince.
+- `adeclick`: native FFmpeg declick filter for optional click and mouth-click cleanup.
+- `deesser`: native FFmpeg de-essing filter for optional sibilance cleanup.
+- `afftdn`: native FFmpeg FFT denoiser for optional speech cleanup.
+- `afwtdn`: native FFmpeg wavelet denoiser for optional speech cleanup.
+- `anlmdn`: native FFmpeg non-local-means denoiser for optional speech cleanup.
+- `agate`: native FFmpeg gate for optional between-phrase noise reduction.
 - `firequalizer`: useful for smoother filter-curve support, but not required because `equalizer` chains can approximate curves.
 - `afir`: useful for convolution reverb with impulse responses, but not required for the first implementation.
 - `ladspa` or `lv2`: plugin-host filters; explicitly out of scope for the first implementation because they make installation and support much harder.
 - `arnndn`: neural denoising; out of scope for voice profiles and should not be required because it depends on model files.
 
-Quince must not bundle GPL-enabled FFmpeg or Rubber Band. The integration model is optional detection of a user-managed FFmpeg binary that happens to provide `rubberband`. If `rubberband` is unavailable, Quince should use the portable FFmpeg fallback or disable only the optional higher-quality pitch mode.
+The native cleanup filters above do not require separate plugins or non-LGPL libraries when supplied by a normal FFmpeg build. They should be probed because FFmpeg builds can disable individual filters. If they are missing, Quince should disable the associated cleanup preset or warn; it should not fail baseline voice rendering.
+
+Quince must not bundle GPL-enabled FFmpeg or Rubber Band. Rubber Band integration is a follow-on feature and must remain optional user-managed tooling if it is added later.
 
 Stager should provide a capability diagnostic command or render preflight that reports:
 
@@ -266,7 +293,7 @@ Stager should provide a capability diagnostic command or render preflight that r
 - FFprobe path,
 - required filters present or missing,
 - optional filters present or missing,
-- whether pitch rendering will use `rubberband` or the portable fallback.
+- whether optional cleanup/effects filters are available.
 
 The renderer should fail when required filters are missing. It should warn, not fail, when optional filters are missing and a fallback exists.
 
@@ -434,7 +461,7 @@ Stager may warn for:
 
 - large pitch shifts after clamping,
 - speed changes likely to affect acting timing,
-- unavailable optional FFmpeg filters such as `rubberband`,
+- unavailable optional FFmpeg filters,
 - profile definitions that are not used by the current play.
 
 ## Future LineRecorder Integration

@@ -77,14 +77,17 @@ This is a resumable implementation plan for Stager voice profiles. The design so
   - `concat`,
   - `loudnorm`.
 - [x] Check optional filters:
-  - `rubberband`,
+  - `adeclick`,
+  - `deesser`,
+  - `afftdn`,
+  - `afwtdn`,
+  - `anlmdn`,
+  - `agate`,
   - `firequalizer`,
   - `afir`.
 - [ ] Fail render preflight when required filters are missing.
 - [x] Warn when optional filters are missing and a fallback exists.
 - [ ] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
-- [x] Treat GPL-enabled `rubberband` support as optional user-provided integration only.
-- [x] Add diagnostics that clearly say `rubberband` is optional and requires a compatible user-installed FFmpeg build.
 - [ ] Add `src/stager/audio/ffmpeg_filter_graph.py`.
 - [ ] Compile `highpass`.
 - [ ] Compile `lowpass`.
@@ -100,9 +103,12 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - [ ] Compile baseline portable `speed`.
 - [ ] Compile initial `reverb` using FFmpeg-native filters.
 - [ ] Compile initial `delay` using FFmpeg-native filters.
-- [ ] Detect optional `rubberband` support.
-- [ ] Prefer `rubberband` for pitch when available and requested.
-- [ ] Fall back to portable pitch filters when `rubberband` is unavailable.
+- [ ] Compile optional `declick` to `adeclick`.
+- [ ] Compile optional `deesser` to `deesser`.
+- [ ] Compile optional `denoise` to conservative `afftdn`, `afwtdn`, or `anlmdn` presets.
+- [ ] Compile optional `gate` to conservative `agate` presets.
+- [ ] Ensure missing cleanup filters disable only the associated cleanup preset, not baseline voice rendering.
+- [ ] Keep `arnndn` out of the baseline implementation because it requires external model files with separately reviewed licenses.
 - [ ] Add compiler tests that assert filter graph strings for representative transforms.
 - [ ] Add tests for unsupported transforms and invalid values.
 
@@ -185,6 +191,10 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 
 - [ ] Add built-in preset registry.
 - [ ] Add producer-defined presets in `voice_profiles.yaml`.
+- [ ] Add conservative `declick_gentle`.
+- [ ] Add conservative `declick_medium`.
+- [ ] Add conservative `voice_cleanup_gentle`.
+- [ ] Add conservative `deesser_gentle`.
 - [ ] Implement `female_bright` from the existing Audacity macro shape.
 - [ ] Add `female_bright_subtle`.
 - [ ] Add `male_warm`.
@@ -212,12 +222,24 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - [ ] Compare output correctness and speed against per-segment rendering.
 - [ ] Keep per-segment rendering as the correctness fallback.
 
-## Phase 14: Documentation And Verification
+## Phase 14: Rubber Band Follow-On
+
+Rubber Band integration is explicitly out of scope for the MVP. The MVP must use the portable LGPL-compatible FFmpeg path for pitch shifting.
+
+- [ ] Revisit whether Rubber Band quality is worth the GPL-enabled FFmpeg integration complexity.
+- [ ] Keep Rubber Band disabled unless a user explicitly configures a compatible GPL-enabled FFmpeg build.
+- [ ] Detect optional `rubberband` support only in a follow-on diagnostic path.
+- [ ] Prefer `rubberband` for pitch only when explicitly requested.
+- [ ] Fall back to portable pitch filters when `rubberband` is unavailable.
+- [ ] Add diagnostics that clearly say `rubberband` is optional and requires a compatible user-installed FFmpeg build.
+- [ ] Document GPL-enabled FFmpeg and Rubber Band licensing before enabling the feature.
+
+## Phase 15: Documentation And Verification
 
 - [ ] Update [playbook_usage.md](playbook_usage.md) with voice-profile options.
 - [ ] Update [../quince-workflow.md](../quince-workflow.md) with producer workflow guidance.
 - [ ] Update [install.md](install.md) with voice-profile FFmpeg install and verification instructions.
-- [ ] Add troubleshooting notes for missing FFmpeg filters and optional `rubberband` support.
+- [ ] Add troubleshooting notes for missing MVP FFmpeg filters.
 - [ ] Add examples for one actor reading multiple roles.
 - [ ] Add examples for two actors reading the same role.
 - [ ] Run targeted Stager audio/profile tests.

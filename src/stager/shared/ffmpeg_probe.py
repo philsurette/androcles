@@ -27,7 +27,12 @@ REQUIRED_VOICE_PROFILE_FILTERS = (
     "loudnorm",
 )
 OPTIONAL_VOICE_PROFILE_FILTERS = (
-    "rubberband",
+    "adeclick",
+    "deesser",
+    "afftdn",
+    "afwtdn",
+    "anlmdn",
+    "agate",
     "firequalizer",
     "afir",
 )
@@ -67,8 +72,7 @@ class FfmpegProbe:
         if config is not None:
             return self._from_config(config)
         logger.warning(
-            "No Quince FFmpeg config file found; falling back to ffmpeg and ffprobe on PATH. "
-            "Optional GPL-enabled filters such as rubberband require a configured compatible FFmpeg build."
+            "No Quince FFmpeg config file found; falling back to ffmpeg and ffprobe on PATH."
         )
         return self._from_path()
 

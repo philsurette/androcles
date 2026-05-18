@@ -53,27 +53,24 @@ Required filters for the planned portable voice-profile renderer:
 
 Optional filters that improve quality or future effects:
 
-- `rubberband`: better pitch shifting and formant-aware voice presentation shifts. This usually requires a GPL-enabled FFmpeg build, such as Homebrew `ffmpeg-full`, and must remain optional.
+- `adeclick`: optional click and mouth-click cleanup.
+- `deesser`: optional sibilance cleanup.
+- `afftdn`: optional FFT denoising.
+- `afwtdn`: optional wavelet denoising.
+- `anlmdn`: optional non-local-means denoising.
+- `agate`: optional between-phrase noise gate.
 - `firequalizer`: smoother filter-curve implementation.
 - `afir`: convolution reverb if impulse responses are added later.
 
-The first voice-profile implementation should work without optional quality filters. If `rubberband` is missing, Stager should use the portable `asetrate`/`aresample`/`atempo` pitch-shift fallback and warn that quality may be lower. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
+The first voice-profile implementation should work without optional quality filters. Pitch shifting in the MVP should use the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
 
-Check for optional `rubberband` support:
+The optional cleanup filters listed above are native FFmpeg filters. They do not require separate plugins or GPL-enabled FFmpeg when they are present in a normal FFmpeg build, but FFmpeg builds can disable individual filters. If a cleanup filter is missing, Stager should disable or warn for that cleanup preset rather than failing all voice-profile rendering.
 
-```sh
-ffmpeg -hide_banner -filters | grep rubberband
-```
-
-On Windows PowerShell:
-
-```powershell
-ffmpeg -hide_banner -filters | Select-String rubberband
-```
+`arnndn` is not part of the baseline cleanup feature. It requires an external model file, and model licenses must be reviewed separately before use.
 
 If a required filter is missing, install a fuller FFmpeg build from a trusted distribution. If only optional filters are missing, voice-profile rendering should still work with fallbacks.
 
-Do not treat `ffmpeg-full` or Rubber Band as a Quince dependency. If a user chooses to install a GPL-enabled FFmpeg build, Quince may integrate with it when configured, but the standard FFmpeg install remains the supported baseline.
+Do not treat `ffmpeg-full` or Rubber Band as a Quince dependency. Rubber Band is a follow-on feature and must stay outside the MVP.
 
 ## Build A Wheel
 
