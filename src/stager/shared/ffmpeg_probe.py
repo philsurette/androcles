@@ -23,10 +23,10 @@ REQUIRED_VOICE_PROFILE_FILTERS = (
     "aecho",
     "atrim",
     "asetpts",
-    "concat",
     "loudnorm",
 )
 OPTIONAL_VOICE_PROFILE_FILTERS = (
+    "concat",
     "firequalizer",
     "afir",
 )

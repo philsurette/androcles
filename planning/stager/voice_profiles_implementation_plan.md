@@ -34,8 +34,8 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 
 ## Phase 2: Config Model And Parser
 
-- [ ] Add `src/stager/audio/voice_profile_config.py`.
-- [ ] Define dataclasses for:
+- [x] Add `src/stager/audio/voice_profile_config.py`.
+- [x] Define dataclasses for:
   - `VoiceProfileConfig`,
   - `ActorVoiceBaseline`,
   - `RoleVoiceTarget`,
@@ -45,51 +45,51 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   - `ObservedVoiceMetrics`,
   - `VoiceTransform`,
   - `VoicePreset`.
-- [ ] Load `plays/<play_id>/voice_profiles.yaml` when present.
-- [ ] Treat a missing profile file as an empty config.
-- [ ] Validate `version: 1`.
-- [ ] Parse optional manual observed actor-role metrics for tempo-aware pitch strategy selection.
-- [ ] Parse pitch transforms with `strategy: auto|linked_speed|preserve_tempo`.
-- [ ] Reject legacy `preserve_tempo` boolean pitch-transform fields.
-- [ ] Validate actor ids, role ids, cast profile ids, and duplicate `actor@role` bindings.
+- [x] Load `plays/<play_id>/voice_profiles.yaml` when present.
+- [x] Treat a missing profile file as an empty config.
+- [x] Validate `version: 1`.
+- [x] Parse optional manual observed actor-role metrics for tempo-aware pitch strategy selection.
+- [x] Parse pitch transforms with `strategy: auto|linked_speed|preserve_tempo`.
+- [x] Reject legacy `preserve_tempo` boolean pitch-transform fields.
+- [x] Validate actor ids, role ids, cast profile ids, and duplicate `actor@role` bindings.
 - [ ] Validate transform parameters with clear diagnostics.
-- [ ] Reject unknown transform types.
-- [ ] Reject computed profiles missing required baseline or target pitch.
-- [ ] Validate `tempo_policy` ranges and thresholds.
-- [ ] Validate `pitch_strategy` values.
-- [ ] Treat tempo-policy fields as constraints, not required target transforms.
-- [ ] Add parser tests using `tmp_path`.
+- [x] Reject unknown transform types.
+- [x] Reject computed profiles missing required baseline or target pitch.
+- [x] Validate `tempo_policy` ranges and thresholds.
+- [x] Validate `pitch_strategy` values.
+- [x] Treat tempo-policy fields as constraints, not required target transforms.
+- [x] Add parser tests using `tmp_path`.
 
 ## Phase 3: Transform Resolution
 
-- [ ] Add `src/stager/audio/voice_profile_resolver.py`.
-- [ ] Resolve the active actor from explicit `--actor`, a single matching cast profile, or a play-level actor mapping if added.
-- [ ] Fail when multiple cast profiles match a role and no actor can be selected.
-- [ ] Resolve the active profile for a role and actor.
-- [ ] Support `mode: none`.
-- [ ] Support `mode: explicit`.
-- [ ] Support `mode: computed`.
-- [ ] Compute pitch shift with `12 * log2(target / baseline)`.
-- [ ] Clamp computed pitch shift with `max_pitch_shift_semitones`.
-- [ ] Compute the speed factor implied by linked speed/pitch.
-- [ ] Use observed actor-role tempo to predict post-transform WPM when metrics are present and confident.
-- [ ] Preserve tempo when observed metrics are absent.
-- [ ] Select linked speed/pitch only when role tempo policy allows it.
-- [ ] Select preserve-tempo pitch when linked speed/pitch would violate tempo policy.
-- [ ] Select preserve-tempo pitch when observed tempo confidence is too low.
-- [ ] Record the selected pitch strategy in the resolved profile.
-- [ ] Warn when independent pitch is chosen because linked speed/pitch is unsafe and may produce artifacts.
-- [ ] Apply computed-profile overrides.
-- [ ] Expand `preset` transforms into concrete transform chains.
-- [ ] Preserve a stable resolved-profile id for cache keys.
-- [ ] Do not require `voice-analyze` output for transform resolution.
-- [ ] Add unit tests for one actor reading multiple roles.
-- [ ] Add unit tests for two actors reading the same role.
-- [ ] Add unit tests for ambiguous actor selection.
-- [ ] Add unit tests for pitch clamping and overrides.
-- [ ] Add unit tests for linked speed/pitch selection when predicted WPM is within policy.
-- [ ] Add unit tests for preserve-tempo fallback when predicted WPM is outside policy.
-- [ ] Add unit tests for low-confidence tempo preserving performance timing.
+- [x] Add `src/stager/audio/voice_profile_resolver.py`.
+- [x] Resolve the active actor from explicit `--actor`, a single matching cast profile, or a play-level actor mapping if added.
+- [x] Fail when multiple cast profiles match a role and no actor can be selected.
+- [x] Resolve the active profile for a role and actor.
+- [x] Support `mode: none`.
+- [x] Support `mode: explicit`.
+- [x] Support `mode: computed`.
+- [x] Compute pitch shift with `12 * log2(target / baseline)`.
+- [x] Clamp computed pitch shift with `max_pitch_shift_semitones`.
+- [x] Compute the speed factor implied by linked speed/pitch.
+- [x] Use observed actor-role tempo to predict post-transform WPM when metrics are present and confident.
+- [x] Preserve tempo when observed metrics are absent.
+- [x] Select linked speed/pitch only when role tempo policy allows it.
+- [x] Select preserve-tempo pitch when linked speed/pitch would violate tempo policy.
+- [x] Select preserve-tempo pitch when observed tempo confidence is too low.
+- [x] Record the selected pitch strategy in the resolved profile.
+- [x] Warn when independent pitch is chosen because linked speed/pitch is unsafe and may produce artifacts.
+- [x] Apply computed-profile overrides.
+- [x] Expand `preset` transforms into concrete transform chains.
+- [x] Preserve a stable resolved-profile id for cache keys.
+- [x] Do not require `voice-analyze` output for transform resolution.
+- [x] Add unit tests for one actor reading multiple roles.
+- [x] Add unit tests for two actors reading the same role.
+- [x] Add unit tests for ambiguous actor selection.
+- [x] Add unit tests for pitch clamping and overrides.
+- [x] Add unit tests for linked speed/pitch selection when predicted WPM is within policy.
+- [x] Add unit tests for preserve-tempo fallback when predicted WPM is outside policy.
+- [x] Add unit tests for low-confidence tempo preserving performance timing.
 
 ## Phase 4: FFmpeg Filter Graph Compiler
 
@@ -115,25 +115,25 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Fail render preflight when required filters are missing.
 - [x] Warn when optional filters are missing and a fallback exists.
 - [ ] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
-- [ ] Add `src/stager/audio/ffmpeg_filter_graph.py`.
-- [ ] Compile `highpass`.
-- [ ] Compile `lowpass`.
-- [ ] Compile `eq` bands.
-- [ ] Compile `filter_curve` into FFmpeg-compatible equalizer filters.
-- [ ] Compile `compressor` to `acompressor`.
-- [ ] Compile `gain`.
-- [ ] Compile `loudnorm`.
+- [x] Add `src/stager/audio/ffmpeg_filter_graph.py`.
+- [x] Compile `highpass`.
+- [x] Compile `lowpass`.
+- [x] Compile `eq` bands.
+- [x] Compile `filter_curve` into FFmpeg-compatible equalizer filters.
+- [x] Compile `compressor` to `acompressor`.
+- [x] Compile `gain`.
+- [x] Compile `loudnorm`.
 - [x] Reuse the existing Lorick-derived `stager.loudnorm` two-pass normalizer for final loudness normalization.
 - [x] Add tests around `stager.loudnorm` parsing, command construction, and unnormalizable audio handling before using it in voice rendering.
 - [x] Make loudness targets explicit presets instead of hard-coded podcast/Librivox assumptions.
-- [ ] Compile baseline portable `pitch` with `strategy: linked_speed`.
-- [ ] Compile baseline portable `pitch` with `strategy: preserve_tempo`.
-- [ ] Compile baseline portable `pitch` with `strategy: auto` after resolution has selected a concrete strategy.
-- [ ] Compile baseline portable `speed`.
-- [ ] Compile initial `reverb` using FFmpeg-native filters.
-- [ ] Compile initial `delay` using FFmpeg-native filters.
-- [ ] Add compiler tests that assert filter graph strings for representative transforms.
-- [ ] Add tests for unsupported transforms and invalid values.
+- [x] Compile baseline portable `pitch` with `strategy: linked_speed`.
+- [x] Compile baseline portable `pitch` with `strategy: preserve_tempo`.
+- [x] Compile baseline portable `pitch` with `strategy: auto` after resolution has selected a concrete strategy.
+- [x] Compile baseline portable `speed`.
+- [x] Compile initial `reverb` using FFmpeg-native filters.
+- [x] Compile initial `delay` using FFmpeg-native filters.
+- [x] Add compiler tests that assert filter graph strings for representative transforms.
+- [x] Add tests for unsupported transforms and invalid values.
 
 ## Phase 5: Render Cache
 

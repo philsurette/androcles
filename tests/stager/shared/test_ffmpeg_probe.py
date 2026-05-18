@@ -77,6 +77,7 @@ def test_probe_uses_project_config_and_prepends_path(
     assert installation.missing_required_voice_profile_filters() == []
     assert installation.missing_required_audio_cleanup_filters() == []
     assert installation.optional_voice_profile_filter_report() == {
+        "concat": True,
         "firequalizer": True,
         "afir": True,
     }
