@@ -111,6 +111,40 @@ def test_quince_publish_writes_new_production_version(tmp_path: Path, monkeypatc
     assert "// production_version:" in cfg.production_markdown.read_text(encoding="utf-8")
 
 
+def test_quince_cast_show_reports_unassigned_roles(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["cast", "show"])
+
+    assert result.exit_code == 0
+    assert "Cast:" in result.output
+    assert "Unassigned roles: CAPTAIN" in result.output
+
+
+def test_quince_cast_assign_writes_cast_yaml(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["cast", "assign", "CAPTAIN", "phil"])
+
+    assert result.exit_code == 0
+    assert "Assigned phil to CAPTAIN." in result.output
+    text = (cfg.play_dir / "cast.yaml").read_text(encoding="utf-8")
+    assert "phil:" in text
+    assert "CAPTAIN:" in text
+
+
+def test_quince_cast_assign_rejects_unknown_role(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["cast", "assign", "GHOST", "phil"])
+
+    assert result.exit_code != 0
+    assert "Unknown rehearsable role: GHOST" in result.output
+
+
 def _workspace(root: Path, *play_ids: str) -> None:
     (root / "plays").mkdir(exist_ok=True)
     (root / "pyproject.toml").write_text("[project]\nname = 'test'\n", encoding="utf-8")

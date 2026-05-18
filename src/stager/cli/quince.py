@@ -8,8 +8,10 @@ import click
 import typer
 from ruamel.yaml import YAML
 
+from stager.production.cast_config_service import CastConfigService
 from stager.production.production_recommendation import ProductionRecommendationService
 from stager.production.production_renderers import (
+    render_cast_config,
     render_production_change_report,
     render_production_recommendation,
     render_production_status,
@@ -27,6 +29,12 @@ app = typer.Typer(
     pretty_exceptions_enable=False,
     help="Producer workflow CLI for Quince productions.",
 )
+cast_app = typer.Typer(
+    add_completion=False,
+    pretty_exceptions_enable=False,
+    help="Show and edit cast assignments.",
+)
+app.add_typer(cast_app, name="cast")
 
 PlayOption = Annotated[str | None, typer.Option("--play", "-p", help="Production id under plays/.")]
 WorkspaceOption = Annotated[
@@ -222,6 +230,55 @@ def publish(
             typer.echo(f"  {request_path.relative_to(context.workspace_root).as_posix()}")
 
 
+@cast_app.command("show")
+def cast_show(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
+    """Show cast assignments for the selected production."""
+    try:
+        context, service = _cast_service(play=play, workspace=workspace)
+        config = service.load()
+        validation = service.validate(config)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    typer.echo(render_cast_config(config, validation))
+
+
+@cast_app.command("check")
+def cast_check(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
+    """Validate cast assignments for the selected production."""
+    try:
+        context, service = _cast_service(play=play, workspace=workspace)
+        config = service.load()
+        validation = service.validate(config)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    typer.echo(render_cast_config(config, validation))
+    if not validation.ok:
+        raise typer.Exit(code=1)
+
+
+@cast_app.command("assign")
+def cast_assign(
+    role: str,
+    actor: str,
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    recording: str | None = typer.Option(None, "--recording", help="Recording method: linerecorder or whole-role."),
+) -> None:
+    """Assign an actor id to a role in cast.yaml."""
+    try:
+        context, service = _cast_service(play=play, workspace=workspace)
+        config = service.assign(role=role, actor=actor, recording=recording)
+        validation = service.validate(config)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Assigned {actor} to {role}.")
+    typer.echo(f"Wrote {(context.path_config.play_dir / 'cast.yaml').relative_to(context.workspace_root).as_posix()}")
+    if validation.unassigned_roles:
+        typer.echo("Unassigned roles: " + ", ".join(validation.unassigned_roles))
+
+
 @app.command("next")
 def next_step(
     play: PlayOption = None,
@@ -254,6 +311,12 @@ def _production_status(context: QuinceContext):
         ProductionSourceResolver(cfg).apply_to(context.production_source)
     play = ProductionPlayLoader(paths_config=cfg).load()
     return ProductionStatusService(paths_config=cfg, play=play).build()
+
+
+def _cast_service(*, play: str | None, workspace: Path | None) -> tuple[QuinceContext, CastConfigService]:
+    context = _resolve_context(play=play, workspace=workspace, production_source="working")
+    loaded_play = ProductionPlayLoader(paths_config=context.path_config).load()
+    return context, CastConfigService(paths_config=context.path_config, play=loaded_play)
 
 
 def main_cli() -> None:

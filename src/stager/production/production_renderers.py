@@ -6,6 +6,8 @@ from ruamel.yaml import YAML
 
 from stager.production.production_recommendation import ProductionRecommendation
 from stager.production.production_status import ProductionStatus
+from stager.production.cast_config import CastConfig
+from stager.production.cast_config_service import CastValidationResult
 from stager.production.quince_context import QuinceContext
 
 
@@ -33,6 +35,30 @@ def render_production_recommendation(
             f"Command: {recommendation.command}",
         ]
     )
+
+
+def render_cast_config(config: CastConfig, validation: CastValidationResult) -> str:
+    lines: list[str] = ["Cast:"]
+    if not config.actors:
+        lines.append("  actors: none")
+    else:
+        lines.append("  actors:")
+        for actor_id, actor in sorted(config.actors.items()):
+            suffix = f" <{actor.email}>" if actor.email else ""
+            lines.append(f"    {actor_id}: {actor.display_name}{suffix}")
+    if not config.roles:
+        lines.append("  roles: none")
+    else:
+        lines.append("  roles:")
+        for role_id, assignment in sorted(config.roles.items()):
+            actor = assignment.actor or "unassigned"
+            voice = f", voice {assignment.voice_profile}" if assignment.voice_profile else ""
+            lines.append(f"    {role_id}: {actor}, {assignment.recording}{voice}")
+    if validation.unknown_roles:
+        lines.extend(["", "Unknown roles: " + ", ".join(validation.unknown_roles)])
+    if validation.unassigned_roles:
+        lines.extend(["", "Unassigned roles: " + ", ".join(validation.unassigned_roles)])
+    return "\n".join(lines)
 
 
 def render_production_change_report(report, base_label: str | None = None) -> str:

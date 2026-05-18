@@ -95,12 +95,12 @@ Reduce hand-editing mistakes in `cast.yaml` without replacing the file.
 
 Checklist:
 
-- [ ] Implement `quince cast show`.
-- [ ] Implement `quince cast check`.
-- [ ] Implement `quince cast assign <ROLE> <actor>`.
-- [ ] Preserve comments and formatting where practical; otherwise document that the helper rewrites `cast.yaml`.
-- [ ] Validate configured actors against actor ids.
-- [ ] Add tests for assigning existing roles, rejecting unknown roles, and rejecting malformed actor ids.
+- [x] Implement `quince cast show`.
+- [x] Implement `quince cast check`.
+- [x] Implement `quince cast assign <ROLE> <actor>`.
+- [x] Preserve comments and formatting where practical; otherwise document that the helper rewrites `cast.yaml`.
+- [x] Validate configured actors against actor ids.
+- [x] Add tests for assigning existing roles, rejecting unknown roles, and rejecting malformed actor ids.
 
 ## Phase 7: Recording Workflows
 

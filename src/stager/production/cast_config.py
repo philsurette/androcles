@@ -41,6 +41,29 @@ class CastConfig:
     def assignment_for_role(self, role: str) -> CastRoleAssignment | None:
         return self.roles.get(role)
 
+    def to_dict(self) -> dict:
+        data: dict[str, Any] = {"version": 1}
+        if self.actors:
+            data["actors"] = {
+                actor_id: {
+                    "display_name": actor.display_name,
+                    **({"email": actor.email} if actor.email is not None else {}),
+                    **({"notes": actor.notes} if actor.notes is not None else {}),
+                }
+                for actor_id, actor in sorted(self.actors.items())
+            }
+        if self.roles:
+            data["roles"] = {
+                role_id: {
+                    **({"actor": assignment.actor} if assignment.actor is not None else {}),
+                    "recording": assignment.recording,
+                    **({"voice_profile": assignment.voice_profile} if assignment.voice_profile is not None else {}),
+                    **({"notes": assignment.notes} if assignment.notes is not None else {}),
+                }
+                for role_id, assignment in sorted(self.roles.items())
+            }
+        return data
+
 
 class CastConfigParser:
     def parse(self, path: Path) -> CastConfig:
