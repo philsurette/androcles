@@ -671,6 +671,7 @@ class RoleRecordingsImporter:
         transaction_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
         transaction_dir = self.paths.build_dir / "linerecorder" / "imports" / transaction_id
         imported = []
+        floor_noise_manifest = []
 
         for floor_noise in floor_noise_items:
             artifact_path = transaction_dir / "floor_noise" / floor_noise.audio_path
@@ -678,6 +679,15 @@ class RoleRecordingsImporter:
             with archive.open(floor_noise.member) as source, artifact_path.open("wb") as target:
                 target.write(source.read())
             floor_noise.artifact_path = artifact_path
+            floor_noise_manifest.append(
+                {
+                    "id": floor_noise.id,
+                    "audio_path": floor_noise.audio_path,
+                    "artifact_path": paths.display_path(artifact_path),
+                    "recorded_at": floor_noise.recorded_at,
+                    "duration_ms": floor_noise.duration_ms,
+                }
+            )
 
         for import_job in import_jobs:
             original_path = transaction_dir / "original" / import_job.audio_path
@@ -706,6 +716,7 @@ class RoleRecordingsImporter:
             self._put_optional(item, "line_id", import_job.line_id)
             self._put_optional(item, "line_content_hash", import_job.line_content_hash)
             self._put_optional(item, "segment_content_hash", import_job.segment_content_hash)
+            self._put_optional(item, "recorded_at", import_job.recorded_at)
             self._put_optional(item, "floor_noise_id", import_job.floor_noise.id if import_job.floor_noise else None)
             if existed_before:
                 item["backup_path"] = paths.display_path(backup_path)
@@ -726,6 +737,7 @@ class RoleRecordingsImporter:
                         "denoise": processing_options.denoise,
                         "trim_silence": processing_options.trim_silence,
                     },
+                    "floor_noise_recordings": floor_noise_manifest,
                     "issues": [issue.to_dict() for issue in issues],
                     "imported": imported,
                 },

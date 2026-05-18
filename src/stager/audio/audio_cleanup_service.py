@@ -286,20 +286,69 @@ class AudioCleanupService:
             role = data.get("role_id")
             if not isinstance(role, str):
                 continue
+            floor_noise_items = self._floor_noise_items(data, import_json.parent)
             for imported in data.get("imported", []):
                 if not isinstance(imported, dict):
                     continue
                 segment_id = imported.get("segment_id")
                 if not isinstance(segment_id, str):
                     continue
-                floor_noise_id = imported.get("floor_noise_id")
-                floor_noise_path = (
-                    self._floor_noise_path(import_json.parent, floor_noise_id)
-                    if isinstance(floor_noise_id, str)
-                    else None
-                )
-                index[(role, segment_id)] = (floor_noise_id if isinstance(floor_noise_id, str) else None, floor_noise_path)
+                floor_noise_id, floor_noise_path = self._resolve_floor_noise(imported, floor_noise_items)
+                index[(role, segment_id)] = (floor_noise_id, floor_noise_path)
         return index
+
+    def _floor_noise_items(
+        self,
+        transaction: dict,
+        transaction_dir: Path,
+    ) -> list["ImportedFloorNoise"]:
+        items = []
+        for floor_noise in transaction.get("floor_noise_recordings", []) or []:
+            if not isinstance(floor_noise, dict):
+                continue
+            floor_noise_id = floor_noise.get("id")
+            recorded_at = floor_noise.get("recorded_at")
+            if not isinstance(floor_noise_id, str) or not isinstance(recorded_at, str):
+                continue
+            artifact_path = self._artifact_path(floor_noise.get("artifact_path"))
+            if artifact_path is None:
+                artifact_path = self._floor_noise_path(transaction_dir, floor_noise_id)
+            items.append(
+                ImportedFloorNoise(
+                    id=floor_noise_id,
+                    recorded_at=recorded_at,
+                    artifact_path=artifact_path,
+                )
+            )
+        return sorted(items, key=lambda item: item.recorded_at)
+
+    def _resolve_floor_noise(
+        self,
+        imported: dict,
+        floor_noise_items: list["ImportedFloorNoise"],
+    ) -> tuple[str | None, Path | None]:
+        floor_noise_id = imported.get("floor_noise_id")
+        if isinstance(floor_noise_id, str):
+            for floor_noise in floor_noise_items:
+                if floor_noise.id == floor_noise_id:
+                    return floor_noise.id, floor_noise.artifact_path
+            return floor_noise_id, None
+        recorded_at = imported.get("recorded_at")
+        if not isinstance(recorded_at, str):
+            return None, None
+        candidates = [floor_noise for floor_noise in floor_noise_items if floor_noise.recorded_at <= recorded_at]
+        if not candidates:
+            return None, None
+        floor_noise = candidates[-1]
+        return floor_noise.id, floor_noise.artifact_path
+
+    def _artifact_path(self, value) -> Path | None:
+        if not isinstance(value, str):
+            return None
+        path = Path(value)
+        if path.is_absolute():
+            return path
+        return paths.project_root() / path
 
     def _floor_noise_path(self, transaction_dir: Path, floor_noise_id: str) -> Path | None:
         floor_noise_dir = transaction_dir / "floor_noise"
@@ -319,3 +368,10 @@ class AudioCleanupSegmentGroup:
     floor_noise_id: str | None
     floor_noise_path: Path | None
     segment_paths: tuple[Path, ...]
+
+
+@dataclass(frozen=True)
+class ImportedFloorNoise:
+    id: str
+    recorded_at: str
+    artifact_path: Path | None

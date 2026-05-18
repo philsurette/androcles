@@ -281,7 +281,11 @@ def test_role_recordings_importer_processes_recordings_with_floor_noise(tmp_path
     assert audio_processor.calls[0]["options"].denoise is True
     transaction = json.loads(result.transaction_manifest_path.read_text(encoding="utf-8"))
     assert transaction["processing"] == {"denoise": True, "trim_silence": True}
+    assert transaction["floor_noise_recordings"][0]["id"] == "floor-20260511T115900Z"
+    assert transaction["floor_noise_recordings"][0]["recorded_at"] == "2026-05-11T11:59:00Z"
+    assert "artifact_path" in transaction["floor_noise_recordings"][0]
     assert transaction["imported"][0]["floor_noise_id"] == "floor-20260511T115900Z"
+    assert transaction["imported"][0]["recorded_at"] == "2026-05-11T12:00:00Z"
     assert "original_path" in transaction["imported"][0]
 
 

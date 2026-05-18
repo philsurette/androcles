@@ -80,7 +80,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Load accepted segment audio for the selected play/role.
 - [x] Load LineRecorder floor-noise metadata when present.
 - [x] Resolve each recording's floor-noise sample by explicit id.
-- [ ] Resolve each recording's floor-noise sample by timestamp association.
+- [x] Resolve each recording's floor-noise sample by timestamp association.
 - [ ] Estimate broadband noise floor from floor-noise samples.
 - [ ] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
 - [ ] Mark fallback noise estimates as lower confidence.
