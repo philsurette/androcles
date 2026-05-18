@@ -100,26 +100,26 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 6: Render Cache
 
-- [ ] Add cleanup output roots:
+- [x] Add cleanup output roots:
 
   ```text
   build/<play_id>/audio/cleaned/<batch_id>/batch_manifest.json
   build/<play_id>/audio/cleaned/<batch_id>/<ROLE>/<segment_id>.wav
   ```
 
-- [ ] Compute batch cache keys from grouped source audio fingerprints, floor-noise fingerprint, resolved cleanup chain, and boundary settings.
-- [ ] Include source segment hashes and original sample ranges in cache inputs.
-- [ ] Write cleanup batch manifest JSON.
-- [ ] Skip unchanged renders.
-- [ ] Add cache hit/miss tests without invoking FFmpeg.
+- [x] Compute batch cache keys from grouped source audio fingerprints, resolved cleanup chain, and boundary settings.
+- [x] Include source segment hashes and original sample ranges in cache inputs.
+- [x] Write cleanup batch manifest JSON.
+- [x] Skip unchanged manifest preparation.
+- [x] Add cache hit/miss tests without invoking FFmpeg.
 
 ## Phase 7: Anchor-Based Batch Renderer
 
-- [ ] Add `src/stager/audio/audio_cleanup_renderer.py`.
+- [x] Add `src/stager/audio/audio_cleanup_renderer.py`.
 - [x] Add `src/stager/audio/audio_cleanup_batch.py`.
 - [ ] Group segments by play, role or recording package/session, cleanup profile or analysis recommendation, floor-noise id, and normalized sample rate.
 - [ ] Normalize source segments to a common sample rate before batch construction.
-- [ ] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
+- [x] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
 - [x] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
 - [ ] Render each batch with FFmpeg.
 - [ ] Preserve source files unchanged.
@@ -135,7 +135,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Warn when detected speech no longer contains the original center anchor.
 - [x] Warn when detected range approaches or crosses padding midpoint toward a neighboring segment.
 - [x] Treat empty detected ranges as severe review items.
-- [ ] Store original and cleaned ranges in the batch manifest.
+- [x] Store original and cleaned ranges in the batch manifest.
 - [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [ ] Run loudnorm as the final step.
 - [ ] Validate output exists, is non-silent, and does not clip.

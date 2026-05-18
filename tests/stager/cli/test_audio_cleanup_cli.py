@@ -101,6 +101,20 @@ cleanup_approach: analysis-based
     assert "MEGAERA: analysis" in result.output
 
 
+def test_audio_cleanup_prepare_writes_batch_manifest(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "prepare", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "Prepared 1 cleanup batches." in result.output
+    assert "MEGAERA-gentle_voice_cleanup" in result.output
+    assert "build/test/audio/cleaned/MEGAERA-gentle_voice_cleanup/batch_manifest.json" in result.output
+
+
 def _config(tmp_path: Path) -> paths.PathConfig:
     cfg = paths.PathConfig(
         play_name="test",

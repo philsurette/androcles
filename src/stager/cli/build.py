@@ -1242,6 +1242,35 @@ def audio_cleanup_analyze(
     typer.echo(paths.display_path(result.markdown_path))
 
 
+@audio_cleanup_app.command("prepare")
+def audio_cleanup_prepare(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit cleanup preparation to one role"),
+    profile: str | None = typer.Option(None, "--profile", help="Override the resolved cleanup profile"),
+    use_analysis: bool = typer.Option(False, "--use-analysis", help="Prepare using analysis recommendations"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Prepare cleanup batch manifests and boundary review data."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        results = run_audio_cleanup_prepare(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            paths_config=cfg,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Prepared {len(results)} cleanup batches.")
+    for result in results:
+        cache_state = "cache hit" if result.cache_hit else "cache updated"
+        typer.echo(
+            f"{result.batch_id}: {result.segment_count} segments, "
+            f"{result.warning_count} boundary warnings, {cache_state}"
+        )
+        typer.echo(paths.display_path(result.manifest_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -1552,6 +1581,21 @@ def run_audio_cleanup_analyze(
 ):
     cfg = paths_config or paths.current()
     return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).analyze(role=role)
+
+
+def run_audio_cleanup_prepare(
+    *,
+    role: str | None = None,
+    profile: str | None = None,
+    use_analysis: bool = False,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).prepare(
+        role=role,
+        profile=profile,
+        use_analysis=use_analysis,
+    )
 
 
 def _is_segment_id(value: str) -> bool:

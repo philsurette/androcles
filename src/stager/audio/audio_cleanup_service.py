@@ -6,6 +6,7 @@ from pathlib import Path
 from stager.audio.audio_cleanup_analyzer import AudioCleanupAnalysisStore, AudioCleanupAnalyzer
 from stager.audio.audio_cleanup_config import AudioCleanupConfig
 from stager.audio.audio_cleanup_filter_graph import AudioCleanupFilterGraphCompiler
+from stager.audio.audio_cleanup_renderer import AudioCleanupRenderer
 from stager.shared import paths
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.ffmpeg_probe import FfmpegInstallation
@@ -35,6 +36,15 @@ class AudioCleanupAnalysisResult:
     json_path: Path
     markdown_path: Path
     entry_count: int
+
+
+@dataclass(frozen=True)
+class PreparedAudioCleanupBatchResult:
+    batch_id: str
+    manifest_path: Path
+    segment_count: int
+    cache_hit: bool
+    warning_count: int
 
 
 @dataclass
@@ -143,6 +153,42 @@ class AudioCleanupService:
             entry_count=len(report.entries),
         )
 
+    def prepare(
+        self,
+        *,
+        role: str | None = None,
+        profile: str | None = None,
+        use_analysis: bool = False,
+    ) -> tuple[PreparedAudioCleanupBatchResult, ...]:
+        plan = self.build_plan(role=role, profile=profile, use_analysis=use_analysis)
+        renderer = AudioCleanupRenderer(paths_config=self.paths_config)
+        results = []
+        for entry in plan.entries:
+            if entry.resolution == "none":
+                continue
+            segment_paths = self._segment_paths(entry.role)
+            if not segment_paths:
+                continue
+            batch_id = self._batch_id(entry)
+            prepared = renderer.prepare_batch(
+                batch_id=batch_id,
+                segment_paths=segment_paths,
+                padding_seconds=plan.batch_padding_seconds,
+                boundary_warning_ms=plan.boundary_warning_ms,
+                resolved_filters=entry.filters,
+            )
+            warning_count = sum(1 for boundary in prepared.manifest.cleaned_boundaries if boundary.warnings)
+            results.append(
+                PreparedAudioCleanupBatchResult(
+                    batch_id=batch_id,
+                    manifest_path=prepared.manifest_path,
+                    segment_count=len(prepared.manifest.segments),
+                    cache_hit=prepared.cache_hit,
+                    warning_count=warning_count,
+                )
+            )
+        return tuple(results)
+
     def _installation(self) -> FfmpegInstallation:
         checker = self.tool_checker or ExternalToolChecker()
         return checker.require_audio_tools()
@@ -152,3 +198,11 @@ class AudioCleanupService:
         if self.paths_config.segments_dir.exists():
             roles.update(path.name for path in self.paths_config.segments_dir.iterdir() if path.is_dir())
         return sorted(roles)
+
+    def _segment_paths(self, role: str) -> list[Path]:
+        role_dir = self.paths_config.segments_dir / role
+        return sorted(role_dir.glob("*.wav")) if role_dir.exists() else []
+
+    def _batch_id(self, entry: AudioCleanupPlanEntry) -> str:
+        profile = entry.profile or entry.resolution
+        return f"{entry.role}-{profile}".replace("/", "_").replace(" ", "_")
