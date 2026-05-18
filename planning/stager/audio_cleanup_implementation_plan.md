@@ -51,7 +51,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [x] Support role-level named profile overrides for exceptional recordings.
 - [x] Support role-level `analysis: true` override in profile-based productions.
 - [x] Support role-level `analysis: false` override in analysis-based productions.
-- [ ] Fail clearly when analysis-based cleanup is requested without an accepted analysis report.
+- [x] Fail clearly when analysis-based cleanup is requested without an accepted analysis report.
 - [x] Validate profile names.
 - [ ] Validate role ids.
 - [x] Add built-in presets:
@@ -76,9 +76,9 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 
 ## Phase 5: Cleanup Analysis
 
-- [ ] Add `src/stager/audio/audio_cleanup_analyzer.py`.
-- [ ] Load accepted segment audio for the selected play/role.
-- [ ] Load LineRecorder floor-noise metadata when present.
+- [x] Add `src/stager/audio/audio_cleanup_analyzer.py`.
+- [x] Load accepted segment audio for the selected play/role.
+- [x] Load LineRecorder floor-noise metadata when present.
 - [ ] Resolve each recording's floor-noise sample by explicit id or timestamp association.
 - [ ] Estimate broadband noise floor from floor-noise samples.
 - [ ] Fall back to leading/trailing quiet-region analysis when floor-noise samples are unavailable.
@@ -87,14 +87,14 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [ ] Estimate click density or impulsive-noise likelihood.
 - [ ] Estimate sibilance risk and suggested de-essing strength.
 - [ ] Identify conservative leading/trailing silence trim candidates.
-- [ ] Detect clipping or near-clipping risk.
+- [x] Detect clipping or near-clipping risk.
 - [ ] Estimate loudness normalization feasibility and expected gain change.
 - [ ] Group analysis by role, recording package/session, floor-noise id, and source characteristics.
-- [ ] Recommend a cleanup profile or explicit parameter set per role/session/recording group.
-- [ ] Flag per-segment outliers for review.
-- [ ] Write machine-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.json`.
-- [ ] Write human-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.md`.
-- [ ] Add tests for floor-noise-backed analysis.
+- [x] Recommend a first-pass cleanup profile per recording.
+- [x] Flag per-segment outliers for review.
+- [x] Write machine-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.json`.
+- [x] Write human-readable analysis report under `build/<play_id>/audio/cleanup_analysis/report.md`.
+- [ ] Add tests for floor-noise-backed signal analysis.
 - [ ] Add tests for fallback analysis without floor-noise samples.
 - [ ] Add tests that aggressive recommendations require explicit opt-in.
 
@@ -116,39 +116,39 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 ## Phase 7: Anchor-Based Batch Renderer
 
 - [ ] Add `src/stager/audio/audio_cleanup_renderer.py`.
-- [ ] Add `src/stager/audio/audio_cleanup_batch.py`.
+- [x] Add `src/stager/audio/audio_cleanup_batch.py`.
 - [ ] Group segments by play, role or recording package/session, cleanup profile or analysis recommendation, floor-noise id, and normalized sample rate.
 - [ ] Normalize source segments to a common sample rate before batch construction.
 - [ ] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
-- [ ] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
+- [x] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
 - [ ] Render each batch with FFmpeg.
 - [ ] Preserve source files unchanged.
 - [ ] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
 - [ ] Forbid global silence removal during batch cleanup.
 - [ ] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
 - [ ] Use batch rendering only for duration-preserving filter chains.
-- [ ] After cleanup, detect cleaned speech start/end inside each segment's padded window.
-- [ ] Use original center sample as the boundary detection anchor.
+- [x] After cleanup, detect cleaned speech start/end inside each segment's padded window.
+- [x] Use original center sample as the boundary detection anchor.
 - [ ] Write cleaned segment WAV output from detected boundaries.
-- [ ] Warn when cleaned start/end moves more than `boundary_warning_ms`.
-- [ ] Warn when cleaned duration changes by more than 20%.
-- [ ] Warn when detected speech no longer contains the original center anchor.
-- [ ] Warn when detected range approaches or crosses padding midpoint toward a neighboring segment.
-- [ ] Treat empty detected ranges as severe review items.
+- [x] Warn when cleaned start/end moves more than `boundary_warning_ms`.
+- [x] Warn when cleaned duration changes by more than 20%.
+- [x] Warn when detected speech no longer contains the original center anchor.
+- [x] Warn when detected range approaches or crosses padding midpoint toward a neighboring segment.
+- [x] Treat empty detected ranges as severe review items.
 - [ ] Store original and cleaned ranges in the batch manifest.
 - [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [ ] Run loudnorm as the final step.
 - [ ] Validate output exists, is non-silent, and does not clip.
 - [ ] Add tests with fake FFmpeg runner.
-- [ ] Add tests for sample-accurate batch manifest construction.
-- [ ] Add tests for post-cleanup boundary detection.
-- [ ] Add tests for suspicious boundary warnings.
+- [x] Add tests for sample-accurate batch manifest construction.
+- [x] Add tests for post-cleanup boundary detection.
+- [x] Add tests for suspicious boundary warnings.
 - [ ] Add tests for per-segment fallback when batch validation fails.
 
 ## Phase 8: CLI
 
 - [x] Add `./main audio-cleanup`.
-- [ ] Add `./main audio-cleanup analyze`.
+- [x] Add `./main audio-cleanup analyze`.
 - [x] Add `./main audio-cleanup doctor`.
 - [x] Support `--play/-p`.
 - [x] Support `--role`.
@@ -156,7 +156,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [ ] Support `--use-analysis` to render using analysis recommendations.
 - [ ] Support `--force`.
 - [ ] Support `--dry-run`.
-- [ ] Print analysis report locations.
+- [x] Print analysis report locations.
 - [ ] Print rendered/skipped/missing-filter summary.
 - [x] Add CLI tests.
 

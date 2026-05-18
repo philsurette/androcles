@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import wave
 
 from typer.testing import CliRunner
 
@@ -47,6 +48,59 @@ def test_audio_cleanup_plan_reports_missing_optional_filters(tmp_path: Path, mon
     assert "MEGAERA: missing optional filters adeclick, deesser, afftdn" in result.output
 
 
+def test_audio_cleanup_analyze_writes_report(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "analyze", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "Analyzed 1 segments." in result.output
+    assert "build/test/audio/cleanup_analysis/report.json" in result.output
+
+
+def test_audio_cleanup_plan_fails_for_analysis_without_report(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    (cfg.play_dir / "audio_cleanup.yaml").write_text(
+        """
+version: 1
+cleanup_approach: analysis-based
+""",
+        encoding="utf-8",
+    )
+    (cfg.segments_dir / "MEGAERA").mkdir(parents=True)
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "plan", "--play", "test"])
+
+    assert result.exit_code != 0
+    assert "Analysis-based audio cleanup requires an accepted analysis report" in result.output
+
+
+def test_audio_cleanup_plan_uses_analysis_after_report_exists(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    (cfg.play_dir / "audio_cleanup.yaml").write_text(
+        """
+version: 1
+cleanup_approach: analysis-based
+""",
+        encoding="utf-8",
+    )
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+    analyze_result = CliRunner().invoke(build.app, ["audio-cleanup", "analyze", "--play", "test"])
+    assert analyze_result.exit_code == 0
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "plan", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "MEGAERA: analysis" in result.output
+
+
 def _config(tmp_path: Path) -> paths.PathConfig:
     cfg = paths.PathConfig(
         play_name="test",
@@ -82,3 +136,12 @@ class FakeAudioToolChecker:
             config_path=None,
             filters=frozenset(self.filters),
         )
+
+
+def _write_wav(path: Path, *, samples: list[int], sample_rate: int = 48_000) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with wave.open(str(path), "wb") as wav:
+        wav.setnchannels(1)
+        wav.setsampwidth(2)
+        wav.setframerate(sample_rate)
+        wav.writeframes(b"".join(sample.to_bytes(2, "little", signed=True) for sample in samples))

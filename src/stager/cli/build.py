@@ -1225,6 +1225,23 @@ def audio_cleanup_plan(
             typer.echo(f"{entry.role}: {entry.resolution}")
 
 
+@audio_cleanup_app.command("analyze")
+def audio_cleanup_analyze(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit cleanup analysis to one role"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Analyze segment audio and write cleanup recommendations."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        result = run_audio_cleanup_analyze(role=role, paths_config=cfg)
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Analyzed {result.entry_count} segments.")
+    typer.echo(paths.display_path(result.json_path))
+    typer.echo(paths.display_path(result.markdown_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -1526,6 +1543,15 @@ def run_audio_cleanup_plan(
         profile=profile,
         use_analysis=use_analysis,
     )
+
+
+def run_audio_cleanup_analyze(
+    *,
+    role: str | None = None,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).analyze(role=role)
 
 
 def _is_segment_id(value: str) -> bool:

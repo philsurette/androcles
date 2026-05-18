@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
+from stager.audio.audio_cleanup_analyzer import AudioCleanupAnalysisStore, AudioCleanupAnalyzer
 from stager.audio.audio_cleanup_config import AudioCleanupConfig
 from stager.audio.audio_cleanup_filter_graph import AudioCleanupFilterGraphCompiler
 from stager.shared import paths
@@ -26,6 +28,13 @@ class AudioCleanupPlan:
     batch_padding_seconds: float
     boundary_warning_ms: int
     entries: tuple[AudioCleanupPlanEntry, ...]
+
+
+@dataclass(frozen=True)
+class AudioCleanupAnalysisResult:
+    json_path: Path
+    markdown_path: Path
+    entry_count: int
 
 
 @dataclass
@@ -68,10 +77,12 @@ class AudioCleanupService:
         roles = [role] if role else self._roles(config)
         installation = self._installation()
         compiler = AudioCleanupFilterGraphCompiler(available_filters=set(installation.filters))
+        analysis_store = AudioCleanupAnalysisStore(self.paths_config)
         entries = []
         for role_name in roles:
             resolution = config.resolve_role(role_name)
             if use_analysis:
+                analysis_store.require_role(role_name)
                 resolution_name = "analysis"
                 profile_name = None
                 filters: tuple[str, ...] = ()
@@ -86,6 +97,7 @@ class AudioCleanupService:
                 filters = compiled.filters
                 missing = compiled.missing_optional_filters
             elif resolution.uses_analysis:
+                analysis_store.require_role(role_name)
                 resolution_name = "analysis"
                 profile_name = None
                 filters = ()
@@ -119,6 +131,16 @@ class AudioCleanupService:
             batch_padding_seconds=config.batch_padding_seconds,
             boundary_warning_ms=config.boundary_warning_ms,
             entries=tuple(entries),
+        )
+
+    def analyze(self, *, role: str | None = None) -> AudioCleanupAnalysisResult:
+        analyzer = AudioCleanupAnalyzer(paths_config=self.paths_config)
+        report = analyzer.analyze(role=role)
+        json_path, markdown_path = analyzer.write_report(report)
+        return AudioCleanupAnalysisResult(
+            json_path=json_path,
+            markdown_path=markdown_path,
+            entry_count=len(report.entries),
         )
 
     def _installation(self) -> FfmpegInstallation:
