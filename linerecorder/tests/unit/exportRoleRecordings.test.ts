@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
+import type { FloorNoiseRecording } from "../../src/domain/floorNoiseRecording";
 import type { RecordingTake } from "../../src/domain/take";
 import {
   exportRoleRecordings,
@@ -80,6 +81,36 @@ describe("exportRoleRecordings", () => {
     ]);
     expect(manifest.recordings[0].floor_noise_id).toBe("floor-20260511T115900Z");
     await expect(zip.file("noise/floor-20260511T115900Z.wav")!.async("string")).resolves.toBe("floor wav");
+  });
+
+  it("associates later takes with the newest preceding floor noise recording", async () => {
+    const result = await exportRoleRecordings(
+      projectFixture(),
+      [
+        takeFixture("I-12:s1", { recordedAt: "2026-05-11T12:00:00Z" }),
+        takeFixture("I-14:s1", { recordedAt: "2026-05-11T13:00:00Z" })
+      ],
+      [
+        floorNoiseFixture({
+          id: "floor-20260511T125900Z",
+          recordedAt: "2026-05-11T12:59:00Z",
+          blobText: "later floor wav"
+        }),
+        floorNoiseFixture()
+      ]
+    );
+    const zip = await JSZip.loadAsync(result.blob);
+
+    expect(result.manifest.floor_noise_recordings?.map((floorNoise) => floorNoise.id)).toEqual([
+      "floor-20260511T115900Z",
+      "floor-20260511T125900Z"
+    ]);
+    expect(result.manifest.recordings.map((recording) => recording.floor_noise_id)).toEqual([
+      "floor-20260511T115900Z",
+      "floor-20260511T125900Z"
+    ]);
+    await expect(zip.file("noise/floor-20260511T115900Z.wav")!.async("string")).resolves.toBe("floor wav");
+    await expect(zip.file("noise/floor-20260511T125900Z.wav")!.async("string")).resolves.toBe("later floor wav");
   });
 
   it("reports package generation failures with an export-specific error", async () => {
@@ -174,7 +205,7 @@ function projectFixture(): RecordingProjectRecord {
   };
 }
 
-function takeFixture(segmentId: string): RecordingTake {
+function takeFixture(segmentId: string, overrides: Partial<RecordingTake> = {}): RecordingTake {
   return {
     id: `take-${segmentId}`,
     projectId: "androcles:CENTURION",
@@ -193,11 +224,15 @@ function takeFixture(segmentId: string): RecordingTake {
         clipping: 0
       }
     },
-    blob: new Blob(["fake wav"], { type: "audio/wav" })
+    blob: new Blob(["fake wav"], { type: "audio/wav" }),
+    ...overrides
   };
 }
 
-function floorNoiseFixture() {
+function floorNoiseFixture(
+  overrides: Partial<FloorNoiseRecording> & { blobText?: string } = {}
+) {
+  const { blobText, ...recordingOverrides } = overrides;
   return {
     id: "floor-20260511T115900Z",
     projectId: "androcles:CENTURION",
@@ -208,7 +243,8 @@ function floorNoiseFixture() {
     deviceId: "usb",
     deviceLabel: "USB Microphone",
     mode: "clean" as const,
-    blob: new Blob(["floor wav"], { type: "audio/wav" })
+    blob: new Blob([blobText ?? "floor wav"], { type: "audio/wav" }),
+    ...recordingOverrides
   };
 }
 
