@@ -1962,14 +1962,14 @@ def run_voice_render(
     command_runner: CommandRunner | None = None,
 ) -> tuple[VoiceRenderResult, ...]:
     cfg = paths_config or paths.current()
+    active_installation = installation or AUDIO_TOOL_CHECKER.require_audio_tools()
     plan = run_voice_render_plan(
         role=role,
         actor=actor,
         audio_source=audio_source,
         paths_config=cfg,
-        installation=installation,
+        installation=active_installation,
     )
-    active_installation = installation or AUDIO_TOOL_CHECKER.require_audio_tools()
     renderer = VoiceProfileRenderer(
         paths_config=cfg,
         installation=active_installation,

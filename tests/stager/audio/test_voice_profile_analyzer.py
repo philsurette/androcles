@@ -52,6 +52,23 @@ def test_voice_profile_analyzer_marks_larger_roles_confident(tmp_path: Path) -> 
     assert report.results[0].confidence == 0.9
 
 
+def test_voice_profile_analyzer_ignores_outer_silence_for_pitch_center(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    play = _play(role="MEGAERA", texts=["one two three four"])
+    _write_sine(
+        cfg.segments_dir / "MEGAERA" / "0_1_1.wav",
+        frequency_hz=100,
+        duration_seconds=1.0,
+        leading_silence_seconds=0.5,
+        trailing_silence_seconds=0.5,
+    )
+
+    result = VoiceProfileAnalyzer(paths_config=cfg, play=play).analyze(actor="phil", role="MEGAERA").results[0]
+
+    assert result.pitch_center_hz is not None
+    assert 90 <= result.pitch_center_hz <= 110
+
+
 def test_voice_profile_analysis_can_feed_pitch_strategy_without_speed_normalization(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     texts = [" ".join(f"word{i}x{j}" for j in range(30)) for i in range(5)]
@@ -132,7 +149,15 @@ def _play(*, role: str, texts: list[str]) -> Play:
     )
 
 
-def _write_sine(path: Path, *, frequency_hz: float, duration_seconds: float, sample_rate: int = 8_000) -> None:
+def _write_sine(
+    path: Path,
+    *,
+    frequency_hz: float,
+    duration_seconds: float,
+    sample_rate: int = 8_000,
+    leading_silence_seconds: float = 0.0,
+    trailing_silence_seconds: float = 0.0,
+) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     frame_count = int(sample_rate * duration_seconds)
     with wave.open(str(path), "wb") as wav:
@@ -140,9 +165,17 @@ def _write_sine(path: Path, *, frequency_hz: float, duration_seconds: float, sam
         wav.setsampwidth(2)
         wav.setframerate(sample_rate)
         frames = []
+        frames.extend(
+            (0).to_bytes(2, "little", signed=True)
+            for _ in range(int(sample_rate * leading_silence_seconds))
+        )
         for frame in range(frame_count):
             value = int(12_000 * math.sin(2 * math.pi * frequency_hz * frame / sample_rate))
             frames.append(value.to_bytes(2, "little", signed=True))
+        frames.extend(
+            (0).to_bytes(2, "little", signed=True)
+            for _ in range(int(sample_rate * trailing_silence_seconds))
+        )
         wav.writeframes(b"".join(frames))
 
 

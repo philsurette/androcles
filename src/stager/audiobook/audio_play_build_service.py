@@ -78,7 +78,6 @@ class AudioPlayBuildService:
             part_no = int(part)
         if voice_profiles:
             self._render_voice_profiles(
-                play=play,
                 role=None,
                 actor=voice_actor,
                 audio_source=audio_source,
@@ -121,7 +120,6 @@ class AudioPlayBuildService:
     def _render_voice_profiles(
         self,
         *,
-        play: Play,
         role: str | None,
         actor: str | None,
         audio_source: str,

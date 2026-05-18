@@ -239,7 +239,7 @@ Useful observed metric fields:
 - `word_count`: optional represented text word count used for tempo estimation.
 - `notes`: optional producer note.
 
-Manual observed metrics are enough for the MVP. A later `voice-analyze` command may generate suggested observed metrics, but it should not silently rewrite producer-authored values.
+Manual observed metrics are supported. The `voice-analyze` command can generate suggested observed metrics, but it must not silently rewrite producer-authored values.
 
 ## Cast Profiles
 
@@ -305,7 +305,7 @@ Predicted tempo: 199 WPM
 Decision: preserve tempo and use the independent pitch path.
 ```
 
-Observed tempo may be producer-authored in `voice_profiles.yaml`, loaded from generated analysis output, or absent. The first implementation may use manual observed metrics and does not need to implement analysis before tempo-aware pitch selection. If observed tempo is absent or low confidence, the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
+Observed tempo may be producer-authored in `voice_profiles.yaml`, copied from generated analysis output, or absent. If observed tempo is absent or low confidence, the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
 
 For small roles or sparse recordings, generated tempo estimates should be low confidence. In that case the safe default is to preserve tempo unless the producer explicitly selects a linked strategy.
 
@@ -355,7 +355,7 @@ Gender-presentation presets should participate in tempo-aware pitch strategy sel
 
 Quince will not include FFmpeg. Users must install FFmpeg and FFprobe separately, and Stager must verify required filters before rendering. Required voice-profile rendering must work with a normal LGPL-compatible FFmpeg installation.
 
-The first voice-profile implementation should require only filters that are normally present in mainstream FFmpeg builds:
+The voice-profile MVP requires only filters that are normally present in mainstream FFmpeg builds:
 
 - `aresample`: resample after pitch operations.
 - `asetrate`: portable pitch-shift building block.
@@ -422,7 +422,7 @@ Stager should keep the preset language abstract enough that a later renderer can
 
 ## Built-In Presets
 
-The first implementation provides these built-in presets. A producer can override any built-in preset by defining the same preset name in `voice_profiles.yaml`.
+The MVP provides these built-in presets. A producer can override any built-in preset by defining the same preset name in `voice_profiles.yaml`.
 
 - `female_bright`: high-pass filtering, clarity compression, a bright EQ curve, and a second compressor pass based on the existing Audacity macro shape.
 - `female_bright_subtle`: lighter high-pass, presence lift, and gentle compression.

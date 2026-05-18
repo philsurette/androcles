@@ -19,7 +19,7 @@ Quince/Stager does not bundle FFmpeg. Required Stager audio features must work w
 
 ## FFmpeg For Voice Profiles
 
-Voice-profile rendering will use FFmpeg filters. Quince/Stager will not bundle FFmpeg, so showrunners need an FFmpeg build with the required filters available.
+Voice-profile rendering uses FFmpeg filters. Quince/Stager does not bundle FFmpeg, so showrunners need an FFmpeg build with the required filters available.
 
 Verify the installed commands:
 
@@ -52,11 +52,11 @@ Required filters for the portable voice-profile renderer:
 
 Optional filters that improve quality or future effects:
 
-- `concat`: future role-batch rendering and some integration fixtures.
+- `concat`: future role-batch rendering.
 - `firequalizer`: smoother filter-curve implementation.
 - `afir`: convolution reverb if impulse responses are added later.
 
-The first voice-profile implementation should work without optional quality filters. Pitch shifting in the MVP should use the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
+The voice-profile MVP works without optional quality filters. Pitch shifting uses the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager fails voice-profile rendering because rendered role voices need consistent perceived loudness.
 
 Check Stager's view of the installed FFmpeg:
 

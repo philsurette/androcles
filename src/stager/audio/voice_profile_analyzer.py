@@ -92,7 +92,7 @@ class VoiceProfileAnalyzer:
         total_frames = 0
         active_frames = 0
         sample_rate = None
-        active_samples: list[int] = []
+        pitch_samples: list[int] = []
         for segment_id in flat_segment_ids:
             path = self.paths_config.segments_dir / role_name / f"{segment_id}.wav"
             if not path.exists():
@@ -108,7 +108,7 @@ class VoiceProfileAnalyzer:
             total_frames += len(audio.samples)
             active = [sample for sample in audio.samples if abs(sample) >= self.silence_threshold]
             active_frames += len(active)
-            active_samples.extend(active)
+            pitch_samples.extend(audio.samples)
         sample_rate = sample_rate or 1
         total_duration_seconds = total_frames / sample_rate
         speech_active_seconds = active_frames / sample_rate
@@ -128,7 +128,7 @@ class VoiceProfileAnalyzer:
             total_duration_seconds=total_duration_seconds,
             speech_active_seconds=speech_active_seconds,
             speaking_rate_wpm=speaking_rate_wpm,
-            pitch_center_hz=self._pitch_center(active_samples, sample_rate),
+            pitch_center_hz=self._pitch_center(pitch_samples, sample_rate),
             confidence=confidence,
             confidence_reason=reason,
         )
@@ -154,15 +154,17 @@ class VoiceProfileAnalyzer:
         return 0.35, "sparse role; tempo estimate should not drive automatic strategy selection"
 
     def _pitch_center(self, samples: list[int], sample_rate_hz: int) -> float | None:
-        if len(samples) < 2:
+        active_indices = [index for index, sample in enumerate(samples) if abs(sample) >= self.silence_threshold]
+        if len(samples) < 2 or not active_indices:
             return None
+        voiced_samples = samples[active_indices[0] : active_indices[-1] + 1]
         crossings = 0
-        previous = samples[0]
-        for sample in samples[1:]:
+        previous = voiced_samples[0]
+        for sample in voiced_samples[1:]:
             if (previous < 0 <= sample) or (previous > 0 >= sample):
                 crossings += 1
             previous = sample
-        duration_seconds = len(samples) / sample_rate_hz
+        duration_seconds = len(voiced_samples) / sample_rate_hz
         if duration_seconds <= 0 or crossings == 0:
             return None
         return crossings / (2 * duration_seconds)

@@ -21,8 +21,10 @@ from stager.shared.ffmpeg_probe import FfmpegInstallation, REQUIRED_VOICE_PROFIL
 class FakeVoiceToolChecker:
     def __init__(self, filters: set[str] | None = None) -> None:
         self.filters = filters or set(REQUIRED_VOICE_PROFILE_FILTERS)
+        self.calls = 0
 
     def require_audio_tools(self) -> FfmpegInstallation:
+        self.calls += 1
         return FfmpegInstallation(
             ffmpeg_path=Path("/usr/bin/ffmpeg"),
             ffprobe_path=Path("/usr/bin/ffprobe"),
@@ -120,6 +122,19 @@ def test_run_voice_render_renders_and_then_skips_cache_hit(tmp_path: Path, monke
     assert first[0].rendered is True
     assert second[0].cache_hit is True
     assert len(runner.commands) == 1
+
+
+def test_run_voice_render_probes_ffmpeg_once_when_installation_is_not_injected(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_voice_profiles(cfg)
+    _write_segment(cfg, "MEGAERA", "0_1_1")
+    checker = FakeVoiceToolChecker()
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", checker)
+
+    results = build.run_voice_render(paths_config=cfg, command_runner=CopyingRunner())
+
+    assert len(results) == 1
+    assert checker.calls == 1
 
 
 def test_voice_analyze_writes_report(tmp_path: Path, monkeypatch) -> None:
