@@ -24,6 +24,27 @@ Build a Playbook with MP3 audio assets:
 
 Supported Playbook audio formats are `wav` and `mp3`. The default is `wav`; MP3 assets are encoded at 128 kbps.
 
+Build a Playbook with rendered voice-profile audio:
+
+```sh
+./main playbook --voice-profiles
+```
+
+If a role has multiple actor-specific cast profiles, select the actor explicitly:
+
+```sh
+./main playbook --voice-profiles --voice-actor phil
+```
+
+Voice-profile builds use the same source-audio policy as normal Playbook builds:
+
+```sh
+./main playbook --voice-profiles --audio-source canonical
+./main playbook --voice-profiles --audio-source cleaned
+```
+
+`--audio-source auto` remains the default. Voice-profile rendering runs before Playbook assembly and writes generated audio under `build/<play_id>/audio/rendered/`. The Playbook manifest still references packaged audio assets in the Playbook app directory; detailed voice-profile render metadata has not been added to the Playbook manifest contract yet.
+
 The command is strict. It raises if any rehearsable non-meta role line is missing required cue audio or response audio.
 
 Playbook generation copies production metadata from the selected production source into `manifest.json`. Published-source builds include `production.version`, `production.sequence`, `production.publication_id`, and `production.source: "published"`. Working-source preview builds are marked with `production.source: "working"` and do not create synthetic production versions.
@@ -110,3 +131,5 @@ Cue-start offsets are computed from the source WAV and may be emitted for both W
 The builder does not assemble MP4 files or invoke Whisper. It uses the same Python audio stack as the rest of Stager, so the repository virtualenv must be used. MP3 Playbook export uses pydub's ffmpeg-backed encoder.
 
 Audio preparation before Playbook export may require Audacity exports, pydub, and ffmpeg through the segment-splitting workflow.
+
+Voice-profile rendering also requires FFmpeg with the portable voice-profile filters described in [install.md](install.md). Use `./main voice-profiles doctor --play <play_id>` to check the active FFmpeg installation before rendering profile audio.

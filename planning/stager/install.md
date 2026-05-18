@@ -34,7 +34,7 @@ List available filters:
 ffmpeg -hide_banner -filters
 ```
 
-Required filters for the planned portable voice-profile renderer:
+Required filters for the portable voice-profile renderer:
 
 - `aresample`
 - `asetrate`
@@ -48,15 +48,29 @@ Required filters for the planned portable voice-profile renderer:
 - `aecho`
 - `atrim`
 - `asetpts`
-- `concat`
 - `loudnorm`
 
 Optional filters that improve quality or future effects:
 
+- `concat`: future role-batch rendering and some integration fixtures.
 - `firequalizer`: smoother filter-curve implementation.
 - `afir`: convolution reverb if impulse responses are added later.
 
 The first voice-profile implementation should work without optional quality filters. Pitch shifting in the MVP should use the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
+
+Check Stager's view of the installed FFmpeg:
+
+```sh
+./main voice-profiles doctor --play <play_id>
+```
+
+The doctor command reports the FFmpeg and FFprobe paths, whether required voice-profile filters are available, and whether optional filters are present. Stager first looks for a Quince FFmpeg config file and then falls back to `ffmpeg`/`ffprobe` on `PATH`.
+
+Troubleshooting:
+
+- If `voice-profiles doctor` reports a missing required filter, use a fuller LGPL-compatible FFmpeg build from a trusted distribution and rerun the doctor command.
+- If only `concat`, `firequalizer`, or `afir` is missing, MVP per-segment voice rendering can still work. Those filters are optional for the current implementation.
+- If FFmpeg is installed but Stager cannot find it, add the FFmpeg `bin` directory to `PATH` or create a Quince `ffmpeg.conf` file as described in [../../docs/quince_ffmpeg_rubberband_installation.md](../../docs/quince_ffmpeg_rubberband_installation.md).
 
 ## FFmpeg For Audio Cleanup
 

@@ -177,7 +177,52 @@ Examples:
 
 LineRecorder room-tone capture and recording-package metadata are described in [linerecorder/floor_noise_reduction_plan.md](linerecorder/floor_noise_reduction_plan.md).
 
-## 6. Build Cues
+## 6. Render Voice Profiles
+
+Voice profiles are optional creative effects for actor/role characterization, such as brighter or deeper voices, reverb, or stylized gender-presentation shifts. They are separate from audio cleanup. Voice-profile rendering never overwrites canonical segment audio or LineRecorder recording packages.
+
+Define profiles in:
+
+```text
+plays/<play_id>/voice_profiles.yaml
+```
+
+Check FFmpeg support:
+
+```sh
+./main voice-profiles doctor --play <play_id>
+```
+
+Analyze accepted role recordings when you want suggested observed tempo and rough pitch values:
+
+```sh
+./main voice-analyze --play <play_id> --actor phil --role MEGAERA
+```
+
+The analysis report is written under:
+
+```text
+build/<play_id>/audio/voice_analysis/
+```
+
+Analysis output is a suggestion. It does not rewrite `voice_profiles.yaml`.
+
+Render voice-profile audio:
+
+```sh
+./main voice-render --play <play_id>
+./main voice-render --play <play_id> --role MEGAERA --actor phil
+```
+
+Rendered voice audio is generated under:
+
+```text
+build/<play_id>/audio/rendered/
+```
+
+Use `--audio-source canonical`, `--audio-source cleaned`, or the default `auto` to choose whether voice effects are rendered from canonical segment audio or reviewed cleaned audio.
+
+## 7. Build Cues
 
 Cuemaster rehearsal depends on cue audio as well as response audio. Build cue files from the prepared segment audio:
 
@@ -187,7 +232,7 @@ Cuemaster rehearsal depends on cue audio as well as response audio. Build cue fi
 
 Cue selection rules and cue-window behavior are described in [cuemaster/cue_generation.md](cuemaster/cue_generation.md). This workflow only describes when cue assets are produced.
 
-## 7. Build The Playbook
+## 8. Build The Playbook
 
 Build the Cuemaster Playbook after text, segments, and cue audio are ready:
 
@@ -199,6 +244,13 @@ For a smaller distribution package, build with MP3 audio:
 
 ```sh
 ./main playbook --play <play_id> --audio-format mp3
+```
+
+Build with voice-profile audio when a production wants Cuemaster response and cue assets to use rendered role voices:
+
+```sh
+./main playbook --play <play_id> --voice-profiles
+./main playbook --play <play_id> --voice-profiles --voice-actor phil
 ```
 
 Stager writes both an unpacked inspection directory and a distributable zip:
@@ -218,11 +270,17 @@ An audioplay can be built as its own production artifact:
 ./main audioplay --play <play_id>
 ```
 
+To review rendered role voices in the assembled audioplay:
+
+```sh
+./main audioplay --play <play_id> --voice-profiles
+```
+
 It is best thought of as a sibling output of the same prepared script and segment audio, not as the source for Playbook creation. The Playbook builder uses the shared play and segment assets directly so Cuemaster does not depend on MP4 chapter metadata or audiobook assembly.
 
 A production may build an audioplay for review, publication, or quality control before or after building the Playbook. When `audioplay` is run with preparation enabled, it may also refresh text and segment artifacts that the Playbook workflow needs.
 
-## 8. Distribute To Actors
+## 9. Distribute To Actors
 
 Actors receive different package types for different jobs:
 

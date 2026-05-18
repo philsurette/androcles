@@ -114,7 +114,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
   - `afir`.
 - [x] Fail render preflight when required filters are missing.
 - [x] Warn when optional filters are missing and a fallback exists.
-- [ ] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
+- [x] Ensure required voice-profile rendering works with a normal LGPL-compatible FFmpeg install.
 - [x] Add `src/stager/audio/ffmpeg_filter_graph.py`.
 - [x] Compile `highpass`.
 - [x] Compile `lowpass`.
@@ -252,7 +252,7 @@ Recording-quality cleanup is planned separately in [audio_cleanup_implementation
 - [ ] Design role-batch rendering manifest and split-boundary tracking.
 - [ ] Prototype role-batch rendering with silence padding between segments.
 - [ ] Compare output correctness and speed against per-segment rendering.
-- [ ] Keep per-segment rendering as the correctness fallback.
+- [x] Keep per-segment rendering as the correctness fallback.
 
 ## Phase 14: Rubber Band Follow-On
 
@@ -264,21 +264,21 @@ Rubber Band integration is explicitly out of scope for the MVP. The MVP must use
 - [ ] Prefer `rubberband` for pitch only when explicitly requested.
 - [ ] Fall back to portable pitch filters when `rubberband` is unavailable.
 - [ ] Add diagnostics that clearly say `rubberband` is optional and requires a compatible user-installed FFmpeg build.
-- [ ] Document GPL-enabled FFmpeg and Rubber Band licensing before enabling the feature.
+- [x] Document GPL-enabled FFmpeg and Rubber Band licensing before enabling the feature.
 
 ## Phase 15: Documentation And Verification
 
-- [ ] Update [playbook_usage.md](playbook_usage.md) with voice-profile options.
-- [ ] Update [../quince-workflow.md](../quince-workflow.md) with producer workflow guidance.
-- [ ] Update [install.md](install.md) with voice-profile FFmpeg install and verification instructions.
-- [ ] Add troubleshooting notes for missing MVP FFmpeg filters.
-- [ ] Add examples for one actor reading multiple roles.
-- [ ] Add examples for two actors reading the same role.
-- [ ] Run targeted Stager audio/profile tests.
-- [ ] Run Playbook tests.
-- [ ] Run audioplay tests.
-- [ ] Run Recording Request and LineRecorder tests if contracts changed.
-- [ ] Run full Python suite:
+- [x] Update [playbook_usage.md](playbook_usage.md) with voice-profile options.
+- [x] Update [../quince-workflow.md](../quince-workflow.md) with producer workflow guidance.
+- [x] Update [install.md](install.md) with voice-profile FFmpeg install and verification instructions.
+- [x] Add troubleshooting notes for missing MVP FFmpeg filters.
+- [x] Add examples for one actor reading multiple roles.
+- [x] Add examples for two actors reading the same role.
+- [x] Run targeted Stager audio/profile tests.
+- [x] Run Playbook tests.
+- [x] Run audioplay tests.
+- [x] Run Recording Request and LineRecorder tests if contracts changed.
+- [x] Run full Python suite:
 
   ```sh
   .venv/bin/python run_tests.py
@@ -286,20 +286,20 @@ Rubber Band integration is explicitly out of scope for the MVP. The MVP must use
 
 ## Acceptance Criteria
 
-- [ ] Original recording package content is never modified by voice profile rendering.
-- [ ] Canonical segment audio remains usable without voice profiles.
-- [ ] `voice_profiles.yaml` can express actor baselines, role targets, and actor-role cast profiles.
-- [ ] One actor can render different voices for multiple roles.
-- [ ] Two actors can render toward the same role target with different transforms.
-- [ ] Explicit transform mode works.
-- [ ] Computed pitch mode works and clamps large shifts.
-- [ ] Computed pitch strategy uses linked speed/pitch only when role tempo policy allows it.
-- [ ] Missing or low-confidence observed tempo preserves recorded timing.
-- [ ] Actor selection is explicit or unambiguous, and ambiguity fails before rendering.
-- [ ] Render cache keys distinguish canonical source audio from reviewed cleaned source audio.
-- [ ] Voice analysis can estimate observed speaking rate with confidence and does not normalize tempo.
-- [ ] Built-in presets expand to deterministic FFmpeg transform chains.
-- [ ] Rendered audio is cached and rebuilt only when relevant inputs change.
-- [ ] Playbook/audioplay builds can opt into rendered voice-profile audio.
-- [ ] Verification remains based on canonical segment audio unless explicitly requested otherwise.
-- [ ] Tests do not require real recordings, network access, or downloaded models.
+- [x] Original recording package content is never modified by voice profile rendering.
+- [x] Canonical segment audio remains usable without voice profiles.
+- [x] `voice_profiles.yaml` can express actor baselines, role targets, and actor-role cast profiles.
+- [x] One actor can render different voices for multiple roles.
+- [x] Two actors can render toward the same role target with different transforms.
+- [x] Explicit transform mode works.
+- [x] Computed pitch mode works and clamps large shifts.
+- [x] Computed pitch strategy uses linked speed/pitch only when role tempo policy allows it.
+- [x] Missing or low-confidence observed tempo preserves recorded timing.
+- [x] Actor selection is explicit or unambiguous, and ambiguity fails before rendering.
+- [x] Render cache keys distinguish canonical source audio from reviewed cleaned source audio.
+- [x] Voice analysis can estimate observed speaking rate with confidence and does not normalize tempo.
+- [x] Built-in presets expand to deterministic FFmpeg transform chains.
+- [x] Rendered audio is cached and rebuilt only when relevant inputs change.
+- [x] Playbook/audioplay builds can opt into rendered voice-profile audio.
+- [x] Verification remains based on canonical segment audio unless explicitly requested otherwise.
+- [x] Tests do not require real recordings, network access, or downloaded models.
