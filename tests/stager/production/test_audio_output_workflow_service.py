@@ -1,12 +1,46 @@
 from __future__ import annotations
 
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from stager.production.audio_output_workflow_service import AudioOutputWorkflowService
 from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
+
+
+def test_prepare_audio_runs_analysis_before_analysis_based_plan(tmp_path: Path, monkeypatch) -> None:
+    cfg = _workspace(tmp_path)
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    calls = []
+
+    class FakeAudioCleanupService:
+        def __init__(self, **kwargs):
+            pass
+
+        def analyze(self, **kwargs):
+            calls.append("analyze")
+            return SimpleNamespace(json_path=cfg.build_dir / "analysis.json", markdown_path=cfg.build_dir / "analysis.md", entry_count=1)
+
+        def build_plan(self, **kwargs):
+            calls.append("build_plan")
+            return SimpleNamespace(entries=())
+
+        def prepare(self, **kwargs):
+            calls.append("prepare")
+            return ()
+
+        def render(self, **kwargs):
+            calls.append("render")
+            return ()
+
+    monkeypatch.setattr("stager.production.audio_output_workflow_service.AudioCleanupService", FakeAudioCleanupService)
+
+    result = AudioOutputWorkflowService(paths_config=cfg, play=play).prepare_audio(run=True, use_analysis=True)
+
+    assert result.cleanup_analysis.entry_count == 1
+    assert calls == ["analyze", "build_plan", "prepare", "render"]
 
 
 def test_build_playbook_preserves_strict_missing_audio_failure(tmp_path: Path) -> None:

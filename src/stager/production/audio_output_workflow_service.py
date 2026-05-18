@@ -70,6 +70,7 @@ class AudioOutputWorkflowService:
         self._validate_audio_source(audio_source)
         cleanup = AudioCleanupService(paths_config=self.paths_config, tool_checker=self.tool_checker)
         status = ProductionStatusService(paths_config=self.paths_config, play=self.play).build()
+        cleanup_analysis = cleanup.analyze(role=role) if run and use_analysis else None
         cleanup_plan = cleanup.build_plan(role=role, profile=profile, use_analysis=use_analysis)
         voice_profile_count = len(VoiceProfileConfig.load(self.paths_config).cast_profiles)
         if not run:
@@ -84,7 +85,6 @@ class AudioOutputWorkflowService:
                 dry_run=True,
             )
 
-        cleanup_analysis = cleanup.analyze(role=role) if use_analysis else None
         prepared_batches = tuple(cleanup.prepare(role=role, profile=profile, use_analysis=use_analysis))
         rendered_batches = tuple(cleanup.render(role=role, profile=profile, use_analysis=use_analysis, force=force))
         voice_results = self._render_voice_profiles(
