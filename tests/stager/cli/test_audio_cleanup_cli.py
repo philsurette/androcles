@@ -115,6 +115,19 @@ def test_audio_cleanup_prepare_writes_batch_manifest(tmp_path: Path, monkeypatch
     assert "build/test/audio/cleaned/MEGAERA-gentle_voice_cleanup/batch_manifest.json" in result.output
 
 
+def test_audio_cleanup_render_writes_cleaned_segment_with_no_filter_profile(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker())
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "render", "--play", "test", "--profile", "none"])
+
+    assert result.exit_code == 0
+    assert "Rendered 1 cleanup batches." in result.output
+    assert (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "MEGAERA" / "0_1_1.wav").exists()
+
+
 def _config(tmp_path: Path) -> paths.PathConfig:
     cfg = paths.PathConfig(
         play_name="test",

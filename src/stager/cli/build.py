@@ -1271,6 +1271,34 @@ def audio_cleanup_prepare(
         typer.echo(paths.display_path(result.manifest_path))
 
 
+@audio_cleanup_app.command("render")
+def audio_cleanup_render(
+    role: str | None = typer.Option(None, "--role", "-r", help="Limit cleanup rendering to one role"),
+    profile: str | None = typer.Option(None, "--profile", help="Override the resolved cleanup profile"),
+    use_analysis: bool = typer.Option(False, "--use-analysis", help="Render using analysis recommendations"),
+    play: str | None = PLAY_OPTION,
+) -> None:
+    """Render cleaned segment audio from cleanup batches."""
+    cfg = paths.PathConfig(play or paths.default_play_name())
+    setup_logging(cfg)
+    try:
+        results = run_audio_cleanup_render(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            paths_config=cfg,
+        )
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(f"Rendered {len(results)} cleanup batches.")
+    for result in results:
+        typer.echo(
+            f"{result.batch_id}: {result.rendered_count} segments, "
+            f"{result.warning_count} boundary warnings"
+        )
+        typer.echo(paths.display_path(result.manifest_path))
+
+
 # Helper functions (non-Typer) -----------------------------------------------
 
 def run_text(
@@ -1592,6 +1620,21 @@ def run_audio_cleanup_prepare(
 ):
     cfg = paths_config or paths.current()
     return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).prepare(
+        role=role,
+        profile=profile,
+        use_analysis=use_analysis,
+    )
+
+
+def run_audio_cleanup_render(
+    *,
+    role: str | None = None,
+    profile: str | None = None,
+    use_analysis: bool = False,
+    paths_config: paths.PathConfig | None = None,
+):
+    cfg = paths_config or paths.current()
+    return AudioCleanupService(paths_config=cfg, tool_checker=AUDIO_TOOL_CHECKER).render(
         role=role,
         profile=profile,
         use_analysis=use_analysis,

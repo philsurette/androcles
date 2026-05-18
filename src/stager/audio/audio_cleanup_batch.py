@@ -103,6 +103,7 @@ class CleanupBatchBoundaryEntry:
     cleaned_start_sample: int
     cleaned_end_sample: int
     warnings: tuple[str, ...]
+    output_path: Path | None = None
 
     @classmethod
     def from_detection(
@@ -119,11 +120,25 @@ class CleanupBatchBoundaryEntry:
             original_center_sample=segment.center_sample,
             cleaned_start_sample=detection.cleaned_start_sample,
             cleaned_end_sample=detection.cleaned_end_sample,
+            output_path=None,
             warnings=detection.warnings,
         )
 
+    def with_output_path(self, output_path: Path) -> "CleanupBatchBoundaryEntry":
+        return CleanupBatchBoundaryEntry(
+            role=self.role,
+            segment_id=self.segment_id,
+            original_start_sample=self.original_start_sample,
+            original_end_sample=self.original_end_sample,
+            original_center_sample=self.original_center_sample,
+            cleaned_start_sample=self.cleaned_start_sample,
+            cleaned_end_sample=self.cleaned_end_sample,
+            output_path=output_path,
+            warnings=self.warnings,
+        )
+
     def to_dict(self) -> dict:
-        return {
+        data = {
             "role": self.role,
             "segment_id": self.segment_id,
             "original_start_sample": self.original_start_sample,
@@ -133,6 +148,9 @@ class CleanupBatchBoundaryEntry:
             "cleaned_end_sample": self.cleaned_end_sample,
             "warnings": list(self.warnings),
         }
+        if self.output_path is not None:
+            data["output_path"] = paths.display_path(self.output_path)
+        return data
 
 
 @dataclass

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import shutil
+import subprocess
 import wave
 
 from stager.audio.audio_cleanup_renderer import AudioCleanupRenderer
@@ -57,6 +59,49 @@ def test_cleanup_renderer_reports_cache_hit_on_second_prepare(tmp_path: Path) ->
     assert second_result.cache_hit is True
 
 
+def test_cleanup_renderer_runs_ffmpeg_and_writes_cleaned_segments(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+    runner = CopyingRunner()
+
+    result = AudioCleanupRenderer(paths_config=cfg, command_runner=runner).render_batch(
+        batch_id="MEGAERA-gentle_voice_cleanup",
+        segment_paths=[first],
+        padding_seconds=3.0,
+        boundary_warning_ms=500,
+        resolved_filters=("adeclick",),
+    )
+
+    output_path = cfg.audio_out_dir / "cleaned" / "MEGAERA-gentle_voice_cleanup" / "MEGAERA" / "0_1_1.wav"
+    data = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    assert runner.commands[0][0] == "ffmpeg"
+    assert output_path.exists()
+    assert data["cleaned_boundaries"][0]["output_path"].endswith("MEGAERA/0_1_1.wav")
+    assert result.rendered_count == 1
+
+
+def test_cleanup_renderer_rejects_duration_changing_filter_output(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    first = cfg.segments_dir / "MEGAERA" / "0_1_1.wav"
+    _write_wav(first, samples=[0, 1200, -1200, 0])
+
+    renderer = AudioCleanupRenderer(paths_config=cfg, command_runner=ShorteningRunner())
+
+    try:
+        renderer.render_batch(
+            batch_id="MEGAERA-gentle_voice_cleanup",
+            segment_paths=[first],
+            padding_seconds=3.0,
+            boundary_warning_ms=500,
+            resolved_filters=("adeclick",),
+        )
+    except RuntimeError as exc:
+        assert "duration changed unexpectedly" in str(exc)
+    else:
+        raise AssertionError("Expected duration-changing output to fail")
+
+
 def _config(tmp_path: Path) -> paths.PathConfig:
     cfg = paths.PathConfig(
         play_name="test",
@@ -76,3 +121,19 @@ def _write_wav(path: Path, *, samples: list[int], sample_rate: int = 48_000) -> 
         wav.setsampwidth(2)
         wav.setframerate(sample_rate)
         wav.writeframes(b"".join(sample.to_bytes(2, "little", signed=True) for sample in samples))
+
+
+class CopyingRunner:
+    def __init__(self) -> None:
+        self.commands: list[list[str]] = []
+
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        self.commands.append(command)
+        shutil.copy2(command[3], command[-1])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")
+
+
+class ShorteningRunner:
+    def __call__(self, command: list[str], *, capture_output: bool, text: bool) -> subprocess.CompletedProcess[str]:
+        _write_wav(Path(command[-1]), samples=[0])
+        return subprocess.CompletedProcess(args=command, returncode=0, stdout="", stderr="")

@@ -121,15 +121,15 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [ ] Normalize source segments to a common sample rate before batch construction.
 - [x] Build concatenated batches with configurable generated silence padding, default `3.0` seconds.
 - [x] Store original start sample, original end sample, original center sample, source duration, source hash, and guard/padding ranges for each segment.
-- [ ] Render each batch with FFmpeg.
-- [ ] Preserve source files unchanged.
+- [x] Render each batch with FFmpeg.
+- [x] Preserve source files unchanged.
 - [ ] Use associated floor-noise samples for `afftdn` measured-noise workflows when available.
 - [ ] Forbid global silence removal during batch cleanup.
 - [ ] Declare each cleanup filter/preset as duration-preserving or not duration-preserving.
 - [ ] Use batch rendering only for duration-preserving filter chains.
 - [x] After cleanup, detect cleaned speech start/end inside each segment's padded window.
 - [x] Use original center sample as the boundary detection anchor.
-- [ ] Write cleaned segment WAV output from detected boundaries.
+- [x] Write cleaned segment WAV output from detected boundaries.
 - [x] Warn when cleaned start/end moves more than `boundary_warning_ms`.
 - [x] Warn when cleaned duration changes by more than 20%.
 - [x] Warn when detected speech no longer contains the original center anchor.
@@ -139,7 +139,7 @@ This is a resumable implementation plan for Stager audio cleanup. The design sou
 - [ ] Fall back to per-segment cleanup when a batch cannot be safely split.
 - [ ] Run loudnorm as the final step.
 - [ ] Validate output exists, is non-silent, and does not clip.
-- [ ] Add tests with fake FFmpeg runner.
+- [x] Add tests with fake FFmpeg runner.
 - [x] Add tests for sample-accurate batch manifest construction.
 - [x] Add tests for post-cleanup boundary detection.
 - [x] Add tests for suspicious boundary warnings.

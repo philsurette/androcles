@@ -47,6 +47,14 @@ class PreparedAudioCleanupBatchResult:
     warning_count: int
 
 
+@dataclass(frozen=True)
+class RenderedAudioCleanupBatchResult:
+    batch_id: str
+    manifest_path: Path
+    rendered_count: int
+    warning_count: int
+
+
 @dataclass
 class AudioCleanupService:
     paths_config: paths.PathConfig
@@ -185,6 +193,40 @@ class AudioCleanupService:
                     segment_count=len(prepared.manifest.segments),
                     cache_hit=prepared.cache_hit,
                     warning_count=warning_count,
+                )
+            )
+        return tuple(results)
+
+    def render(
+        self,
+        *,
+        role: str | None = None,
+        profile: str | None = None,
+        use_analysis: bool = False,
+    ) -> tuple[RenderedAudioCleanupBatchResult, ...]:
+        plan = self.build_plan(role=role, profile=profile, use_analysis=use_analysis)
+        renderer = AudioCleanupRenderer(paths_config=self.paths_config)
+        results = []
+        for entry in plan.entries:
+            if entry.resolution == "none":
+                continue
+            segment_paths = self._segment_paths(entry.role)
+            if not segment_paths:
+                continue
+            batch_id = self._batch_id(entry)
+            rendered = renderer.render_batch(
+                batch_id=batch_id,
+                segment_paths=segment_paths,
+                padding_seconds=plan.batch_padding_seconds,
+                boundary_warning_ms=plan.boundary_warning_ms,
+                resolved_filters=entry.filters,
+            )
+            results.append(
+                RenderedAudioCleanupBatchResult(
+                    batch_id=batch_id,
+                    manifest_path=rendered.manifest_path,
+                    rendered_count=rendered.rendered_count,
+                    warning_count=rendered.warning_count,
                 )
             )
         return tuple(results)
