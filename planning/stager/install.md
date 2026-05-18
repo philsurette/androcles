@@ -53,18 +53,31 @@ Required filters for the planned portable voice-profile renderer:
 
 Optional filters that improve quality or future effects:
 
+- `firequalizer`: smoother filter-curve implementation.
+- `afir`: convolution reverb if impulse responses are added later.
+
+The first voice-profile implementation should work without optional quality filters. Pitch shifting in the MVP should use the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
+
+## FFmpeg For Audio Cleanup
+
+Audio cleanup uses FFmpeg for conservative recording-quality repair before creative voice effects. The MVP must work with a normal LGPL-compatible FFmpeg installation.
+
+Required cleanup filters:
+
+- `loudnorm`
+- `atrim`
+- `asetpts`
+
+Optional cleanup filters:
+
 - `adeclick`: optional click and mouth-click cleanup.
 - `deesser`: optional sibilance cleanup.
 - `afftdn`: optional FFT denoising.
 - `afwtdn`: optional wavelet denoising.
 - `anlmdn`: optional non-local-means denoising.
 - `agate`: optional between-phrase noise gate.
-- `firequalizer`: smoother filter-curve implementation.
-- `afir`: convolution reverb if impulse responses are added later.
 
-The first voice-profile implementation should work without optional quality filters. Pitch shifting in the MVP should use the portable `asetrate`/`aresample`/`atempo` path. If `loudnorm` is missing, Stager should fail voice-profile rendering because rendered role voices need consistent perceived loudness.
-
-The optional cleanup filters listed above are native FFmpeg filters. They do not require separate plugins or GPL-enabled FFmpeg when they are present in a normal FFmpeg build, but FFmpeg builds can disable individual filters. If a cleanup filter is missing, Stager should disable or warn for that cleanup preset rather than failing all voice-profile rendering.
+The optional cleanup filters listed above are native FFmpeg filters. They do not require separate plugins or GPL-enabled FFmpeg when they are present in a normal FFmpeg build, but FFmpeg builds can disable individual filters. If a cleanup filter is missing, Stager should disable or warn for that cleanup preset rather than failing all cleanup or voice-profile rendering.
 
 `arnndn` is not part of the baseline cleanup feature. It requires an external model file, and model licenses must be reviewed separately before use.
 

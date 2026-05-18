@@ -27,14 +27,21 @@ REQUIRED_VOICE_PROFILE_FILTERS = (
     "loudnorm",
 )
 OPTIONAL_VOICE_PROFILE_FILTERS = (
+    "firequalizer",
+    "afir",
+)
+REQUIRED_AUDIO_CLEANUP_FILTERS = (
+    "loudnorm",
+    "atrim",
+    "asetpts",
+)
+OPTIONAL_AUDIO_CLEANUP_FILTERS = (
     "adeclick",
     "deesser",
     "afftdn",
     "afwtdn",
     "anlmdn",
     "agate",
-    "firequalizer",
-    "afir",
 )
 
 
@@ -60,6 +67,12 @@ class FfmpegInstallation:
 
     def optional_voice_profile_filter_report(self) -> dict[str, bool]:
         return {name: name in self.filters for name in OPTIONAL_VOICE_PROFILE_FILTERS}
+
+    def missing_required_audio_cleanup_filters(self) -> list[str]:
+        return [name for name in REQUIRED_AUDIO_CLEANUP_FILTERS if name not in self.filters]
+
+    def optional_audio_cleanup_filter_report(self) -> dict[str, bool]:
+        return {name: name in self.filters for name in OPTIONAL_AUDIO_CLEANUP_FILTERS}
 
 
 @dataclass
@@ -175,9 +188,29 @@ class FfmpegProbe:
 
     def _log_filter_report(self, installation: FfmpegInstallation) -> None:
         for name in REQUIRED_VOICE_PROFILE_FILTERS:
-            logger.info("FFmpeg required filter %s: %s", name, "found" if installation.has_filter(name) else "missing")
+            logger.info(
+                "FFmpeg required voice-profile filter %s: %s",
+                name,
+                "found" if installation.has_filter(name) else "missing",
+            )
         for name, found in installation.optional_voice_profile_filter_report().items():
-            logger.info("FFmpeg optional filter %s: %s", name, "found" if found else "not found")
+            logger.info(
+                "FFmpeg optional voice-profile filter %s: %s",
+                name,
+                "found" if found else "not found",
+            )
+        for name in REQUIRED_AUDIO_CLEANUP_FILTERS:
+            logger.info(
+                "FFmpeg required audio-cleanup filter %s: %s",
+                name,
+                "found" if installation.has_filter(name) else "missing",
+            )
+        for name, found in installation.optional_audio_cleanup_filter_report().items():
+            logger.info(
+                "FFmpeg optional audio-cleanup filter %s: %s",
+                name,
+                "found" if found else "not found",
+            )
 
     def _prepend_path(self, bin_dir: Path) -> None:
         current = os.environ.get("PATH", "")

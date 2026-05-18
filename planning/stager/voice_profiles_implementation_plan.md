@@ -2,6 +2,8 @@
 
 This is a resumable implementation plan for Stager voice profiles. The design source of truth is [../specs/voice_profiles.md](../specs/voice_profiles.md).
 
+Recording-quality cleanup is planned separately in [audio_cleanup_implementation_plan.md](audio_cleanup_implementation_plan.md). Voice-profile rendering may consume cleaned audio, but it does not implement click removal, denoising, de-essing, or cleanup promotion.
+
 ## Objectives
 
 - Add optional `plays/<play_id>/voice_profiles.yaml`.
@@ -12,6 +14,7 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - Add computed pitch transforms from actor baseline to role target.
 - Use FFmpeg as the first renderer, with portable filters as the baseline.
 - Keep performance acceptable with caching before attempting role-batch rendering.
+- Keep creative voice effects separate from recording-quality cleanup.
 
 ## Phase 1: Spec And Planning
 
@@ -77,12 +80,6 @@ This is a resumable implementation plan for Stager voice profiles. The design so
   - `concat`,
   - `loudnorm`.
 - [x] Check optional filters:
-  - `adeclick`,
-  - `deesser`,
-  - `afftdn`,
-  - `afwtdn`,
-  - `anlmdn`,
-  - `agate`,
   - `firequalizer`,
   - `afir`.
 - [ ] Fail render preflight when required filters are missing.
@@ -103,12 +100,6 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 - [ ] Compile baseline portable `speed`.
 - [ ] Compile initial `reverb` using FFmpeg-native filters.
 - [ ] Compile initial `delay` using FFmpeg-native filters.
-- [ ] Compile optional `declick` to `adeclick`.
-- [ ] Compile optional `deesser` to `deesser`.
-- [ ] Compile optional `denoise` to conservative `afftdn`, `afwtdn`, or `anlmdn` presets.
-- [ ] Compile optional `gate` to conservative `agate` presets.
-- [ ] Ensure missing cleanup filters disable only the associated cleanup preset, not baseline voice rendering.
-- [ ] Keep `arnndn` out of the baseline implementation because it requires external model files with separately reviewed licenses.
 - [ ] Add compiler tests that assert filter graph strings for representative transforms.
 - [ ] Add tests for unsupported transforms and invalid values.
 
@@ -191,10 +182,6 @@ This is a resumable implementation plan for Stager voice profiles. The design so
 
 - [ ] Add built-in preset registry.
 - [ ] Add producer-defined presets in `voice_profiles.yaml`.
-- [ ] Add conservative `declick_gentle`.
-- [ ] Add conservative `declick_medium`.
-- [ ] Add conservative `voice_cleanup_gentle`.
-- [ ] Add conservative `deesser_gentle`.
 - [ ] Implement `female_bright` from the existing Audacity macro shape.
 - [ ] Add `female_bright_subtle`.
 - [ ] Add `male_warm`.

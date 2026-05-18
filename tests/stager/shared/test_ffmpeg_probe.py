@@ -31,6 +31,8 @@ Filters:
  ... afwtdn            A->A       Denoise audio stream using Wavelets.
  ... anlmdn            A->A       Reduce broadband noise from stream.
  ... agate             A->A       Audio gate.
+ ... firequalizer      A->A       Finite impulse response equalizer.
+ ... afir              N->N       Apply finite impulse response filter.
 """
 
 
@@ -73,6 +75,12 @@ def test_probe_uses_project_config_and_prepends_path(
     assert installation.ffmpeg_path == bin_dir / "ffmpeg"
     assert installation.has_filter("adeclick") is True
     assert installation.missing_required_voice_profile_filters() == []
+    assert installation.missing_required_audio_cleanup_filters() == []
+    assert installation.optional_voice_profile_filter_report() == {
+        "firequalizer": True,
+        "afir": True,
+    }
+    assert installation.optional_audio_cleanup_filter_report()["adeclick"] is True
     assert runner.commands == [[str(bin_dir / "ffmpeg"), "-hide_banner", "-filters"]]
     assert str(bin_dir) == __import__("os").environ["PATH"].split(__import__("os").pathsep)[0]
 
@@ -82,7 +90,12 @@ def test_probe_warns_and_falls_back_to_path_when_config_is_missing(
     monkeypatch: pytest.MonkeyPatch,
     caplog: pytest.LogCaptureFixture,
 ) -> None:
-    runner = FakeRunner(stdout=FILTER_OUTPUT.replace(" ... adeclick          A->A       Remove impulsive noise from input audio.\n", ""))
+    runner = FakeRunner(
+        stdout=FILTER_OUTPUT.replace(
+            " ... adeclick          A->A       Remove impulsive noise from input audio.\n",
+            "",
+        )
+    )
     monkeypatch.setattr("stager.shared.ffmpeg_probe.subprocess.run", runner)
     monkeypatch.setattr("stager.shared.ffmpeg_probe.shutil.which", lambda tool: f"/usr/bin/{tool}")
     caplog.set_level(logging.INFO)
@@ -93,7 +106,7 @@ def test_probe_warns_and_falls_back_to_path_when_config_is_missing(
     assert installation.ffmpeg_path == Path("/usr/bin/ffmpeg")
     assert installation.has_filter("adeclick") is False
     assert "No Quince FFmpeg config file found" in caplog.text
-    assert "FFmpeg optional filter adeclick: not found" in caplog.text
+    assert "FFmpeg optional audio-cleanup filter adeclick: not found" in caplog.text
 
 
 def test_probe_fails_when_no_config_or_path_tools(

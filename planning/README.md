@@ -32,6 +32,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/production_publication_workflow.md](stager/production_publication_workflow.md): Producer-facing publish workflow for production history, changed-line ids, and targeted Recording Requests.
 - [stager/versioning_implementation_plan.md](stager/versioning_implementation_plan.md): Resumable rollout plan for package format versions, structured production versions, fork detection, and production metadata propagation.
 - [stager/blocking_notes_implementation_plan.md](stager/blocking_notes_implementation_plan.md): Design and implementation plan for production blocking notes in `production.md`, publication diffs, actor artifacts, and Playbooks.
+- [stager/audio_cleanup_implementation_plan.md](stager/audio_cleanup_implementation_plan.md): Resumable implementation plan for denoise, declick, de-ess, light gating, and loudness cleanup.
 - [stager/voice_profiles_implementation_plan.md](stager/voice_profiles_implementation_plan.md): Resumable implementation plan for actor/role voice profiles, FFmpeg transforms, rendered audio caching, and Playbook/audioplay integration.
 - [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
 - [stager/standalone_bundle.md](stager/standalone_bundle.md): PyInstaller-based CLI bundle plan, ffmpeg policy, and signing/distribution notes.
@@ -65,6 +66,7 @@ Specs define file contracts shared by two or more Quince tools.
 - [specs/production_script_ids.md](specs/production_script_ids.md): Shared permanent production-script identifier strategy for Stager, LineRecorder, and Cuemaster.
 - [specs/script_text_format.md](specs/script_text_format.md): Source of truth for source script formats, `production.md`, comments, and script metadata.
 - [specs/versioning.md](specs/versioning.md): Shared format-version and production-version strategy for Playbooks, Recording Requests, role recordings, and published manuscripts.
+- [specs/audio_cleanup.md](specs/audio_cleanup.md): Shared design for conservative recording cleanup, including denoise, declick, de-ess, light gating, and loudness normalization.
 - [specs/voice_profiles.md](specs/voice_profiles.md): Shared design for actor baselines, role targets, actor-role cast profiles, and generated voice-profile audio.
 
 ## Decisions
@@ -89,6 +91,7 @@ Current decisions:
 - Cue-length preset windows shared by Stager and Cuemaster belong in `planning/specs/cue_window_presets.json`; do not duplicate the list in app code without a test that checks it against this file.
 - The LineRecorder Recording Request and recording-package schema source of truth is `planning/specs/recording_package_manifest.md`.
 - Format compatibility and production manuscript version rules belong in `planning/specs/versioning.md`.
+- Audio cleanup concepts and future cross-tool file contracts belong in `planning/specs/audio_cleanup.md`.
 - Voice profile concepts and future cross-tool file contracts belong in `planning/specs/voice_profiles.md`.
 - The source and production script text format source of truth is `planning/specs/script_text_format.md`.
 - Production-script identifier rules belong in `planning/specs/production_script_ids.md`.
