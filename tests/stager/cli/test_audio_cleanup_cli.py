@@ -115,6 +115,21 @@ def test_audio_cleanup_prepare_writes_batch_manifest(tmp_path: Path, monkeypatch
     assert "build/test/audio/cleaned/MEGAERA-gentle_voice_cleanup/batch_manifest.json" in result.output
 
 
+def test_audio_cleanup_prepare_reports_missing_optional_filter_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker(filters={"loudnorm", "atrim", "asetpts"}))
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "prepare", "--play", "test"])
+
+    assert result.exit_code == 0
+    assert "Missing optional cleanup filters:" in result.output
+    assert "adeclick (MEGAERA)" in result.output
+    assert "deesser (MEGAERA)" in result.output
+    assert "afftdn (MEGAERA)" in result.output
+
+
 def test_audio_cleanup_render_writes_cleaned_segment_with_no_filter_profile(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
@@ -143,6 +158,20 @@ def test_audio_cleanup_render_dry_run_prepares_without_rendering_audio(tmp_path:
     assert "Dry run prepared 1 cleanup batches" in result.output
     assert (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "batch_manifest.json").exists()
     assert not (cfg.audio_out_dir / "cleaned" / "MEGAERA-none" / "MEGAERA" / "0_1_1.wav").exists()
+
+
+def test_audio_cleanup_render_dry_run_reports_missing_optional_filter_summary(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_1_1.wav", samples=[0, 1200, -1200, 0])
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeAudioToolChecker(filters={"loudnorm", "atrim", "asetpts"}))
+
+    result = CliRunner().invoke(build.app, ["audio-cleanup", "render", "--play", "test", "--dry-run"])
+
+    assert result.exit_code == 0
+    assert "Missing optional cleanup filters:" in result.output
+    assert "adeclick (MEGAERA)" in result.output
+    assert "Dry run prepared 1 cleanup batches" in result.output
 
 
 def test_audio_cleanup_render_skips_rendered_cache_hits_unless_forced(tmp_path: Path, monkeypatch) -> None:

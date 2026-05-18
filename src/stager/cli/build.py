@@ -1253,6 +1253,12 @@ def audio_cleanup_prepare(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     try:
+        plan = run_audio_cleanup_plan(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            paths_config=cfg,
+        )
         results = run_audio_cleanup_prepare(
             role=role,
             profile=profile,
@@ -1261,6 +1267,7 @@ def audio_cleanup_prepare(
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
+    _echo_audio_cleanup_missing_filter_summary(plan)
     _echo_audio_cleanup_prepare_summary(results)
 
 
@@ -1277,6 +1284,12 @@ def audio_cleanup_render(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     try:
+        plan = run_audio_cleanup_plan(
+            role=role,
+            profile=profile,
+            use_analysis=use_analysis,
+            paths_config=cfg,
+        )
         if dry_run:
             prepared = run_audio_cleanup_prepare(
                 role=role,
@@ -1284,6 +1297,7 @@ def audio_cleanup_render(
                 use_analysis=use_analysis,
                 paths_config=cfg,
             )
+            _echo_audio_cleanup_missing_filter_summary(plan)
             _echo_audio_cleanup_prepare_summary(prepared, prefix="Dry run prepared")
             return
         results = run_audio_cleanup_render(
@@ -1295,6 +1309,7 @@ def audio_cleanup_render(
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc
+    _echo_audio_cleanup_missing_filter_summary(plan)
     rendered_batches = sum(1 for result in results if not result.skipped)
     skipped_batches = sum(1 for result in results if result.skipped)
     rendered_segments = sum(result.rendered_count for result in results)
@@ -1674,6 +1689,20 @@ def _echo_audio_cleanup_prepare_summary(results, *, prefix: str = "Prepared") ->
             f"{result.warning_count} boundary warnings, {cache_state}"
         )
         typer.echo(paths.display_path(result.manifest_path))
+
+
+def _echo_audio_cleanup_missing_filter_summary(plan) -> None:
+    missing_by_filter: dict[str, set[str]] = {}
+    for entry in plan.entries:
+        for filter_name in entry.missing_optional_filters:
+            missing_by_filter.setdefault(filter_name, set()).add(entry.role)
+    if not missing_by_filter:
+        return
+    parts = [
+        f"{filter_name} ({', '.join(sorted(roles))})"
+        for filter_name, roles in sorted(missing_by_filter.items())
+    ]
+    typer.echo(f"Missing optional cleanup filters: {'; '.join(parts)}.")
 
 
 def _is_segment_id(value: str) -> bool:
