@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import type { BlockingNote, Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
 import { buildCalloutResolver } from "../../rehearsal/calloutLookup";
@@ -19,6 +20,14 @@ import {
   sectionWindowForIndex
 } from "../../rehearsal/playPageNavigation";
 import { entryMatchesSearchQuery } from "../../rehearsal/playPageSearch";
+import {
+  loadDiagramBundleManifest,
+  loadDiagramIconLibrary,
+  loadDiagramStateForBlocking
+} from "../../staging/diagramLoader";
+import { resolveDiagramTarget } from "../../staging/diagramResolver";
+import type { DiagramBundleManifest, DiagramState } from "../../staging/diagramTypes";
+import { BlockingDiagramSheet } from "../components/BlockingDiagramSheet";
 import { PlayPageControls, type PlayPagePlaybackState, type PlaySpeed } from "../components/PlayPageControls";
 
 type PlayPageScreenProps = {
@@ -36,9 +45,19 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const [playbackRate, setPlaybackRate] = useState<PlaySpeed>(1);
   const [playbackState, setPlaybackState] = useState<PlayPagePlaybackState>("idle");
   const [readNarration, setReadNarration] = useState(true);
+  const [includeBlocking, setIncludeBlocking] = useState(false);
   const [isCalloutEnabled, setIsCalloutEnabled] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMatchIndex, setSearchMatchIndex] = useState(-1);
+  const [diagramBundleManifest, setDiagramBundleManifest] = useState<DiagramBundleManifest | null>(null);
+  const [blockingDiagramError, setBlockingDiagramError] = useState("");
+  const [selectedBlockingDiagram, setSelectedBlockingDiagram] = useState<{
+    state: DiagramState;
+    blockingId: string;
+    noteText: string;
+    iconLibrarySvg: string | null;
+  } | null>(null);
   const playbackSeq = useRef(0);
   const calloutPlaybackSeq = useRef(0);
   const isRunthrough = useRef(false);
@@ -61,6 +80,10 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return resolveCallout(currentLine);
   }, [currentLine, resolveCallout]);
   const hasCurrentLineCallout = currentLineCallout !== null;
+  const hasBlocking = useMemo(
+    () => playbook.roles.some((role) => role.lines.some((line) => (line.blocking ?? []).length > 0)),
+    [playbook.roles]
+  );
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const searchMatches = useMemo(() => {
     if (normalizedSearchQuery.length === 0 || entries.length === 0) {
@@ -85,6 +108,17 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     }
     return `${Math.min(searchMatchIndex + 1, total)}/${total}`;
   }, [normalizedSearchQuery, searchMatches.length, searchMatchIndex]);
+  const loadCurrentDiagramBundleManifest = useCallback(async () => {
+    if (diagramBundleManifest) {
+      return diagramBundleManifest;
+    }
+    if (!playbook.staging?.manifestPath) {
+      return null;
+    }
+    const manifest = await loadDiagramBundleManifest(playbook.id, playbook.staging.manifestPath);
+    setDiagramBundleManifest(manifest);
+    return manifest;
+  }, [diagramBundleManifest, playbook.id, playbook.staging?.manifestPath]);
 
   const clampedIndex = entries.length === 0
     ? -1
@@ -161,6 +195,28 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [isPlaybackSpeedOpen]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDiagramBundleManifest(null);
+    if (!playbook.staging?.manifestPath) {
+      return;
+    }
+    loadDiagramBundleManifest(playbook.id, playbook.staging.manifestPath)
+      .then((manifest) => {
+        if (!cancelled) {
+          setDiagramBundleManifest(manifest);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDiagramBundleManifest(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [playbook.id, playbook.staging?.manifestPath]);
 
   useEffect(() => {
     if (entries.length === 0) {
@@ -292,6 +348,46 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     }
   }
 
+  function blockingNoteWithDiagram(line: Line): BlockingNote | null {
+    const notes = line.blocking ?? [];
+    if (notes.length === 0 || !playbook.staging) {
+      return null;
+    }
+    if (!diagramBundleManifest) {
+      return notes[0] ?? null;
+    }
+    return notes.find((blocking) => resolveDiagramTarget(diagramBundleManifest, line.id, blocking.id) !== null) ?? null;
+  }
+
+  async function openBlockingDiagram(line: Line, preferredBlocking?: BlockingNote) {
+    try {
+      const manifest = await loadCurrentDiagramBundleManifest();
+      if (!manifest) {
+        return;
+      }
+      const blocking =
+        preferredBlocking && resolveDiagramTarget(manifest, line.id, preferredBlocking.id) !== null
+          ? preferredBlocking
+          : (line.blocking ?? []).find(
+              (candidate) => resolveDiagramTarget(manifest, line.id, candidate.id) !== null
+            );
+      if (!blocking) {
+        return;
+      }
+      const diagramState = await loadDiagramStateForBlocking(playbook.id, manifest, line.id, blocking.id);
+      const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
+      setBlockingDiagramError("");
+      setSelectedBlockingDiagram({
+        state: diagramState,
+        blockingId: blocking.id,
+        noteText: blocking.text,
+        iconLibrarySvg
+      });
+    } catch (error) {
+      setBlockingDiagramError(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
+    }
+  }
+
   function changeRate(nextRate: PlaySpeed) {
     setPlaybackRate(nextRate);
     setIsPlaybackSpeedOpen(false);
@@ -420,6 +516,9 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                 {currentSectionEntries.map((entry, offset) => {
                     const globalIndex = currentSectionWindow.start + offset;
                     const isCurrent = globalIndex === currentIndex;
+                    const lineForDiagram = entry.type === "line" ? entry.line : null;
+                    const visibleBlocking = includeBlocking && lineForDiagram ? (lineForDiagram.blocking ?? []) : [];
+                    const blockingWithDiagram = lineForDiagram ? blockingNoteWithDiagram(lineForDiagram) : null;
                     return (
                     <fieldset
                       key={`${entry.id}-${globalIndex}`}
@@ -445,9 +544,51 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
                     >
                       <legend className="play-page-line-pane-title">
                         <span>{entry.speaker}</span>
-                        <span className="play-page-line-id-tag">{entry.id}</span>
+                        <span className="play-page-line-pane-actions">
+                          {blockingWithDiagram ? (
+                            <button
+                              type="button"
+                              className="play-page-line-action"
+                              aria-label={`Open blocking diagram for ${entry.id}`}
+                              title={blockingWithDiagram.text}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                if (lineForDiagram) {
+                                  void openBlockingDiagram(lineForDiagram);
+                                }
+                              }}
+                            >
+                              <span aria-hidden="true">⌖</span>
+                            </button>
+                          ) : null}
+                          <span className="play-page-line-id-tag">{entry.id}</span>
+                        </span>
                       </legend>
+                      {visibleBlocking.filter((blocking) => blocking.placement !== "after").map((blocking) => (
+                        <PlayPageBlockingNote
+                          blocking={blocking}
+                          canOpen={blocking === blockingWithDiagram}
+                          key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
+                          onOpen={() => {
+                            if (lineForDiagram) {
+                              void openBlockingDiagram(lineForDiagram, blocking);
+                            }
+                          }}
+                        />
+                      ))}
                       <p className="play-page-caption">{renderLineText(entry, readNarration)}</p>
+                      {visibleBlocking.filter((blocking) => blocking.placement === "after").map((blocking) => (
+                        <PlayPageBlockingNote
+                          blocking={blocking}
+                          canOpen={blocking === blockingWithDiagram}
+                          key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
+                          onOpen={() => {
+                            if (lineForDiagram) {
+                              void openBlockingDiagram(lineForDiagram, blocking);
+                            }
+                          }}
+                        />
+                      ))}
                     </fieldset>
                   );
                 })}
@@ -464,10 +605,13 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
             nextLineForCurrentRole={nextLineForCurrentRole}
             nextSection={nextSection}
             playbackState={playbackState}
+            isSearchOpen={isSearchOpen}
             searchQuery={searchQuery}
             searchMatchDisplay={searchMatchDisplay}
             searchMatchCount={searchMatches.length}
             readNarration={readNarration}
+            includeBlocking={includeBlocking}
+            hasBlocking={hasBlocking}
             isCalloutEnabled={isCalloutEnabled}
             hasCurrentLineCallout={hasCurrentLineCallout}
             playbackRate={playbackRate}
@@ -479,11 +623,23 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
             onStopPlayback={stopPlayback}
             onSearchQueryChange={setSearchQuery}
             onRunSearch={runSearch}
+            onToggleSearch={() => setIsSearchOpen((current) => !current)}
             onToggleNarrationAndDirections={toggleNarrationAndDirections}
+            onToggleIncludeBlocking={() => setIncludeBlocking((current) => !current)}
             onToggleCallout={() => setIsCalloutEnabled((current) => !current)}
             onTogglePlaybackSpeed={() => setIsPlaybackSpeedOpen((current) => !current)}
             onChangeRate={changeRate}
           />
+          {blockingDiagramError ? <p className="play-page-diagram-error">{blockingDiagramError}</p> : null}
+          {selectedBlockingDiagram ? (
+            <BlockingDiagramSheet
+              state={selectedBlockingDiagram.state}
+              blockingId={selectedBlockingDiagram.blockingId}
+              noteText={selectedBlockingDiagram.noteText}
+              iconLibrarySvg={selectedBlockingDiagram.iconLibrarySvg}
+              onClose={() => setSelectedBlockingDiagram(null)}
+            />
+          ) : null}
         </div>
       </section>
     </main>
@@ -540,4 +696,39 @@ function renderLineText(entry: PlayPageEntry, includeDirections: boolean) {
   });
 
   return <>{nodes}</>;
+}
+
+function PlayPageBlockingNote({
+  blocking,
+  canOpen,
+  onOpen
+}: {
+  blocking: BlockingNote;
+  canOpen: boolean;
+  onOpen: () => void;
+}) {
+  const content = (
+    <>
+      <span className="blocking-target">{blocking.targets.join(", ")}</span>
+      <span className="blocking-text">({blocking.text})</span>
+    </>
+  );
+  return canOpen ? (
+    <button
+      type="button"
+      className="blocking-note blocking-note-button play-page-blocking-note"
+      title="Open blocking diagram"
+      onClick={(event) => {
+        event.stopPropagation();
+        onOpen();
+      }}
+    >
+      {content}
+      <span className="blocking-diagram-affordance" aria-hidden="true">
+        ⧉
+      </span>
+    </button>
+  ) : (
+    <p className="blocking-note play-page-blocking-note">{content}</p>
+  );
 }

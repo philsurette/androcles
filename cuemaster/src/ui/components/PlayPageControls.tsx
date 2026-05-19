@@ -16,10 +16,13 @@ type PlayPageControlsProps = {
   nextLineForCurrentRole: number;
   nextSection: number;
   playbackState: PlayPagePlaybackState;
+  isSearchOpen: boolean;
   searchQuery: string;
   searchMatchDisplay: string;
   searchMatchCount: number;
   readNarration: boolean;
+  includeBlocking: boolean;
+  hasBlocking: boolean;
   isCalloutEnabled: boolean;
   hasCurrentLineCallout: boolean;
   playbackRate: PlaySpeed;
@@ -31,7 +34,9 @@ type PlayPageControlsProps = {
   onStopPlayback: () => void;
   onSearchQueryChange: (query: string) => void;
   onRunSearch: (direction: "previous" | "next") => void;
+  onToggleSearch: () => void;
   onToggleNarrationAndDirections: () => void;
+  onToggleIncludeBlocking: () => void;
   onToggleCallout: () => void;
   onTogglePlaybackSpeed: () => void;
   onChangeRate: (rate: PlaySpeed) => void;
@@ -47,10 +52,13 @@ export function PlayPageControls({
   nextLineForCurrentRole,
   nextSection,
   playbackState,
+  isSearchOpen,
   searchQuery,
   searchMatchDisplay,
   searchMatchCount,
   readNarration,
+  includeBlocking,
+  hasBlocking,
   isCalloutEnabled,
   hasCurrentLineCallout,
   playbackRate,
@@ -62,7 +70,9 @@ export function PlayPageControls({
   onStopPlayback,
   onSearchQueryChange,
   onRunSearch,
+  onToggleSearch,
   onToggleNarrationAndDirections,
+  onToggleIncludeBlocking,
   onToggleCallout,
   onTogglePlaybackSpeed,
   onChangeRate,
@@ -184,45 +194,16 @@ export function PlayPageControls({
         </div>
       </div>
       <div className="play-page-utility-bar">
-        <form
-          className="play-page-search"
-          onSubmit={(event) => event.preventDefault()}
+        <button
+          type="button"
+          className={`quick-toggle${isSearchOpen || searchQuery ? " active" : ""}`}
+          aria-label={isSearchOpen ? "Hide search." : "Show search."}
+          aria-pressed={isSearchOpen}
+          title={searchQuery ? `Search ${searchMatchDisplay}` : "Search"}
+          onClick={onToggleSearch}
         >
-          <label className="play-page-search-field">
-            <input
-              type="search"
-              placeholder="Search…"
-              value={searchQuery}
-              onChange={(event) => onSearchQueryChange(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  onRunSearch("next");
-                }
-              }}
-              aria-label="Search lines, directions, IDs, or title"
-            />
-          </label>
-          <button
-            type="button"
-            className="quick-toggle play-page-search-arrow"
-            aria-label="Previous match"
-            onClick={() => onRunSearch("previous")}
-            disabled={searchMatchCount === 0}
-          >
-            &lt;
-          </button>
-          <span className="play-page-search-count" aria-live="polite">{searchMatchDisplay}</span>
-          <button
-            type="button"
-            className="quick-toggle play-page-search-arrow"
-            aria-label="Next match"
-            onClick={() => onRunSearch("next")}
-            disabled={searchMatchCount === 0}
-          >
-            &gt;
-          </button>
-        </form>
+          <span aria-hidden="true">⌕</span>
+        </button>
         <button
           type="button"
           className={`quick-toggle${readNarration ? " active" : ""}`}
@@ -232,6 +213,17 @@ export function PlayPageControls({
           onClick={onToggleNarrationAndDirections}
         >
           <span aria-hidden="true">⌞⌝</span>
+        </button>
+        <button
+          type="button"
+          className={includeBlocking ? "quick-toggle active" : "quick-toggle"}
+          aria-pressed={includeBlocking}
+          aria-label={includeBlocking ? "Hide blocking." : "Show blocking."}
+          title={hasBlocking ? `Blocking ${includeBlocking ? "visible" : "hidden"}` : "No blocking notes in this Playbook"}
+          onClick={onToggleIncludeBlocking}
+          disabled={!hasBlocking}
+        >
+          <span aria-hidden="true">⌖</span>
         </button>
         <button
           type="button"
@@ -274,6 +266,47 @@ export function PlayPageControls({
           </div>
         </div>
       </div>
+      {isSearchOpen ? (
+        <form
+          className="play-page-search"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <label className="play-page-search-field">
+            <input
+              type="search"
+              placeholder="Search lines, directions, IDs, or title…"
+              value={searchQuery}
+              onChange={(event) => onSearchQueryChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  onRunSearch("next");
+                }
+              }}
+              aria-label="Search lines, directions, IDs, or title"
+            />
+          </label>
+          <button
+            type="button"
+            className="quick-toggle play-page-search-arrow"
+            aria-label="Previous match"
+            onClick={() => onRunSearch("previous")}
+            disabled={searchMatchCount === 0}
+          >
+            &lt;
+          </button>
+          <span className="play-page-search-count" aria-live="polite">{searchMatchDisplay}</span>
+          <button
+            type="button"
+            className="quick-toggle play-page-search-arrow"
+            aria-label="Next match"
+            onClick={() => onRunSearch("next")}
+            disabled={searchMatchCount === 0}
+          >
+            &gt;
+          </button>
+        </form>
+      ) : null}
     </div>
   );
 }

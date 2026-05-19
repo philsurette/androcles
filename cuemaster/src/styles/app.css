@@ -615,6 +615,11 @@ button:disabled {
   white-space: normal;
 }
 
+.play-page-blocking-note {
+  margin: 0;
+  max-width: 100%;
+}
+
 .play-page-line-pane.is-current {
   border-color: rgba(30, 38, 31, 0.35);
   box-shadow: inset 0 0 0 1px rgba(30, 38, 31, 0.15);
@@ -632,6 +637,35 @@ button:disabled {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-weight: 900;
+}
+
+.play-page-line-pane-actions {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.35rem;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.play-page-line-action {
+  align-items: center;
+  background: rgba(255, 255, 255, 0.54);
+  border: 1px solid rgba(30, 38, 31, 0.18);
+  border-radius: 0.35rem;
+  color: var(--quiet);
+  display: inline-flex;
+  font: inherit;
+  height: 1.25rem;
+  justify-content: center;
+  line-height: 1;
+  min-width: 1.25rem;
+  padding: 0;
+}
+
+.play-page-line-action:hover,
+.play-page-line-action:focus-visible {
+  border-color: rgba(30, 38, 31, 0.36);
+  color: var(--ink);
 }
 
 .play-page-line-id-tag {
@@ -746,17 +780,17 @@ button:disabled {
 .play-page-utility-bar {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.5rem;
   width: 100%;
 }
 
 .play-page-search {
-  flex: 1 1 auto;
-  display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
+  display: flex;
+  gap: 0.2rem;
   min-width: 0;
+  width: 100%;
 }
 
 .play-page-search-field {
@@ -792,6 +826,13 @@ button:disabled {
   letter-spacing: 0.05em;
   font-weight: 800;
   padding: 0;
+  margin: 0;
+}
+
+.play-page-diagram-error {
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
   margin: 0;
 }
 
