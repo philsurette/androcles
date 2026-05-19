@@ -27,6 +27,7 @@ Implementation should remove or replace the current blocking-note parser, public
 - `spec-cue-lite.md` — cue/lighting-lite DSL draft.
 - `spec-rendering-animation.md` — SVG rendering and animation design.
 - `implementation-plan.md` — staged implementation plan and acceptance tests.
+- `point_in_time_svg_implementation_plan.md` — focused plan for a standalone stage-description-to-SVG vertical slice before Quince/Playbook integration.
 - `examples/production-staging-example.md` — sample embedded usage in `production.md`.
 
 ## Design stance

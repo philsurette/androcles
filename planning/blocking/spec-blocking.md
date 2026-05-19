@@ -134,7 +134,7 @@ note "Director wants this cross to feel reluctant."
 
 Rendering a beat requires knowing where actors, props, and movable set pieces are at that moment. Replaying every prior event from the start of the play is brittle, so the staging model should support explicit snapshots/checkpoints.
 
-A `snapshot` is authoritative state at a beat, scene, or production boundary:
+A `snapshot` is authoritative state at a beat, scene, or production boundary. Producers should normally define a starting snapshot at the beginning of each scene, then write only meaningful changes after that.
 
 ```text
 snapshot
@@ -142,6 +142,17 @@ HAM @ DL face=CLA
 CLA @ UC
 table @ C
 letter @ table
+```
+
+Scene-start example:
+
+```text
+scene 1.2 snapshot
+HAM @ DL face=CLA
+CLA @ UC
+OPH offstage via=door_l
+table @ C
+sword @ table
 ```
 
 Rendering should start from the nearest prior snapshot and apply events up to the requested beat. This keeps diagrams useful even when earlier blocking is incomplete or has changed.

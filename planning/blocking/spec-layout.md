@@ -21,6 +21,34 @@ It should answer:
 [[/layout]]
 ```
 
+## Progressive stage definition
+
+The layout syntax should support text-only stage definitions before exact dimensions are known. Exact measurements should improve the drawing, not be required to draw one.
+
+Minimal named-location layout:
+
+```text
+stage type=proscenium
+grid standard=9
+anchor door_l = UL
+anchor door_r = UR
+anchor table = C
+anchor window = DR
+```
+
+Measured version of the same idea:
+
+```text
+stage type=proscenium width=36 depth=24 units=ft
+grid standard=9
+anchor door_l at=(-16,20,0)
+anchor door_r at=(16,20,0)
+anchor table at=C
+anchor window at=DR
+```
+
+If dimensions are absent, Stager should use a deterministic default stage, such as a normalized coordinate space or a default proscenium stage. Producers should be able to start with named places and add precision later.
+
 ## Coordinate system
 
 Recommended default:

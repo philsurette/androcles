@@ -21,6 +21,44 @@ Secondary users:
 
 ## Core requirements
 
+### R0. Progressive producer workflow
+
+The producer workflow should not require a fully measured technical stage model before useful blocking diagrams can be created.
+
+Recommended workflow:
+
+1. Define the stage once.
+2. Define reusable named positions, areas, anchors, and important set/prop positions.
+3. Define a starting snapshot for each scene or major beat.
+4. Add only the blocking changes that matter.
+5. Add dimensions and exact geometry later only when diagrams need more precision.
+
+The authoring model should support progressive specificity:
+
+- **Tier 1: named zones only**
+
+  ```text
+  door_l = UL
+  door_r = UR
+  table = C
+  ```
+
+- **Tier 2: approximate geometry**
+
+  ```text
+  table at=C size=medium
+  platform at=UC level=platform
+  ```
+
+- **Tier 3: measured geometry**
+
+  ```text
+  table at=(0,12,0) size=(5,3)
+  platform rect=(-8,16,16,6) z=4
+  ```
+
+Dimensions should improve rendering quality, not unlock the feature. If no dimensions are provided, Stager should use a normalized or default stage model and still produce a useful SVG.
+
 ### R1. Markdown-embedded authoring
 
 The staging DSL must be embeddable in `production.md`. The exact authoring syntax is not settled.
