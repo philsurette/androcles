@@ -531,3 +531,48 @@ HAM -> C
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["scene_id"] == "1.2@b1"
     assert data["placements"][0]["source"] == "C"
+
+
+def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
+    source = tmp_path / "stage.txt"
+    svg_path = tmp_path / "stage.svg"
+    icons_path = tmp_path / "icons.svg"
+    source.write_text(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+
+scene 1.2 snapshot
+HAM @ DL
+
+beat b1 scene=1.2
+HAM -> C
+""",
+        encoding="utf-8",
+    )
+
+    from stager.staging.block import main
+    import sys
+
+    original_argv = sys.argv
+    try:
+        sys.argv = [
+            "block",
+            "render",
+            str(source),
+            "--scene",
+            "1.2",
+            "--beat",
+            "b1",
+            "--out",
+            str(svg_path),
+        ]
+        main()
+        sys.argv = ["block", "icons", "--out", str(icons_path)]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    assert "Scene 1.2@b1" in svg_path.read_text(encoding="utf-8")
+    assert '<symbol id="stage-icon-table"' in icons_path.read_text(encoding="utf-8")

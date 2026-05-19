@@ -32,6 +32,27 @@ Implementation should remove or replace the current blocking-note parser, public
 - `examples/README.md` — standalone point-in-time stage examples and render commands.
 - `examples/production-staging-example.md` — sample embedded usage in `production.md`.
 
+## Current Terminology
+
+- **Block CLI**: standalone command surface for staging/blocking workflows, currently `python -m stager.staging.block`.
+- **Stage file**: standalone input file containing stage layout, scene snapshots, and optional blocking beats.
+- **Stage**: physical playing space plus levels, anchors, connectors, set pieces, and prop presets.
+- **Scene snapshot**: authoritative initialization for a scene, written as `scene <scene_id> snapshot`.
+- **Blocking beat**: ordered group of blocking directions, written as `beat <beat_id> scene=<scene_id>`.
+- **Blocking direction**: a single state change such as placement, move, enter, exit, or remove.
+- **Point-in-time state**: computed state after applying a scene snapshot plus beats up to the requested beat.
+- **Blocking diagram**: generated SVG for a point-in-time state.
+
+Example render command:
+
+```sh
+PYTHONPATH=src .venv/bin/python -m stager.staging.block render \
+  plays/hamlet/stage.txt \
+  --scene 1.3 \
+  --beat b2 \
+  --out build/hamlet/staging/scene-1.3-b2.svg
+```
+
 ## Design stance
 
 This is deliberately not a full theatre production-control standard. It is a small, local-first, Markdown-friendly staging layer that can be edited by humans and rendered by Stager.

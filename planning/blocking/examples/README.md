@@ -13,7 +13,7 @@ These files are standalone inputs for the current `stager.staging.render_point` 
 Default portrait output, suitable for mobile viewing:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+PYTHONPATH=src .venv/bin/python -m stager.staging.block render \
   planning/blocking/examples/text-only-stage.txt \
   --scene 1.2 \
   --out /tmp/text-only-stage.svg
@@ -22,7 +22,7 @@ PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
 Landscape output:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+PYTHONPATH=src .venv/bin/python -m stager.staging.block render \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
   --out /tmp/multi-level-stage-landscape.svg \
@@ -36,7 +36,7 @@ Scene snapshots are authoritative point-in-time state. The renderer does not rep
 For staged progression inside a scene, use ordered `beat` blocks. Rendering with `--beat` starts from the scene snapshot and applies all beats for that scene up to the requested beat:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+PYTHONPATH=src .venv/bin/python -m stager.staging.block render \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
   --beat b2 \

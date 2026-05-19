@@ -25,6 +25,19 @@
 - **Response**: The actor's expected spoken line or segment group.
 - **Manifest**: `manifest.json` inside a Playbook. It is the structured contract Cuemaster consumes.
 
+## Staging And Blocking Terms
+
+- **Block CLI**: The standalone staging/blocking command surface. During the decoupled implementation phase, use `python -m stager.staging.block ...` rather than adding these workflows to the main Stager build CLI.
+- **Stage file**: A standalone text file that describes a stage world and optional scene snapshots/beats. It can include stage dimensions, actors, anchors, levels, connectors, set pieces, props, scene snapshots, and blocking beats.
+- **Stage**: The physical performance space described by `stage`, `grid`, levels, anchors, connectors, set pieces, and prop presets.
+- **Scene snapshot**: An authoritative point-in-time initialization for a scene, written as `scene <scene_id> snapshot`. It provides the known starting state for actors, props, and movable set pieces.
+- **Blocking beat**: An ordered group of blocking directions for a scene, written as `beat <beat_id> scene=<scene_id>`. Resolving a beat starts from the scene snapshot and applies all earlier beats for that scene up to the requested beat.
+- **Blocking direction**: A single actor, prop, or set-piece state change inside a scene snapshot or blocking beat, such as `HAM @ DL`, `HAM move DL -> C`, `OPH enter door_l -> DR`, or `sword remove`.
+- **Point-in-time state**: The computed state after applying a scene snapshot and zero or more blocking beats. This is the model rendered to SVG.
+- **Blocking diagram**: The generated SVG rendering of a point-in-time state. It may be portrait or landscape.
+- **Level**: A named elevated or lowered 2D surface with z metadata, such as `level balcony at=UC size=(18,4) z=8`.
+- **Connector**: A named 2D connection between different level positions, such as a stair, ramp, or lift.
+
 ## Naming Rules
 
 - Use **Quince** for the suite, not as a replacement for individual tool names.
@@ -36,5 +49,6 @@
 - Use **manifest** for the JSON contract inside a Playbook.
 - Use **Recording Request** for Stager- or Cuemaster-to-LineRecorder work orders and **recording package** for LineRecorder-to-Stager audio exports.
 - Keep **line** as actor-facing UI language; use **segment** for manifest fields, filenames, Stager IDs, and implementation details.
+- Use **stage file** for standalone blocking input files, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, and **blocking diagram** for rendered SVG output.
 - Treat Playbooks as strict artifacts: required cue and response audio must exist for every rehearsable non-meta role line.
 - Keep `Androcles` only when referring to the sample/source play, not the tool.
