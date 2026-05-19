@@ -138,6 +138,14 @@ def render_production_status(status: ProductionStatus) -> str:
         lines.extend(["", "Unassigned roles: " + ", ".join(status.unassigned_roles)])
     if status.missing_recording_count:
         lines.extend(["", f"Missing segment recordings: {status.missing_recording_count}"])
+    if status.stale_recording_count:
+        stale = [
+            f"{role.role}: {', '.join(role.stale_segments)}"
+            for role in status.roles
+            if role.stale_segments
+        ]
+        lines.extend(["", f"Stale imported recordings: {status.stale_recording_count}"])
+        lines.extend(f"  {item}" for item in stale)
     if status.missing_source_recording_roles:
         lines.extend(
             [
@@ -148,6 +156,36 @@ def render_production_status(status: ProductionStatus) -> str:
     if status.blocking_changes:
         lines.extend(["", f"Blocking changes needing Playbook rebuild: {len(status.blocking_changes)}"])
         lines.append("  " + ", ".join(status.blocking_changes))
+    lines.extend(
+        [
+            "",
+            "Cleanup review:",
+            f"  exists: {'yes' if status.cleanup_review.exists else 'no'}",
+            f"  reviewed: {status.cleanup_review.reviewed_segments}/{status.cleanup_review.expected_segments}",
+        ]
+    )
+    if status.cleanup_review.exists:
+        lines.append(f"  complete: {'yes' if status.cleanup_review.complete else 'no'}")
+        if status.cleanup_review.missing_segments:
+            lines.append(f"  missing review entries: {len(status.cleanup_review.missing_segments)}")
+        if status.cleanup_review.missing_output_segments:
+            lines.append(f"  missing output files: {len(status.cleanup_review.missing_output_segments)}")
+        if status.cleanup_review.warning_count or status.cleanup_review.fallback_count:
+            lines.append(
+                f"  warnings: {status.cleanup_review.warning_count}, fallbacks: {status.cleanup_review.fallback_count}"
+            )
+    lines.extend(
+        [
+            "",
+            "Voice profiles:",
+            f"  configured profiles: {status.voice_profiles.configured_profiles}",
+            f"  rendered: {status.voice_profiles.rendered_segments}/{status.voice_profiles.expected_segments}",
+        ]
+    )
+    if status.voice_profiles.configured_profiles:
+        lines.append(f"  complete: {'yes' if status.voice_profiles.complete else 'no'}")
+        if status.voice_profiles.missing_segments:
+            lines.append(f"  missing rendered segments: {len(status.voice_profiles.missing_segments)}")
     lines.extend(
         [
             "",

@@ -1,15 +1,14 @@
 # Rehearsal Workflow Readiness Plan
 
-This is a resumable implementation plan for making Quince practical as a real rehearsal tool: actors can practice from the current script and blocking, producers can keep the cast synchronized, and showrunners can see what must be rebuilt or redistributed.
+Status: refreshed after blocking MVP, audio cleanup, voice profiles, and the producer `quince` CLI landed. This plan now treats `ProductionStatusService` as the readiness data layer, `./main production-status` as the expert/status API, `quince status` as the producer-facing summary, and `quince next` as the next-action recommender.
 
 The user-facing overview belongs in [../quince_production_guide.md](../quince_production_guide.md). Shared file contracts remain in [../specs/](../specs/). This plan covers implementation work.
 
 ## Goals
 
-- Add a first-class cast configuration that connects actors, roles, Recording Requests, Playbooks, and voice profiles.
-- Add a `production-status` command that shows whether the production is ready to send to actors.
-- Improve Cuemaster's Playbook update experience so actors know when a package replaces an older script/blocking version.
-- Make blocking-only changes a clear Playbook update workflow without triggering unnecessary re-recording.
+- Make one status model answer whether a production is ready to send to actors.
+- Let `quince next` recommend the next highest-priority producer action from that status model.
+- Keep cast assignment, recording freshness, cleanup review state, voice-profile render state, Playbook freshness, and blocking-only updates visible in one place.
 - Preserve whole-role recording and splitting as an advanced producer path, while keeping LineRecorder as the default actor handoff path.
 
 ## Non-Goals
@@ -18,12 +17,13 @@ The user-facing overview belongs in [../quince_production_guide.md](../quince_pr
 - Do not remove existing whole-role recording/splitting.
 - Do not make Playbooks depend on legacy cue-file output.
 - Do not add a full GUI production manager in this slice.
+- Do not run expensive audio analysis or rendering from a status command.
 
 ## Phase 1: Cast Configuration
 
-Add `plays/<play_id>/cast.yaml` as the producer-authored cast source of truth.
+`plays/<play_id>/cast.yaml` is the producer-authored cast source of truth.
 
-Recommended shape:
+Implemented shape:
 
 ```yaml
 version: 1
@@ -48,14 +48,16 @@ Checklist:
 - [x] Validate unknown top-level version and malformed actor/role entries.
 - [x] Expose role assignment lookup by role id.
 - [x] Validate configured roles against the loaded `Play`.
-- [ ] Validate configured actors against voice-profile actor ids when voice profiles are enabled.
+- [x] Add producer `quince cast` helpers that reduce YAML mistakes.
+- [x] Validate configured actor ids against `voice_profiles.yaml` when cast roles reference voice profiles.
+- [x] Validate configured `voice_profile` ids against known voice cast profiles.
 - [ ] Let Recording Request generation use cast assignments to include actor-facing metadata.
 - [ ] Let voice rendering use cast assignments as the default `--voice-actor` where unambiguous.
-- [ ] Document cast config in the production guide.
+- [ ] Ensure [../quince_production_guide.md](../quince_production_guide.md) stays aligned with the implemented cast fields.
 
-## Phase 2: Production Status Command
+## Phase 2: Production Status Data Model
 
-Add `./main production-status --play <play_id>` as the showrunner's readiness dashboard.
+`./main production-status --play <play_id>` is the expert readiness dashboard and `quince status` should present the same facts in producer language.
 
 It should answer:
 
@@ -66,8 +68,11 @@ It should answer:
 - Which recording path is expected for each role: LineRecorder or whole-role split?
 - How many expected response segments exist for each role?
 - How many canonical segment files are present?
-- Are cleanup, voice-profile, Playbook, and audioplay outputs current enough to distribute?
-- Is the next likely action publish, record, verify, cleanup, render voices, or build Playbook?
+- Are any imported recordings stale because their saved content hashes no longer match the current production text?
+- Is the cleanup review missing, incomplete, or current?
+- Is voice-profile rendered audio missing or current for configured cast profiles?
+- Are Playbook and audioplay outputs current enough to distribute?
+- Is the next likely action publish, cast, record, verify, cleanup, render voices, build Playbook, or distribute?
 
 Checklist:
 
@@ -76,18 +81,36 @@ Checklist:
 - [x] Report per-role cast assignment and basic segment audio coverage.
 - [x] Add CLI text output.
 - [x] Add `--format yaml` for automation.
-- [ ] Report stale recordings by content hash, not only missing files.
-- [ ] Report cleanup review status.
-- [ ] Report voice-profile rendered-audio status.
 - [x] Report Playbook build metadata and whether it matches the current production version.
 - [x] Report whole-role source recording presence for `recording: whole-role` roles.
-- [ ] Add targeted rebuild recommendations.
+- [x] Report blocking-only changes that require a Playbook rebuild.
+- [x] Report stale imported recordings by content hash, not only missing files.
+- [x] Report cleanup review coverage and warnings/fallback counts.
+- [x] Report voice-profile rendered-audio coverage for configured profiles.
+- [ ] Report audioplay build freshness.
+- [x] Add status tests for stale recordings, cleanup review, voice renders, and recommendations.
 
-## Phase 3: Cuemaster Playbook Update UX
+## Phase 3: Targeted Recommendations
+
+`quince next` already exists and uses `ProductionRecommendationService`, but it currently reasons over a small subset of readiness signals.
+
+Checklist:
+
+- [x] Recommend publish when `production.md` has unpublished changes.
+- [x] Recommend cast work when roles are unassigned.
+- [x] Recommend whole-role source recording when a whole-role role has no source file.
+- [x] Recommend recording requests/imports when canonical segment audio is missing.
+- [x] Recommend Playbook rebuild when the Playbook is missing or stale against the published production.
+- [x] Recommend re-recording or re-import when imported segment files are stale by content hash.
+- [x] Recommend cleanup render/review when cleanup is configured or review exists but is incomplete.
+- [x] Recommend voice-profile render when configured rendered audio is missing or stale.
+- [x] Recommend Playbook rebuild for blocking-only changes even when speech audio is current.
+- [ ] Recommend audioplay rebuild when audioplay output is stale or missing.
+- [ ] Include the reason and command in both `quince next` and any status summary.
+
+## Phase 4: Cuemaster Playbook Update UX
 
 Cuemaster must make script/blocking freshness visible to actors.
-
-Current issue: importing a Playbook with the same play id replaces the local one directly. That is simple, but it hides whether the actor just imported a new production version, a new build of the same version, or an older package.
 
 Checklist:
 
@@ -99,7 +122,7 @@ Checklist:
 - [x] Show "what changed" after import when the Playbook carries production change metadata.
 - [ ] Add tests for same-version rebuild, newer version replacement, older version warning, and fork warning.
 
-## Phase 4: Blocking-Only Update Workflow
+## Phase 5: Blocking-Only Update Workflow
 
 Blocking changes should update actor rehearsal material without creating unnecessary recording work.
 
@@ -112,7 +135,7 @@ Checklist:
 - [x] Surface changed blocking clearly in Cuemaster after Playbook replacement.
 - [x] Add tests that blocking-only publication creates no Recording Requests but does mark Playbook rebuild needed.
 
-## Phase 5: Whole-Role Recording Path Preservation
+## Phase 6: Whole-Role Recording Path Preservation
 
 Whole-role recording and splitting remains supported as an advanced producer workflow.
 
@@ -126,8 +149,11 @@ Checklist:
 
 ## Acceptance Criteria
 
-- [ ] A producer can run one status command and understand what is blocking actor distribution.
+- [ ] A producer can run `quince status` and understand what blocks actor distribution.
+- [ ] A producer can run `quince next` and get a specific next action with a concrete command.
 - [ ] A cast file can drive role ownership without duplicating role/actor choices in multiple places.
+- [ ] Status distinguishes missing recordings from stale imported recordings.
+- [ ] Status distinguishes canonical audio, cleanup review audio, and voice-profile rendered audio readiness.
 - [ ] Actors can see which production version is installed in Cuemaster.
 - [ ] Importing a replacement Playbook is explicit when version lineage is risky.
 - [x] Blocking-only updates produce updated rehearsal material without unnecessary recording requests.

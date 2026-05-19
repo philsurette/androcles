@@ -39,6 +39,30 @@ class ProductionRecommendationService:
                 reason="some canonical segment recordings are missing; send requests or import returned recordings",
                 command=f"quince send-requests --play {play_id}",
             )
+        if status.stale_recording_count:
+            return ProductionRecommendation(
+                action="refresh recordings",
+                reason="some imported recordings were made against older segment text",
+                command=f"quince send-requests --play {play_id}",
+            )
+        if status.cleanup_review.exists and not status.cleanup_review.complete:
+            return ProductionRecommendation(
+                action="render cleanup",
+                reason="a cleanup review exists but does not cover every required segment",
+                command=f"quince prepare-audio --play {play_id}",
+            )
+        if status.voice_profiles.configured_profiles and not status.voice_profiles.complete:
+            return ProductionRecommendation(
+                action="render voice profiles",
+                reason="voice-profile audio is configured but not fully rendered",
+                command=f"quince prepare-audio --play {play_id}",
+            )
+        if status.blocking_changes:
+            return ProductionRecommendation(
+                action="build playbook",
+                reason="blocking changes need a refreshed Playbook",
+                command=f"quince build-playbook --play {play_id}",
+            )
         if status.playbook.exists and status.playbook.matches_current_published_version is False:
             return ProductionRecommendation(
                 action="build playbook",
