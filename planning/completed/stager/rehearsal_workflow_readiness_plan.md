@@ -1,6 +1,6 @@
 # Rehearsal Workflow Readiness Plan
 
-Status: refreshed after blocking MVP, audio cleanup, voice profiles, and the producer `quince` CLI landed. This plan now treats `ProductionStatusService` as the readiness data layer, `./main production-status` as the expert/status API, `quince status` as the producer-facing summary, and `quince next` as the next-action recommender.
+Status: completed. `ProductionStatusService` is the readiness data layer, `./main production-status` is the expert/status API, `quince status` is the producer-facing summary, and `quince next` is the next-action recommender. Remaining deployment and packaging polish is tracked in [../../deployment_implementation_plan.md](../../deployment_implementation_plan.md).
 
 The user-facing overview belongs in [../quince_production_guide.md](../quince_production_guide.md). Shared file contracts remain in [../specs/](../specs/). This plan covers implementation work.
 

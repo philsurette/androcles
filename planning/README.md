@@ -35,10 +35,10 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/versioning_implementation_plan.md](stager/versioning_implementation_plan.md): Resumable rollout plan for package format versions, structured production versions, fork detection, and production metadata propagation.
 - [stager/audio_cleanup_implementation_plan.md](stager/audio_cleanup_implementation_plan.md): Resumable implementation plan for denoise, declick, de-ess, light gating, and loudness cleanup.
 - [stager/voice_profiles_implementation_plan.md](stager/voice_profiles_implementation_plan.md): Resumable implementation plan for actor/role voice profiles, FFmpeg transforms, rendered audio caching, and Playbook/audioplay integration.
-- [stager/rehearsal_workflow_readiness_plan.md](stager/rehearsal_workflow_readiness_plan.md): Resumable plan for cast configuration, production status, Cuemaster Playbook update UX, and blocking-only rehearsal updates.
 - [stager/quince_cli_implementation_plan.md](stager/quince_cli_implementation_plan.md): Resumable implementation plan for the producer-first `quince` CLI.
 - [stager/install.md](stager/install.md): Current technical install notes for Stager wheel builds and console-script use.
 - [stager/standalone_bundle.md](stager/standalone_bundle.md): PyInstaller-based CLI bundle plan, ffmpeg policy, and signing/distribution notes.
+- Completed: [completed/stager/rehearsal_workflow_readiness_plan.md](completed/stager/rehearsal_workflow_readiness_plan.md).
 - Future Stager docs belong in `planning/stager/`.
 
 ## Blocking And Staging
@@ -49,7 +49,7 @@ Blocking and staging design docs live under `planning/blocking/`.
 - [blocking/stage_set_scene_design.md](blocking/stage_set_scene_design.md): Stage/set/scene distinction, CLI terminology, syntax direction, and rollout checklist.
 - [blocking/future-features.md](blocking/future-features.md): Future blocking features such as animation, richer prop semantics, authoring UX, and editor support.
 
-Completed blocking and staging plans are archived under [completed/](completed/).
+Completed blocking, staging, and Stager feature plans are archived under [completed/](completed/).
 
 ## LineRecorder
 
