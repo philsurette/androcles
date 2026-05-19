@@ -51,9 +51,9 @@ Checklist:
 - [x] Add producer `quince cast` helpers that reduce YAML mistakes.
 - [x] Validate configured actor ids against `voice_profiles.yaml` when cast roles reference voice profiles.
 - [x] Validate configured `voice_profile` ids against known voice cast profiles.
-- [ ] Let Recording Request generation use cast assignments to include actor-facing metadata.
-- [ ] Let voice rendering use cast assignments as the default `--voice-actor` where unambiguous.
-- [ ] Ensure [../quince_production_guide.md](../quince_production_guide.md) stays aligned with the implemented cast fields.
+- [x] Let Recording Request generation use cast assignments to include actor-facing metadata.
+- [x] Let voice rendering use cast assignments as the default `--voice-actor` where unambiguous.
+- [x] Ensure [../quince_production_guide.md](../quince_production_guide.md) stays aligned with the implemented cast fields.
 
 ## Phase 2: Production Status Data Model
 
@@ -106,7 +106,7 @@ Checklist:
 - [x] Recommend voice-profile render when configured rendered audio is missing or stale.
 - [x] Recommend Playbook rebuild for blocking-only changes even when speech audio is current.
 - [ ] Recommend audioplay rebuild when audioplay output is stale or missing.
-- [ ] Include the reason and command in both `quince next` and any status summary.
+- [x] Include the reason and command in both `quince next` and any status summary.
 
 ## Phase 4: Cuemaster Playbook Update UX
 

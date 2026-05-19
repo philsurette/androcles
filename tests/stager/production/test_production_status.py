@@ -93,6 +93,8 @@ def test_production_status_cli_renders_basic_readiness(tmp_path: Path, monkeypat
     assert "Missing segment recordings: 1" in result.output
     assert "Playbook:" in result.output
     assert "exists: no" in result.output
+    assert "Next:" in result.output
+    assert "action: publish" in result.output
 
 
 def test_production_status_rejects_cast_roles_that_are_not_in_the_play(tmp_path: Path) -> None:

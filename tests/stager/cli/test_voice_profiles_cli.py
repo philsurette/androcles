@@ -99,6 +99,31 @@ def test_voice_render_dry_run_fails_for_ambiguous_actor(tmp_path: Path, monkeypa
     assert "Ambiguous actor for role 'MEGAERA'" in result.output
 
 
+def test_voice_render_dry_run_uses_cast_actor_for_ambiguous_role(tmp_path: Path, monkeypatch) -> None:
+    cfg = _config(tmp_path)
+    _write_voice_profiles(cfg, include_alex=True)
+    _write_segment(cfg, "MEGAERA", "0_1_1")
+    (cfg.play_dir / "cast.yaml").write_text(
+        """
+version: 1
+actors:
+  alex: {}
+roles:
+  MEGAERA:
+    actor: alex
+""",
+        encoding="utf-8",
+    )
+    _patch_path_config(monkeypatch, cfg)
+    monkeypatch.setattr(build, "AUDIO_TOOL_CHECKER", FakeVoiceToolChecker())
+
+    result = CliRunner().invoke(build.app, ["voice-render", "--play", "test", "--dry-run"])
+
+    assert result.exit_code == 0
+    assert "alex@MEGAERA 0_1_1: render needed from canonical" in result.output
+    assert "phil@MEGAERA" not in result.output
+
+
 def test_run_voice_render_renders_and_then_skips_cache_hit(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     _write_voice_profiles(cfg)

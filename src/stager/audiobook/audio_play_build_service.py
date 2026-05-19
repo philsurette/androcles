@@ -6,6 +6,7 @@ import logging
 
 from stager.audio.segment_build_service import SegmentBuildService
 from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_cast import VoiceProfileCastResolver
 from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
 from stager.audio.voice_profile_resolver import VoiceProfileResolver
 from stager.audio.voice_render_cache import VoiceRenderCache
@@ -130,6 +131,7 @@ class AudioPlayBuildService:
         if not config.cast_profiles:
             return ()
         resolver = VoiceProfileResolver(config)
+        cast_resolver = VoiceProfileCastResolver(self.paths)
         cache = VoiceRenderCache(self.paths)
         selector = CleanedAudioSelector(paths_config=self.paths, audio_source=audio_source)
         renderer = VoiceProfileRenderer(
@@ -140,7 +142,7 @@ class AudioPlayBuildService:
         roles = [role] if role is not None else sorted({profile.role for profile in config.cast_profiles.values()})
         results = []
         for candidate_role in roles:
-            resolved = resolver.resolve(candidate_role, actor=actor)
+            resolved = resolver.resolve(candidate_role, actor=cast_resolver.actor_for_role(candidate_role, actor))
             if resolved is None:
                 continue
             role_dir = self.paths.segments_dir / resolved.role

@@ -54,12 +54,23 @@ class RecordingRequestPlay:
 class RecordingRequestRole:
     id: str
     display_name: str
+    actor_id: str | None = None
+    actor_display_name: str | None = None
+    actor_email: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "id": self.id,
             "display_name": self.display_name,
         }
+        if self.actor_id is not None:
+            actor: dict[str, Any] = {"id": self.actor_id}
+            if self.actor_display_name is not None:
+                actor["display_name"] = self.actor_display_name
+            if self.actor_email is not None:
+                actor["email"] = self.actor_email
+            data["actor"] = actor
+        return data
 
 
 @dataclass

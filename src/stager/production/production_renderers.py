@@ -4,7 +4,7 @@ from io import StringIO
 
 from ruamel.yaml import YAML
 
-from stager.production.production_recommendation import ProductionRecommendation
+from stager.production.production_recommendation import ProductionRecommendation, ProductionRecommendationService
 from stager.production.production_status import ProductionStatus
 from stager.production.cast_config import CastConfig
 from stager.production.cast_config_service import CastValidationResult
@@ -117,6 +117,7 @@ def _render_change_lines(change) -> list[str]:
 
 
 def render_production_status(status: ProductionStatus) -> str:
+    recommendation = ProductionRecommendationService().recommend(status=status, play_id=status.play_id)
     lines = [
         f"Production status for {status.play_id}: {status.play_title}",
         f"Current published version: {status.current_published_version or 'none'}",
@@ -201,6 +202,15 @@ def render_production_status(status: ProductionStatus) -> str:
                 "  matches current published version: "
                 + ("yes" if status.playbook.matches_current_published_version else "no")
             )
+    lines.extend(
+        [
+            "",
+            "Next:",
+            f"  action: {recommendation.action}",
+            f"  reason: {recommendation.reason}",
+            f"  command: {recommendation.command}",
+        ]
+    )
     return "\n".join(lines)
 
 

@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 from stager.production.production_recommendation import ProductionRecommendationService
-from stager.production.production_status import PlaybookProductionStatus, ProductionStatus, RoleProductionStatus
+from stager.production.production_status import (
+    CleanupReviewProductionStatus,
+    PlaybookProductionStatus,
+    ProductionStatus,
+    RoleProductionStatus,
+    VoiceProfileProductionStatus,
+)
 
 
 def test_recommendation_prefers_publish_for_unpublished_changes() -> None:
@@ -100,6 +106,8 @@ def _status(
         roles=roles,
         cast_configured=True,
         playbook=playbook or PlaybookProductionStatus(exists=False),
+        cleanup_review=CleanupReviewProductionStatus(exists=False, expected_segments=sum(role.expected_segments for role in roles)),
+        voice_profiles=VoiceProfileProductionStatus(configured_profiles=0, expected_segments=0, rendered_segments=0),
     )
 
 

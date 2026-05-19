@@ -23,6 +23,7 @@ from stager.linerecorder.recording_request_manifest import (
 )
 from stager.playbook.app_line import AppLine
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
+from stager.production.cast_config import CastConfig
 from stager.production_publication.production_version import ProductionVersion
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright.production_script_parser import ProductionScriptParser
@@ -79,6 +80,9 @@ class RecordingRequestBuilder:
 
         created_at = self.created_at or self._now()
         production = self._production_metadata()
+        cast_config = CastConfig.load(self.paths)
+        assignment = cast_config.assignment_for_role(role.name)
+        actor = cast_config.actors.get(assignment.actor) if assignment is not None and assignment.actor is not None else None
         return RecordingRequestManifest(
             request=RecordingRequestMetadata(
                 id=self.request_id or self._default_request_id(created_at),
@@ -98,6 +102,9 @@ class RecordingRequestBuilder:
             role=RecordingRequestRole(
                 id=role.name,
                 display_name=role.name,
+                actor_id=assignment.actor if assignment is not None else None,
+                actor_display_name=actor.display_name if actor is not None else None,
+                actor_email=actor.email if actor is not None else None,
             ),
             recording=RecordingPreferences(),
             items=self._build_items(),

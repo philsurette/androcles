@@ -12,6 +12,7 @@ from stager.audio.audio_cleanup_service import (
 )
 from stager.audio.cleaned_audio_selector import AUDIO_SOURCE_CANONICAL, CleanedAudioSelector, SUPPORTED_AUDIO_SOURCES
 from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_cast import VoiceProfileCastResolver
 from stager.audio.voice_profile_renderer import VoiceProfileRenderer, VoiceRenderResult
 from stager.audio.voice_profile_resolver import VoiceProfileResolver
 from stager.audio.voice_render_cache import VoiceRenderCache
@@ -203,13 +204,14 @@ class AudioOutputWorkflowService:
         if missing_filters:
             raise RuntimeError(f"Missing required FFmpeg voice-profile filter(s): {', '.join(missing_filters)}")
         resolver = VoiceProfileResolver(config)
+        cast_resolver = VoiceProfileCastResolver(self.paths_config)
         cache = VoiceRenderCache(self.paths_config)
         selector = CleanedAudioSelector(paths_config=self.paths_config, audio_source=audio_source)
         renderer = VoiceProfileRenderer(paths_config=self.paths_config, installation=active_installation)
         roles = [role] if role is not None else sorted({profile.role for profile in config.cast_profiles.values()})
         results = []
         for candidate_role in roles:
-            resolved = resolver.resolve(candidate_role, actor=actor)
+            resolved = resolver.resolve(candidate_role, actor=cast_resolver.actor_for_role(candidate_role, actor))
             if resolved is None:
                 continue
             role_dir = self.paths_config.segments_dir / resolved.role

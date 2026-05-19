@@ -155,7 +155,7 @@ At the production level, keep cast assignment in:
 plays/<play_id>/cast.yaml
 ```
 
-This file connects roles to actors, the expected recording path, and optional voice-profile ids.
+This file connects roles to actors, the expected recording path, and optional voice-profile ids. Recording Request packages include the assigned actor id, display name, and email when those fields are present, so actors can tell when a package is meant for them.
 
 Example:
 
@@ -183,7 +183,7 @@ Common cases:
 - One actor reads multiple roles: send one request per role, or coordinate multiple role packages with that actor.
 - Multiple actors may read the same role at different times: use actor-specific voice profiles and select the actor explicitly when rendering.
 
-If a role can be recorded by more than one actor, use clear actor names consistently in `voice_profiles.yaml` and command options. For example:
+If a role has a single assigned actor in `cast.yaml`, voice-profile rendering uses that actor when `--voice-actor` is omitted. If a role can be recorded by more than one actor, use clear actor names consistently in `voice_profiles.yaml` and pass the actor explicitly when needed. For example:
 
 ```sh
 quince prepare-audio --play <play_id> --run --role MEGAERA --voice-actor phil

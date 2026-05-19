@@ -236,6 +236,41 @@ def test_recording_request_builder_writes_full_role_request(tmp_path: Path) -> N
             "reason": "initial_recording",
         }
     ]
+
+
+def test_recording_request_builder_includes_cast_actor_metadata(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), response_block])
+    cfg.play_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.play_dir / "cast.yaml").write_text(
+        """
+version: 1
+actors:
+  phil:
+    display_name: Phil Surette
+    email: phil@example.com
+roles:
+  MEGAERA:
+    actor: phil
+    recording: linerecorder
+""",
+        encoding="utf-8",
+    )
+
+    zip_path = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        created_at="2026-05-10T14:00:00Z",
+    ).build()
+
+    data = json.loads((cfg.build_dir / "linerecorder" / "MEGAERA" / "manifest.json").read_text(encoding="utf-8"))
+    assert data["role"]["actor"] == {
+        "id": "phil",
+        "display_name": "Phil Surette",
+        "email": "phil@example.com",
+    }
     with zipfile.ZipFile(zip_path) as archive:
         assert archive.namelist() == ["manifest.json"]
 

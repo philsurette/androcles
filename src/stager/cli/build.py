@@ -72,6 +72,7 @@ from stager.audio.audacity_recording_exporter import AudacityRecordingExporter
 from stager.audio.audio_cleanup_service import AudioCleanupService
 from stager.audio.cleaned_audio_selector import AUDIO_SOURCE_CANONICAL, CleanedAudioSelector, SUPPORTED_AUDIO_SOURCES
 from stager.audio.voice_profile_config import VoiceProfileConfig
+from stager.audio.voice_profile_cast import VoiceProfileCastResolver
 from stager.audio.voice_profile_analyzer import VoiceAnalysisReport, VoiceProfileAnalyzer
 from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
 from stager.audio.voice_profile_resolver import ResolvedVoiceProfile, VoiceProfileResolver
@@ -1968,7 +1969,7 @@ def run_voice_render_plan(
     config = VoiceProfileConfig.load(cfg)
     if not config.cast_profiles:
         return VoiceRenderPlan(entries=())
-    resolved_profiles = _resolve_voice_profiles(config=config, role=role, actor=actor)
+    resolved_profiles = _resolve_voice_profiles(config=config, role=role, actor=actor, paths_config=cfg)
     selected = CleanedAudioSelector(paths_config=cfg, audio_source=audio_source)
     cache = VoiceRenderCache(cfg)
     active_installation = installation or AUDIO_TOOL_CHECKER.require_audio_tools()
@@ -2056,12 +2057,14 @@ def _resolve_voice_profiles(
     config: VoiceProfileConfig,
     role: str | None,
     actor: str | None,
+    paths_config: paths.PathConfig,
 ) -> tuple[ResolvedVoiceProfile, ...]:
     resolver = VoiceProfileResolver(config)
+    cast_resolver = VoiceProfileCastResolver(paths_config)
     roles = [role] if role is not None else sorted({profile.role for profile in config.cast_profiles.values()})
     resolved = []
     for candidate_role in roles:
-        candidate = resolver.resolve(candidate_role, actor=actor)
+        candidate = resolver.resolve(candidate_role, actor=cast_resolver.actor_for_role(candidate_role, actor))
         if candidate is not None:
             resolved.append(candidate)
     return tuple(resolved)
