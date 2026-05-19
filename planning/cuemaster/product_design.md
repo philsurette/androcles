@@ -37,6 +37,7 @@ Use `planning/specs/playbook_manifest.md` as the authoritative manifest schema. 
 - **Cue length is actor-controlled.** The actor can choose full cue playback or a shared max-cue-length preset. Preset values come from `planning/specs/cue_window_presets.json` so Cuemaster settings and Stager cue-start offsets stay aligned.
 - **Narrow, transparent microphone use.** Microphone access is used only for explicitly enabled features: voice commands and voice-activity timing. Tempo timing does not record, save, transcribe, upload, or score audio.
 - **Simple state machine.** The app walks a flat, ordered list of rehearsal lines for the selected role. Navigation is the primary complexity; playback is deliberately straightforward.
+- **Blocking stays optional and non-disruptive.** Text blocking notes may be shown inline when enabled. Visual blocking diagrams are on-demand references and must not interrupt playback, auto-advance, or eyes-free rehearsal.
 - **Web app first, mobile wrapper second.** The app is built first as a browser-based React web app, then packaged for mobile using Capacitor.
 - **Preserve commercial and open-source flexibility.** The shipped app must avoid GPL-family and other restrictive dependencies so it can be released as permissive open source, source-available, freeware, or paid software later.
 
@@ -254,6 +255,49 @@ Rules:
 - `storage/` must hide the difference between browser IndexedDB and Capacitor filesystem/preferences.
 - `capacitor/` modules must be isolated so the browser app can run without native APIs.
 - Session state transitions must be unit-tested without rendering React components.
+
+---
+
+## Blocking Notes And Diagrams
+
+Cuemaster consumes two separate blocking layers from a Playbook:
+
+1. Human-readable blocking notes attached to lines and context.
+2. Optional packaged diagram JSON under the Playbook `staging` entry point.
+
+These layers should remain separate in the app. Blocking notes are rehearsal text. Blocking diagrams are visual reference material.
+
+### Blocking Notes
+
+The current rehearsal blocking toggle should keep its existing behavior:
+
+- Off: hide blocking notes from the rehearsal flow.
+- On: show concise blocking text inline with the current line.
+- Scope: preserve the existing role/all filtering.
+
+Blocking note text should remain directly readable. If a note has an associated diagram target, render the note as a tappable/clickable control. The control opens the diagram view, but the note itself still displays the human-readable text.
+
+If a Playbook has no packaged staging assets, or if a particular note has no diagram target, the note remains plain text and no broken diagram affordance is shown.
+
+### Diagram View
+
+Clicking/tapping a diagram-enabled blocking note opens an on-demand full-screen diagram page or sheet:
+
+1. Resolve the note to a diagram target using the note id, line id, scene id, beat id, or production anchor carried by the Playbook staging bundle.
+2. Load the nearest checkpoint JSON lazily from stored Playbook assets.
+3. Apply any delta records needed to reach the target beat.
+4. Render the resulting diagram state as an SVG/component in Cuemaster.
+
+The diagram page should include:
+
+- a clear back/close action that returns to the same rehearsal line,
+- pan/zoom for mobile,
+- tap/press inspection of actors and props using titles/labels from diagram state,
+- an unavailable-state message if the diagram cannot be loaded.
+
+Do not auto-open diagrams during playback, speak-along, timing practice, or auto-advance. Visual blocking is an optional reference, not part of the primary audio loop.
+
+Cuemaster must not parse `production.md`, `staging.txt`, or Stager authoring syntax. It consumes only Playbook manifest fields, diagram bundle metadata, checkpoints, and deltas.
 
 ---
 

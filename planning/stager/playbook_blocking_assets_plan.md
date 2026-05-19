@@ -1,0 +1,196 @@
+# Playbook Blocking Diagram Assets Implementation Plan
+
+## Goal
+
+Package blocking diagram JSON into Playbooks so Cuemaster can render stage/blocking snapshots without parsing `production.md`, `staging.txt`, or Stager resolver internals.
+
+The Playbook should include these assets by default when staging data exists, with an explicit opt-out for smaller packages or clients that do not need blocking diagrams.
+
+## Version Decision
+
+- [x] Treat this as a Playbook minor version change: `1.0.0` -> `1.1.0`.
+- [x] Rationale: the change adds optional root metadata and optional package files. Existing Cuemaster behavior can continue by ignoring `staging`.
+- [x] Do not use a major version unless an existing required field changes meaning, package path resolution changes, or Cuemaster must understand blocking assets to rehearse.
+
+## Target Package Shape
+
+```text
+app/
+  manifest.json
+  audio/
+  staging/
+    diagram_manifest.json
+    checkpoints/
+      scene-1.3-start.json
+      scene-1.3-b20.json
+    deltas/
+      scene-1.3.json
+```
+
+`manifest.json` points at the staging bundle:
+
+```json
+{
+  "format_version": "1.1.0",
+  "staging": {
+    "included": true,
+    "format": "quince.blocking.diagram_bundle",
+    "format_version": "1.0.0",
+    "manifest_path": "staging/diagram_manifest.json"
+  }
+}
+```
+
+## Design Rules
+
+- [ ] Store compact renderer input JSON, not pre-rendered SVGs.
+- [ ] Use `DiagramState` JSON for checkpoints.
+- [ ] Use semantic JSON delta operations for diffs; do not use textual JSON Patch or SVG diffs for the MVP.
+- [ ] Keep Cuemaster ignorant of staging authoring syntax and resolver logic.
+- [ ] Include enough ids in the bundle for Cuemaster to attach diagrams to script lines:
+  - [ ] scene id,
+  - [ ] beat id,
+  - [ ] production anchor id,
+  - [ ] set id when applicable.
+- [ ] Keep SVG generation as a renderer concern, not a Playbook package concern.
+
+## Phase 1: Spec And Fixtures
+
+- [x] Update `planning/specs/playbook_manifest.md` with the root `staging` object and package layout.
+- [x] Update `planning/specs/versioning.md` to record the minor-version decision.
+- [ ] Add a machine-readable JSON fixture under `tests/fixtures/playbooks/` or a staging fixture directory showing:
+  - [ ] `manifest.json` with `format_version: "1.1.0"`,
+  - [ ] `staging/diagram_manifest.json`,
+  - [ ] at least one checkpoint,
+  - [ ] at least one delta target.
+- [ ] Add a small schema or validation helper for `quince.blocking.diagram_bundle`.
+
+## Phase 2: Stager Bundle Builder
+
+- [ ] Add a Playbook-facing staging bundle builder under `src/stager/playbook/` or `src/stager/staging/`.
+- [ ] Inputs:
+  - [ ] `paths.PathConfig`,
+  - [ ] parsed `StagingDocument`,
+  - [ ] selected checkpoint policy,
+  - [ ] output directory.
+- [ ] Outputs:
+  - [ ] `staging/diagram_manifest.json`,
+  - [ ] checkpoint `DiagramState` JSON files,
+  - [ ] delta JSON files,
+  - [ ] summary object for insertion into Playbook `manifest.json`.
+- [ ] Reuse `StagingExportService`, `StagingParser`, `StagingResolver`, `StagingStateResolver`, and `DiagramStateBuilder`.
+- [ ] Do not call the SVG renderer from the package builder.
+
+## Phase 3: Checkpoint Policy
+
+- [ ] MVP checkpoints:
+  - [ ] scene start for every scene snapshot,
+  - [ ] every set change,
+  - [ ] every N beats if a scene has many beats.
+- [ ] Default `N` to a conservative value such as `20`.
+- [ ] Add an internal threshold that writes a full checkpoint instead of a delta when the delta is larger than the target full state.
+- [ ] Make checkpoint spacing configurable in code first; defer CLI knobs unless real packages show a need.
+
+## Phase 4: Delta Operations
+
+- [ ] Define the minimal operation set:
+  - [ ] `upsert_entity`,
+  - [ ] `remove_entity`,
+  - [ ] `set_visible`,
+  - [ ] `set_offstage`,
+  - [ ] `set_diagnostic`,
+  - [ ] `replace_stage` only for checkpoint/set-boundary transitions.
+- [ ] Store full replacement entity records for changed entities rather than fine-grained field patches.
+- [ ] Add deterministic sorting so generated deltas are stable in tests.
+- [ ] Add a round-trip test: checkpoint + deltas reconstructs the same `DiagramState` as direct resolver output.
+
+## Phase 5: Playbook Builder Integration
+
+- [ ] Add `blocking_diagrams: bool = True` or similar to Stager Playbook build options.
+- [ ] Add CLI opt-out:
+  - [ ] `./main playbook --no-blocking-diagrams`,
+  - [ ] `quince build-playbook --no-blocking-diagrams`.
+- [ ] Decide interaction with the existing `--staging/--no-staging` option:
+  - [ ] `--no-staging` should skip staging export and imply no blocking diagrams,
+  - [ ] `--no-blocking-diagrams` should still allow staging export for local Block CLI use.
+- [ ] If no staging data exists, omit the root `staging` object and do not fail Playbook generation.
+- [ ] If staging data exists but bundle generation fails validation, fail Playbook generation unless the user opts out.
+- [ ] Include staging files in both unpacked app output and zipped Playbook output.
+- [ ] Set Playbook `format_version` to at least `1.1.0` when staging is included.
+- [ ] Keep `schema_version: 1`.
+
+## Phase 6: Cuemaster Import And Rendering
+
+- [ ] Update Cuemaster Playbook import validation to accept `format_version: 1.1.0`.
+- [ ] Preserve existing newer-minor warning behavior for unsupported future minor versions.
+- [ ] Add TypeScript types for:
+  - [ ] root `staging`,
+  - [ ] diagram bundle manifest,
+  - [ ] checkpoint records,
+  - [ ] delta records,
+  - [ ] delta operations.
+- [ ] Add an IndexedDB/storage path for staging JSON files.
+- [ ] Port or implement a Cuemaster diagram-state renderer equivalent to the Python renderer.
+- [ ] Add a delta applicator and fixture tests proving Python-generated JSON renders expected actors/props.
+- [ ] Keep the rehearsal UI usable when staging is absent.
+- [ ] Normalize Playbook `manifest.staging` into the Cuemaster domain model without loading every checkpoint/delta during import.
+- [ ] Store staging JSON assets alongside other extracted Playbook assets and load them lazily when a diagram is opened.
+- [ ] Add a resolver that maps a line/blocking note to the best diagram target:
+  - [ ] exact `blocking.id` / production anchor match,
+  - [ ] line id match,
+  - [ ] nearest prior scene checkpoint when no beat target exists.
+
+## Phase 7: UX Integration
+
+- [ ] Keep the existing blocking toggle semantics:
+  - [ ] off means no blocking text is shown in the rehearsal flow,
+  - [ ] on means concise human-readable blocking notes are displayed inline,
+  - [ ] role/all scope continues to filter which notes are shown.
+- [ ] Render visible blocking notes as clickable/tappable controls when a diagram target is available.
+- [ ] Keep the note text itself visible and readable; the diagram affordance should not replace text blocking.
+- [ ] Open an on-demand blocking diagram page/sheet from a blocking note:
+  - [ ] resolve the diagram target for the selected note,
+  - [ ] load the nearest checkpoint JSON,
+  - [ ] apply any needed deltas,
+  - [ ] render full-screen SVG/component from the resulting diagram state.
+- [ ] Start with on-demand viewing, not always-visible diagrams in the rehearsal line.
+- [ ] Allow tap/press inspection of actors and props using titles/labels from diagram state.
+- [ ] Include a clear close/back action that returns to the same rehearsal line and playback state.
+- [ ] On mobile, default the diagram page to portrait full-screen with pan/zoom; downstage orientation follows the packaged diagram state/rendering options.
+- [ ] Preserve existing rehearsal flow if a diagram cannot be rendered.
+- [ ] If a note has no diagram target, display it as plain text with no broken affordance.
+- [ ] Consider a setting to hide blocking diagrams for actors who do not want visual blocking.
+- [ ] Do not auto-open diagrams during audio playback or auto-advance.
+
+## Phase 8: Tests
+
+- [ ] Stager unit tests:
+  - [ ] bundle manifest generation,
+  - [ ] checkpoint generation,
+  - [ ] delta generation,
+  - [ ] direct state equals checkpoint-plus-delta state,
+  - [ ] no-staging-data omits Playbook `staging`,
+  - [ ] opt-out omits Playbook `staging` and files.
+- [ ] Stager integration tests:
+  - [ ] `./main playbook` includes staging by default for Hamlet fixture,
+  - [ ] `./main playbook --no-blocking-diagrams` excludes it,
+  - [ ] zipped Playbook contains referenced staging files.
+- [ ] Cuemaster tests:
+  - [ ] imports `1.1.0` Playbook,
+  - [ ] older fixture without `staging` still imports,
+  - [ ] unsupported newer minor imports with warning,
+  - [ ] unsupported newer major rejects,
+  - [ ] blocking toggle still hides/shows text notes without staging assets,
+  - [ ] visible blocking note opens diagram view when a target exists,
+  - [ ] non-targeted blocking note remains plain text,
+  - [ ] diagram view returns to the same rehearsal line,
+  - [ ] checkpoint and delta fixture renders expected entity positions.
+
+## Acceptance Criteria
+
+- [ ] Playbooks with staging data include `manifest.staging` by default.
+- [ ] Playbooks without staging data remain valid and omit `manifest.staging`.
+- [ ] Existing rehearsal behavior does not depend on staging assets.
+- [ ] Existing Cuemaster clients can ignore the added field/files as a newer minor-format package.
+- [ ] Cuemaster can render a blocking diagram from packaged JSON without source markdown or `staging.txt`.
+- [ ] Full test suite passes in Stager and Cuemaster.

@@ -27,6 +27,7 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - [stager/playbook_usage.md](stager/playbook_usage.md): Current Stager CLI usage, output layout, tests, and dependencies for Playbook export.
 - [stager/cue_start_offsets.md](stager/cue_start_offsets.md): Plan for Stager-generated cue-start offsets so Cuemaster can trim long cues near word boundaries.
+- [stager/playbook_blocking_assets_plan.md](stager/playbook_blocking_assets_plan.md): Plan for packaging blocking diagram JSON checkpoints and deltas into Playbooks for Cuemaster.
 - [stager/production_pipeline.md](stager/production_pipeline.md): Master plan for ScriptWright, the Stager `production.md` source refactor, and production-id adoption.
 - [stager/scriptwright.md](stager/scriptwright.md): Resumable implementation plan for converting source scripts into locked `production.md`.
 - [stager/production_source_refactor.md](stager/production_source_refactor.md): Resumable implementation plan for making Stager consume locked `production.md`.

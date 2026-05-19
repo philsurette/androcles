@@ -141,6 +141,8 @@ The Playbook manifest includes:
 
 The current Playbook v1 contract is defined by [playbook_manifest.md](playbook_manifest.md).
 
+Adding optional blocking diagram JSON assets to Playbooks is a minor v1 change, not a major change. A `1.0.0` Cuemaster client can still rehearse from the existing script/audio fields if it ignores the new root `staging` object and `staging/` package files. Writers that include these assets should emit Playbook `format_version: "1.1.0"` or newer.
+
 ## Recording Format Versions
 
 There are two recording package types:
