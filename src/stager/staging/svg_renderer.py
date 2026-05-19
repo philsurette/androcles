@@ -44,12 +44,10 @@ class StageSvgRenderer:
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
             ".level-surface{fill:#d9edf7;fill-opacity:.34;stroke:#2f6f9f;stroke-width:2;stroke-dasharray:7 4}",
             ".connector{stroke:#6b614d;stroke-width:2;stroke-dasharray:5 4;fill:none}",
-            ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke:#6b614d;stroke-width:1}",
+            ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
-            ".actor-circle{fill:#2f6f9f;fill-opacity:.78;stroke:#12384f;stroke-width:1.5}",
+            ".actor-circle{fill-opacity:.86;stroke-width:1.5}",
             ".actor-label{font:10px sans-serif;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:middle}",
-            ".icon-set-piece{color:#6b614d}",
-            ".icon-prop{color:#7a4b9d}",
             ".label{font:13px sans-serif;fill:#111}",
             ".small{font:11px sans-serif;fill:#333;paint-order:stroke;stroke:#fff;stroke-width:3}",
             ".diagnostic{font:12px sans-serif;fill:#8a3a00}",
@@ -148,7 +146,12 @@ class StageSvgRenderer:
             if anchor.at.point is None:
                 continue
             x, y = self._project(anchor.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            lines.append(f'<circle class="anchor" cx="{x:g}" cy="{y:g}" r="5"><title>{escape(anchor_id)}</title></circle>')
+            stroke = self._elevation_stroke(anchor.at.point.z)
+            fill = self._elevation_fill(anchor.at.point.z)
+            lines.append(
+                f'<circle class="anchor" cx="{x:g}" cy="{y:g}" r="5" '
+                f'style="fill:{fill};stroke:{stroke}"><title>{escape(anchor_id)}</title></circle>'
+            )
             if anchor.at.point.z:
                 lines.append(f'<text class="small" x="{x + 7:g}" y="{y + 7:g}">+{anchor.at.point.z:g}</text>')
         return lines
@@ -168,12 +171,13 @@ class StageSvgRenderer:
             x, y = self._project(set_piece.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
             width, depth = set_piece.size or (3.0, 2.0)
             footprint_width, footprint_height = self._footprint_size(width, depth, scale)
+            stroke = self._elevation_stroke(set_piece.at.point.z)
             lines.append(
                 f'<rect class="set-piece-footprint" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
-                f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2"/>'
+                f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2" style="stroke:{stroke}"/>'
             )
             icon_id = self._set_piece_icon_id(set_id, set_piece.kind)
-            lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=set_id))
+            lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=set_id, color=stroke))
             if set_piece.at.point.z:
                 lines.append(f'<text class="small" x="{x:g}" y="{y + 43:g}" text-anchor="middle">+{set_piece.at.point.z:g}</text>')
         return lines
@@ -220,9 +224,11 @@ class StageSvgRenderer:
         actor = snapshot.actors.get(placement.entity)
         label = actor.label if actor is not None else self._default_actor_label(placement.entity)
         title = actor.name if actor is not None else placement.entity
+        fill = self._elevation_fill(placement.point.z)
+        stroke = self._elevation_stroke(placement.point.z)
         lines = [
             f'<g class="actor-mark"><title>{escape(title)}</title>',
-            f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13"/>',
+            f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13" style="fill:{fill};stroke:{stroke}"/>',
             f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(label)}</text>',
             "</g>",
         ]
@@ -248,7 +254,7 @@ class StageSvgRenderer:
         if placement.source in snapshot.set_pieces:
             return self._prop_on_set_piece(snapshot, placement, scale, slot_index, icon_id)
         return [
-            self._icon_use(icon_id, "icon-prop", x, y, 24, title=placement.entity),
+            self._icon_use(icon_id, "icon-prop", x, y, 24, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
         ]
 
     def _prop_on_set_piece(
@@ -271,7 +277,7 @@ class StageSvgRenderer:
         icon_x = center_x + half_width * columns[slot_index % len(columns)]
         icon_y = center_y + half_depth * rows[(slot_index // len(columns)) % len(rows)]
         return [
-            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22, title=placement.entity),
+            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
         ]
 
     def _placed_set_piece(self, snapshot: ResolvedSnapshot, placement: ResolvedPlacement, scale: float) -> list[str]:
@@ -280,7 +286,7 @@ class StageSvgRenderer:
         set_piece = snapshot.set_pieces.get(placement.entity)
         icon_id = self._set_piece_icon_id(placement.entity, set_piece.kind if set_piece is not None else None)
         return [
-            self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=placement.entity),
+            self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
         ]
 
     def _side_panel(self, snapshot: ResolvedSnapshot, x: int, y: int) -> list[str]:
@@ -332,10 +338,21 @@ class StageSvgRenderer:
             return (stage_depth * scale, stage_width * scale)
         return (stage_width * scale, stage_depth * scale)
 
-    def _icon_use(self, icon_id: str, class_name: str, x: float, y: float, size: int, *, title: str | None = None) -> str:
+    def _icon_use(
+        self,
+        icon_id: str,
+        class_name: str,
+        x: float,
+        y: float,
+        size: int,
+        *,
+        title: str | None = None,
+        color: str | None = None,
+    ) -> str:
         offset = size / 2
+        style = f' style="color:{color}"' if color is not None else ""
         use = (
-            f'<use class="stage-icon {class_name}" href="#stage-icon-{escape(icon_id)}" '
+            f'<use class="stage-icon {class_name}" href="#stage-icon-{escape(icon_id)}"{style} '
             f'x="{x - offset:g}" y="{y - offset:g}" width="{size}" height="{size}"/>'
         )
         if title is None:
@@ -353,6 +370,20 @@ class StageSvgRenderer:
         if len(compact) >= 2:
             return compact[:2]
         return compact.ljust(2, "?")
+
+    def _elevation_fill(self, z: float) -> str:
+        if z > 0:
+            return "#d9edf7"
+        if z < 0:
+            return "#f4e3ff"
+        return "#e6e6e6"
+
+    def _elevation_stroke(self, z: float) -> str:
+        if z > 0:
+            return "#2f6f9f"
+        if z < 0:
+            return "#7a4b9d"
+        return "#555555"
 
     def _actor_offsets(self, snapshot: ResolvedSnapshot, scale: float) -> dict[int, tuple[float, float]]:
         grouped: dict[tuple[int, int], list[int]] = {}

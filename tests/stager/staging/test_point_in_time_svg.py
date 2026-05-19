@@ -130,6 +130,34 @@ HAM @ UC
     assert ">balcony +8</text>" in svg
 
 
+def test_renderer_colors_actors_and_objects_by_elevation() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium width=40 depth=30 units=ft
+grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+level balcony at=UC size=(18,4) z=8
+anchor balcony_l at=(-8,24,8)
+anchor deck_c at=(0,8,0)
+
+scene 2 snapshot
+HAM @ balcony_l
+CLA @ deck_c
+flower @ balcony_l
+book @ deck_c
+"""
+    )
+
+    snapshot = StagingResolver().resolve_snapshot(document, "2")
+    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+
+    assert 'class="actor-circle" cx="232" cy="136" r="13" style="fill:#d9edf7;stroke:#2f6f9f"' in svg
+    assert 'class="actor-circle" cx="360" cy="392" r="13" style="fill:#e6e6e6;stroke:#555555"' in svg
+    assert '<g><title>flower</title><use class="stage-icon icon-prop" href="#stage-icon-flower" style="color:#2f6f9f"' in svg
+    assert '<g><title>book</title><use class="stage-icon icon-prop" href="#stage-icon-book" style="color:#555555"' in svg
+
+
 def test_svg_renderer_outputs_stage_grid_actor_and_diagnostics() -> None:
     document = StagingParser().parse(
         """
@@ -181,7 +209,7 @@ dagger @ table
     assert '<g class="layer-actors">' in svg
     assert ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}" in svg
     assert '<text class="area-label" x="45" y="55">UL</text>' in svg
-    assert ".actor-circle{fill:#2f6f9f;fill-opacity:.78;" in svg
+    assert ".actor-circle{fill-opacity:.86;stroke-width:1.5}" in svg
     actor_circles = re.findall(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
     assert len(actor_circles) == 2
     assert actor_circles[0] != actor_circles[1]
@@ -189,7 +217,7 @@ dagger @ table
     assert ">HM</text>" in svg
     assert "<title>Claudius</title>" in svg
     assert ">CD</text>" in svg
-    prop_labels = re.findall(r'<use class="stage-icon icon-prop" href="#stage-icon-[^"]+" x="([^"]+)" y="([^"]+)"', svg)
+    prop_labels = re.findall(r'<use class="stage-icon icon-prop" href="#stage-icon-[^"]+"[^>]* x="([^"]+)" y="([^"]+)"', svg)
     assert len(prop_labels) == 2
     assert prop_labels[0] != prop_labels[1]
     assert svg.index('<g class="layer-props">') < svg.index('<g class="layer-actors">')

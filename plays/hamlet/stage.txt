@@ -22,3 +22,4 @@ HAM @ balcony_l face=CLA
 CLA @ DC
 OPH @ deck_l face=HAM
 sword @ table
+flower @ balcony_l
