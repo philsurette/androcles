@@ -39,9 +39,20 @@ function isAutoplayError(error: unknown): boolean {
 }
 
 function isIndexedDbError(error: unknown): boolean {
-  return ["DataError", "InvalidStateError", "ReadOnlyError", "TransactionInactiveError", "UnknownError", "VersionError"].includes(
-    errorName(error) ?? ""
-  );
+  return [
+    "ConstraintError",
+    "DatabaseClosedError",
+    "DataError",
+    "InvalidStateError",
+    "MissingAPIError",
+    "NotFoundError",
+    "OpenFailedError",
+    "ReadOnlyError",
+    "SecurityError",
+    "TransactionInactiveError",
+    "UnknownError",
+    "VersionError"
+  ].includes(errorName(error) ?? "");
 }
 
 function errorName(error: unknown): string | undefined {

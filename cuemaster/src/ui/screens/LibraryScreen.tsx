@@ -4,6 +4,7 @@ import { estimateStorage, formatBytes, requestPersistentStorage, type StorageEst
 import { installPlaybook, type PlaybookReplacementDecision } from "../../playbook/installPlaybook";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
+import { importSuccessMessage } from "../importSuccessMessage";
 import { playbookProductionLabel, playbookProductionWarning } from "../playbookProductionPresentation";
 
 type LibraryScreenProps = {
@@ -50,9 +51,9 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
       return;
     }
 
-    setSelectedFilename(file.name);
+    setSelectedFilename(`${file.name} (${formatBytes(file.size)})`);
     setIsImporting(true);
-    setImportStatus("Reading Playbook...");
+    setImportStatus("Reading Playbook from this device...");
 
     try {
       const importStartedAt = performance.now();
@@ -78,15 +79,13 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
       await loadStorageEstimate();
       await loadPlaybooks();
       setMessage(
-        `${replacementDecision ? "Replaced" : "Imported"} ${playbook.title} (${formatBytes(file.size)}) in ${elapsedSeconds.toFixed(1)}s.${
-          playbook.production.changeSummary ? ` Production change: ${playbook.production.changeSummary}` : ""
-        }${
-          playbook.production.blockingChanges?.length
-            ? ` Blocking updates: ${playbook.production.blockingChanges.length}.`
-            : ""
-        }${
-          persistence === null ? "" : persistence ? " Persistent storage is enabled." : " Persistent storage was not granted."
-        }`
+        importSuccessMessage({
+          playbook,
+          fileSizeBytes: file.size,
+          elapsedSeconds,
+          replaced: replacementDecision !== null,
+          persistentStorage: persistence
+        })
       );
     } catch (importError) {
       setError(userFacingErrorMessage(importError));
@@ -130,7 +129,7 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
         </div>
         <div className="library-intro-row">
           <p>
-            Import a playbook. Rehearse.
+            Import a .playbook.zip from this device. Cuemaster stores it in this browser for offline rehearsal.
           </p>
         </div>
         {isAboutOpen ? (
@@ -145,6 +144,9 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
                       ? "Persistent storage is enabled."
                       : "Storage is currently best effort."}
                 </p>
+                <p>
+                  Use a current Chrome, Edge, Firefox, or Safari browser. Private windows or blocked browser storage can prevent imports.
+                </p>
               </>
             ) : (
               <p>Storage usage is still loading.</p>
@@ -154,8 +156,8 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
 
         <div className="import-panel">
           <label className="button">
-            Import Playbook
-            <input type="file" accept=".zip,application/zip" onChange={handleFileSelected} />
+            Import Playbook Zip
+            <input type="file" accept=".playbook.zip,.zip,application/zip" onChange={handleFileSelected} />
           </label>
           {selectedFilename ? <span className="filename">{selectedFilename}</span> : null}
           {isImporting ? <span className="status">{importStatus || "Importing..."}</span> : null}

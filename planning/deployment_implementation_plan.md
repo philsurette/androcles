@@ -25,12 +25,14 @@ Deferred enhancements:
 
 Goal: actors can import a Playbook zip from disk and understand import/storage failures.
 
+Detailed plan: [cuemaster/cloudflare_import_flow_plan.md](cuemaster/cloudflare_import_flow_plan.md).
+
 - [ ] Confirm Playbook import works from a local file input when the app is hosted on Cloudflare.
-- [ ] Ensure import progress is visible for large MP3 Playbooks.
-- [ ] Ensure extraction work stays off the main UI path for large packages.
-- [ ] Add clear storage error handling for quota, private browsing, blocked IndexedDB, and unsupported browser cases.
-- [ ] Add user-facing import success text showing the play title and available roles.
-- [ ] Add a browser compatibility note favoring current Chrome, Edge, Firefox, and Safari versions.
+- [x] Ensure import progress is visible for large MP3 Playbooks.
+- [x] Ensure extraction work stays off the main UI path for large packages.
+- [x] Add clear storage error handling for quota, private browsing, blocked IndexedDB, and unsupported browser cases.
+- [x] Add user-facing import success text showing the play title and available roles.
+- [x] Add a browser compatibility note favoring current Chrome, Edge, Firefox, and Safari versions.
 - [ ] Add Playwright coverage for importing a built fixture Playbook from the hosted subdirectory base path.
 
 ## Milestone 3: Static Cloudflare Builds

@@ -3,7 +3,7 @@ import { buildMinimalPlaybookZip } from "./playbookFixture";
 
 test("loads the Cuemaster shell", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByText("Cuemaster")).toBeVisible();
+  await expect(page.getByText("QUINCE CUEMASTER")).toBeVisible();
 });
 
 test("imports a Playbook and shows actor roles", async ({ page }) => {
@@ -16,14 +16,15 @@ test("imports a Playbook and shows actor roles", async ({ page }) => {
   });
 
   await expect(page.getByText("Imported Androcles and the Lion")).toBeVisible();
+  await expect(page.getByText("Roles: ANDROCLES, MEGAERA")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Androcles and the Lion" })).toBeVisible();
   await expect(page.getByText("2 roles")).toBeVisible();
 
-  await page.getByRole("button", { name: "Rehearse!" }).click();
+  await page.getByRole("button", { name: "Rehearse" }).click();
 
-  await expect(page.getByText("Choose Role")).toBeVisible();
-  await expect(page.getByRole("heading", { name: "ANDROCLES", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "MEGAERA", exact: true })).toBeVisible();
+  await expect(page.getByText("Choose role")).toBeVisible();
+  await expect(page.getByRole("option", { name: /ANDROCLES/ })).toBeVisible();
+  await expect(page.getByRole("option", { name: /MEGAERA/ })).toBeVisible();
 });
 
 test("reports an invalid Playbook zip", async ({ page }) => {

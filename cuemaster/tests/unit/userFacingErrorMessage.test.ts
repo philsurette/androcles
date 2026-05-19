@@ -22,6 +22,12 @@ describe("userFacingErrorMessage", () => {
     );
   });
 
+  it("reports blocked browser storage clearly", () => {
+    expect(userFacingErrorMessage(new DOMException("blocked", "SecurityError"))).toBe(
+      "Local browser storage could not be read. Try refreshing; if the problem persists, clear Cuemaster site data and re-import Playbooks."
+    );
+  });
+
   it("reports browser autoplay failures clearly", () => {
     expect(userFacingErrorMessage(new DOMException("blocked", "NotAllowedError"))).toBe(
       "The browser blocked playback. Press a playback button again to start audio."

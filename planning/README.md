@@ -67,6 +67,7 @@ Cuemaster is the mobile rehearsal app that consumes Playbooks.
 
 - [cuemaster/product_design.md](cuemaster/product_design.md): Product behavior, screens, session flow, and mobile-app concerns.
 - [cuemaster/cue_generation.md](cuemaster/cue_generation.md): Cue-selection and cue-audio rules for Playbooks.
+- [cuemaster/cloudflare_import_flow_plan.md](cuemaster/cloudflare_import_flow_plan.md): Hosted static Cuemaster import UX, storage diagnostics, and nested-path verification plan.
 - Future Cuemaster docs belong in `planning/cuemaster/`.
 
 ## Shared Specs
