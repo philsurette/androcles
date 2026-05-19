@@ -177,7 +177,7 @@ export function RehearsalBottomBar({
           title={includeBlocking ? "Blocking on" : "Blocking off"}
           onClick={onToggleIncludeBlocking}
         >
-          <span aria-hidden="true">♿</span>
+          <span aria-hidden="true">⌖</span>
         </button>
         <button
           type="button"
