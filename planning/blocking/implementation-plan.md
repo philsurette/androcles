@@ -44,21 +44,24 @@ Implement a minimal parser for:
 ```text
 stage type=proscenium width=36 depth=24 audience=south
 grid standard=9
+setup act1
 anchor door_l kind=exit at=(-18,20,0)
-set table kind=furniture at=C size=(5,3) fixed=true
+piece table kind=table at=C size=(5,3) fixed=true
 prop letter preset=table
 ```
 
 Acceptance tests:
 
 - parses stage dimensions
+- parses named setup/set blocks
 - generates 9-zone grid
 - resolves aliases
-- parses anchors
-- parses set pieces
-- parses prop presets
+- parses anchors inside a setup
+- parses set pieces inside a setup using `piece`
+- parses prop presets inside a setup
 - stores z/elevation metadata without requiring 3D rendering
 - parses stairs/ramps/lifts as level connectors
+- rejects or diagnoses setup-owned records outside a setup
 
 ## Milestone 3 — Blocking parser
 
@@ -117,6 +120,9 @@ Acceptance tests:
 - `DL` resolves to center of downstage-left area
 - `DSR` resolves as alias of `DR`
 - `table` resolves to set-piece location
+- scene snapshots resolve against their referenced setup/set
+- two scenes can share one setup/set
+- two scenes can use different setup/set records with different levels/connectors
 - unknown locations produce diagnostics
 - vertical moves warn when no stair/ramp/lift connector exists
 - rendering state resolves from the nearest prior snapshot rather than from full-play replay
@@ -126,6 +132,7 @@ Acceptance tests:
 Renderers should be able to request a scene state at a specific beat. The resolver should:
 
 - start with the scene-start snapshot
+- load the scene's referenced setup/set before resolving placements
 - apply ordered blocking beats for that scene up to the requested beat
 - update actor, prop, and movable set-piece locations
 - handle enters and exits as state changes
@@ -159,6 +166,7 @@ Render:
 
 - stage rectangle
 - grid labels
+- selected setup/set scenery
 - actors
 - movement paths
 - cue badges
@@ -167,6 +175,9 @@ Acceptance tests:
 
 - produces valid-looking SVG string
 - includes `viewBox`
+- `block stage` renders only invariant stage geometry
+- `block set` renders selected set scenery without scene actor placements
+- scene rendering includes the selected setup/set
 - includes actor IDs/classes
 - deterministic output for snapshot testing
 - labels elevated levels in 2D plan view

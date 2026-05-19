@@ -20,10 +20,24 @@ class BlockCli:
             description="Standalone staging/blocking tools.",
         )
         subparsers = parser.add_subparsers(dest="command", required=True)
+        self._add_stage_command(subparsers)
         self._add_render_command(subparsers)
         self._add_icons_command(subparsers)
         args = parser.parse_args()
         args.handler(args)
+
+    def _add_stage_command(self, subparsers) -> None:
+        parser = subparsers.add_parser("stage", help="Render a stage-only diagram.")
+        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--json-out", type=Path, help="Optional normalized stage JSON output path")
+        parser.add_argument(
+            "--orientation",
+            choices=("portrait", "landscape"),
+            default="portrait",
+            help="Diagram orientation. Portrait puts downstage to the right and is the default.",
+        )
+        parser.set_defaults(handler=self._stage)
 
     def _add_render_command(self, subparsers) -> None:
         parser = subparsers.add_parser("render", help="Render a point-in-time blocking diagram.")
@@ -51,6 +65,14 @@ class BlockCli:
             snapshot = StagingResolver().resolve_snapshot(document, args.scene)
         else:
             snapshot = StagingStateResolver().resolve_beat(document, args.scene, args.beat)
+        self._write_snapshot(args, snapshot)
+
+    def _stage(self, args) -> None:
+        document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
+        snapshot = StagingResolver().resolve_stage(document)
+        self._write_snapshot(args, snapshot)
+
+    def _write_snapshot(self, args, snapshot) -> None:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(snapshot), encoding="utf-8")
         if args.json_out is not None:

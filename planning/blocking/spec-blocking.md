@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The blocking spec defines actions by actors, props, and set pieces against a declared layout.
+The blocking spec defines actions by actors, props, and set pieces against a scene snapshot. A scene snapshot references one named set, which supplies the scenic layout for that scene.
 
 It should be readable enough for rehearsal notes but structured enough for SVG rendering.
 
@@ -34,7 +34,7 @@ Recommended block attributes:
 - `scene`
 - `line`
 - `time`
-- `layout`
+- `set`
 - `variant`
 
 ## Minimal syntax
@@ -147,7 +147,7 @@ letter @ table
 Scene-start example:
 
 ```text
-scene 1.2 snapshot
+scene 1.2 set=act1 snapshot
 HAM @ DL face=CLA
 CLA @ UC
 OPH offstage via=door_l
@@ -188,7 +188,7 @@ To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HAM` a
 The first standalone renderer implements the same idea with ordered beat blocks:
 
 ```text
-scene 1.3 snapshot
+scene 1.3 set=act1 snapshot
 HAM @ balcony_l face=CLA
 CLA @ DC
 OPH @ deck_l face=HAM
@@ -203,7 +203,7 @@ CLA move DC -> DR
 sword remove
 ```
 
-Rendering `--scene 1.3 --beat b2` starts from the `scene 1.3 snapshot`, applies `b1`, then applies `b2`.
+Rendering `--scene 1.3 --beat b2` starts from the `scene 1.3 set=act1 snapshot`, resolves locations against set `act1`, applies `b1`, then applies `b2`.
 
 ## Timing model
 
@@ -229,10 +229,10 @@ Locations may be:
 
 - standard areas: `DL`, `C`, `UR`
 - aliases: `DSR`, `USL`
-- custom areas: `balcony`
-- anchors: `door_l`
-- set pieces: `table`
-- props: `letter`
+- selected-set custom areas: `balcony`
+- selected-set anchors: `door_l`
+- selected-set set pieces: `table`
+- selected-set props: `letter`
 - numeric coordinates: `(x,y)` or `(x,y,z)`
 
 ## Normalization
@@ -260,7 +260,7 @@ Normalizes to:
 ## Validation rules
 
 - Actor IDs must be declared or inferable from the production cast.
-- Locations must resolve through the layout.
+- Locations must resolve through the scene's selected set plus the invariant stage grid.
 - Cue IDs should resolve through cue-lite definitions, but missing cue definitions may be warnings.
 - Events with z changes should warn if no stairs/ramp/lift path is available.
 - Prop interactions should warn if prop state is impossible or unknown.

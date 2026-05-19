@@ -2,6 +2,8 @@
 
 This is a focused implementation plan for rendering a described stage and a single point-in-time scene state to SVG. It intentionally starts independently of Quince Playbook integration, Cuemaster integration, publication diffs, audio timing, and animation.
 
+Status note: this plan documents the completed pre-stage/set/scene vertical slice. Future work should use [stage_set_scene_design.md](stage_set_scene_design.md), which moves set-specific records under named `setup` blocks and keeps `stage` limited to invariant geometry.
+
 ## Goal
 
 Given a text file that describes:
@@ -92,7 +94,7 @@ sword @ table
 Suggested standalone command during the spike:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+./block render \
   path/to/stage.txt \
   --scene 1.2 \
   --out /tmp/stage.svg
@@ -101,7 +103,7 @@ PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
 Landscape output:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+./block render \
   path/to/stage.txt \
   --scene 1.2 \
   --out /tmp/stage-landscape.svg \

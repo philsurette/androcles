@@ -577,3 +577,53 @@ HAM -> C
 
     assert "Scene 1.2@b1" in svg_path.read_text(encoding="utf-8")
     assert '<symbol id="stage-icon-table"' in icons_path.read_text(encoding="utf-8")
+
+
+def test_block_cli_renders_stage_only_diagram(tmp_path: Path) -> None:
+    source = tmp_path / "stage.txt"
+    svg_path = tmp_path / "stage.svg"
+    json_path = tmp_path / "stage.json"
+    source.write_text(
+        """
+stage type=proscenium
+grid standard=9
+level balcony at=UC size=(18,4) z=8
+anchor door_l = UL
+anchor deck_l at=CL
+anchor balcony_l at=(-8,20,8)
+stair stair_l from=deck_l to=balcony_l
+set table kind=furniture at=C size=(5,3)
+
+scene 1.2 snapshot
+HAM @ DL
+""",
+        encoding="utf-8",
+    )
+
+    from stager.staging.block import main
+    import sys
+
+    original_argv = sys.argv
+    try:
+        sys.argv = [
+            "block",
+            "stage",
+            str(source),
+            "--out",
+            str(svg_path),
+            "--json-out",
+            str(json_path),
+        ]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    svg = svg_path.read_text(encoding="utf-8")
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    assert "Scene stage" in svg
+    assert "<title>balcony +8</title>" in svg
+    assert "<title>table</title>" in svg
+    assert ">HAM</text>" not in svg
+    assert data["scene_id"] == "stage"
+    assert data["placements"] == []
+    assert "balcony" in data["levels"]

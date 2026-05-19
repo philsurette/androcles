@@ -93,8 +93,9 @@ The final syntax should optimize for producer readability and editability, not f
 
 The system must define separate conceptual specs:
 
-- Layout: physical stage world.
-- Blocking: actor/prop/set events against the layout.
+- Stage: invariant physical performance-space geometry.
+- Set: reusable scenic setup for one or more scenes.
+- Blocking: actor/prop/set-piece events against a scene snapshot and its selected set.
 - Cue-lite: coordination cues linked to beats, actions, areas, actors, props, or set pieces.
 
 ### R3. Standard 9-zone support

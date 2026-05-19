@@ -2,16 +2,17 @@
 
 ## Purpose
 
-The layout spec defines the physical stage world that blocking references.
+The layout spec defines the physical world that blocking references. It now separates invariant **stage** geometry from reusable **set** setup. See [stage_set_scene_design.md](stage_set_scene_design.md) for the current stage/set/scene design and rollout plan.
 
 It should answer:
 
 - What shape is the stage?
 - Where is downstage/upstage/stage-left/stage-right?
 - What are the standard areas?
-- Where are entrances/exits?
-- What platforms, stairs, ramps, bridges, traps, and fixed objects exist?
-- Where are preset props?
+- Which named set is installed for a scene?
+- Where are entrances/exits for that set?
+- What platforms, stairs, ramps, bridges, traps, and fixed objects exist in that set?
+- Where are prop presets for that set?
 
 ## Block form
 
@@ -31,9 +32,11 @@ Minimal named-location layout:
 stage type=proscenium
 grid standard=9
 actor HAM label=HM name=Hamlet
+
+setup act1
 anchor door_l = UL
 anchor door_r = UR
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 anchor window = DR
 ```
 
@@ -43,9 +46,11 @@ Measured version of the same idea:
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
 actor HAM label=HM name=Hamlet
+
+setup act1
 anchor door_l at=(-16,20,0)
 anchor door_r at=(16,20,0)
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 anchor window at=DR
 ```
 
@@ -79,8 +84,8 @@ Stager should store coordinates as `(x,y,z)` where available, but the first rend
 
 Recommended behavior:
 
-- `level` records define named surfaces such as `deck`, `platform`, `bridge`, and `balcony`.
-- Areas, anchors, set pieces, and props may carry a `z` value or reference a named level.
+- `level` records live inside a named set and define named surfaces such as `deck`, `platform`, `bridge`, and `balcony`.
+- Set-specific areas, anchors, set pieces, and props may carry a `z` value or reference a named level.
 - The renderer draws elevated surfaces as 2D overlays with labels such as `balcony +8'`.
 - Actor glyphs on non-deck levels get a small level/elevation badge.
 - Stairs, ramps, and lifts are connectors between levels, not 3D geometry.
@@ -90,6 +95,7 @@ Recommended behavior:
 Example:
 
 ```text
+setup act1
 level deck z=0
 level balcony polygon=(-10,18, 10,18, 10,22, -10,22) z=8
 stair stair_l from=(-12,14,0) to=(-10,18,8) steps=10
@@ -143,6 +149,16 @@ DSL -> DL
 DSC -> DC
 DSR -> DR
 ```
+
+### Setup
+
+```text
+setup act1
+```
+
+A setup declares a named set. Levels, custom areas, anchors, connectors, set pieces, and prop presets belong inside the current setup. Scenes reference a setup using `set=<setup_id>`.
+
+Use **set** as the producer-facing term and **setup** as the authoring keyword. This avoids ambiguity with set pieces.
 
 ### Actor
 
@@ -216,8 +232,8 @@ Supported `kind` values for v0.1:
 ### Set piece
 
 ```text
-set table kind=furniture at=C size=(5,3) fixed=true
-set wagon1 kind=platform at=(0,18,0) size=(8,4) movable=true
+piece table kind=table at=C size=(5,3) fixed=true
+piece wagon1 kind=platform at=(0,18,0) size=(8,4) movable=true
 ```
 
 ### Prop
@@ -230,10 +246,11 @@ prop lantern preset=(2,14,0)
 
 ## Validation rules
 
-- IDs must be unique within a layout.
+- IDs must be unique within a resolved set's addressable namespace.
 - `stage` is required.
-- `grid standard=9` requires rectangular stage dimensions.
+- `grid standard=9` uses rectangular stage dimensions when present and otherwise uses the deterministic default stage.
 - All `preset` references must resolve to an area, anchor, set piece, or coordinate.
+- Scenes must reference a known setup using `set=<setup_id>`.
 - z-axis surfaces should be labelled in SVG even if not rendered in 3D.
 
 ## Renderer expectations

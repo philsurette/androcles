@@ -26,6 +26,7 @@ Implementation should remove or replace the current blocking-note parser, public
 - `spec-blocking.md` — blocking DSL draft.
 - `spec-cue-lite.md` — cue/lighting-lite DSL draft.
 - `spec-rendering-animation.md` — SVG rendering and animation design.
+- `stage_set_scene_design.md` — stage/set/scene terminology, syntax direction, CLI shape, and rollout plan.
 - `implementation-plan.md` — staged implementation plan and acceptance tests.
 - `point_in_time_svg_implementation_plan.md` — focused plan for a standalone stage-description-to-SVG vertical slice before Quince/Playbook integration.
 - `future-features.md` — animation, timeline playback, and richer staging features deferred from the active implementation path.
@@ -34,19 +35,56 @@ Implementation should remove or replace the current blocking-note parser, public
 
 ## Current Terminology
 
-- **Block CLI**: standalone command surface for staging/blocking workflows, currently `python -m stager.staging.block`.
-- **Stage file**: standalone input file containing stage layout, scene snapshots, and optional blocking beats.
-- **Stage**: physical playing space plus levels, anchors, connectors, set pieces, and prop presets.
-- **Scene snapshot**: authoritative initialization for a scene, written as `scene <scene_id> snapshot`.
+- **Block CLI**: standalone command surface for staging/blocking workflows, available as `./block`.
+- **Stage file**: standalone input file containing stage geometry, reusable sets, scene snapshots, and optional blocking beats.
+- **Stage**: invariant physical playing space: type, dimensions, units, orientation, coordinate system, and generated grid.
+- **Set**: reusable scenic setup for one or more scenes. A set owns levels, anchors, connectors, set pieces, and prop presets.
+- **Scene snapshot**: authoritative initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`.
 - **Blocking beat**: ordered group of blocking directions, written as `beat <beat_id> scene=<scene_id>`.
 - **Blocking direction**: a single state change such as placement, move, enter, exit, or remove.
 - **Point-in-time state**: computed state after applying a scene snapshot plus beats up to the requested beat.
 - **Blocking diagram**: generated SVG for a point-in-time state.
 
-Example render command:
+Example stage-only command:
 
 ```sh
-PYTHONPATH=src .venv/bin/python -m stager.staging.block render \
+./block stage \
+  plays/hamlet/stage.txt \
+  --out build/hamlet/staging/stage.svg
+```
+
+Planned set-only command:
+
+```sh
+./block set \
+  plays/hamlet/stage.txt \
+  --set act1 \
+  --out build/hamlet/staging/set-act1.svg
+```
+
+Planned scene snapshot command:
+
+```sh
+./block scene \
+  plays/hamlet/stage.txt \
+  --scene 1.2 \
+  --out build/hamlet/staging/scene-1.2.svg
+```
+
+Planned beat command:
+
+```sh
+./block beat \
+  plays/hamlet/stage.txt \
+  --scene 1.3 \
+  --beat b2 \
+  --out build/hamlet/staging/scene-1.3-b2.svg
+```
+
+Current prototype point-in-time render command:
+
+```sh
+./block render \
   plays/hamlet/stage.txt \
   --scene 1.3 \
   --beat b2 \
@@ -59,9 +97,10 @@ This is deliberately not a full theatre production-control standard. It is a sma
 
 The system should keep three concerns separate:
 
-1. **Layout** defines the stage world.
-2. **Blocking** defines actor, prop, and set-piece events against that world.
-3. **Cue-lite** defines coordination cues, especially lighting/sound/set-shift references.
+1. **Stage** defines invariant performance-space geometry.
+2. **Set** defines reusable scenic setup for one or more scenes.
+3. **Blocking** defines actor, prop, and movable set-piece events against a scene snapshot.
+4. **Cue-lite** defines coordination cues, especially lighting/sound/set-shift references.
 
 Syntax remains open. A likely final design may use larger fenced blocks for layout and cue definitions, while allowing terse inline or nearby action notation for line-local movement and business.
 

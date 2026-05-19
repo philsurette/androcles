@@ -32,6 +32,22 @@ AREA_ALIASES = {
 
 @dataclass
 class StagingResolver:
+    def resolve_stage(self, document: StagingDocument) -> ResolvedSnapshot:
+        diagnostics = list(document.diagnostics)
+        areas = self._areas(document)
+        return ResolvedSnapshot(
+            scene_id="stage",
+            stage=document.stage,
+            areas=areas,
+            anchors=self._resolved_anchors(document, areas, diagnostics),
+            actors=document.actors,
+            connectors=self._resolved_connectors(document, areas, diagnostics),
+            levels=self._resolved_levels(document, areas, diagnostics),
+            set_pieces=self._resolved_set_pieces(document, areas, diagnostics),
+            placements=(),
+            diagnostics=tuple(diagnostics),
+        )
+
     def resolve_snapshot(self, document: StagingDocument, scene_id: str) -> ResolvedSnapshot:
         diagnostics = list(document.diagnostics)
         areas = self._areas(document)
