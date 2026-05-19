@@ -5,6 +5,11 @@ import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
 import type { QueueItem } from "../../rehearsal/audioQueue";
+import {
+  blockingNavigationIndex,
+  buildBlockingNavigationItems,
+  type BlockingNavigationItem
+} from "../../rehearsal/blockingNavigation";
 import { cueWindowPresetForId } from "../../rehearsal/cueWindowPreset";
 import { shortcutForKey } from "../../rehearsal/keyboardShortcuts";
 import { buildCalloutResolverForSpeaker } from "../../rehearsal/calloutLookup";
@@ -153,6 +158,7 @@ export function RehearsalScreen({
     blockingId: string;
     noteText: string;
     iconLibrarySvg: string | null;
+    navigationIndex: number;
   } | null>(null);
   const {
     reviewAttempts,
@@ -248,6 +254,38 @@ export function RehearsalScreen({
         : Boolean(playbook.staging),
     [diagramBundleManifest, playbook.staging]
   );
+  const blockingNavigationItems = useMemo(
+    () =>
+      buildBlockingNavigationItems(
+        role.lines,
+        { mode: "role", roleId: role.id },
+        diagramBundleManifest
+      ),
+    [diagramBundleManifest, role.id, role.lines]
+  );
+  const showBlockingDiagramItem = useCallback(
+    async (
+      item: BlockingNavigationItem,
+      itemIndex: number,
+      manifest: DiagramBundleManifest
+    ) => {
+      const diagramState = await loadDiagramStateForBlocking(
+        playbook.id,
+        manifest,
+        item.line.id,
+        item.blocking.id
+      );
+      const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
+      setSelectedBlockingDiagram({
+        state: diagramState,
+        blockingId: item.blocking.id,
+        noteText: item.blocking.text,
+        iconLibrarySvg,
+        navigationIndex: itemIndex
+      });
+    },
+    [playbook.id]
+  );
   const openBlockingDiagram = useCallback(
     async (candidateLine: Line, blocking: BlockingNote) => {
       const manifest = await loadCurrentDiagramBundleManifest();
@@ -255,24 +293,49 @@ export function RehearsalScreen({
         return;
       }
       try {
-        const diagramState = await loadDiagramStateForBlocking(
-          playbook.id,
-          manifest,
-          candidateLine.id,
-          blocking.id
+        const navigationItems = buildBlockingNavigationItems(
+          role.lines,
+          { mode: "role", roleId: role.id },
+          manifest
         );
-        const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
-        setSelectedBlockingDiagram({
-          state: diagramState,
-          blockingId: blocking.id,
-          noteText: blocking.text,
-          iconLibrarySvg
-        });
+        const itemIndex = blockingNavigationIndex(navigationItems, candidateLine.id, blocking.id);
+        const item = navigationItems[itemIndex] ?? { line: candidateLine, blocking };
+        await showBlockingDiagramItem(item, Math.max(0, itemIndex), manifest);
       } catch (error) {
         setStorageStatus(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
       }
     },
-    [loadCurrentDiagramBundleManifest, playbook.id]
+    [loadCurrentDiagramBundleManifest, role.id, role.lines, showBlockingDiagramItem]
+  );
+  const navigateBlockingDiagram = useCallback(
+    async (direction: "previous" | "next") => {
+      if (!selectedBlockingDiagram) {
+        return;
+      }
+      const manifest = await loadCurrentDiagramBundleManifest();
+      if (!manifest) {
+        return;
+      }
+      const navigationItems = buildBlockingNavigationItems(
+        role.lines,
+        { mode: "role", roleId: role.id },
+        manifest
+      );
+      const nextIndex =
+        direction === "next"
+          ? selectedBlockingDiagram.navigationIndex + 1
+          : selectedBlockingDiagram.navigationIndex - 1;
+      const item = navigationItems[nextIndex];
+      if (!item) {
+        return;
+      }
+      try {
+        await showBlockingDiagramItem(item, nextIndex, manifest);
+      } catch (error) {
+        setStorageStatus(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
+      }
+    },
+    [loadCurrentDiagramBundleManifest, role.id, role.lines, selectedBlockingDiagram, showBlockingDiagramItem]
   );
 
   const lineLengthMs = useMemo(() => {
@@ -1416,6 +1479,11 @@ export function RehearsalScreen({
             blockingId={selectedBlockingDiagram.blockingId}
             noteText={selectedBlockingDiagram.noteText}
             iconLibrarySvg={selectedBlockingDiagram.iconLibrarySvg}
+            navigationLabel={`${selectedBlockingDiagram.navigationIndex + 1}/${blockingNavigationItems.length}`}
+            canNavigatePrevious={selectedBlockingDiagram.navigationIndex > 0}
+            canNavigateNext={selectedBlockingDiagram.navigationIndex + 1 < blockingNavigationItems.length}
+            onNavigatePrevious={() => void navigateBlockingDiagram("previous")}
+            onNavigateNext={() => void navigateBlockingDiagram("next")}
             onClose={() => setSelectedBlockingDiagram(null)}
           />
         ) : null}

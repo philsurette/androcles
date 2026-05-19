@@ -2,6 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { BlockingNote, Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import { AudioQueue, type QueueItem } from "../../rehearsal/audioQueue";
+import {
+  blockingNavigationIndex,
+  buildBlockingNavigationItems,
+  type BlockingNavigationItem
+} from "../../rehearsal/blockingNavigation";
 import { buildCalloutResolver } from "../../rehearsal/calloutLookup";
 import {
   buildDirectionAudioPathLookup,
@@ -57,6 +62,7 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     blockingId: string;
     noteText: string;
     iconLibrarySvg: string | null;
+    navigationIndex: number;
   } | null>(null);
   const playbackSeq = useRef(0);
   const calloutPlaybackSeq = useRef(0);
@@ -83,6 +89,14 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
   const hasBlocking = useMemo(
     () => playbook.roles.some((role) => role.lines.some((line) => (line.blocking ?? []).length > 0)),
     [playbook.roles]
+  );
+  const playPageLines = useMemo(
+    () => entries.filter((entry) => entry.type === "line").map((entry) => entry.line),
+    [entries]
+  );
+  const blockingNavigationItems = useMemo(
+    () => buildBlockingNavigationItems(playPageLines, { mode: "all" }, diagramBundleManifest),
+    [diagramBundleManifest, playPageLines]
   );
   const normalizedSearchQuery = searchQuery.trim().toLowerCase();
   const searchMatches = useMemo(() => {
@@ -359,30 +373,74 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
     return notes.find((blocking) => resolveDiagramTarget(diagramBundleManifest, line.id, blocking.id) !== null) ?? null;
   }
 
+  async function showBlockingDiagramItem(
+    item: BlockingNavigationItem,
+    navigationIndex: number,
+    manifest: DiagramBundleManifest
+  ) {
+    const diagramState = await loadDiagramStateForBlocking(
+      playbook.id,
+      manifest,
+      item.line.id,
+      item.blocking.id
+    );
+    const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
+    setBlockingDiagramError("");
+    setSelectedBlockingDiagram({
+      state: diagramState,
+      blockingId: item.blocking.id,
+      noteText: item.blocking.text,
+      iconLibrarySvg,
+      navigationIndex
+    });
+  }
+
   async function openBlockingDiagram(line: Line, preferredBlocking?: BlockingNote) {
     try {
       const manifest = await loadCurrentDiagramBundleManifest();
       if (!manifest) {
         return;
       }
-      const blocking =
-        preferredBlocking && resolveDiagramTarget(manifest, line.id, preferredBlocking.id) !== null
-          ? preferredBlocking
-          : (line.blocking ?? []).find(
-              (candidate) => resolveDiagramTarget(manifest, line.id, candidate.id) !== null
-            );
-      if (!blocking) {
+      const navigationItems = buildBlockingNavigationItems(playPageLines, { mode: "all" }, manifest);
+      const preferredIndex = preferredBlocking
+        ? blockingNavigationIndex(navigationItems, line.id, preferredBlocking.id)
+        : -1;
+      const fallbackBlocking = (line.blocking ?? []).find(
+        (candidate) => resolveDiagramTarget(manifest, line.id, candidate.id) !== null
+      );
+      const fallbackIndex = fallbackBlocking
+        ? blockingNavigationIndex(navigationItems, line.id, fallbackBlocking.id)
+        : -1;
+      const itemIndex = preferredIndex >= 0 ? preferredIndex : fallbackIndex;
+      const item = navigationItems[itemIndex];
+      if (!item) {
         return;
       }
-      const diagramState = await loadDiagramStateForBlocking(playbook.id, manifest, line.id, blocking.id);
-      const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
-      setBlockingDiagramError("");
-      setSelectedBlockingDiagram({
-        state: diagramState,
-        blockingId: blocking.id,
-        noteText: blocking.text,
-        iconLibrarySvg
-      });
+      await showBlockingDiagramItem(item, itemIndex, manifest);
+    } catch (error) {
+      setBlockingDiagramError(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
+    }
+  }
+
+  async function navigateBlockingDiagram(direction: "previous" | "next") {
+    if (!selectedBlockingDiagram) {
+      return;
+    }
+    try {
+      const manifest = await loadCurrentDiagramBundleManifest();
+      if (!manifest) {
+        return;
+      }
+      const navigationItems = buildBlockingNavigationItems(playPageLines, { mode: "all" }, manifest);
+      const nextIndex =
+        direction === "next"
+          ? selectedBlockingDiagram.navigationIndex + 1
+          : selectedBlockingDiagram.navigationIndex - 1;
+      const item = navigationItems[nextIndex];
+      if (!item) {
+        return;
+      }
+      await showBlockingDiagramItem(item, nextIndex, manifest);
     } catch (error) {
       setBlockingDiagramError(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
     }
@@ -637,6 +695,11 @@ export function PlayPageScreen({ playbook, onBack }: PlayPageScreenProps) {
               blockingId={selectedBlockingDiagram.blockingId}
               noteText={selectedBlockingDiagram.noteText}
               iconLibrarySvg={selectedBlockingDiagram.iconLibrarySvg}
+              navigationLabel={`${selectedBlockingDiagram.navigationIndex + 1}/${blockingNavigationItems.length}`}
+              canNavigatePrevious={selectedBlockingDiagram.navigationIndex > 0}
+              canNavigateNext={selectedBlockingDiagram.navigationIndex + 1 < blockingNavigationItems.length}
+              onNavigatePrevious={() => void navigateBlockingDiagram("previous")}
+              onNavigateNext={() => void navigateBlockingDiagram("next")}
               onClose={() => setSelectedBlockingDiagram(null)}
             />
           ) : null}

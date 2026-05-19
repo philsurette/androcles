@@ -1663,6 +1663,23 @@ button:disabled {
   margin-bottom: 0.75rem;
 }
 
+.blocking-diagram-header-actions {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: flex-end;
+}
+
+.blocking-diagram-position {
+  color: var(--quiet);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0.25rem 0 0;
+  text-transform: uppercase;
+}
+
 .blocking-diagram-header h2 {
   font-size: 1rem;
   line-height: 1.25;
