@@ -101,81 +101,81 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 ## Phase 1: Data Model
 
-- [ ] Add staging model classes for `StageLayout`, `StageShape`, `Area`, `Anchor`, `Level`, `Connector`, `SetPiece`, `Prop`, `SceneSnapshot`, and `Placement`.
-- [ ] Keep model classes independent from Playbook and Cuemaster code.
-- [ ] Represent locations as resolved `(x,y,z)` plus the source reference string.
-- [ ] Represent unresolved locations as diagnostics rather than `None` where possible.
-- [ ] Add unit tests for model serialization to normalized JSON.
+- [x] Add staging model classes for `StageLayout`, `StageShape`, `Area`, `Anchor`, `Level`, `Connector`, `SetPiece`, `Prop`, `SceneSnapshot`, and `Placement`.
+- [x] Keep model classes independent from Playbook and Cuemaster code.
+- [x] Represent locations as resolved `(x,y,z)` plus the source reference string.
+- [x] Represent unresolved locations as diagnostics rather than `None` where possible.
+- [x] Add unit tests for model serialization to normalized JSON.
 
 ## Phase 2: Layout Parser
 
-- [ ] Parse minimal text-only layout:
+- [x] Parse minimal text-only layout:
   - `stage type=proscenium`
   - `grid standard=9`
   - `anchor door_l = UL`
   - `anchor table = C`
-- [ ] Parse measured layout:
+- [x] Parse measured layout:
   - `width`
   - `depth`
   - `units`
   - `at=(x,y,z)`
   - `size=(w,d)`
-- [ ] Generate default 9-zone areas from measured or default dimensions.
-- [ ] Support standard aliases such as `USL`, `DSR`, and `CSC`.
-- [ ] Add diagnostics for duplicate IDs and malformed statements.
-- [ ] Add parser tests for text-only and measured layouts.
+- [x] Generate default 9-zone areas from measured or default dimensions.
+- [x] Support standard aliases such as `USL`, `DSR`, and `CSC`.
+- [x] Add diagnostics for duplicate IDs and malformed statements.
+- [x] Add parser tests for text-only and measured layouts.
 
 ## Phase 3: Snapshot Parser
 
-- [ ] Parse scene snapshot headers such as `scene 1.2 snapshot`.
-- [ ] Parse actor placements:
+- [x] Parse scene snapshot headers such as `scene 1.2 snapshot`.
+- [x] Parse actor placements:
   - `HAM @ DL`
   - `HAM @ balcony_l face=house`
   - `OPH offstage via=door_l`
-- [ ] Parse prop and set-piece placements:
+- [x] Parse prop and set-piece placements:
   - `table @ C`
   - `sword @ table`
-- [ ] Treat placements as absolute state.
-- [ ] Add diagnostics for malformed placements.
-- [ ] Add tests for scene-start snapshots.
+- [x] Treat placements as absolute state.
+- [x] Add diagnostics for malformed placements.
+- [x] Add tests for scene-start snapshots.
 
 ## Phase 4: Resolver
 
-- [ ] Resolve grid zones to coordinates.
-- [ ] Resolve anchors and set pieces.
-- [ ] Resolve props placed on set pieces.
-- [ ] Resolve offstage actors with entrance/exit metadata.
-- [ ] Preserve unresolved entries with diagnostics.
-- [ ] Add tests for unknown references and partial rendering state.
+- [x] Resolve grid zones to coordinates.
+- [x] Resolve anchors and set pieces.
+- [x] Resolve props placed on set pieces.
+- [x] Resolve offstage actors with entrance/exit metadata.
+- [x] Preserve unresolved entries with diagnostics.
+- [x] Add tests for unknown references and partial rendering state.
 
 ## Phase 5: 2D Level Support
 
-- [ ] Parse `level` definitions with `z`.
-- [ ] Parse elevated anchors and set pieces.
-- [ ] Parse stairs/ramps/lifts as connectors between z levels.
-- [ ] Render z as metadata only; do not introduce 3D.
+- [x] Parse `level` definitions with `z`.
+- [x] Parse elevated anchors and set pieces.
+- [x] Parse stairs/ramps/lifts as connectors between z levels.
+- [x] Render z as metadata only; do not introduce 3D.
 - [ ] Add tests for elevated actor placement and connector diagnostics.
 
 ## Phase 6: Static SVG Renderer
 
-- [ ] Render stage boundary.
-- [ ] Render 9-zone grid and labels.
-- [ ] Render named anchors and set pieces.
-- [ ] Render actor glyphs with labels and facing indicators.
-- [ ] Render prop labels or compact prop markers.
+- [x] Render stage boundary.
+- [x] Render 9-zone grid and labels.
+- [x] Render named anchors and set pieces.
+- [x] Render actor glyphs with labels and facing indicators.
+- [x] Render prop labels or compact prop markers.
 - [ ] Render elevated surfaces with 2D styling and elevation labels.
-- [ ] Render unresolved/offstage actors in a side list or diagnostics block.
-- [ ] Use deterministic SVG output suitable for snapshot tests.
-- [ ] Add renderer tests for text-only and measured stages.
+- [x] Render unresolved/offstage actors in a side list or diagnostics block.
+- [x] Use deterministic SVG output suitable for snapshot tests.
+- [x] Add renderer tests for text-only and measured stages.
 
 ## Phase 7: Standalone CLI
 
-- [ ] Add a small standalone render entry point.
-- [ ] Accept input path and output SVG path.
-- [ ] Support selecting scene/snapshot by ID.
-- [ ] Write normalized JSON next to the SVG when requested.
-- [ ] Print diagnostics in producer-readable text.
-- [ ] Add CLI smoke tests with temporary files.
+- [x] Add a small standalone render entry point.
+- [x] Accept input path and output SVG path.
+- [x] Support selecting scene/snapshot by ID.
+- [x] Write normalized JSON next to the SVG when requested.
+- [x] Print diagnostics in producer-readable text.
+- [x] Add CLI smoke tests with temporary files.
 
 ## Phase 8: Documentation And Examples
 
@@ -187,10 +187,10 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 ## Acceptance Criteria
 
-- [ ] A producer can describe a stage using only named zones and anchors.
-- [ ] A producer can define a scene-start snapshot.
-- [ ] The renderer produces a useful SVG without exact dimensions.
-- [ ] The renderer uses exact dimensions when provided.
+- [x] A producer can describe a stage using only named zones and anchors.
+- [x] A producer can define a scene-start snapshot.
+- [x] The renderer produces a useful SVG without exact dimensions.
+- [x] The renderer uses exact dimensions when provided.
 - [ ] Multi-level stage elements render in 2D with elevation labels.
-- [ ] Missing actor/prop state produces diagnostics and does not prevent SVG generation.
-- [ ] The implementation is independent of Quince Playbook/Cuemaster integration.
+- [x] Missing actor/prop state produces diagnostics and does not prevent SVG generation.
+- [x] The implementation is independent of Quince Playbook/Cuemaster integration.
