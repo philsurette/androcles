@@ -24,19 +24,19 @@ export function BlockingDiagram({ state }: BlockingDiagramProps) {
       viewBox={`0 0 ${viewWidth} ${viewHeight}`}
     >
       <title>{diagramLabel(state)}</title>
-      <rect className="blocking-stage" x={PADDING} y={PADDING} width={depth} height={width} rx="2" />
+      <rect className="blocking-stage" x={PADDING} y={PADDING} width={depth} height={width} />
       {state.areas?.map((area) => {
-        const topLeft = project({ x: area.center.x - (area.width ?? 0) / 2, y: area.center.y + (area.depth ?? 0) / 2 });
+        const bounds = areaBounds(area, project);
         return (
           <g key={area.id}>
             <rect
               className="blocking-area"
-              x={topLeft.x}
-              y={topLeft.y}
-              width={area.depth ?? 0}
-              height={area.width ?? 0}
+              x={bounds.x}
+              y={bounds.y}
+              width={bounds.width}
+              height={bounds.height}
             />
-            <text className="blocking-area-label" x={topLeft.x + 4} y={topLeft.y + 12}>
+            <text className="blocking-area-label" x={bounds.x + 0.25} y={bounds.y + 0.75}>
               {area.id}
             </text>
           </g>
@@ -54,9 +54,33 @@ export function BlockingDiagram({ state }: BlockingDiagramProps) {
   function project(point: Point3D): { x: number; y: number } {
     return {
       x: PADDING + (depth - point.y),
-      y: PADDING + (width / 2 - point.x)
+      y: PADDING + (point.x + width / 2)
     };
   }
+}
+
+function areaBounds(
+  area: { center: Point3D; width?: number; depth?: number },
+  project: (point: Point3D) => { x: number; y: number }
+): { x: number; y: number; width: number; height: number } {
+  const halfWidth = (area.width ?? 0) / 2;
+  const halfDepth = (area.depth ?? 0) / 2;
+  const corners = [
+    project({ x: area.center.x - halfWidth, y: area.center.y - halfDepth }),
+    project({ x: area.center.x - halfWidth, y: area.center.y + halfDepth }),
+    project({ x: area.center.x + halfWidth, y: area.center.y - halfDepth }),
+    project({ x: area.center.x + halfWidth, y: area.center.y + halfDepth })
+  ];
+  const xs = corners.map((corner) => corner.x);
+  const ys = corners.map((corner) => corner.y);
+  const minX = Math.min(...xs);
+  const minY = Math.min(...ys);
+  return {
+    x: minX,
+    y: minY,
+    width: Math.max(...xs) - minX,
+    height: Math.max(...ys) - minY
+  };
 }
 
 function SetPiece({ entity, project }: { entity: DiagramEntity; project: (point: Point3D) => { x: number; y: number } }) {
