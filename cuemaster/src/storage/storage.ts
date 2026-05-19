@@ -3,6 +3,7 @@ import type { Playbook } from "../domain/playbook";
 import type { RehearsalSession } from "../domain/session";
 import type { TimingAttempt } from "../domain/timingAttempt";
 import type { StoredAudioAsset } from "./audioAssetRepository";
+import type { StoredJsonAsset } from "./jsonAssetRepository";
 
 export type PlaybookRepository = {
   list(): Promise<Playbook[]>;
@@ -21,6 +22,12 @@ export type SessionRepository = {
 export type AudioAssetRepository = {
   save(asset: StoredAudioAsset): Promise<unknown>;
   get(playbookId: string, path: string): Promise<StoredAudioAsset | undefined>;
+  deleteForPlaybook(playbookId: string): Promise<unknown>;
+};
+
+export type JsonAssetRepository = {
+  save(asset: StoredJsonAsset): Promise<unknown>;
+  get(playbookId: string, path: string): Promise<StoredJsonAsset | undefined>;
   deleteForPlaybook(playbookId: string): Promise<unknown>;
 };
 
@@ -44,6 +51,7 @@ export type CuemasterStorage = {
   playbooks: PlaybookRepository;
   sessions: SessionRepository;
   audioAssets: AudioAssetRepository;
+  jsonAssets: JsonAssetRepository;
   bookmarks: BookmarkRepository;
   timingAttempts: TimingAttemptRepository;
 };

@@ -957,6 +957,24 @@ def test_playbook_manifest_marks_working_source_production_metadata(tmp_path: Pa
     assert cfg.production_markdown.read_text(encoding="utf-8") == before
 
 
+def test_playbook_manifest_treats_legacy_history_as_working_source(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_lockable_production(cfg)
+    legacy_current = cfg.build_dir / "production-history" / "current.json"
+    legacy_current.parent.mkdir(parents=True)
+    legacy_current.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+    _write_production_playbook_audio(cfg)
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    data = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert data["production"] == {"source": "working"}
+
+
 def test_playbook_manifest_exports_blocking_without_required_audio(tmp_path: Path) -> None:
     cfg = _cfg(tmp_path)
     cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)

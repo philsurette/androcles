@@ -1,6 +1,6 @@
 import { indexedDbStorage } from "../storage/indexedDbStorage";
 import type { Playbook } from "../domain/playbook";
-import type { ExtractedAudioAsset } from "./extractedPlaybookZip";
+import type { ExtractedAudioAsset, ExtractedJsonAsset } from "./extractedPlaybookZip";
 import { extractPlaybookZip } from "./extractPlaybookZip";
 import { normalizePlaybook } from "./normalizePlaybook";
 
@@ -54,10 +54,22 @@ export async function installPlaybook(file: File, options: PlaybookImportOptions
     }
   }
   await indexedDbStorage.audioAssets.deleteForPlaybook(playbook.id);
+  await indexedDbStorage.jsonAssets.deleteForPlaybook(playbook.id);
   await storeRequiredAudioAssets(playbook.id, extracted.audioAssets, options);
+  await storeJsonAssets(playbook.id, extracted.jsonAssets);
   options.onProgress?.({ phase: "saving-playbook" });
   await indexedDbStorage.playbooks.save(playbook);
   return playbook;
+}
+
+async function storeJsonAssets(playbookId: string, jsonAssets: ExtractedJsonAsset[]): Promise<void> {
+  for (const jsonAsset of jsonAssets) {
+    await indexedDbStorage.jsonAssets.save({
+      playbookId,
+      path: jsonAsset.path,
+      text: jsonAsset.text
+    });
+  }
 }
 
 export function playbookReplacementDecision(existing: Playbook, incoming: Playbook): PlaybookReplacementDecision {

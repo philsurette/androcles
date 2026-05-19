@@ -1,7 +1,6 @@
 import type { Cue } from "../../domain/cue";
-import type { Line } from "../../domain/line";
+import type { BlockingNote, Line } from "../../domain/line";
 import type { RehearsalCommand } from "../../rehearsal/rehearsalCommand";
-import { visibleBlockingForLine } from "../../rehearsal/rehearsalPresentation";
 import type { PlaybackSource, PlaybackUiState } from "../hooks/useRehearsalPlayback";
 import { CueCard } from "./CueCard";
 import { LineCard, type BlockingScope } from "./LineCard";
@@ -25,7 +24,9 @@ type RehearsalLineWorkspaceProps = {
   includeDirections: boolean;
   isLineRevealed: boolean;
   blockingScope: BlockingScope;
+  hasBlockingDiagram?: (line: Line, blocking: BlockingNote) => boolean;
   onCommand: (command: RehearsalCommand) => void;
+  onOpenBlockingDiagram?: (line: Line, blocking: BlockingNote) => void;
   onJumpToLine: (lineId: string) => void;
 };
 
@@ -45,7 +46,9 @@ export function RehearsalLineWorkspace({
   includeDirections,
   isLineRevealed,
   blockingScope,
+  hasBlockingDiagram,
   onCommand,
+  onOpenBlockingDiagram,
   onJumpToLine
 }: RehearsalLineWorkspaceProps) {
   if (!line) {
@@ -179,19 +182,6 @@ export function RehearsalLineWorkspace({
             {visibleCues.map((cue, index) => (
               <CueCard cue={cue} showSpeaker={false} key={`${line.id}-cue-${index}`} />
             ))}
-            {includeBlocking
-              ? visibleBlockingForLine(line, blockingScope)
-                  .filter((blocking) => blocking.placement !== "inline")
-                  .map((blocking) => (
-                    <article
-                      className="card cue-card cue-blocking-card"
-                      key={`${blocking.id}-${blocking.segmentId ?? "context"}-${blocking.placement}`}
-                    >
-                      <p className="speaker blocking-target">{blocking.targets.join(", ")}</p>
-                      <p className="cue-blocking-text">({blocking.text})</p>
-                    </article>
-                  ))
-              : null}
           </div>
         </section>
       </fieldset>
@@ -204,6 +194,10 @@ export function RehearsalLineWorkspace({
               includeDirections={includeDirections}
               includeBlocking={includeBlocking}
               blockingScope={blockingScope}
+              hasBlockingDiagram={hasBlockingDiagram ? (blocking) => hasBlockingDiagram(line, blocking) : undefined}
+              onOpenBlockingDiagram={
+                onOpenBlockingDiagram ? (blocking) => onOpenBlockingDiagram(line, blocking) : undefined
+              }
             />
           ) : (
             <article className="card hidden-line">Line hidden</article>

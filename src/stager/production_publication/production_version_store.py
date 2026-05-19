@@ -31,7 +31,15 @@ class ProductionVersionStore:
         if not self.current_path.exists():
             return None
         current = json.loads(self.current_path.read_text(encoding="utf-8"))
-        return self.load_version(current["production_version"])
+        production_version = current.get("production_version")
+        if production_version is None:
+            legacy_label = current.get("label") or current.get("version")
+            detail = f" ({legacy_label})" if legacy_label is not None else ""
+            raise RuntimeError(
+                f"Legacy production history is not supported{detail}: "
+                f"{paths.display_path(self.current_path)}"
+            )
+        return self.load_version(production_version)
 
     def current_production_path(self) -> Path | None:
         current = self.current()
@@ -62,11 +70,10 @@ class ProductionVersionStore:
         versions: list[PublishedVersion] = []
         for version_dir in sorted(self.versions_dir.iterdir()):
             if version_dir.is_dir() and (version_dir / "manifest.json").exists():
-                versions.append(
-                    PublishedVersion.from_dict(
-                        json.loads((version_dir / "manifest.json").read_text(encoding="utf-8"))
-                    )
-                )
+                data = json.loads((version_dir / "manifest.json").read_text(encoding="utf-8"))
+                if data.get("production_version") is None and self._is_legacy_manifest(data):
+                    continue
+                versions.append(PublishedVersion.from_dict(data))
         return versions
 
     def forked_sequences(self) -> dict[int, tuple[ProductionVersion, ...]]:
@@ -186,3 +193,7 @@ class ProductionVersionStore:
         if len(matches) > 1:
             raise RuntimeError(f"Forked production history has multiple versions for sequence {sequence}")
         return matches[0]
+
+    def _is_legacy_manifest(self, data: dict) -> bool:
+        label = data.get("label")
+        return isinstance(label, str) and label.startswith("v") and label[1:].isdigit()

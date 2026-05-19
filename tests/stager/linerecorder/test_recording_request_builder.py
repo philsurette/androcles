@@ -493,6 +493,27 @@ def test_recording_request_manifest_includes_published_production_metadata(tmp_p
     }
 
 
+def test_recording_request_manifest_treats_legacy_history_as_working_source(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_lockable_production(cfg)
+    legacy_current = cfg.build_dir / "production-history" / "current.json"
+    legacy_current.parent.mkdir(parents=True)
+    legacy_current.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    data = RecordingRequestBuilder(
+        play=play,
+        paths=cfg,
+        role="MEGAERA",
+        created_at="2026-05-10T14:00:00Z",
+    ).build_manifest().to_dict()
+
+    assert data["production"] == {"source": "working"}
+
+
 def _write_lockable_production(cfg: paths.PathConfig) -> None:
     cfg.production_markdown.parent.mkdir(parents=True, exist_ok=True)
     cfg.production_markdown.write_text(

@@ -6,10 +6,16 @@ export type ExtractedAudioAsset = {
   blob: Blob;
 };
 
+export type ExtractedJsonAsset = {
+  path: string;
+  text: string;
+};
+
 export type ExtractedPlaybookZip = {
   manifest: PlaybookManifest;
   assetIndex: PlaybookAssetIndex;
   audioAssets: ExtractedAudioAsset[];
+  jsonAssets: ExtractedJsonAsset[];
 };
 
 export type ExtractedPlaybookZipData = {
@@ -17,4 +23,5 @@ export type ExtractedPlaybookZipData = {
   manifestJson: string;
   assetPaths: string[];
   audioAssets: ExtractedAudioAsset[];
+  jsonAssets: ExtractedJsonAsset[];
 };

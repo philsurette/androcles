@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Cue } from "../../domain/cue";
-import type { Line } from "../../domain/line";
+import type { BlockingNote, Line } from "../../domain/line";
 import type { Playbook } from "../../domain/playbook";
 import type { Role } from "../../domain/role";
 import type { RehearsalSession } from "../../domain/session";
@@ -43,6 +43,10 @@ import { useRehearsalPlayback } from "../hooks/useRehearsalPlayback";
 import { useRehearsalSessionPersistence } from "../hooks/useRehearsalSessionPersistence";
 import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
 import { evaluateTempoTimingResult, useTempoTiming } from "../hooks/useTempoTiming";
+import type { DiagramBundleManifest, DiagramState } from "../../staging/diagramTypes";
+import { loadDiagramBundleManifest, loadDiagramStateForBlocking } from "../../staging/diagramLoader";
+import { resolveDiagramTarget } from "../../staging/diagramResolver";
+import { BlockingDiagramSheet } from "../components/BlockingDiagramSheet";
 
 type RehearsalScreenProps = {
   playbook: Playbook;
@@ -139,6 +143,11 @@ export function RehearsalScreen({
   const [isOptionsPageVisible, setIsOptionsPageVisible] = useState(false);
   const [isCompactViewport, setIsCompactViewport] = useState(() => isCompactRehearsalViewport());
   const [isOutlineOpen, setIsOutlineOpen] = useState(() => !isCompactRehearsalViewport());
+  const [diagramBundleManifest, setDiagramBundleManifest] = useState<DiagramBundleManifest | null>(null);
+  const [selectedBlockingDiagram, setSelectedBlockingDiagram] = useState<{
+    state: DiagramState;
+    noteText: string;
+  } | null>(null);
   const {
     reviewAttempts,
     startVoiceActivityDetector,
@@ -186,6 +195,73 @@ export function RehearsalScreen({
     [activeLineId, role.lines]
   );
   const resolveCallout = useMemo(() => buildCalloutResolverForSpeaker(playbook), [playbook]);
+  const loadCurrentDiagramBundleManifest = useCallback(async () => {
+    if (diagramBundleManifest) {
+      return diagramBundleManifest;
+    }
+    if (!playbook.staging?.manifestPath) {
+      return null;
+    }
+    try {
+      const manifest = await loadDiagramBundleManifest(playbook.id, playbook.staging.manifestPath);
+      setDiagramBundleManifest(manifest);
+      return manifest;
+    } catch {
+      setStorageStatus("Blocking diagrams are unavailable for this installed Playbook. Re-import the Playbook to store the packaged staging assets.");
+      return null;
+    }
+  }, [diagramBundleManifest, playbook.id, playbook.staging?.manifestPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setDiagramBundleManifest(null);
+    if (!playbook.staging?.manifestPath) {
+      return;
+    }
+    loadDiagramBundleManifest(playbook.id, playbook.staging.manifestPath)
+      .then((manifest) => {
+        if (!cancelled) {
+          setDiagramBundleManifest(manifest);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDiagramBundleManifest(null);
+          setStorageStatus("Blocking diagrams are unavailable for this installed Playbook. Re-import the Playbook to store the packaged staging assets.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [playbook.id, playbook.staging?.manifestPath]);
+
+  const hasBlockingDiagram = useCallback(
+    (candidateLine: Line, blocking: BlockingNote) =>
+      diagramBundleManifest
+        ? resolveDiagramTarget(diagramBundleManifest, candidateLine.id, blocking.id) !== null
+        : Boolean(playbook.staging),
+    [diagramBundleManifest, playbook.staging]
+  );
+  const openBlockingDiagram = useCallback(
+    async (candidateLine: Line, blocking: BlockingNote) => {
+      const manifest = await loadCurrentDiagramBundleManifest();
+      if (!manifest) {
+        return;
+      }
+      try {
+        const diagramState = await loadDiagramStateForBlocking(
+          playbook.id,
+          manifest,
+          candidateLine.id,
+          blocking.id
+        );
+        setSelectedBlockingDiagram({ state: diagramState, noteText: blocking.text });
+      } catch (error) {
+        setStorageStatus(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
+      }
+    },
+    [loadCurrentDiagramBundleManifest, playbook.id]
+  );
 
   const lineLengthMs = useMemo(() => {
     if (!line) {
@@ -1281,7 +1357,9 @@ export function RehearsalScreen({
               includeDirections={includeDirections}
               isLineRevealed={isLineRevealed}
               blockingScope={blockingScope}
+              hasBlockingDiagram={hasBlockingDiagram}
               onCommand={(command) => void runCommand(command)}
+              onOpenBlockingDiagram={(targetLine, blocking) => void openBlockingDiagram(targetLine, blocking)}
               onJumpToLine={jumpToLine}
             />
           </div>
@@ -1320,6 +1398,13 @@ export function RehearsalScreen({
           onOpenOptions={openOptionsPage}
           onToggleTimingPill={(pill) => setExpandedTimingPill((current) => (current === pill ? null : pill))}
         />
+        {selectedBlockingDiagram ? (
+          <BlockingDiagramSheet
+            state={selectedBlockingDiagram.state}
+            noteText={selectedBlockingDiagram.noteText}
+            onClose={() => setSelectedBlockingDiagram(null)}
+          />
+        ) : null}
       </div>
       </section>
     </main>

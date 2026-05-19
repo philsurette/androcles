@@ -124,44 +124,44 @@ app/
 
 - [x] Update Cuemaster Playbook import validation to accept `format_version: 1.1.0`.
 - [x] Preserve existing newer-minor warning behavior for unsupported future minor versions.
-- [ ] Add TypeScript types for:
+- [x] Add TypeScript types for:
   - [x] root `staging`,
-  - [ ] diagram bundle manifest,
-  - [ ] checkpoint records,
-  - [ ] delta records,
-  - [ ] delta operations.
-- [ ] Add an IndexedDB/storage path for staging JSON files.
-- [ ] Port or implement a Cuemaster diagram-state renderer equivalent to the Python renderer.
-- [ ] Add a delta applicator and fixture tests proving Python-generated JSON renders expected actors/props.
+  - [x] diagram bundle manifest,
+  - [x] checkpoint records,
+  - [x] delta records,
+  - [x] delta operations.
+- [x] Add an IndexedDB/storage path for staging JSON files.
+- [x] Port or implement a Cuemaster diagram-state renderer equivalent to the Python renderer.
+- [x] Add a delta applicator and fixture tests proving Python-generated JSON renders expected actors/props.
 - [x] Keep the rehearsal UI usable when staging is absent.
 - [x] Normalize Playbook `manifest.staging` into the Cuemaster domain model without loading every checkpoint/delta during import.
-- [ ] Store staging JSON assets alongside other extracted Playbook assets and load them lazily when a diagram is opened.
-- [ ] Add a resolver that maps a line/blocking note to the best diagram target:
-  - [ ] exact `blocking.id` / production anchor match,
-  - [ ] line id match,
-  - [ ] nearest prior scene checkpoint when no beat target exists.
+- [x] Store staging JSON assets alongside other extracted Playbook assets and load them lazily when a diagram is opened.
+- [x] Add a resolver that maps a line/blocking note to the best diagram target:
+  - [x] exact `blocking.id` / production anchor match,
+  - [x] line id match,
+  - [x] nearest prior scene checkpoint when no beat target exists.
 
 ## Phase 7: UX Integration
 
-- [ ] Keep the existing blocking toggle semantics:
-  - [ ] off means no blocking text is shown in the rehearsal flow,
-  - [ ] on means concise human-readable blocking notes are displayed inline,
-  - [ ] role/all scope continues to filter which notes are shown.
-- [ ] Render visible blocking notes as clickable/tappable controls when a diagram target is available.
-- [ ] Keep the note text itself visible and readable; the diagram affordance should not replace text blocking.
-- [ ] Open an on-demand blocking diagram page/sheet from a blocking note:
-  - [ ] resolve the diagram target for the selected note,
-  - [ ] load the nearest checkpoint JSON,
-  - [ ] apply any needed deltas,
-  - [ ] render full-screen SVG/component from the resulting diagram state.
-- [ ] Start with on-demand viewing, not always-visible diagrams in the rehearsal line.
-- [ ] Allow tap/press inspection of actors and props using titles/labels from diagram state.
-- [ ] Include a clear close/back action that returns to the same rehearsal line and playback state.
+- [x] Keep the existing blocking toggle semantics:
+  - [x] off means no blocking text is shown in the rehearsal flow,
+  - [x] on means concise human-readable blocking notes are displayed inline,
+  - [x] role/all scope continues to filter which notes are shown.
+- [x] Render visible blocking notes as clickable/tappable controls when a diagram target is available.
+- [x] Keep the note text itself visible and readable; the diagram affordance should not replace text blocking.
+- [x] Open an on-demand blocking diagram page/sheet from a blocking note:
+  - [x] resolve the diagram target for the selected note,
+  - [x] load the nearest checkpoint JSON,
+  - [x] apply any needed deltas,
+  - [x] render full-screen SVG/component from the resulting diagram state.
+- [x] Start with on-demand viewing, not always-visible diagrams in the rehearsal line.
+- [x] Allow tap/press inspection of actors and props using titles/labels from diagram state.
+- [x] Include a clear close/back action that returns to the same rehearsal line and playback state.
 - [ ] On mobile, default the diagram page to portrait full-screen with pan/zoom; downstage orientation follows the packaged diagram state/rendering options.
-- [ ] Preserve existing rehearsal flow if a diagram cannot be rendered.
-- [ ] If a note has no diagram target, display it as plain text with no broken affordance.
+- [x] Preserve existing rehearsal flow if a diagram cannot be rendered.
+- [x] If a note has no diagram target, display it as plain text with no broken affordance.
 - [ ] Consider a setting to hide blocking diagrams for actors who do not want visual blocking.
-- [ ] Do not auto-open diagrams during audio playback or auto-advance.
+- [x] Do not auto-open diagrams during audio playback or auto-advance.
 
 ## Phase 8: Tests
 
@@ -181,11 +181,11 @@ app/
   - [x] older fixture without `staging` still imports,
   - [x] unsupported newer minor imports with warning,
   - [x] unsupported newer major rejects,
-  - [ ] blocking toggle still hides/shows text notes without staging assets,
-  - [ ] visible blocking note opens diagram view when a target exists,
-  - [ ] non-targeted blocking note remains plain text,
-  - [ ] diagram view returns to the same rehearsal line,
-  - [ ] checkpoint and delta fixture renders expected entity positions.
+  - [x] blocking toggle still hides/shows text notes without staging assets,
+  - [x] visible blocking note opens diagram view when a target exists,
+  - [x] non-targeted blocking note remains plain text,
+  - [x] diagram view returns to the same rehearsal line,
+  - [x] checkpoint and delta fixture renders expected entity positions.
 
 ## Acceptance Criteria
 

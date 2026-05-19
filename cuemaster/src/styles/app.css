@@ -1208,6 +1208,18 @@ button:disabled {
   color: var(--quiet);
 }
 
+.cue-blocking-button {
+  appearance: none;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.cue-blocking-button:hover,
+.blocking-note-button:hover {
+  border-color: var(--accent);
+}
+
 .cue-blocking-card .blocking-target {
   margin-right: 0;
 }
@@ -1535,6 +1547,19 @@ button:disabled {
   margin-bottom: 0.2rem;
 }
 
+.blocking-note-button {
+  appearance: none;
+  background: transparent;
+  border: 1px solid rgba(185, 79, 47, 0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  display: block;
+  font-family: inherit;
+  padding: 0.12rem 0.35rem;
+  text-align: left;
+  width: fit-content;
+}
+
 .blocking-target {
   color: var(--quiet);
   font-size: 0.8rem;
@@ -1549,10 +1574,118 @@ button:disabled {
   opacity: 0.85;
 }
 
+.blocking-diagram-affordance {
+  color: var(--accent);
+  font-size: 0.8em;
+  font-style: normal;
+  font-weight: 800;
+  margin-left: 0.45rem;
+  opacity: 0.82;
+}
+
 .hidden-line {
   color: var(--quiet);
   font-size: 1.25rem;
   font-style: italic;
+}
+
+.blocking-diagram-backdrop {
+  align-items: stretch;
+  background: rgba(20, 20, 18, 0.45);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: clamp(0.75rem, 2vw, 1.25rem);
+  position: fixed;
+  z-index: 40;
+}
+
+.blocking-diagram-sheet {
+  background: var(--panel);
+  border: 1px solid rgba(45, 43, 35, 0.22);
+  border-radius: 8px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
+  color: inherit;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-width: min(96vw, 48rem);
+  min-height: 0;
+  padding: clamp(0.8rem, 2vw, 1.2rem);
+  width: 100%;
+}
+
+.blocking-diagram-header {
+  align-items: start;
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.blocking-diagram-header h2 {
+  font-size: 1rem;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.blocking-diagram {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(45, 43, 35, 0.2);
+  height: 100%;
+  min-height: 18rem;
+  width: 100%;
+}
+
+.blocking-stage {
+  fill: #f8f8f4;
+  stroke: rgba(45, 43, 35, 0.35);
+  stroke-width: 1;
+}
+
+.blocking-area {
+  fill: rgba(124, 170, 184, 0.08);
+  stroke: rgba(45, 43, 35, 0.14);
+  stroke-width: 0.5;
+}
+
+.blocking-area-label {
+  fill: var(--quiet);
+  font-size: 7px;
+  font-weight: 700;
+}
+
+.blocking-set-piece rect {
+  fill: rgba(177, 160, 119, 0.22);
+  stroke: rgba(45, 43, 35, 0.55);
+  stroke-width: 1;
+}
+
+.blocking-entity circle {
+  fill: #eef3f6;
+  stroke: rgba(45, 43, 35, 0.7);
+  stroke-width: 1;
+}
+
+.blocking-entity text {
+  dominant-baseline: middle;
+  fill: #111;
+  font-size: 7px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.blocking-entity path {
+  fill: rgba(115, 83, 145, 0.18);
+  stroke: rgba(83, 55, 110, 0.8);
+  stroke-width: 1.2;
+}
+
+.blocking-movement-arrow {
+  fill: none;
+  stroke: rgba(45, 43, 35, 0.45);
+  stroke-dasharray: 3 2;
+  stroke-linecap: round;
+  stroke-width: 1.2;
 }
 
 .inline-stage-direction {

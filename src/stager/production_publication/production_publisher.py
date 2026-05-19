@@ -122,7 +122,12 @@ class ProductionPublisher:
         production = self._locked_source(write_locked=False)
         store = ProductionVersionStore(self.paths_config)
         store.assert_no_forks()
-        current = store.current()
+        try:
+            current = store.current()
+        except RuntimeError as exc:
+            if "Legacy production history is not supported" not in str(exc):
+                raise
+            current = None
         working_version = self._working_production_version(production)
         report = ProductionChangeAnalyzer().analyze(
             previous=current,

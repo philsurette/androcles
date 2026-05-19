@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import { ZodError } from "zod";
 import { validatePlaybookManifest } from "../specs/validatePlaybookManifest";
-import type { ExtractedAudioAsset, ExtractedPlaybookZipData } from "./extractedPlaybookZip";
+import type { ExtractedAudioAsset, ExtractedJsonAsset, ExtractedPlaybookZipData } from "./extractedPlaybookZip";
 import {
   PlaybookAssetIndex,
   assertRequiredAudioAssetsPresent,
@@ -28,7 +28,8 @@ export async function extractPlaybookZipData(file: Blob): Promise<ExtractedPlayb
     manifest,
     manifestJson,
     assetPaths,
-    audioAssets: await extractRequiredAudioAssets(zip, collectRequiredAudioAssetPaths(manifest))
+    audioAssets: await extractRequiredAudioAssets(zip, collectRequiredAudioAssetPaths(manifest)),
+    jsonAssets: await extractStagingJsonAssets(zip, manifest)
   };
 }
 
@@ -85,6 +86,54 @@ async function extractRequiredAudioAssets(zip: JSZip, assetPaths: string[]): Pro
   }
 
   return audioAssets;
+}
+
+async function extractStagingJsonAssets(zip: JSZip, manifest: ReturnType<typeof validatePlaybookManifest>): Promise<ExtractedJsonAsset[]> {
+  if (!manifest.staging) {
+    return [];
+  }
+
+  const manifestPath = manifest.staging.manifest_path;
+  const manifestEntry = zip.file(manifestPath);
+  if (!manifestEntry) {
+    throw new PlaybookImportError(`Playbook zip is missing staging manifest: ${manifestPath}`);
+  }
+
+  const stagingManifestText = await manifestEntry.async("text");
+  const stagingManifest = parseStagingManifest(stagingManifestText, manifestPath);
+  const paths = new Set<string>([manifestPath]);
+  for (const checkpoint of stagingManifest.checkpoints ?? []) {
+    if (typeof checkpoint.path === "string") {
+      paths.add(checkpoint.path);
+    }
+  }
+  for (const delta of stagingManifest.deltas ?? []) {
+    if (typeof delta.path === "string") {
+      paths.add(delta.path);
+    }
+  }
+
+  const assets: ExtractedJsonAsset[] = [];
+  for (const path of paths) {
+    const entry = zip.file(path);
+    if (!entry) {
+      throw new PlaybookImportError(`Playbook zip is missing staging asset: ${path}`);
+    }
+    assets.push({ path, text: path === manifestPath ? stagingManifestText : await entry.async("text") });
+  }
+  return assets;
+}
+
+function parseStagingManifest(text: string, path: string): { checkpoints?: Array<{ path?: unknown }>; deltas?: Array<{ path?: unknown }> } {
+  try {
+    const parsed = JSON.parse(text) as { checkpoints?: Array<{ path?: unknown }>; deltas?: Array<{ path?: unknown }> };
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Staging manifest is not a JSON object");
+    }
+    return parsed;
+  } catch (error) {
+    throw new PlaybookImportError(`Playbook staging manifest is not valid JSON: ${path}`, { cause: error });
+  }
 }
 
 function withAudioMimeType(assetPath: string, blob: Blob): Blob {

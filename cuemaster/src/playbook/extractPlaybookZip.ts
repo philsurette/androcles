@@ -9,7 +9,8 @@ export async function extractPlaybookZip(file: Blob) {
   return {
     manifest: extracted.manifest,
     assetIndex: new PlaybookAssetIndex(extracted.assetPaths),
-    audioAssets: extracted.audioAssets
+    audioAssets: extracted.audioAssets,
+    jsonAssets: extracted.jsonAssets
   };
 }
 

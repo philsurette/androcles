@@ -123,7 +123,10 @@ class RecordingRequestBuilder:
         )
 
     def _production_source(self, source_path: Path) -> str:
-        current_path = ProductionVersionStore(self.paths).current_production_path()
+        try:
+            current_path = ProductionVersionStore(self.paths).current_production_path()
+        except RuntimeError:
+            return "working"
         if current_path is not None and source_path.resolve() == current_path.resolve():
             return "published"
         return "working"

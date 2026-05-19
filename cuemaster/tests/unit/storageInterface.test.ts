@@ -4,6 +4,7 @@ import type { Playbook } from "../../src/domain/playbook";
 import type { RehearsalSession } from "../../src/domain/session";
 import type { TimingAttempt } from "../../src/domain/timingAttempt";
 import type { StoredAudioAsset } from "../../src/storage/audioAssetRepository";
+import type { StoredJsonAsset } from "../../src/storage/jsonAssetRepository";
 import type { CuemasterStorage } from "../../src/storage/storage";
 
 describe("CuemasterStorage", () => {
@@ -20,6 +21,11 @@ describe("CuemasterStorage", () => {
       path: "audio/line.wav",
       blob: new Blob(["audio"])
     });
+    await storage.jsonAssets.save({
+      playbookId: playbook.id,
+      path: "staging/diagram_manifest.json",
+      text: "{}"
+    });
 
     await expect(storage.playbooks.list()).resolves.toEqual([playbook]);
     await expect(storage.sessions.getLatestForPlaybook(playbook.id)).resolves.toMatchObject({ lineIndex: 1 });
@@ -30,6 +36,9 @@ describe("CuemasterStorage", () => {
     await expect(storage.audioAssets.get(playbook.id, "audio/line.wav")).resolves.toMatchObject({
       path: "audio/line.wav"
     });
+    await expect(storage.jsonAssets.get(playbook.id, "staging/diagram_manifest.json")).resolves.toMatchObject({
+      text: "{}"
+    });
   });
 });
 
@@ -37,6 +46,7 @@ class MemoryStorage implements CuemasterStorage {
   private readonly playbookRecords = new Map<string, Playbook>();
   private readonly sessionRecords = new Map<string, RehearsalSession>();
   private readonly audioAssetRecords = new Map<string, StoredAudioAsset>();
+  private readonly jsonAssetRecords = new Map<string, StoredJsonAsset>();
   private readonly bookmarkRecords = new Map<string, Bookmark>();
   private readonly timingAttemptRecords = new Map<string, TimingAttempt>();
 
@@ -50,6 +60,7 @@ class MemoryStorage implements CuemasterStorage {
       this.playbookRecords.delete(id);
       await this.sessions.deleteForPlaybook(id);
       await this.audioAssets.deleteForPlaybook(id);
+      await this.jsonAssets.deleteForPlaybook(id);
       await this.bookmarks.deleteForPlaybook(id);
       await this.timingAttempts.deleteForPlaybook(id);
     }
@@ -76,6 +87,16 @@ class MemoryStorage implements CuemasterStorage {
     get: async (playbookId: string, path: string) => this.audioAssetRecords.get(`${playbookId}:${path}`),
     deleteForPlaybook: async (playbookId: string) => {
       deleteWhere(this.audioAssetRecords, (record) => record.playbookId === playbookId);
+    }
+  };
+
+  readonly jsonAssets = {
+    save: async (record: StoredJsonAsset) => {
+      this.jsonAssetRecords.set(`${record.playbookId}:${record.path}`, record);
+    },
+    get: async (playbookId: string, path: string) => this.jsonAssetRecords.get(`${playbookId}:${path}`),
+    deleteForPlaybook: async (playbookId: string) => {
+      deleteWhere(this.jsonAssetRecords, (record) => record.playbookId === playbookId);
     }
   };
 

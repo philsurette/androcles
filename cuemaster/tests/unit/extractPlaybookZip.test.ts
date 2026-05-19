@@ -27,6 +27,28 @@ describe("extractPlaybookZip", () => {
     expect(extracted.audioAssets.find((asset) => asset.path.endsWith(".mp3"))?.blob.type).toBe("audio/mpeg");
   });
 
+  it("extracts staging JSON assets referenced by the diagram bundle manifest", async () => {
+    const manifest = {
+      ...manifestFixture,
+      format_version: "1.1.0",
+      staging: {
+        included: true,
+        format: "quince.blocking.diagram_bundle",
+        format_version: "1.0.0",
+        manifest_path: "staging/diagram_manifest.json"
+      }
+    } as typeof manifestFixture;
+    const file = await buildPlaybookZip({ manifest, staging: true });
+
+    const extracted = await extractPlaybookZip(file);
+
+    expect(extracted.jsonAssets.map((asset) => asset.path).sort()).toEqual([
+      "staging/checkpoints/scene-start.json",
+      "staging/deltas/scene-b1.json",
+      "staging/diagram_manifest.json"
+    ]);
+  });
+
   it("reports an invalid zip with a friendly import error", async () => {
     await expect(extractPlaybookZip(new Blob(["not a zip"]))).rejects.toThrow(PlaybookImportError);
     await expect(extractPlaybookZip(new Blob(["not a zip"]))).rejects.toThrow("Invalid Playbook zip");
@@ -83,10 +105,19 @@ describe("extractPlaybookZip", () => {
   });
 });
 
-async function buildPlaybookZip(options: { excludePath?: string; manifest?: typeof manifestFixture } = {}): Promise<Blob> {
+async function buildPlaybookZip(options: {
+  excludePath?: string;
+  manifest?: typeof manifestFixture;
+  staging?: boolean;
+} = {}): Promise<Blob> {
   const zip = new JSZip();
   const manifest = options.manifest ?? manifestFixture;
   zip.file("manifest.json", JSON.stringify(manifest));
+  if (options.staging) {
+    zip.file("staging/diagram_manifest.json", JSON.stringify(stagingManifest()));
+    zip.file("staging/checkpoints/scene-start.json", "{}");
+    zip.file("staging/deltas/scene-b1.json", "{}");
+  }
 
   for (const audioPath of requiredAudioPaths(manifest)) {
     if (audioPath !== options.excludePath) {
@@ -95,6 +126,24 @@ async function buildPlaybookZip(options: { excludePath?: string; manifest?: type
   }
 
   return zip.generateAsync({ type: "blob" });
+}
+
+function stagingManifest() {
+  return {
+    format: "quince.blocking.diagram_bundle",
+    format_version: "1.0.0",
+    checkpoints: [{ id: "scene:start", scene_id: "1", path: "staging/checkpoints/scene-start.json" }],
+    deltas: [
+      {
+        id: "scene:1@b1",
+        scene_id: "1",
+        beat_id: "b1",
+        production_anchor: "1-1",
+        from_checkpoint: "scene:start",
+        path: "staging/deltas/scene-b1.json"
+      }
+    ]
+  };
 }
 
 function manifestWithAudioExtension(extension: "mp3" | "wav"): typeof manifestFixture {

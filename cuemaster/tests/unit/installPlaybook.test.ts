@@ -15,6 +15,7 @@ describe("installPlaybook", () => {
     vi.useRealTimers();
     await db.playbooks.clear();
     await db.audioAssets.clear();
+    await db.jsonAssets.clear();
     await db.sessions.clear();
     await db.timingAttempts.clear();
     await db.bookmarks.clear();
@@ -54,6 +55,19 @@ describe("installPlaybook", () => {
     expect(progress[0]).toBe("extracting");
     expect(progress).toContain("saving-playbook");
     expect(progress.filter((event) => event.startsWith("storing-audio:"))).toHaveLength(requiredAudioPaths().length);
+  });
+
+  it("stores staging JSON assets when the Playbook includes blocking diagrams", async () => {
+    const file = await buildPlaybookFile("androcles-minimal.playbook.zip", manifestWithStaging());
+
+    await installPlaybook(file);
+
+    await expect(db.jsonAssets.get(["androcles-minimal", "staging/diagram_manifest.json"])).resolves.toMatchObject({
+      text: expect.stringContaining("quince.blocking.diagram_bundle")
+    });
+    await expect(db.jsonAssets.get(["androcles-minimal", "staging/checkpoints/scene-start.json"])).resolves.toMatchObject({
+      text: "{}"
+    });
   });
 
   it("preserves local rehearsal progress when replacing an installed Playbook", async () => {
@@ -121,12 +135,48 @@ describe("installPlaybook", () => {
 async function buildPlaybookFile(filename: string, manifest = manifestFixture): Promise<File> {
   const zip = new JSZip();
   zip.file("manifest.json", JSON.stringify(manifest));
+  if ((manifest as { staging?: unknown }).staging) {
+    zip.file("staging/diagram_manifest.json", JSON.stringify(stagingManifest()));
+    zip.file("staging/checkpoints/scene-start.json", "{}");
+    zip.file("staging/deltas/scene-b1.json", "{}");
+  }
 
   for (const audioPath of requiredAudioPaths()) {
     zip.file(audioPath, "");
   }
 
   return new File([await zip.generateAsync({ type: "blob" })], filename, { type: "application/zip" });
+}
+
+function manifestWithStaging(): typeof manifestFixture {
+  return {
+    ...manifestFixture,
+    format_version: "1.1.0",
+    staging: {
+      included: true,
+      format: "quince.blocking.diagram_bundle",
+      format_version: "1.0.0",
+      manifest_path: "staging/diagram_manifest.json"
+    }
+  } as typeof manifestFixture;
+}
+
+function stagingManifest() {
+  return {
+    format: "quince.blocking.diagram_bundle",
+    format_version: "1.0.0",
+    checkpoints: [{ id: "scene:start", scene_id: "1", path: "staging/checkpoints/scene-start.json" }],
+    deltas: [
+      {
+        id: "scene:1@b1",
+        scene_id: "1",
+        beat_id: "b1",
+        production_anchor: "1-1",
+        from_checkpoint: "scene:start",
+        path: "staging/deltas/scene-b1.json"
+      }
+    ]
+  };
 }
 
 function manifestWithProductionVersion(version: string): typeof manifestFixture {

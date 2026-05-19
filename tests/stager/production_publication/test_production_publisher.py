@@ -397,3 +397,91 @@ P-1 LILLIAN: Working text.""",
     assert resolved.kind == "working"
     assert resolved.path == cfg.production_markdown
     assert "No published production version exists; using working production source" in caplog.text
+
+
+def test_production_version_store_reports_legacy_current_history(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    current_path = cfg.build_dir / "production-history" / "current.json"
+    current_path.parent.mkdir(parents=True)
+    current_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Legacy production history is not supported \\(v0001\\)"):
+        ProductionVersionStore(cfg).current()
+
+
+def test_production_version_store_ignores_legacy_version_manifests_when_listing(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    manifest_path = cfg.build_dir / "production-history" / "versions" / "v0001" / "manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+
+    assert ProductionVersionStore(cfg).list_versions() == []
+
+
+def test_production_source_resolver_auto_falls_back_to_working_with_legacy_history(
+    tmp_path: Path,
+    caplog,
+) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Working text.""",
+    )
+    current_path = cfg.build_dir / "production-history" / "current.json"
+    current_path.parent.mkdir(parents=True)
+    current_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+
+    resolved = ProductionSourceResolver(cfg).resolve("auto")
+
+    assert resolved.kind == "working"
+    assert resolved.path == cfg.production_markdown
+    assert "Legacy production history is not supported (v0001)" in caplog.text
+
+
+def test_production_source_resolver_published_rejects_legacy_history(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    current_path = cfg.build_dir / "production-history" / "current.json"
+    current_path.parent.mkdir(parents=True)
+    current_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Legacy production history is not supported \\(v0001\\)"):
+        ProductionSourceResolver(cfg).resolve("published")
+
+
+def test_diff_with_versions_treats_legacy_history_as_no_current_version(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    _write_production(
+        cfg,
+        """# P-0 PROLOGUE
+P-1 LILLIAN: Working text.""",
+    )
+    current_path = cfg.build_dir / "production-history" / "current.json"
+    current_path.parent.mkdir(parents=True)
+    current_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+    manifest_path = cfg.build_dir / "production-history" / "versions" / "v0001" / "manifest.json"
+    manifest_path.parent.mkdir(parents=True)
+    manifest_path.write_text(
+        json.dumps({"version": 1, "label": "v0001", "published_at": "2026-05-13T18:31:49Z"}),
+        encoding="utf-8",
+    )
+
+    result = ProductionPublisher(paths_config=cfg).diff_with_versions()
+
+    assert result.current_version is None
+    assert result.change_report.base_version is None

@@ -33,7 +33,19 @@ class ProductionSourceResolver:
             self._log_selected(resolved)
             return resolved
 
-        published_path = ProductionVersionStore(self.paths_config).current_production_path()
+        fallback_reason: str | None = None
+        try:
+            published_path = ProductionVersionStore(self.paths_config).current_production_path()
+        except RuntimeError as exc:
+            if source_key != "auto":
+                raise
+            published_path = None
+            fallback_reason = str(exc)
+            logger.warning(
+                "%s; using working production source %s",
+                exc,
+                paths.display_path(self.paths_config.production_markdown),
+            )
         if published_path is not None:
             resolved = ResolvedProductionSource(kind="published", path=published_path)
             self._log_selected(resolved)
@@ -43,10 +55,11 @@ class ProductionSourceResolver:
             raise RuntimeError("No published production version exists.")
 
         resolved = ResolvedProductionSource(kind="working", path=self.paths_config.production_markdown)
-        logger.warning(
-            "No published production version exists; using working production source %s",
-            paths.display_path(resolved.path),
-        )
+        if fallback_reason is None:
+            logger.warning(
+                "No published production version exists; using working production source %s",
+                paths.display_path(resolved.path),
+            )
         return resolved
 
     def apply_to(self, source: str = "auto") -> paths.PathConfig:
