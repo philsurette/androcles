@@ -1,10 +1,10 @@
-# SVG Rendering and Animation Spec Draft
+# SVG Rendering Spec Draft
 
 ## Purpose
 
 Generate visual blocking assets from normalized staging data.
 
-The first target is static SVG. Animation is a later generated layer.
+The active target is static SVG. Animation and timeline playback are future features tracked in `future-features.md`.
 
 ## Static SVG goals
 
@@ -96,59 +96,6 @@ A movement path should use SVG path data:
 
 Vertical movement should render as 2D movement with connector labels, for example `via stair_l`, rather than true vertical motion. If the normalized model contains a z change without a valid connector, the renderer should include a warning/diagnostic badge.
 
-## Animation recommendation
-
-Prefer **SVG + JavaScript-controlled timeline** for interactive playback.
-
-Native SVG animation may be generated for demo/export, but JS control is better for:
-
-- pause
-- scrub
-- jump to line
-- sync with audio
-- playback speed
-- rehearsal controls
-- Cuemaster integration
-
-## Timeline JSON
-
-Example:
-
-```json
-{
-  "beat": "b12",
-  "lineId": "HAM-042",
-  "audioStart": 192.4,
-  "audioEnd": 196.8,
-  "events": [
-    {
-      "type": "move",
-      "actor": "HAM",
-      "path": "M -12 4 Q -5 8 0 12",
-      "start": 192.8,
-      "end": 195.0,
-      "face": "OPH"
-    },
-    {
-      "type": "cue",
-      "id": "LX.24",
-      "at": 195.0
-    }
-  ]
-}
-```
-
-## Timing inference
-
-Timing should be inferred only when explicit timing is missing.
-
-Priority:
-
-1. explicit start/end
-2. explicit duration
-3. beat-relative timing from line/audio metadata
-4. static-only fallback
-
 ## First implementation
 
 Do not implement full animation first.
@@ -157,8 +104,8 @@ Implement:
 
 1. static SVG stage diagram
 2. actor placement
-3. movement path arrows
-4. cue badges
-5. optional JSON timeline skeleton
+3. stateful point-in-time rendering from scene snapshots plus ordered blocking directions
+4. optional movement path arrows
+5. optional cue badges
 
 Animation can follow after diagrams are reliable.

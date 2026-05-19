@@ -185,6 +185,26 @@ cue LX.12 at=HAM.arrive(C)
 
 To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HAM` at `C`, `CLA` at `UC`, and `sword` carried by `HAM`.
 
+The first standalone renderer implements the same idea with ordered beat blocks:
+
+```text
+scene 1.3 snapshot
+HAM @ balcony_l face=CLA
+CLA @ DC
+OPH @ deck_l face=HAM
+sword @ table
+
+beat b1 scene=1.3
+HAM move balcony_l -> UC face=OPH
+OPH move deck_l -> C face=HAM
+
+beat b2 scene=1.3
+CLA move DC -> DR
+sword remove
+```
+
+Rendering `--scene 1.3 --beat b2` starts from the `scene 1.3 snapshot`, applies `b1`, then applies `b2`.
+
 ## Timing model
 
 Timing should be layered:

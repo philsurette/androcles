@@ -8,6 +8,7 @@ from stager.staging.diagnostics import StagingDiagnostic
 from stager.staging.model import (
     AnchorDefinition,
     ActorDefinition,
+    BlockingBeat,
     ConnectorDefinition,
     LevelDefinition,
     Placement,
@@ -24,6 +25,7 @@ from stager.staging.model import (
 COORD_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(-?\d+(?:\.\d+)?))?\)$")
 SIZE_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\)$")
 SCENE_SNAPSHOT_RE = re.compile(r"^scene\s+(\S+)\s+snapshot$")
+BEAT_RE = re.compile(r"^beat\s+(\S+)\s+scene=(\S+)$")
 
 
 @dataclass
@@ -41,21 +43,36 @@ class StagingParser:
         set_pieces: dict[str, SetPieceDefinition] = {}
         props: dict[str, PropDefinition] = {}
         snapshots: dict[str, SceneSnapshot] = {}
+        beats: list[BlockingBeat] = []
+        current_block: str | None = None
         current_scene: str | None = None
-        current_snapshot_line: int | None = None
+        current_beat: str | None = None
+        current_block_line: int | None = None
         current_placements: list[Placement] = []
 
-        def flush_snapshot() -> None:
-            nonlocal current_scene, current_snapshot_line, current_placements
-            if current_scene is None:
+        def flush_block() -> None:
+            nonlocal current_block, current_scene, current_beat, current_block_line, current_placements
+            if current_block is None or current_scene is None:
                 return
-            snapshots[current_scene] = SceneSnapshot(
-                scene_id=current_scene,
-                placements=tuple(current_placements),
-                line_no=current_snapshot_line,
-            )
+            if current_block == "snapshot":
+                snapshots[current_scene] = SceneSnapshot(
+                    scene_id=current_scene,
+                    placements=tuple(current_placements),
+                    line_no=current_block_line,
+                )
+            elif current_block == "beat" and current_beat is not None:
+                beats.append(
+                    BlockingBeat(
+                        beat_id=current_beat,
+                        scene_id=current_scene,
+                        placements=tuple(current_placements),
+                        line_no=current_block_line,
+                    )
+                )
+            current_block = None
             current_scene = None
-            current_snapshot_line = None
+            current_beat = None
+            current_block_line = None
             current_placements = []
 
         for line_no, raw_line in enumerate(text.splitlines(), start=1):
@@ -64,14 +81,23 @@ class StagingParser:
                 continue
             scene_match = SCENE_SNAPSHOT_RE.match(line)
             if scene_match:
-                flush_snapshot()
+                flush_block()
+                current_block = "snapshot"
                 current_scene = scene_match.group(1)
-                current_snapshot_line = line_no
+                current_block_line = line_no
                 continue
-            if current_scene is not None and self._looks_like_placement(line):
-                current_placements.append(self._parse_placement(line, line_no))
+            beat_match = BEAT_RE.match(line)
+            if beat_match:
+                flush_block()
+                current_block = "beat"
+                current_beat = beat_match.group(1)
+                current_scene = beat_match.group(2)
+                current_block_line = line_no
                 continue
-            flush_snapshot()
+            if current_block is not None and self._looks_like_blocking_statement(line):
+                current_placements.append(self._parse_blocking_statement(line, line_no))
+                continue
+            flush_block()
             tokens = self._tokens(line, line_no)
             if not tokens:
                 continue
@@ -110,7 +136,7 @@ class StagingParser:
                     self._warn(f"Unknown staging statement: {keyword}", line_no)
             except ValueError as exc:
                 self._warn(str(exc), line_no)
-        flush_snapshot()
+        flush_block()
         return StagingDocument(
             stage=stage,
             grid_standard=grid_standard,
@@ -121,6 +147,7 @@ class StagingParser:
             set_pieces=set_pieces,
             props=props,
             snapshots=snapshots,
+            beats=tuple(beats),
             diagnostics=tuple(self.diagnostics),
         )
 
@@ -239,9 +266,45 @@ class StagingParser:
         self._warn(f"Malformed placement: {line}", line_no)
         return Placement(entity=tokens[0] if tokens else "unknown", offstage=True, line_no=line_no)
 
-    def _looks_like_placement(self, line: str) -> bool:
+    def _parse_blocking_statement(self, line: str, line_no: int) -> Placement:
+        tokens = self._tokens(line, line_no)
+        if len(tokens) >= 2 and tokens[1] == "->":
+            fields = self._fields(tokens[3:])
+            return Placement(
+                entity=tokens[0],
+                location=self._source_location(tokens[2]),
+                face=fields.get("face"),
+                line_no=line_no,
+            )
+        if len(tokens) >= 5 and tokens[1] in ("move", "cross") and tokens[3] == "->":
+            fields = self._fields(tokens[5:])
+            return Placement(
+                entity=tokens[0],
+                location=self._source_location(tokens[4]),
+                face=fields.get("face"),
+                line_no=line_no,
+            )
+        if len(tokens) >= 4 and tokens[1] == "enter" and tokens[3] == "->":
+            fields = self._fields(tokens[4:])
+            return Placement(
+                entity=tokens[0],
+                location=self._source_location(tokens[4]) if len(tokens) > 4 and "=" not in tokens[4] else self._source_location(tokens[2]),
+                face=fields.get("face"),
+                line_no=line_no,
+            )
+        if len(tokens) >= 2 and tokens[1] in ("exit", "remove"):
+            fields = self._fields(tokens[2:])
+            return Placement(
+                entity=tokens[0],
+                offstage=True,
+                via=fields.get("via") or (tokens[2] if len(tokens) >= 3 and "=" not in tokens[2] else None),
+                line_no=line_no,
+            )
+        return self._parse_placement(line, line_no)
+
+    def _looks_like_blocking_statement(self, line: str) -> bool:
         tokens = line.split()
-        return len(tokens) >= 2 and (tokens[1] == "@" or tokens[1] == "offstage")
+        return len(tokens) >= 2 and tokens[1] in ("@", "offstage", "->", "move", "cross", "enter", "exit", "remove")
 
     def _tokens(self, line: str, line_no: int) -> list[str]:
         try:

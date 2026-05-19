@@ -191,6 +191,22 @@ class SceneSnapshot:
 
 
 @dataclass(frozen=True)
+class BlockingBeat:
+    beat_id: str
+    scene_id: str
+    placements: tuple[Placement, ...]
+    line_no: int | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "beat_id": self.beat_id,
+            "scene_id": self.scene_id,
+            "placements": [placement.to_dict() for placement in self.placements],
+            **({"line_no": self.line_no} if self.line_no is not None else {}),
+        }
+
+
+@dataclass(frozen=True)
 class StagingDocument:
     stage: StageDefinition = field(default_factory=StageDefinition)
     grid_standard: int | None = 9
@@ -201,6 +217,7 @@ class StagingDocument:
     set_pieces: dict[str, SetPieceDefinition] = field(default_factory=dict)
     props: dict[str, PropDefinition] = field(default_factory=dict)
     snapshots: dict[str, SceneSnapshot] = field(default_factory=dict)
+    beats: tuple[BlockingBeat, ...] = ()
     diagnostics: tuple[StagingDiagnostic, ...] = ()
 
     def to_dict(self) -> dict:
@@ -214,6 +231,7 @@ class StagingDocument:
             "set_pieces": {key: value.to_dict() for key, value in sorted(self.set_pieces.items())},
             "props": {key: value.to_dict() for key, value in sorted(self.props.items())},
             "snapshots": {key: value.to_dict() for key, value in sorted(self.snapshots.items())},
+            "beats": [beat.to_dict() for beat in self.beats],
             "diagnostics": [diagnostic.to_dict() for diagnostic in self.diagnostics],
         }
 

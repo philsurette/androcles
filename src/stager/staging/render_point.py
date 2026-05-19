@@ -6,6 +6,7 @@ from pathlib import Path
 
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
+from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_renderer import StageSvgRenderer
 
 
@@ -13,6 +14,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Render a point-in-time stage snapshot to SVG.")
     parser.add_argument("input", type=Path, help="Stage description text file")
     parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
+    parser.add_argument("--beat", help="Optional beat id. Applies scene blocking beats up to and including this beat.")
     parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
     parser.add_argument("--json-out", type=Path, help="Optional normalized JSON output path")
     parser.add_argument(
@@ -24,7 +26,10 @@ def main() -> None:
     args = parser.parse_args()
 
     document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
-    snapshot = StagingResolver().resolve_snapshot(document, args.scene)
+    if args.beat is None:
+        snapshot = StagingResolver().resolve_snapshot(document, args.scene)
+    else:
+        snapshot = StagingStateResolver().resolve_beat(document, args.scene, args.beat)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(snapshot), encoding="utf-8")
     if args.json_out is not None:

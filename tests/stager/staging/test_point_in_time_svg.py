@@ -6,6 +6,7 @@ from pathlib import Path
 
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
+from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
 
@@ -183,6 +184,60 @@ CLA @ nowhere
     assert "sword" in svg
     assert "Offstage / unknown" in svg
     assert "nowhere" in svg
+
+
+def test_state_resolver_applies_ordered_blocking_beats() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+actor OPH label=OP name=Ophelia
+set table kind=furniture at=C size=(5,3)
+
+scene 1.2 snapshot
+HAM @ DL face=CLA
+CLA @ UC
+OPH offstage via=door_l
+sword @ table
+
+beat b1 scene=1.2
+HAM move DL -> C face=CLA
+OPH enter door_l -> DR
+
+beat b2 scene=1.2
+CLA -> DC
+sword remove
+"""
+    )
+
+    snapshot = StagingStateResolver().resolve_beat(document, "1.2", "b2")
+
+    placements = {placement.entity: placement for placement in snapshot.placements}
+    assert snapshot.scene_id == "1.2@b2"
+    assert placements["HAM"].source == "C"
+    assert placements["OPH"].source == "DR"
+    assert placements["CLA"].source == "DC"
+    assert placements["sword"].offstage is True
+    assert placements["HAM"].point is not None
+    assert placements["HAM"].point.x == 0
+
+
+def test_state_resolver_warns_for_unknown_beat() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+
+scene 1.2 snapshot
+HAM @ DL
+"""
+    )
+
+    snapshot = StagingStateResolver().resolve_beat(document, "1.2", "missing")
+
+    assert any("Unknown beat 'missing' for scene '1.2'" == diagnostic.message for diagnostic in snapshot.diagnostics)
 
 
 def test_svg_renderer_uses_layers_top_left_area_labels_and_offsets_actor_collisions() -> None:
@@ -431,3 +486,48 @@ OPH offstage via=door_l
     assert "HAM" in svg_path.read_text(encoding="utf-8")
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["scene_id"] == "1.2"
+
+
+def test_render_point_cli_writes_beat_state(tmp_path: Path) -> None:
+    source = tmp_path / "stage.txt"
+    svg_path = tmp_path / "stage.svg"
+    json_path = tmp_path / "stage.json"
+    source.write_text(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+
+scene 1.2 snapshot
+HAM @ DL
+
+beat b1 scene=1.2
+HAM -> C
+""",
+        encoding="utf-8",
+    )
+
+    from stager.staging.render_point import main
+    import sys
+
+    original_argv = sys.argv
+    try:
+        sys.argv = [
+            "render_point",
+            str(source),
+            "--scene",
+            "1.2",
+            "--beat",
+            "b1",
+            "--out",
+            str(svg_path),
+            "--json-out",
+            str(json_path),
+        ]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    data = json.loads(json_path.read_text(encoding="utf-8"))
+    assert data["scene_id"] == "1.2@b1"
+    assert data["placements"][0]["source"] == "C"

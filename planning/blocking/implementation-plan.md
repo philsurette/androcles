@@ -121,7 +121,39 @@ Acceptance tests:
 - vertical moves warn when no stair/ramp/lift connector exists
 - rendering state resolves from the nearest prior snapshot rather than from full-play replay
 
-## Milestone 6 — Static SVG renderer
+## Milestone 6 — Point-in-time state resolver
+
+Renderers should be able to request a scene state at a specific beat. The resolver should:
+
+- start with the scene-start snapshot
+- apply ordered blocking beats for that scene up to the requested beat
+- update actor, prop, and movable set-piece locations
+- handle enters and exits as state changes
+- preserve diagnostics for unknown or inconsistent state
+
+Initial supported beat statements:
+
+```text
+HAM @ C
+HAM move DL -> C
+HAM -> C
+OPH enter door_l -> DL
+OPH exit via=door_r
+sword @ table
+sword remove
+```
+
+Acceptance tests:
+
+- [x] scene-start snapshot initializes state
+- [x] absolute placement updates state
+- [x] move/cross updates the entity to the destination
+- [x] enter introduces an offstage actor/prop into the rendered state
+- [x] exit/remove moves an entity to the offstage list
+- [x] rendering an unknown beat produces a diagnostic
+- [x] resolving a later beat applies all earlier beats for the same scene in source order
+
+## Milestone 7 — Static SVG renderer
 
 Render:
 
@@ -136,13 +168,14 @@ Acceptance tests:
 - produces valid-looking SVG string
 - includes `viewBox`
 - includes actor IDs/classes
-- includes path for movement
 - deterministic output for snapshot testing
 - labels elevated levels in 2D plan view
 - renders actor level/elevation badges for non-deck positions
 - includes diagnostics for unknown actor/prop state instead of failing the whole diagram
 
-## Milestone 7 — Playbook integration
+Movement path arrows and cue badges are future refinements after stateful point-in-time rendering is reliable.
+
+## Milestone 8 — Playbook integration
 
 Add compiled outputs to Playbook assets.
 
@@ -153,23 +186,11 @@ Acceptance tests:
 - Cuemaster can load/display SVG as a static asset, if relevant code exists
 - old text-only blocking entries are no longer required in the Playbook manifest
 
-## Milestone 8 — Timeline skeleton
-
-Generate timeline JSON without playback.
-
-Acceptance tests:
-
-- timed moves produce start/end or duration records
-- cue events appear in timeline
-- untimed events are omitted or marked static
-
 ## Later milestones
 
 - editor diagnostics
 - layout preview UI
 - drag-to-adjust locations in Stager
-- animation playback
-- audio synchronization
 - prop state validation
 - z-axis path validation
 - support for multiple layouts per production
