@@ -1652,23 +1652,25 @@ button:disabled {
   max-width: min(96vw, 48rem);
   min-height: 0;
   padding: clamp(0.8rem, 2vw, 1.2rem);
+  position: relative;
   width: 100%;
 }
 
 .blocking-diagram-header {
-  align-items: start;
-  display: flex;
-  gap: 1rem;
-  justify-content: space-between;
   margin-bottom: 0.75rem;
+  min-height: 3.75rem;
+  padding-right: 6.1rem;
 }
 
 .blocking-diagram-header-actions {
   align-items: center;
   display: inline-flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.28rem;
   justify-content: flex-end;
+  position: absolute;
+  right: clamp(0.8rem, 2vw, 1.2rem);
+  top: clamp(0.8rem, 2vw, 1.2rem);
 }
 
 .blocking-diagram-header-actions .quick-toggle {
