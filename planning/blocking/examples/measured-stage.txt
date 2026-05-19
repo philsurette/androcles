@@ -1,0 +1,14 @@
+stage type=proscenium width=36 depth=24 units=ft
+grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+actor OPH label=OP name=Ophelia
+anchor door_l kind=exit at=(-16,20,0)
+anchor door_r kind=exit at=(16,20,0)
+set table kind=furniture at=(0,12,0) size=(5,3)
+
+scene 1.2 snapshot
+HAM @ (-12,4,0) face=CLA
+CLA @ (0,20,0)
+OPH offstage via=door_l
+sword @ table

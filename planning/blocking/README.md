@@ -28,6 +28,7 @@ Implementation should remove or replace the current blocking-note parser, public
 - `spec-rendering-animation.md` — SVG rendering and animation design.
 - `implementation-plan.md` — staged implementation plan and acceptance tests.
 - `point_in_time_svg_implementation_plan.md` — focused plan for a standalone stage-description-to-SVG vertical slice before Quince/Playbook integration.
+- `examples/README.md` — standalone point-in-time stage examples and render commands.
 - `examples/production-staging-example.md` — sample embedded usage in `production.md`.
 
 ## Design stance

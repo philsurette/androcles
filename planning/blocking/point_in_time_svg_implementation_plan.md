@@ -201,11 +201,11 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 ## Phase 8: Documentation And Examples
 
-- [ ] Add text-only stage example.
-- [ ] Add measured stage example.
-- [ ] Add multi-level example using 2D elevation metadata.
-- [ ] Document that dimensions are optional.
-- [ ] Document that scene snapshots are preferred over full-play replay.
+- [x] Add text-only stage example.
+- [x] Add measured stage example.
+- [x] Add multi-level example using 2D elevation metadata.
+- [x] Document that dimensions are optional.
+- [x] Document that scene snapshots are preferred over full-play replay.
 
 ## Acceptance Criteria
 

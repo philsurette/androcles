@@ -4,14 +4,19 @@
 stage type=proscenium width=36 depth=24 audience=south
 grid standard=9
 
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+
 level deck z=0
-level bridge polygon=(-10,18, 10,18, 10,22, -10,22) z=8
-stair stair_l from=(-12,14,0) to=(-10,18,8) steps=10
+level bridge at=UC size=(18,4) z=8
 
 anchor door_l kind=exit at=(-18,20,0)
 anchor door_r kind=exit at=(18,20,0)
 anchor vom_dr kind=entrance at=(18,3,0)
+anchor deck_l at=CL
+anchor bridge_l at=(-10,20,8)
 anchor trap_c kind=trap at=(0,12,0) size=(4,4)
+stair stair_l from=deck_l to=bridge_l
 
 set table kind=furniture at=C size=(5,3) fixed=true
 set throne kind=furniture at=UC size=(4,4) fixed=true
