@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Wrapper to invoke the standalone staging/blocking CLI
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PYTHONPATH="$SCRIPT_DIR/src" exec "$SCRIPT_DIR/.venv/bin/python" -m stager.staging.block "$@"
