@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from stager.production.production_recommendation import ProductionRecommendationService
 from stager.production.production_status import (
+    AudioplayProductionStatus,
     CleanupReviewProductionStatus,
     PlaybookProductionStatus,
     ProductionStatus,
@@ -91,11 +92,34 @@ def test_recommendation_reports_ready_when_no_action_needed() -> None:
     assert recommendation.action == "ready"
 
 
+def test_recommendation_reports_stale_audioplay_after_playbook_is_fresh() -> None:
+    recommendation = ProductionRecommendationService().recommend(
+        status=_status(
+            roles=(_role(),),
+            playbook=PlaybookProductionStatus(
+                exists=True,
+                production_version="1@current",
+                matches_current_published_version=True,
+            ),
+            audioplay=AudioplayProductionStatus(
+                exists=True,
+                production_version="1@old",
+                matches_current_published_version=False,
+            ),
+        ),
+        play_id="androcles",
+    )
+
+    assert recommendation.action == "build audioplay"
+    assert recommendation.reason == "the current audioplay does not match the published production version"
+
+
 def _status(
     *,
     has_unpublished_changes: bool = False,
     roles: tuple[RoleProductionStatus, ...],
     playbook: PlaybookProductionStatus | None = None,
+    audioplay: AudioplayProductionStatus | None = None,
 ) -> ProductionStatus:
     return ProductionStatus(
         play_id="androcles",
@@ -106,6 +130,12 @@ def _status(
         roles=roles,
         cast_configured=True,
         playbook=playbook or PlaybookProductionStatus(exists=False),
+        audioplay=audioplay
+        or AudioplayProductionStatus(
+            exists=True,
+            production_version="1@current",
+            matches_current_published_version=True,
+        ),
         cleanup_review=CleanupReviewProductionStatus(exists=False, expected_segments=sum(role.expected_segments for role in roles)),
         voice_profiles=VoiceProfileProductionStatus(configured_profiles=0, expected_segments=0, rendered_segments=0),
     )

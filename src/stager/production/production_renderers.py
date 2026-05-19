@@ -205,6 +205,22 @@ def render_production_status(status: ProductionStatus) -> str:
     lines.extend(
         [
             "",
+            "Audioplay:",
+            f"  exists: {'yes' if status.audioplay.exists else 'no'}",
+        ]
+    )
+    if status.audioplay.exists:
+        lines.append(f"  production version: {status.audioplay.production_version or 'unknown'}")
+        lines.append(f"  audio format: {status.audioplay.audio_format or 'unknown'}")
+        lines.append(f"  audio source: {status.audioplay.audio_source or 'unknown'}")
+        if status.audioplay.matches_current_published_version is not None:
+            lines.append(
+                "  matches current published version: "
+                + ("yes" if status.audioplay.matches_current_published_version else "no")
+            )
+    lines.extend(
+        [
+            "",
             "Next:",
             f"  action: {recommendation.action}",
             f"  reason: {recommendation.reason}",

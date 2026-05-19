@@ -17,6 +17,18 @@ describe("PlaybookInfoScreen", () => {
     expect(screen.getByText("Blocking changes")).toBeInTheDocument();
     expect(screen.getByText("I-1:b1")).toBeInTheDocument();
   });
+
+  it("warns when a Playbook was built from a working source", () => {
+    render(
+      createElement(PlaybookInfoScreen, {
+        playbook: { ...playbook(), production: { source: "working", version: "1@draft" } },
+        onBack: () => undefined
+      })
+    );
+
+    expect(screen.getByText("Production warning")).toBeInTheDocument();
+    expect(screen.getByText(/unpublished working production/)).toBeInTheDocument();
+  });
 });
 
 function playbook(): Playbook {

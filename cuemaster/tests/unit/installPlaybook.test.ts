@@ -124,6 +124,54 @@ describe("installPlaybook", () => {
     });
   });
 
+  it("replaces same-version rebuilds without confirmation", async () => {
+    await installPlaybook(await buildPlaybookFile("androcles-minimal.playbook.zip", manifestWithProductionVersion("1@p1")));
+    const sameVersion = await buildPlaybookFile("androcles-minimal-rebuild.playbook.zip", manifestWithProductionVersion("1@p1"));
+    const confirmReplacement = vi.fn(() => false);
+
+    await installPlaybook(sameVersion, { confirmReplacement });
+
+    expect(confirmReplacement).not.toHaveBeenCalled();
+    await expect(playbookRepository.get("androcles-minimal")).resolves.toMatchObject({
+      importMetadata: { filename: "androcles-minimal-rebuild.playbook.zip" },
+      production: { version: "1@p1" }
+    });
+  });
+
+  it("replaces newer published versions without confirmation", async () => {
+    await installPlaybook(await buildPlaybookFile("androcles-minimal-v1.playbook.zip", manifestWithProductionVersion("1@p1")));
+    const newer = await buildPlaybookFile("androcles-minimal-v2.playbook.zip", manifestWithProductionVersion("2@p2"));
+    const confirmReplacement = vi.fn(() => false);
+
+    await installPlaybook(newer, { confirmReplacement });
+
+    expect(confirmReplacement).not.toHaveBeenCalled();
+    await expect(playbookRepository.get("androcles-minimal")).resolves.toMatchObject({
+      production: { version: "2@p2" }
+    });
+  });
+
+  it("requires confirmation before replacing with a working-source Playbook", async () => {
+    await installPlaybook(await buildPlaybookFile("androcles-minimal-v1.playbook.zip", manifestWithProductionVersion("1@p1")));
+    const working = await buildPlaybookFile(
+      "androcles-minimal-working.playbook.zip",
+      manifestWithProductionVersion("2@p2", "working")
+    );
+    const confirmReplacement = vi.fn(() => false);
+
+    await expect(installPlaybook(working, { confirmReplacement })).rejects.toBeInstanceOf(PlaybookReplacementDeclinedError);
+
+    expect(confirmReplacement).toHaveBeenCalledWith(
+      expect.objectContaining({
+        risk: "working-source",
+        requiresConfirmation: true
+      })
+    );
+    await expect(playbookRepository.get("androcles-minimal")).resolves.toMatchObject({
+      production: { source: "published", version: "1@p1" }
+    });
+  });
+
   it("classifies production forks before replacement", () => {
     const decision = playbookReplacementDecision(
       playbookForReplacement("1@oldpub", "published"),
@@ -187,11 +235,12 @@ function stagingManifest() {
   };
 }
 
-function manifestWithProductionVersion(version: string): typeof manifestFixture {
+function manifestWithProductionVersion(version: string, source: "published" | "working" = "published"): typeof manifestFixture {
   return {
     ...manifestFixture,
     production: {
       ...manifestFixture.production,
+      source,
       version,
       sequence: Number(version.split("@")[0]),
       publication_id: version.split("@")[1]

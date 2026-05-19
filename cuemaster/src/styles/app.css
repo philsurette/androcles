@@ -281,6 +281,12 @@ button:disabled {
   background: rgba(86, 125, 81, 0.14);
 }
 
+.playbook-source-warning {
+  color: #8e2c18;
+  font-size: 0.9rem;
+  margin-top: 0.35rem;
+}
+
 .error {
   background: rgba(185, 79, 47, 0.14);
   color: #8e2c18;

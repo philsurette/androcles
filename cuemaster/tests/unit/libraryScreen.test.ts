@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Playbook } from "../../src/domain/playbook";
-import { playbookProductionLabel } from "../../src/ui/screens/LibraryScreen";
+import { playbookProductionLabel, playbookProductionWarning } from "../../src/ui/playbookProductionPresentation";
 
 describe("playbookProductionLabel", () => {
   it("labels published playbooks with their production version", () => {
@@ -10,7 +10,10 @@ describe("playbookProductionLabel", () => {
   });
 
   it("warns when a library playbook was built from a working source", () => {
-    expect(playbookProductionLabel(playbook({ source: "working" }))).toBe("Working source");
+    const workingPlaybook = playbook({ source: "working" });
+
+    expect(playbookProductionLabel(workingPlaybook)).toBe("Working source");
+    expect(playbookProductionWarning(workingPlaybook)).toContain("unpublished working production");
   });
 });
 

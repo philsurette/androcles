@@ -68,6 +68,28 @@ class PlaybookProductionStatus:
 
 
 @dataclass(frozen=True)
+class AudioplayProductionStatus:
+    exists: bool
+    build_timestamp: str | None = None
+    production_version: str | None = None
+    production_source: str | None = None
+    audio_format: str | None = None
+    audio_source: str | None = None
+    matches_current_published_version: bool | None = None
+
+    def to_dict(self) -> dict:
+        return {
+            "exists": self.exists,
+            "build_timestamp": self.build_timestamp,
+            "production_version": self.production_version,
+            "production_source": self.production_source,
+            "audio_format": self.audio_format,
+            "audio_source": self.audio_source,
+            "matches_current_published_version": self.matches_current_published_version,
+        }
+
+
+@dataclass(frozen=True)
 class CleanupReviewProductionStatus:
     exists: bool
     reviewed_segments: int = 0
@@ -125,6 +147,7 @@ class ProductionStatus:
     roles: tuple[RoleProductionStatus, ...]
     cast_configured: bool
     playbook: PlaybookProductionStatus
+    audioplay: AudioplayProductionStatus
     cleanup_review: CleanupReviewProductionStatus
     voice_profiles: VoiceProfileProductionStatus
     blocking_changes: tuple[str, ...] = ()
@@ -164,6 +187,7 @@ class ProductionStatus:
             "blocking_changes": list(self.blocking_changes),
             "roles": [role.to_dict() for role in self.roles],
             "playbook": self.playbook.to_dict(),
+            "audioplay": self.audioplay.to_dict(),
             "cleanup_review": self.cleanup_review.to_dict(),
             "voice_profiles": self.voice_profiles.to_dict(),
         }
@@ -198,6 +222,7 @@ class ProductionStatusService:
             roles=role_statuses,
             cast_configured=bool(cast_config.actors or cast_config.roles),
             playbook=self._playbook_status(current_version_text),
+            audioplay=self._audioplay_status(current_version_text),
             cleanup_review=self._cleanup_review_status(),
             voice_profiles=self._voice_profile_status(),
             blocking_changes=blocking_changes,
@@ -459,5 +484,33 @@ class ProductionStatusService:
             build_timestamp=build.get("buildTimestamp") if isinstance(build.get("buildTimestamp"), str) else None,
             production_version=production_version,
             production_source=production.get("source") if isinstance(production.get("source"), str) else None,
+            matches_current_published_version=matches_current,
+        )
+
+    def _audioplay_status(self, current_published_version: str | None) -> AudioplayProductionStatus:
+        manifest_path = self.paths_config.audio_play_dir / "audioplay_manifest.json"
+        if not manifest_path.exists():
+            return AudioplayProductionStatus(exists=False)
+        try:
+            raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, OSError):
+            return AudioplayProductionStatus(exists=True)
+        build = raw_manifest.get("build") if isinstance(raw_manifest, dict) else None
+        production = raw_manifest.get("production") if isinstance(raw_manifest, dict) else None
+        options = raw_manifest.get("options") if isinstance(raw_manifest, dict) else None
+        build = build if isinstance(build, dict) else {}
+        production = production if isinstance(production, dict) else {}
+        options = options if isinstance(options, dict) else {}
+        production_version = production.get("version") if isinstance(production.get("version"), str) else None
+        matches_current = None
+        if current_published_version is not None:
+            matches_current = production_version == current_published_version
+        return AudioplayProductionStatus(
+            exists=True,
+            build_timestamp=build.get("buildTimestamp") if isinstance(build.get("buildTimestamp"), str) else None,
+            production_version=production_version,
+            production_source=production.get("source") if isinstance(production.get("source"), str) else None,
+            audio_format=options.get("audioFormat") if isinstance(options.get("audioFormat"), str) else None,
+            audio_source=options.get("audioSource") if isinstance(options.get("audioSource"), str) else None,
             matches_current_published_version=matches_current,
         )

@@ -10,6 +10,7 @@ from stager.audio.voice_profile_cast import VoiceProfileCastResolver
 from stager.audio.voice_profile_renderer import CommandRunner, VoiceProfileRenderer, VoiceRenderResult
 from stager.audio.voice_profile_resolver import VoiceProfileResolver
 from stager.audio.voice_render_cache import VoiceRenderCache
+from stager.audiobook.audio_play_build_manifest import AudioPlayBuildManifestWriter
 from stager.audiobook.play_builder import PlayBuilder
 from stager.domain.play import Play
 from stager.loudnorm.normalizer import Normalizer
@@ -114,6 +115,16 @@ class AudioPlayBuildService:
                     self.progress_reporter.advance(f"Normalized {out_path.name}")
         elif normalize_output and not generate_audio:
             logger.info("Skipping normalization because audio rendering was skipped.")
+        manifest_path = AudioPlayBuildManifestWriter(self.paths).write(
+            out_paths=tuple(out_paths),
+            part=part,
+            audio_format=audio_format,
+            audio_source=audio_source,
+            voice_profiles=voice_profiles,
+            voice_actor=voice_actor,
+            normalized=normalize_output and generate_audio,
+        )
+        logger.info("Wrote audioplay build manifest %s", path_display.display_path(manifest_path))
         if self.progress_reporter is not None:
             self.progress_reporter.finish("Built audioplay")
         return out_paths

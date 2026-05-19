@@ -4,6 +4,7 @@ import { estimateStorage, formatBytes, requestPersistentStorage, type StorageEst
 import { installPlaybook, type PlaybookReplacementDecision } from "../../playbook/installPlaybook";
 import { indexedDbStorage } from "../../storage/indexedDbStorage";
 import { userFacingErrorMessage } from "../errors/userFacingErrorMessage";
+import { playbookProductionLabel, playbookProductionWarning } from "../playbookProductionPresentation";
 
 type LibraryScreenProps = {
   onSelectPlaybook: (playbook: Playbook) => void;
@@ -181,6 +182,9 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
                       {playbook.roles.length} role{playbook.roles.length === 1 ? "" : "s"}
                     </p>
                     <p className="playbook-version-badge">{playbookProductionLabel(playbook)}</p>
+                    {playbookProductionWarning(playbook) ? (
+                      <p className="playbook-source-warning">{playbookProductionWarning(playbook)}</p>
+                    ) : null}
                   </div>
                   <div className="row-actions">
                     <div className="row-action-group row-action-group-primary">
@@ -246,11 +250,4 @@ export function LibraryScreen({ onSelectPlaybook, onPlayPlaybook, onViewPlaybook
       </section>
     </main>
   );
-}
-
-export function playbookProductionLabel(playbook: Playbook): string {
-  if (playbook.production.source === "working") {
-    return playbook.production.version ? `Working source ${playbook.production.version}` : "Working source";
-  }
-  return playbook.production.version ? `Published ${playbook.production.version}` : "Published version unknown";
 }

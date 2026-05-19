@@ -87,7 +87,7 @@ Checklist:
 - [x] Report stale imported recordings by content hash, not only missing files.
 - [x] Report cleanup review coverage and warnings/fallback counts.
 - [x] Report voice-profile rendered-audio coverage for configured profiles.
-- [ ] Report audioplay build freshness.
+- [x] Report audioplay build freshness.
 - [x] Add status tests for stale recordings, cleanup review, voice renders, and recommendations.
 
 ## Phase 3: Targeted Recommendations
@@ -105,7 +105,7 @@ Checklist:
 - [x] Recommend cleanup render/review when cleanup is configured or review exists but is incomplete.
 - [x] Recommend voice-profile render when configured rendered audio is missing or stale.
 - [x] Recommend Playbook rebuild for blocking-only changes even when speech audio is current.
-- [ ] Recommend audioplay rebuild when audioplay output is stale or missing.
+- [x] Recommend audioplay rebuild when audioplay output is stale or missing.
 - [x] Include the reason and command in both `quince next` and any status summary.
 
 ## Phase 4: Cuemaster Playbook Update UX
@@ -115,12 +115,12 @@ Cuemaster must make script/blocking freshness visible to actors.
 Checklist:
 
 - [x] Show production version/source in the Library row.
-- [ ] Show an "unpublished/working source" warning for non-published Playbooks.
+- [x] Show an "unpublished/working source" warning for non-published Playbooks.
 - [x] Before replacing an installed Playbook, compare old/new production metadata.
 - [x] Confirm replacement when the new package is older, from a different production fork, or from a working source.
 - [x] Preserve role selection, session cursor, timing attempts, and bookmarks when replacing with a successor version where line ids still match.
 - [x] Show "what changed" after import when the Playbook carries production change metadata.
-- [ ] Add tests for same-version rebuild, newer version replacement, older version warning, and fork warning.
+- [x] Add tests for same-version rebuild, newer version replacement, older version warning, and fork warning.
 
 ## Phase 5: Blocking-Only Update Workflow
 
@@ -149,12 +149,12 @@ Checklist:
 
 ## Acceptance Criteria
 
-- [ ] A producer can run `quince status` and understand what blocks actor distribution.
-- [ ] A producer can run `quince next` and get a specific next action with a concrete command.
-- [ ] A cast file can drive role ownership without duplicating role/actor choices in multiple places.
-- [ ] Status distinguishes missing recordings from stale imported recordings.
-- [ ] Status distinguishes canonical audio, cleanup review audio, and voice-profile rendered audio readiness.
-- [ ] Actors can see which production version is installed in Cuemaster.
-- [ ] Importing a replacement Playbook is explicit when version lineage is risky.
+- [x] A producer can run `quince status` and understand what blocks actor distribution.
+- [x] A producer can run `quince next` and get a specific next action with a concrete command.
+- [x] A cast file can drive role ownership without duplicating role/actor choices in multiple places.
+- [x] Status distinguishes missing recordings from stale imported recordings.
+- [x] Status distinguishes canonical audio, cleanup review audio, and voice-profile rendered audio readiness.
+- [x] Actors can see which production version is installed in Cuemaster.
+- [x] Importing a replacement Playbook is explicit when version lineage is risky.
 - [x] Blocking-only updates produce updated rehearsal material without unnecessary recording requests.
 - [x] Whole-role recording remains available but does not create a second downstream pipeline.

@@ -153,6 +153,41 @@ def test_production_status_reports_playbook_version_freshness(tmp_path: Path) ->
     assert status.playbook.matches_current_published_version is True
 
 
+def test_production_status_reports_audioplay_version_freshness(tmp_path: Path) -> None:
+    cfg = _config(tmp_path)
+    ScriptWright(paths_config=cfg).write_locked()
+    published = ProductionPublisher(paths_config=cfg).publish(change_summary="Initial")
+    cfg.audio_play_dir.mkdir(parents=True, exist_ok=True)
+    (cfg.audio_play_dir / "audioplay_manifest.json").write_text(
+        json.dumps(
+            {
+                "build": {
+                    "buildTimestamp": "2026-05-18T12:00:00Z",
+                },
+                "production": {
+                    "source": "published",
+                    "version": str(published.version.production_version),
+                },
+                "options": {
+                    "audioFormat": "mp4",
+                    "audioSource": "cleaned",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    play = ProductionPlayLoader(paths_config=cfg).load()
+
+    status = ProductionStatusService(paths_config=cfg, play=play).build()
+
+    assert status.audioplay.exists is True
+    assert status.audioplay.production_version == str(published.version.production_version)
+    assert status.audioplay.build_timestamp == "2026-05-18T12:00:00Z"
+    assert status.audioplay.audio_format == "mp4"
+    assert status.audioplay.audio_source == "cleaned"
+    assert status.audioplay.matches_current_published_version is True
+
+
 def test_production_status_reports_unpublished_blocking_changes(tmp_path: Path, monkeypatch) -> None:
     cfg = _config(tmp_path)
     cfg.production_markdown.write_text(

@@ -75,6 +75,18 @@ class ProductionRecommendationService:
                 reason="no Playbook has been built",
                 command=f"quince build-playbook --play {play_id}",
             )
+        if status.audioplay.exists and status.audioplay.matches_current_published_version is False:
+            return ProductionRecommendation(
+                action="build audioplay",
+                reason="the current audioplay does not match the published production version",
+                command=f"quince build-audioplay --play {play_id}",
+            )
+        if not status.audioplay.exists:
+            return ProductionRecommendation(
+                action="build audioplay",
+                reason="no audioplay has been built",
+                command=f"quince build-audioplay --play {play_id}",
+            )
         return ProductionRecommendation(
             action="ready",
             reason="no immediate blocking action was found",

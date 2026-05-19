@@ -1,4 +1,5 @@
 import type { Playbook } from "../../domain/playbook";
+import { playbookProductionWarning } from "../playbookProductionPresentation";
 
 type PlaybookInfoScreenProps = {
   playbook: Playbook;
@@ -30,6 +31,7 @@ function formatLocalBuildTime(timestamp: string | undefined): string {
 
 export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps) {
   const totalLines = playbook.roles.reduce((sum, role) => sum + role.lines.length, 0);
+  const productionWarning = playbookProductionWarning(playbook);
   const manifestText = playbook.manifestText ?? JSON.stringify({
     id: playbook.id,
     title: playbook.title,
@@ -65,6 +67,12 @@ export function PlaybookInfoScreen({ playbook, onBack }: PlaybookInfoScreenProps
         </header>
 
         <dl className="playbook-metadata-list">
+          {productionWarning ? (
+            <div className="playbook-source-warning">
+              <dt>Production warning</dt>
+              <dd>{productionWarning}</dd>
+            </div>
+          ) : null}
           <div>
             <dt>Title</dt>
             <dd>{playbook.title}</dd>
