@@ -13,6 +13,7 @@ from stager.staging.model import BlockingBeat, StagingDocument
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
+from stager.staging.svg_icons import StageSvgIconLibrary
 
 
 BUNDLE_FORMAT = "quince.blocking.diagram_bundle"
@@ -49,6 +50,9 @@ class PlaybookStagingBundleBuilder:
         checkpoint_records: list[dict[str, Any]] = []
         delta_records: list[dict[str, Any]] = []
         file_paths: list[Path] = []
+        icons_path = self.bundle_dir / "icons.svg"
+        icons_path.write_text("\n".join(StageSvgIconLibrary().defs()) + "\n", encoding="utf-8")
+        file_paths.append(icons_path)
         for scene_id in sorted(document.snapshots):
             checkpoint_state = self._scene_state(document, scene_id)
             checkpoint_id = f"scene:{scene_id}:start"
@@ -93,6 +97,10 @@ class PlaybookStagingBundleBuilder:
             "format": BUNDLE_FORMAT,
             "format_version": BUNDLE_FORMAT_VERSION,
             "default_orientation": "portrait",
+            "icon_library": {
+                "format": "svg-symbols",
+                "path": self._manifest_path(icons_path),
+            },
             "checkpoints": checkpoint_records,
             "deltas": delta_records,
         }

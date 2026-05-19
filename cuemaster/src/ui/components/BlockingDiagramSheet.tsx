@@ -5,10 +5,11 @@ type BlockingDiagramSheetProps = {
   state: DiagramState;
   blockingId: string;
   noteText: string;
+  iconLibrarySvg: string | null;
   onClose: () => void;
 };
 
-export function BlockingDiagramSheet({ state, blockingId, noteText, onClose }: BlockingDiagramSheetProps) {
+export function BlockingDiagramSheet({ state, blockingId, noteText, iconLibrarySvg, onClose }: BlockingDiagramSheetProps) {
   return (
     <div className="blocking-diagram-backdrop" role="presentation">
       <section className="blocking-diagram-sheet" role="dialog" aria-modal="true" aria-label="Blocking diagram">
@@ -21,7 +22,7 @@ export function BlockingDiagramSheet({ state, blockingId, noteText, onClose }: B
             Close
           </button>
         </header>
-        <BlockingDiagram state={state} />
+        <BlockingDiagram state={state} iconLibrarySvg={iconLibrarySvg} />
       </section>
     </div>
   );

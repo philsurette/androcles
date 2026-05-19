@@ -68,6 +68,8 @@ class StageSvgIconLibrary:
         "set-piece": "prop",
         "light": "practical-light",
         "weapon": "sword",
+        "recorder": "radio",
+        "tape-recorder": "radio",
     }
 
     _SYMBOLS = {

@@ -45,7 +45,8 @@ describe("extractPlaybookZip", () => {
     expect(extracted.jsonAssets.map((asset) => asset.path).sort()).toEqual([
       "staging/checkpoints/scene-start.json",
       "staging/deltas/scene-b1.json",
-      "staging/diagram_manifest.json"
+      "staging/diagram_manifest.json",
+      "staging/icons.svg"
     ]);
   });
 
@@ -117,6 +118,7 @@ async function buildPlaybookZip(options: {
     zip.file("staging/diagram_manifest.json", JSON.stringify(stagingManifest()));
     zip.file("staging/checkpoints/scene-start.json", "{}");
     zip.file("staging/deltas/scene-b1.json", "{}");
+    zip.file("staging/icons.svg", '<defs><symbol id="stage-icon-table" viewBox="0 0 24 24"></symbol></defs>');
   }
 
   for (const audioPath of requiredAudioPaths(manifest)) {
@@ -132,6 +134,10 @@ function stagingManifest() {
   return {
     format: "quince.blocking.diagram_bundle",
     format_version: "1.0.0",
+    icon_library: {
+      format: "svg-symbols",
+      path: "staging/icons.svg"
+    },
     checkpoints: [{ id: "scene:start", scene_id: "1", path: "staging/checkpoints/scene-start.json" }],
     deltas: [
       {

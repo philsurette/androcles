@@ -20,6 +20,7 @@ app/
   audio/
   staging/
     diagram_manifest.json
+    icons.svg
     checkpoints/
       scene-1.3-start.json
       scene-1.3-b20.json
@@ -75,6 +76,7 @@ app/
   - [x] output directory.
 - [x] Outputs:
   - [x] `staging/diagram_manifest.json`,
+  - [x] `staging/icons.svg`,
   - [x] checkpoint `DiagramState` JSON files,
   - [x] delta JSON files,
   - [x] summary object for insertion into Playbook `manifest.json`.
@@ -185,7 +187,8 @@ app/
   - [x] visible blocking note opens diagram view when a target exists,
   - [x] non-targeted blocking note remains plain text,
   - [x] diagram view returns to the same rehearsal line,
-  - [x] checkpoint and delta fixture renders expected entity positions.
+  - [x] checkpoint and delta fixture renders expected entity positions,
+  - [x] packaged SVG icon library renders set-piece and prop icons.
 
 ## Acceptance Criteria
 
@@ -193,5 +196,5 @@ app/
 - [x] Playbooks without staging data remain valid and omit `manifest.staging`.
 - [x] Existing rehearsal behavior does not depend on staging assets.
 - [x] Existing Cuemaster clients can ignore the added field/files as a newer minor-format package.
-- [ ] Cuemaster can render a blocking diagram from packaged JSON without source markdown or `staging.txt`.
+- [x] Cuemaster can render a blocking diagram from packaged JSON without source markdown or `staging.txt`.
 - [x] Full test suite passes in Stager and Cuemaster.

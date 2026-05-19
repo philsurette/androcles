@@ -372,12 +372,18 @@ sword remove
     }
     assert bundle["checkpoints"][0]["scene_id"] == "1.1"
     assert bundle["deltas"][0]["production_anchor"] == "I-2"
+    assert bundle["icon_library"] == {
+        "format": "svg-symbols",
+        "path": "staging/icons.svg",
+    }
+    assert "stage-icon-table" in (cfg.build_dir / "app" / bundle["icon_library"]["path"]).read_text(encoding="utf-8")
     assert delta["targets"][0]["ops"]
     assert any(entity["id"] == "actor:MG" and entity["source"] == "DR" for entity in reconstructed["entities"])
     assert delta["format"] == "quince.blocking.diagram_delta"
     assert reconstructed == direct
     with zipfile.ZipFile(zip_path) as archive:
         assert "staging/diagram_manifest.json" in archive.namelist()
+        assert "staging/icons.svg" in archive.namelist()
         assert bundle["checkpoints"][0]["path"] in archive.namelist()
         assert bundle["deltas"][0]["path"] in archive.namelist()
 

@@ -68,6 +68,9 @@ describe("installPlaybook", () => {
     await expect(db.jsonAssets.get(["androcles-minimal", "staging/checkpoints/scene-start.json"])).resolves.toMatchObject({
       text: "{}"
     });
+    await expect(db.jsonAssets.get(["androcles-minimal", "staging/icons.svg"])).resolves.toMatchObject({
+      text: expect.stringContaining("stage-icon-table")
+    });
   });
 
   it("preserves local rehearsal progress when replacing an installed Playbook", async () => {
@@ -139,6 +142,7 @@ async function buildPlaybookFile(filename: string, manifest = manifestFixture): 
     zip.file("staging/diagram_manifest.json", JSON.stringify(stagingManifest()));
     zip.file("staging/checkpoints/scene-start.json", "{}");
     zip.file("staging/deltas/scene-b1.json", "{}");
+    zip.file("staging/icons.svg", '<defs><symbol id="stage-icon-table" viewBox="0 0 24 24"></symbol></defs>');
   }
 
   for (const audioPath of requiredAudioPaths()) {
@@ -165,6 +169,10 @@ function stagingManifest() {
   return {
     format: "quince.blocking.diagram_bundle",
     format_version: "1.0.0",
+    icon_library: {
+      format: "svg-symbols",
+      path: "staging/icons.svg"
+    },
     checkpoints: [{ id: "scene:start", scene_id: "1", path: "staging/checkpoints/scene-start.json" }],
     deltas: [
       {

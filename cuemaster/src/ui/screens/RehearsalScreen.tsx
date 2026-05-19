@@ -44,7 +44,11 @@ import { useRehearsalSessionPersistence } from "../hooks/useRehearsalSessionPers
 import { useRehearsalSettings, type AutoAdvanceMode, type AutoPlayLineMode } from "../hooks/useRehearsalSettings";
 import { evaluateTempoTimingResult, useTempoTiming } from "../hooks/useTempoTiming";
 import type { DiagramBundleManifest, DiagramState } from "../../staging/diagramTypes";
-import { loadDiagramBundleManifest, loadDiagramStateForBlocking } from "../../staging/diagramLoader";
+import {
+  loadDiagramBundleManifest,
+  loadDiagramIconLibrary,
+  loadDiagramStateForBlocking
+} from "../../staging/diagramLoader";
 import { resolveDiagramTarget } from "../../staging/diagramResolver";
 import { BlockingDiagramSheet } from "../components/BlockingDiagramSheet";
 
@@ -148,6 +152,7 @@ export function RehearsalScreen({
     state: DiagramState;
     blockingId: string;
     noteText: string;
+    iconLibrarySvg: string | null;
   } | null>(null);
   const {
     reviewAttempts,
@@ -256,7 +261,13 @@ export function RehearsalScreen({
           candidateLine.id,
           blocking.id
         );
-        setSelectedBlockingDiagram({ state: diagramState, blockingId: blocking.id, noteText: blocking.text });
+        const iconLibrarySvg = await loadDiagramIconLibrary(playbook.id, manifest);
+        setSelectedBlockingDiagram({
+          state: diagramState,
+          blockingId: blocking.id,
+          noteText: blocking.text,
+          iconLibrarySvg
+        });
       } catch (error) {
         setStorageStatus(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
       }
@@ -1404,6 +1415,7 @@ export function RehearsalScreen({
             state={selectedBlockingDiagram.state}
             blockingId={selectedBlockingDiagram.blockingId}
             noteText={selectedBlockingDiagram.noteText}
+            iconLibrarySvg={selectedBlockingDiagram.iconLibrarySvg}
             onClose={() => setSelectedBlockingDiagram(null)}
           />
         ) : null}

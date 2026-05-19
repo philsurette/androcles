@@ -112,6 +112,9 @@ async function extractStagingJsonAssets(zip: JSZip, manifest: ReturnType<typeof 
       paths.add(delta.path);
     }
   }
+  if (typeof stagingManifest.icon_library?.path === "string") {
+    paths.add(stagingManifest.icon_library.path);
+  }
 
   const assets: ExtractedJsonAsset[] = [];
   for (const path of paths) {
@@ -124,9 +127,20 @@ async function extractStagingJsonAssets(zip: JSZip, manifest: ReturnType<typeof 
   return assets;
 }
 
-function parseStagingManifest(text: string, path: string): { checkpoints?: Array<{ path?: unknown }>; deltas?: Array<{ path?: unknown }> } {
+function parseStagingManifest(
+  text: string,
+  path: string
+): {
+  checkpoints?: Array<{ path?: unknown }>;
+  deltas?: Array<{ path?: unknown }>;
+  icon_library?: { path?: unknown };
+} {
   try {
-    const parsed = JSON.parse(text) as { checkpoints?: Array<{ path?: unknown }>; deltas?: Array<{ path?: unknown }> };
+    const parsed = JSON.parse(text) as {
+      checkpoints?: Array<{ path?: unknown }>;
+      deltas?: Array<{ path?: unknown }>;
+      icon_library?: { path?: unknown };
+    };
     if (!parsed || typeof parsed !== "object") {
       throw new Error("Staging manifest is not a JSON object");
     }

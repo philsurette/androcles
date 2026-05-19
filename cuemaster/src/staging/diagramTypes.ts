@@ -8,8 +8,14 @@ export type DiagramBundleManifest = {
   format: "quince.blocking.diagram_bundle";
   format_version: string;
   default_orientation?: "portrait" | "landscape";
+  icon_library?: DiagramIconLibraryRecord;
   checkpoints: DiagramCheckpointRecord[];
   deltas: DiagramDeltaRecord[];
+};
+
+export type DiagramIconLibraryRecord = {
+  format: "svg-symbols";
+  path: string;
 };
 
 export type DiagramCheckpointRecord = {
@@ -60,6 +66,8 @@ export type DiagramEntity = {
   point?: Point3D;
   position?: Point3D;
   size?: { width?: number; depth?: number; radius?: number };
+  offset?: { x?: number; y?: number };
+  slot_index?: number;
   icon?: string;
   face?: string;
   movement_from?: Point3D;

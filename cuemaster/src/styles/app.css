@@ -1660,6 +1660,24 @@ button:disabled {
   stroke-width: 0.1;
 }
 
+.blocking-stage-icon {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.blocking-stage-icon-set-piece {
+  color: #24231e;
+  stroke: currentColor;
+  stroke-width: 0.2;
+}
+
+.blocking-stage-icon-prop {
+  color: #53376e;
+  stroke: currentColor;
+  stroke-width: 0.22;
+}
+
 .blocking-entity circle {
   fill: #eef3f6;
   stroke: rgba(45, 43, 35, 0.7);

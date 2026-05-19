@@ -46,6 +46,7 @@ build/<play_id>/app/
         <ROLE>.wav
   staging/
     diagram_manifest.json
+    icons.svg
     checkpoints/
       <checkpoint_id>.json
     deltas/
@@ -190,6 +191,10 @@ The bundle manifest describes compact renderer input, not SVG output:
   "format": "quince.blocking.diagram_bundle",
   "format_version": "1.0.0",
   "default_orientation": "portrait",
+  "icon_library": {
+    "format": "svg-symbols",
+    "path": "staging/icons.svg"
+  },
   "checkpoints": [
     {
       "id": "scene:1.3:start",
@@ -211,6 +216,8 @@ The bundle manifest describes compact renderer input, not SVG output:
   ]
 }
 ```
+
+The optional `icon_library` entry points to an SVG symbol file used for `icon` ids in checkpoint and delta state JSON. Renderer clients should use it when present and may fall back to simple generic shapes when it is absent.
 
 Checkpoint files contain full `quince.blocking.diagram_state` JSON as produced by Stager's diagram-state builder. Delta files contain semantic JSON diff operations from one checkpoint to one or more target beats. They are not SVG text patches. Cuemaster may either render a checkpoint directly or apply deltas to a checkpoint and render the resulting diagram state.
 

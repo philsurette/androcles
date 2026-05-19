@@ -2,9 +2,25 @@ import { indexedDbStorage } from "../storage/indexedDbStorage";
 import { applyDiagramDelta } from "./diagramDelta";
 import { resolveDiagramTarget } from "./diagramResolver";
 import type { DiagramBundleManifest, DiagramDelta, DiagramState } from "./diagramTypes";
+import { sanitizeSvgIconLibrary } from "./svgIconLibrary";
 
 export async function loadDiagramBundleManifest(playbookId: string, path: string): Promise<DiagramBundleManifest> {
   return parseJsonAsset<DiagramBundleManifest>(playbookId, path);
+}
+
+export async function loadDiagramIconLibrary(
+  playbookId: string,
+  manifest: DiagramBundleManifest
+): Promise<string | null> {
+  const path = manifest.icon_library?.path;
+  if (!path) {
+    return null;
+  }
+  const asset = await indexedDbStorage.jsonAssets.get(playbookId, path);
+  if (!asset) {
+    throw new Error(`Playbook staging asset is missing: ${path}`);
+  }
+  return sanitizeSvgIconLibrary(asset.text);
 }
 
 export async function loadDiagramStateForBlocking(
