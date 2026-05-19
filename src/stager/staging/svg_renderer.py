@@ -256,6 +256,7 @@ class StageSvgRenderer:
         stroke = self._elevation_stroke(entity.elevation)
         lines = [
             *self._movement_arrow(diagram, entity, scale, x, y),
+            *self._next_movement_arrow(diagram, entity, scale, x, y),
             f'<g class="actor-mark"><title>{escape(entity.title)}</title>',
             f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13" style="fill:{fill};stroke:{stroke}"/>',
             f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(entity.label or entity.source_id)}</text>',
@@ -293,6 +294,35 @@ class StageSvgRenderer:
         title = f"{entity.source_id} moved from {entity.movement_from_source}" if entity.movement_from_source else f"{entity.source_id} moved"
         return [
             f'<line class="movement-arrow" x1="{start_x:g}" y1="{start_y:g}" x2="{end_x:g}" y2="{end_y:g}" '
+            f'marker-end="url(#movement-arrowhead)"><title>{escape(title)}</title></line>'
+        ]
+
+    def _next_movement_arrow(
+        self,
+        diagram: DiagramState,
+        entity: DiagramEntity,
+        scale: float,
+        start_x: float,
+        start_y: float,
+    ) -> list[str]:
+        if entity.movement_to is None or entity.point is None:
+            return []
+        destination_x, destination_y = self._project(entity.movement_to, diagram.stage.width, diagram.stage.depth, scale)
+        dx = destination_x - start_x
+        dy = destination_y - start_y
+        distance = (dx * dx + dy * dy) ** 0.5
+        if distance < 1:
+            return []
+        unit_x = dx / distance
+        unit_y = dy / distance
+        arrow_length = min(32.4, max(16.8, distance * 0.24))
+        shaft_start_x = start_x + unit_x * 15
+        shaft_start_y = start_y + unit_y * 15
+        end_x = shaft_start_x + unit_x * arrow_length
+        end_y = shaft_start_y + unit_y * arrow_length
+        title = f"{entity.source_id} moves next to {entity.movement_to_source}" if entity.movement_to_source else f"{entity.source_id} moves next"
+        return [
+            f'<line class="movement-arrow" x1="{shaft_start_x:g}" y1="{shaft_start_y:g}" x2="{end_x:g}" y2="{end_y:g}" '
             f'marker-end="url(#movement-arrowhead)"><title>{escape(title)}</title></line>'
         ]
 

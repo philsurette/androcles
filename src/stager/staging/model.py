@@ -183,6 +183,7 @@ class Placement:
     entity: str
     location: SourceLocation | None = None
     origin: SourceLocation | None = None
+    next_location: SourceLocation | None = None
     face: str | None = None
     offstage: bool = False
     via: str | None = None
@@ -194,6 +195,7 @@ class Placement:
             "offstage": self.offstage,
             **({"location": self.location.to_dict()} if self.location is not None else {}),
             **({"origin": self.origin.to_dict()} if self.origin is not None else {}),
+            **({"next_location": self.next_location.to_dict()} if self.next_location is not None else {}),
             **({"face": self.face} if self.face is not None else {}),
             **({"via": self.via} if self.via is not None else {}),
             **({"line_no": self.line_no} if self.line_no is not None else {}),
@@ -282,6 +284,8 @@ class ResolvedPlacement:
     point: Point3D | None = None
     origin_source: str | None = None
     origin_point: Point3D | None = None
+    next_source: str | None = None
+    next_point: Point3D | None = None
     face: str | None = None
     offstage: bool = False
     via: str | None = None
@@ -296,6 +300,8 @@ class ResolvedPlacement:
             **({"point": self.point.to_dict()} if self.point is not None else {}),
             **({"origin_source": self.origin_source} if self.origin_source is not None else {}),
             **({"origin_point": self.origin_point.to_dict()} if self.origin_point is not None else {}),
+            **({"next_source": self.next_source} if self.next_source is not None else {}),
+            **({"next_point": self.next_point.to_dict()} if self.next_point is not None else {}),
             **({"face": self.face} if self.face is not None else {}),
             **({"via": self.via} if self.via is not None else {}),
             **({"line_no": self.line_no} if self.line_no is not None else {}),

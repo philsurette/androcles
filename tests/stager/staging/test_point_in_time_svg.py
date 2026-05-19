@@ -304,6 +304,16 @@ sword remove
     assert placements["sword"].offstage is True
     assert placements["HM"].point is not None
     assert placements["HM"].point.x == 0
+    assert placements["HM"].origin_point is None
+    assert placements["OP"].origin_point is None
+    assert placements["CD"].origin_source == "UC"
+
+    previous = StagingStateResolver().resolve_beat(document, "1.2", "b1")
+    previous_placements = {placement.entity: placement for placement in previous.placements}
+    assert previous_placements["HM"].origin_source == "DL"
+    assert previous_placements["OP"].origin_point is None
+    assert previous_placements["CD"].next_source == "DC"
+    assert previous_placements["HM"].next_point is None
 
 
 def test_state_resolver_warns_for_unknown_beat() -> None:

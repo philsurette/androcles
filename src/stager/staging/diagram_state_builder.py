@@ -155,6 +155,8 @@ class DiagramStateBuilder:
                         title=title,
                         movement_from=placement.origin_point,
                         movement_from_source=placement.origin_source,
+                        movement_to=placement.next_point,
+                        movement_to_source=placement.next_source,
                         label=label,
                         face=placement.face,
                         elevation=self._elevation(placement.point.z),

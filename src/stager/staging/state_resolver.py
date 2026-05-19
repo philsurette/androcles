@@ -20,17 +20,24 @@ class StagingStateResolver:
                 state[placement.entity] = placement
 
         found_target = False
-        for beat in document.beats:
-            if beat.scene_id != scene_id:
-                continue
+        scene_beats = [beat for beat in document.beats if beat.scene_id == scene_id]
+        target_index = None
+        for index, beat in enumerate(scene_beats):
+            is_target_beat = beat.beat_id == beat_id
             for placement in beat.placements:
-                state[placement.entity] = self._with_origin(placement, state.get(placement.entity))
-            if beat.beat_id == beat_id:
+                if is_target_beat:
+                    state[placement.entity] = self._with_origin(placement, state.get(placement.entity))
+                else:
+                    state[placement.entity] = self._without_origin(placement)
+            if is_target_beat:
                 found_target = True
+                target_index = index
                 break
 
         if not found_target:
             diagnostics.append(StagingDiagnostic("warning", f"Unknown beat {beat_id!r} for scene {scene_id!r}"))
+        elif target_index is not None and target_index + 1 < len(scene_beats):
+            self._apply_next_movements(state, scene_beats[target_index + 1].placements)
 
         effective_document = replace(
             document,
@@ -54,3 +61,19 @@ class StagingStateResolver:
         if previous is None or previous.location is None:
             return placement
         return replace(placement, origin=previous.location)
+
+    def _without_origin(self, placement: Placement) -> Placement:
+        if placement.origin is None:
+            return placement
+        return replace(placement, origin=None)
+
+    def _apply_next_movements(self, state: dict[str, Placement], next_placements: tuple[Placement, ...]) -> None:
+        for next_placement in next_placements:
+            if next_placement.offstage or next_placement.location is None:
+                continue
+            current = state.get(next_placement.entity)
+            if current is None or current.offstage or current.location is None:
+                continue
+            if current.location.source == next_placement.location.source:
+                continue
+            state[next_placement.entity] = replace(current, next_location=next_placement.location)

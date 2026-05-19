@@ -136,6 +136,8 @@ class DiagramEntity:
     title: str
     movement_from: Point3D | None = None
     movement_from_source: str | None = None
+    movement_to: Point3D | None = None
+    movement_to_source: str | None = None
     visible: bool = True
     label: str | None = None
     icon: str | None = None
@@ -162,6 +164,8 @@ class DiagramEntity:
             **({"point": self.point.to_dict()} if self.point is not None else {}),
             **({"movement_from": self.movement_from.to_dict()} if self.movement_from is not None else {}),
             **({"movement_from_source": self.movement_from_source} if self.movement_from_source is not None else {}),
+            **({"movement_to": self.movement_to.to_dict()} if self.movement_to is not None else {}),
+            **({"movement_to_source": self.movement_to_source} if self.movement_to_source is not None else {}),
             **({"label": self.label} if self.label is not None else {}),
             **({"icon": self.icon} if self.icon is not None else {}),
             **({"face": self.face} if self.face is not None else {}),

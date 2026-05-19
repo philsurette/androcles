@@ -226,6 +226,9 @@ class StagingResolver:
         origin = None
         if placement.origin is not None:
             origin = self._resolve_source(document, scenic_set, areas, placement.origin, diagnostics, line_no=placement.line_no)
+        next_location = None
+        if placement.next_location is not None:
+            next_location = self._resolve_source(document, scenic_set, areas, placement.next_location, diagnostics, line_no=placement.line_no)
         if location.point is None:
             diagnostics.append(
                 StagingDiagnostic(
@@ -241,6 +244,8 @@ class StagingResolver:
             point=location.point,
             origin_source=placement.origin.source if placement.origin is not None else None,
             origin_point=origin.point if origin is not None else None,
+            next_source=placement.next_location.source if placement.next_location is not None else None,
+            next_point=next_location.point if next_location is not None else None,
             face=placement.face,
             line_no=placement.line_no,
         )
