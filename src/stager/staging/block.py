@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
+from stager.shared import paths
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
@@ -180,13 +181,13 @@ class BlockCli:
         for diagnostic in snapshot.diagnostics:
             location = f"line {diagnostic.line_no}: " if diagnostic.line_no is not None else ""
             print(f"{diagnostic.severity}: {location}{diagnostic.message}")
-        print(output_path)
+        print(paths.display_path(output_path))
 
     def _icons(self, args) -> None:
         output_path = args.out or REPO_ROOT / "build" / "staging" / "block-icon-library.svg"
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(StageSvgIconLibrary().catalog_svg(), encoding="utf-8")
-        print(output_path)
+        print(paths.display_path(output_path))
 
     def _default_diagram_output(self, input_path: Path, diagram) -> Path:
         return self._default_output_dir(input_path) / self._default_diagram_filename(diagram)

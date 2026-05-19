@@ -4,6 +4,7 @@ import argparse
 import json
 from pathlib import Path
 
+from stager.shared import paths
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
@@ -40,7 +41,7 @@ def main() -> None:
     for diagnostic in snapshot.diagnostics:
         location = f"line {diagnostic.line_no}: " if diagnostic.line_no is not None else ""
         print(f"{diagnostic.severity}: {location}{diagnostic.message}")
-    print(args.out)
+    print(paths.display_path(args.out))
 
 
 if __name__ == "__main__":

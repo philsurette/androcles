@@ -805,7 +805,7 @@ HAM -> C
     assert (output_dir / "scene-1.2-b1.svg").exists()
 
 
-def test_block_cli_icons_uses_default_output() -> None:
+def test_block_cli_icons_uses_default_output(capsys) -> None:
     from stager.staging.block import REPO_ROOT, main
     import sys
 
@@ -818,3 +818,4 @@ def test_block_cli_icons_uses_default_output() -> None:
         sys.argv = original_argv
 
     assert '<symbol id="stage-icon-table"' in output_path.read_text(encoding="utf-8")
+    assert capsys.readouterr().out.strip() == "build/staging/block-icon-library.svg"
