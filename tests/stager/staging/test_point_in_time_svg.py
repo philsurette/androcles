@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
+from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
 
 
@@ -99,6 +101,156 @@ CLA @ nowhere
     assert "sword" in svg
     assert "Offstage / unknown" in svg
     assert "nowhere" in svg
+
+
+def test_svg_renderer_uses_layers_top_left_area_labels_and_offsets_actor_collisions() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+set table kind=furniture at=C size=(5,3)
+
+scene 1.2 snapshot
+HAM @ C
+CLA @ C
+sword @ table
+dagger @ table
+"""
+    )
+    snapshot = StagingResolver().resolve_snapshot(document, "1.2")
+
+    svg = StageSvgRenderer().render(snapshot)
+
+    assert '<g class="layer-props">' in svg
+    assert '<g class="layer-actors">' in svg
+    assert ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}" in svg
+    assert '<text class="area-label" x="45" y="55">UL</text>' in svg
+    assert ".icon-actor{color:#2f6f9f;opacity:.78}" in svg
+    actor_icons = re.findall(r'<use class="stage-icon icon-actor" href="#stage-icon-actor" x="([^"]+)" y="([^"]+)"', svg)
+    assert len(actor_icons) == 2
+    assert actor_icons[0] != actor_icons[1]
+    prop_labels = re.findall(r'<use class="stage-icon icon-prop" href="#stage-icon-[^"]+" x="([^"]+)" y="([^"]+)"', svg)
+    assert len(prop_labels) == 2
+    assert prop_labels[0] != prop_labels[1]
+    assert svg.index('<g class="layer-props">') < svg.index('<g class="layer-actors">')
+    assert 'href="#stage-icon-sword"' in svg
+    assert 'href="#stage-icon-dagger"' in svg
+    assert 'class="prop-leader"' in svg
+
+
+def test_svg_renderer_uses_snapshot_position_for_placed_set_piece() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+set table kind=furniture at=C size=(5,3)
+
+scene 1.2 snapshot
+table @ DL
+"""
+    )
+    snapshot = StagingResolver().resolve_snapshot(document, "1.2")
+
+    svg = StageSvgRenderer().render(snapshot)
+
+    assert svg.count('href="#stage-icon-table"') == 1
+    assert svg.index('<g class="layer-scenery">') < svg.index('href="#stage-icon-table"') < svg.index('<g class="layer-props">')
+
+
+def test_svg_icon_library_contains_stage_object_icons() -> None:
+    icons = StageSvgIconLibrary()
+    expected_icons = [
+        "actor",
+        "actor-group",
+        "chair",
+        "stool",
+        "bench",
+        "sofa",
+        "table",
+        "small-table",
+        "desk",
+        "bed",
+        "cabinet",
+        "chest",
+        "crate",
+        "screen",
+        "piano",
+        "music-stand",
+        "prop",
+        "basket",
+        "bag",
+        "box",
+        "letter",
+        "book",
+        "newspaper",
+        "key",
+        "lantern",
+        "candle",
+        "lamp",
+        "umbrella",
+        "cane",
+        "rope",
+        "bell",
+        "mask",
+        "cloth",
+        "flag",
+        "flower",
+        "cup",
+        "bottle",
+        "tray",
+        "food",
+        "sword",
+        "dagger",
+        "staff",
+        "shield",
+        "pistol",
+        "rifle",
+        "hat",
+        "crown",
+        "cloak",
+        "telephone",
+        "radio",
+        "instrument",
+        "practical-light",
+        "smoke-source",
+        "puppet",
+        "dummy",
+        "animal",
+        "spike-mark",
+        "handoff",
+        "cue-point",
+        "hazard",
+        "preset",
+        "strike",
+        "storage",
+    ]
+
+    assert all(icons.has_icon(icon) for icon in expected_icons)
+
+
+def test_svg_icon_library_renders_browsable_catalog() -> None:
+    svg = StageSvgIconLibrary().catalog_svg(columns=4)
+
+    assert svg.startswith("<?xml")
+    assert '<symbol id="stage-icon-chair"' in svg
+    assert '<use class="icon" href="#stage-icon-chair"' in svg
+    assert '<text class="label"' in svg
+
+
+def test_render_icon_library_cli_writes_svg(tmp_path: Path) -> None:
+    output_path = tmp_path / "icons.svg"
+
+    from stager.staging.render_icon_library import main
+    import sys
+
+    original_argv = sys.argv
+    try:
+        sys.argv = ["render_icon_library", "--out", str(output_path)]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    assert '<symbol id="stage-icon-table"' in output_path.read_text(encoding="utf-8")
 
 
 def test_render_point_cli_writes_svg_and_json(tmp_path: Path) -> None:

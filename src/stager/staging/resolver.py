@@ -135,7 +135,7 @@ class StagingResolver:
         return ResolvedPlacement(
             entity=placement.entity,
             kind=kind,
-            source=location.source,
+            source=placement.location.source,
             point=location.point,
             face=placement.face,
             line_no=placement.line_no,
