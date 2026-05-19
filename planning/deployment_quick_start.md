@@ -116,7 +116,13 @@ cuemaster/dist/     -> cuemaster
 linerecorder/dist/  -> linerecorder
 ```
 
-In Cloudflare, use **Workers & Pages**, choose the app, and upload the matching `dist/` folder. The hosted apps still do not contain production data; actors import Recording Request and Playbook zips separately.
+In Cloudflare, use **Workers & Pages**, choose the app, and upload the matching `dist/` folder. The hosted apps still do not contain production data; actors import Recording Request and Playbook zips separately from local files.
+
+For command-line deployment after the Cloudflare Pages projects exist, set a Cloudflare API token and account id, then run:
+
+```sh
+CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+```
 
 ## Troubleshooting
 
@@ -130,10 +136,10 @@ Check the browser's Downloads list first. The filename includes the play id, rol
 Use the hosted HTTPS app URL, not an insecure local copy. Check browser microphone permissions and the selected input device.
 
 **Cuemaster says storage is unavailable or full.**
-Try a current Chrome, Edge, Firefox, or Safari release. MP3 Playbooks are smaller and should be preferred for distribution.
+Try a current Chrome, Edge, Firefox, or Safari release outside private browsing. Make sure browser storage is allowed for the Cuemaster site. MP3 Playbooks are smaller and should be preferred for distribution.
 
 **An actor is rehearsing an old version.**
-Ask the actor to import the newest Playbook zip from `03 Playbooks/`. Archive old Playbooks so there is only one obvious current package.
+Ask the actor to import the newest Playbook zip from `03 Playbooks/`. Cuemaster can replace a compatible older Playbook while preserving local rehearsal progress. Archive old Playbooks so there is only one obvious current package.
 
 **Stager rejects Playbook generation.**
 Playbook generation is strict. Verify that every rehearsable role line has required cue audio and response audio.

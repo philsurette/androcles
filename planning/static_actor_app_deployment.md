@@ -190,7 +190,7 @@ The built asset filenames include hashes, so long caching is fine for files unde
 Cuemaster:
 
 1. Open the deployed Cuemaster URL.
-2. Import a Playbook zip.
+2. Import a local `.playbook.zip` file.
 3. Confirm the role list appears.
 4. Start a rehearsal line.
 5. Toggle stage directions and blocking if the Playbook contains them.
@@ -222,6 +222,20 @@ Typical Stager commands:
 ```
 
 Upload the resulting zip files to email, Google Drive, Dropbox, or another shared folder.
+
+## Command-Line Cloudflare Deployment
+
+After the Cloudflare Pages projects exist, deployment does not need to use the manual dashboard upload. Set a Cloudflare API token and account id in the environment, then run:
+
+```sh
+CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+```
+
+The script builds `cuemaster/dist/` and `linerecorder/dist/`, then deploys each folder with Wrangler direct upload. Use these variables if your Cloudflare project names differ from the local folder names:
+
+```sh
+CUEMASTER_PROJECT_NAME=my-cuemaster LINERECORDER_PROJECT_NAME=my-linerecorder scripts/deploy_webapps_to_cloudflare.sh
+```
 
 ## Notes
 

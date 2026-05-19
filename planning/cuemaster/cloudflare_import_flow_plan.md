@@ -44,20 +44,20 @@ Checklist:
 
 Checklist:
 
-- [ ] Build Cuemaster with `npm run build:static`.
-- [ ] Serve the built `dist/` folder from a nested/subdirectory path to simulate Cloudflare routing.
-- [ ] Verify the app shell loads with relative assets.
-- [ ] Verify local file import works from the nested path.
-- [ ] Verify imported Playbook audio assets are available after reload.
-- [ ] Add Playwright coverage for the nested-path static import flow.
+- [x] Build Cuemaster with `npm run build:static`.
+- [x] Serve the built `dist/` folder from a nested/subdirectory path to simulate Cloudflare routing.
+- [x] Verify the app shell loads with relative assets.
+- [x] Verify local file import works from the nested path.
+- [x] Verify imported Playbook audio assets are available after reload.
+- [x] Add Playwright coverage for the nested-path static import flow.
 
 ## Phase 4: Documentation
 
 Checklist:
 
-- [ ] Update actor quick-start docs to say the app is hosted but Playbooks are imported from local files.
-- [ ] Document browser storage limitations and what to try when import fails.
-- [ ] Document that actors can re-import a newer Playbook without losing compatible local rehearsal progress.
+- [x] Update actor quick-start docs to say the app is hosted but Playbooks are imported from local files.
+- [x] Document browser storage limitations and what to try when import fails.
+- [x] Document that actors can re-import a newer Playbook without losing compatible local rehearsal progress.
 - [x] Cross-link this plan from the deployment implementation plan.
 
 ## Acceptance Criteria
@@ -66,4 +66,4 @@ Checklist:
 - [x] Import progress remains visible for large Playbooks.
 - [x] Successful imports tell the actor which play and roles are available.
 - [x] Storage failures produce actionable user-facing messages.
-- [ ] The static build imports a fixture Playbook correctly from a Cloudflare-like nested path.
+- [x] The static build imports a fixture Playbook correctly from a Cloudflare-like nested path.

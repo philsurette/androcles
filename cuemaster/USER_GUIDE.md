@@ -14,8 +14,8 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 
 ## Import A Playbook
 
-1. Open Cuemaster in the browser.
-2. Click **Import Playbook**.
+1. Open the hosted Cuemaster URL in the browser.
+2. Click **Import Playbook Zip**.
 3. Choose a `.playbook.zip` file.
 4. Open the imported Playbook.
 5. Select the role you want to rehearse.
@@ -24,6 +24,8 @@ Cuemaster helps actors rehearse lines from a Playbook. It runs locally in your b
 If import fails, the Playbook is probably missing required data or audio. Ask whoever generated the Playbook to regenerate it with Stager.
 
 Large Playbooks can take time to import. Cuemaster shows progress while it validates the Playbook and stores the audio locally.
+
+The hosted app does not contain your production's Playbooks. Your director or showrunner sends the `.playbook.zip` separately, usually by email or shared drive. Re-importing a newer Playbook replaces the older copy and keeps compatible bookmarks, timing history, and saved position when the line ids still match.
 
 ## Rehearsing
 
@@ -129,4 +131,4 @@ Cuemaster does not record or upload microphone audio. It only reads volume-like 
 - Very large Playbooks can still take time to import, but zip extraction runs away from the main app screen and progress is shown while audio is stored.
 - Audio playback depends on the browser supporting the Playbook's audio files.
 - Tempo Timing works best in a quiet space and can be confused by speakers, headphones leaking audio, or background noise.
-- If browser storage fills up, remove old Playbooks or clear site data, then re-import the Playbook you need.
+- If browser storage fills up, remove old Playbooks or clear site data, then re-import the Playbook you need. If import fails immediately, try a current Chrome, Edge, Firefox, or Safari release outside private browsing and make sure browser storage is allowed for the site.

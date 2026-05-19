@@ -27,13 +27,13 @@ Goal: actors can import a Playbook zip from disk and understand import/storage f
 
 Detailed plan: [cuemaster/cloudflare_import_flow_plan.md](cuemaster/cloudflare_import_flow_plan.md).
 
-- [ ] Confirm Playbook import works from a local file input when the app is hosted on Cloudflare.
+- [x] Confirm Playbook import works from a local file input when the app is hosted on Cloudflare.
 - [x] Ensure import progress is visible for large MP3 Playbooks.
 - [x] Ensure extraction work stays off the main UI path for large packages.
 - [x] Add clear storage error handling for quota, private browsing, blocked IndexedDB, and unsupported browser cases.
 - [x] Add user-facing import success text showing the play title and available roles.
 - [x] Add a browser compatibility note favoring current Chrome, Edge, Firefox, and Safari versions.
-- [ ] Add Playwright coverage for importing a built fixture Playbook from the hosted subdirectory base path.
+- [x] Add Playwright coverage for importing a built fixture Playbook from the hosted subdirectory base path.
 
 ## Milestone 3: Static Cloudflare Builds
 
@@ -70,7 +70,13 @@ cd cuemaster && npm run build:static
 cd ../linerecorder && npm run build:static
 ```
 
-Upload each resulting `dist/` folder through Cloudflare Workers & Pages. If upload automation is added later, it should fail if either app build fails or if Cloudflare authentication/deployment fails.
+Upload each resulting `dist/` folder through Cloudflare Workers & Pages, or deploy both apps from the command line:
+
+```sh
+CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+```
+
+The script builds each app with `build:static` and runs `wrangler pages deploy <dist> --project-name <app>`. Set `CUEMASTER_PROJECT_NAME` or `LINERECORDER_PROJECT_NAME` if the Cloudflare Pages project names differ from the local folder names.
 
 ## Milestone 4: User-Facing Deployment Docs
 

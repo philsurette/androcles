@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
+    "e2e:static": "npm run build:static && playwright test --config playwright.static.config.ts static-import.spec.ts",
     "audit:licenses": "node scripts/audit-licenses.mjs"
   },
   "dependencies": {

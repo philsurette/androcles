@@ -23,7 +23,7 @@ The Cuemaster dev server is pinned to `http://127.0.0.1:5173`.
 npm run build:static
 ```
 
-This writes a static deployment bundle to `dist/` with relative asset paths so it can be hosted from either a GitHub Pages user site or project subpath.
+This writes a static deployment bundle to `dist/` with relative asset paths so it can be hosted from a Cloudflare Pages app at either a domain root or a subpath.
 
 ## Key Boundaries
 
@@ -39,4 +39,5 @@ This writes a static deployment bundle to `dist/` with relative asset paths so i
 ```sh
 npm test
 npm run e2e
+npm run e2e:static
 ```
