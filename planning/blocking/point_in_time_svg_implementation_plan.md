@@ -47,11 +47,13 @@ stage type=proscenium
 grid standard=9
 actor HAM label=HM name=Hamlet
 actor CLA label=CD name=Claudius
+
+setup act1
 anchor door_l = UL
 anchor door_r = UR
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 
-scene 1.2 snapshot
+scene 1.2 set=act1 snapshot
 HAM @ DL face=CLA
 CLA @ UC
 OPH offstage via=door_l
@@ -65,11 +67,13 @@ stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
 actor HAM label=HM name=Hamlet
 actor CLA label=CD name=Claudius
+
+setup act1
 anchor door_l at=(-16,20,0)
 anchor door_r at=(16,20,0)
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 
-scene 1.2 snapshot
+scene 1.2 set=act1 snapshot
 HAM @ DL face=CLA
 CLA @ UC
 sword @ table
@@ -94,7 +98,7 @@ sword @ table
 Suggested standalone command during the spike:
 
 ```sh
-./block render \
+./block scene \
   path/to/stage.txt \
   --scene 1.2 \
   --out /tmp/stage.svg
@@ -103,7 +107,7 @@ Suggested standalone command during the spike:
 Landscape output:
 
 ```sh
-./block render \
+./block scene \
   path/to/stage.txt \
   --scene 1.2 \
   --out /tmp/stage-landscape.svg \
@@ -147,7 +151,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 ## Phase 3: Snapshot Parser
 
-- [x] Parse scene snapshot headers such as `scene 1.2 snapshot`.
+- [x] Parse scene snapshot headers such as `scene 1.2 set=act1 snapshot`.
 - [x] Parse actor placements:
   - `HAM @ DL`
   - `HAM @ balcony_l face=house`

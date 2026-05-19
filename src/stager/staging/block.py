@@ -21,6 +21,9 @@ class BlockCli:
         )
         subparsers = parser.add_subparsers(dest="command", required=True)
         self._add_stage_command(subparsers)
+        self._add_set_command(subparsers)
+        self._add_scene_command(subparsers)
+        self._add_beat_command(subparsers)
         self._add_render_command(subparsers)
         self._add_icons_command(subparsers)
         args = parser.parse_args()
@@ -40,7 +43,7 @@ class BlockCli:
         parser.set_defaults(handler=self._stage)
 
     def _add_render_command(self, subparsers) -> None:
-        parser = subparsers.add_parser("render", help="Render a point-in-time blocking diagram.")
+        parser = subparsers.add_parser("render", help="Render a scene or beat diagram. Transitional alias for scene/beat.")
         parser.add_argument("input", type=Path, help="Blocking file / stage file")
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", help="Optional blocking beat id to apply up to")
@@ -54,6 +57,49 @@ class BlockCli:
         )
         parser.set_defaults(handler=self._render)
 
+    def _add_set_command(self, subparsers) -> None:
+        parser = subparsers.add_parser("set", help="Render a set-only diagram.")
+        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument("--set", required=True, dest="set_id", help="Set/setup id to render")
+        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--json-out", type=Path, help="Optional normalized set JSON output path")
+        parser.add_argument(
+            "--orientation",
+            choices=("portrait", "landscape"),
+            default="portrait",
+            help="Diagram orientation. Portrait puts downstage to the right and is the default.",
+        )
+        parser.set_defaults(handler=self._set)
+
+    def _add_scene_command(self, subparsers) -> None:
+        parser = subparsers.add_parser("scene", help="Render a scene snapshot diagram.")
+        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
+        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--json-out", type=Path, help="Optional normalized scene JSON output path")
+        parser.add_argument(
+            "--orientation",
+            choices=("portrait", "landscape"),
+            default="portrait",
+            help="Diagram orientation. Portrait puts downstage to the right and is the default.",
+        )
+        parser.set_defaults(handler=self._scene)
+
+    def _add_beat_command(self, subparsers) -> None:
+        parser = subparsers.add_parser("beat", help="Render a point-in-time beat diagram.")
+        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
+        parser.add_argument("--beat", required=True, help="Blocking beat id to apply up to")
+        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--json-out", type=Path, help="Optional normalized beat JSON output path")
+        parser.add_argument(
+            "--orientation",
+            choices=("portrait", "landscape"),
+            default="portrait",
+            help="Diagram orientation. Portrait puts downstage to the right and is the default.",
+        )
+        parser.set_defaults(handler=self._beat)
+
     def _add_icons_command(self, subparsers) -> None:
         parser = subparsers.add_parser("icons", help="Render a browsable SVG icon catalog.")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
@@ -65,6 +111,21 @@ class BlockCli:
             snapshot = StagingResolver().resolve_snapshot(document, args.scene)
         else:
             snapshot = StagingStateResolver().resolve_beat(document, args.scene, args.beat)
+        self._write_snapshot(args, snapshot)
+
+    def _set(self, args) -> None:
+        document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
+        snapshot = StagingResolver().resolve_set(document, args.set_id)
+        self._write_snapshot(args, snapshot)
+
+    def _scene(self, args) -> None:
+        document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
+        snapshot = StagingResolver().resolve_snapshot(document, args.scene)
+        self._write_snapshot(args, snapshot)
+
+    def _beat(self, args) -> None:
+        document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
+        snapshot = StagingStateResolver().resolve_beat(document, args.scene, args.beat)
         self._write_snapshot(args, snapshot)
 
     def _stage(self, args) -> None:

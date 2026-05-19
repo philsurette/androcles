@@ -2,7 +2,7 @@
 
 These files are standalone inputs for the `./block` CLI. They are intentionally decoupled from `production.md`, Playbook generation, and Cuemaster.
 
-These examples still use the current prototype syntax where levels, anchors, connectors, and set pieces are top-level records. The planned stage/set/scene refactor will move those records under named `setup` blocks and add `set=<setup_id>` to scene snapshot headers.
+These examples use the current stage/set/scene syntax: stage geometry is top-level, reusable scenic setup lives inside `setup` blocks, set pieces use `piece`, and scene snapshots reference a setup with `set=<setup_id>`.
 
 ## Examples
 
@@ -15,7 +15,7 @@ These examples still use the current prototype syntax where levels, anchors, con
 Default portrait output, suitable for mobile viewing:
 
 ```sh
-./block render \
+./block scene \
   planning/blocking/examples/text-only-stage.txt \
   --scene 1.2 \
   --out /tmp/text-only-stage.svg
@@ -24,7 +24,7 @@ Default portrait output, suitable for mobile viewing:
 Landscape output:
 
 ```sh
-./block render \
+./block scene \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
   --out /tmp/multi-level-stage-landscape.svg \
@@ -39,6 +39,15 @@ Stage-only output:
   --out /tmp/multi-level-stage.svg
 ```
 
+Set-only output:
+
+```sh
+./block set \
+  planning/blocking/examples/multi-level-stage.txt \
+  --set act1 \
+  --out /tmp/multi-level-stage-set.svg
+```
+
 Dimensions are optional. If a stage omits `width` and `depth`, the renderer uses a deterministic default proscenium stage so producers can start with rough named locations and add precision later.
 
 Scene snapshots are authoritative point-in-time state. The renderer does not replay all previous blocking events to determine where actors and objects are; each rendered scene should provide the placements needed for that moment.
@@ -46,7 +55,7 @@ Scene snapshots are authoritative point-in-time state. The renderer does not rep
 For staged progression inside a scene, use ordered `beat` blocks. Rendering with `--beat` starts from the scene snapshot and applies all beats for that scene up to the requested beat:
 
 ```sh
-./block render \
+./block beat \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
   --beat b2 \

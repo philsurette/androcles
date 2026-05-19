@@ -38,6 +38,7 @@ class StagingStateResolver:
                 **document.snapshots,
                 scene_id: SceneSnapshot(
                     scene_id=scene_id,
+                    set_id=snapshot.set_id if snapshot is not None else "default",
                     placements=tuple(state.values()),
                     line_no=snapshot.line_no if snapshot is not None else None,
                 ),

@@ -53,7 +53,7 @@ Example stage-only command:
   --out build/hamlet/staging/stage.svg
 ```
 
-Planned set-only command:
+Example set-only command:
 
 ```sh
 ./block set \
@@ -62,7 +62,7 @@ Planned set-only command:
   --out build/hamlet/staging/set-act1.svg
 ```
 
-Planned scene snapshot command:
+Example scene snapshot command:
 
 ```sh
 ./block scene \
@@ -71,7 +71,7 @@ Planned scene snapshot command:
   --out build/hamlet/staging/scene-1.2.svg
 ```
 
-Planned beat command:
+Example beat command:
 
 ```sh
 ./block beat \
@@ -81,7 +81,7 @@ Planned beat command:
   --out build/hamlet/staging/scene-1.3-b2.svg
 ```
 
-Current prototype point-in-time render command:
+Transitional point-in-time render alias:
 
 ```sh
 ./block render \

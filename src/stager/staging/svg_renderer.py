@@ -295,6 +295,9 @@ class StageSvgRenderer:
             f'<text class="small" x="{x}" y="{y + 20}">Stage: {escape(snapshot.stage.stage_type)}</text>',
         ]
         cursor = y + 48
+        if snapshot.set_id is not None:
+            lines.append(f'<text class="small" x="{x}" y="{cursor}">Set: {escape(snapshot.set_id)}</text>')
+            cursor += 20
         offstage = [placement for placement in snapshot.placements if placement.offstage or placement.point is None]
         if offstage:
             lines.append(f'<text class="label" x="{x}" y="{cursor}">Offstage / unknown</text>')

@@ -7,6 +7,7 @@ grid standard=9
 actor HAM label=HM name=Hamlet
 actor CLA label=CD name=Claudius
 
+setup act1
 level deck z=0
 level bridge at=UC size=(18,4) z=8
 
@@ -18,8 +19,8 @@ anchor bridge_l at=(-10,20,8)
 anchor trap_c kind=trap at=(0,12,0) size=(4,4)
 stair stair_l from=deck_l to=bridge_l
 
-set table kind=furniture at=C size=(5,3) fixed=true
-set throne kind=furniture at=UC size=(4,4) fixed=true
+piece table kind=table at=C size=(5,3) fixed=true
+piece throne kind=chair at=UC size=(4,4) fixed=true
 
 prop letter preset=table
 prop sword preset=throne
@@ -37,7 +38,7 @@ Q.17 type=group cues=[LX.13,SND.04] label="Revelation cue"
 HAMLET
 Now might I do it pat—
 
-[[blocking beat=b3 scene=1.2 line=HAM-121]]
+[[blocking beat=b3 scene=1.2 set=act1 line=HAM-121]]
 HAM @ DL face=CLA
 CLA @ UC
 HAM move DL -> C dur=2.5 curve=arc
@@ -48,7 +49,7 @@ cue LX.12 at=HAM.arrive(C)
 CLAUDIUS
 A brother's murder—
 
-[[blocking beat=b4 scene=1.2 line=CLA-122]]
+[[blocking beat=b4 scene=1.2 set=act1 line=CLA-122]]
 HAM gesture point target=CLA hand=R
 HAM move C -> table dur=1.5
 HAM pickup sword from=table

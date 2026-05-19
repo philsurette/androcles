@@ -15,6 +15,7 @@ from stager.staging.model import (
     Point3D,
     PropDefinition,
     SceneSnapshot,
+    ScenicSetDefinition,
     SetPieceDefinition,
     SourceLocation,
     StageDefinition,
@@ -24,7 +25,7 @@ from stager.staging.model import (
 
 COORD_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(-?\d+(?:\.\d+)?))?\)$")
 SIZE_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\)$")
-SCENE_SNAPSHOT_RE = re.compile(r"^scene\s+(\S+)\s+snapshot$")
+SCENE_SNAPSHOT_RE = re.compile(r"^scene\s+(\S+)(?:\s+set=(\S+))?\s+snapshot$")
 BEAT_RE = re.compile(r"^beat\s+(\S+)\s+scene=(\S+)$")
 
 
@@ -36,8 +37,11 @@ class StagingParser:
         self.diagnostics = []
         stage = StageDefinition()
         grid_standard: int | None = 9
-        anchors: dict[str, AnchorDefinition] = {}
         actors: dict[str, ActorDefinition] = {}
+        sets: dict[str, ScenicSetDefinition] = {}
+        current_set_id = "default"
+        current_set_line: int | None = None
+        anchors: dict[str, AnchorDefinition] = {}
         levels: dict[str, LevelDefinition] = {}
         connectors: dict[str, ConnectorDefinition] = {}
         set_pieces: dict[str, SetPieceDefinition] = {}
@@ -58,6 +62,7 @@ class StagingParser:
                 snapshots[current_scene] = SceneSnapshot(
                     scene_id=current_scene,
                     placements=tuple(current_placements),
+                    set_id=current_set_id_for_scene,
                     line_no=current_block_line,
                 )
             elif current_block == "beat" and current_beat is not None:
@@ -75,6 +80,31 @@ class StagingParser:
             current_block_line = None
             current_placements = []
 
+        current_set_id_for_scene = "default"
+
+        def flush_set() -> None:
+            nonlocal anchors, levels, connectors, set_pieces, props
+            if not any((anchors, levels, connectors, set_pieces, props)):
+                return
+            scenic_set = ScenicSetDefinition(
+                id=current_set_id,
+                anchors=anchors,
+                levels=levels,
+                connectors=connectors,
+                set_pieces=set_pieces,
+                props=props,
+                line_no=current_set_line,
+            )
+            if current_set_id in sets:
+                self._warn(f"Duplicate setup id {current_set_id!r}", current_set_line)
+            else:
+                sets[current_set_id] = scenic_set
+            anchors = {}
+            levels = {}
+            connectors = {}
+            set_pieces = {}
+            props = {}
+
         for line_no, raw_line in enumerate(text.splitlines(), start=1):
             line = self._strip_comment(raw_line).strip()
             if not line:
@@ -84,6 +114,7 @@ class StagingParser:
                 flush_block()
                 current_block = "snapshot"
                 current_scene = scene_match.group(1)
+                current_set_id_for_scene = scene_match.group(2) or current_set_id
                 current_block_line = line_no
                 continue
             beat_match = BEAT_RE.match(line)
@@ -105,9 +136,18 @@ class StagingParser:
             fields = self._fields(tokens[1:])
             try:
                 if keyword == "stage":
+                    flush_set()
                     stage = self._parse_stage(fields)
                 elif keyword == "grid":
+                    flush_set()
                     grid_standard = int(fields.get("standard", "9"))
+                elif keyword == "setup":
+                    flush_set()
+                    if len(tokens) < 2:
+                        self._warn("Setup statement requires an id", line_no)
+                    else:
+                        current_set_id = tokens[1]
+                        current_set_line = line_no
                 elif keyword == "anchor":
                     anchor = self._parse_anchor(tokens, fields, line_no)
                     if anchor is not None:
@@ -116,7 +156,7 @@ class StagingParser:
                     actor = self._parse_actor(tokens, fields, line_no)
                     if actor is not None:
                         self._put_unique(actors, actor.id, actor, "actor", line_no)
-                elif keyword == "set":
+                elif keyword in ("piece", "set"):
                     set_piece = self._parse_set_piece(tokens, fields, line_no)
                     if set_piece is not None:
                         self._put_unique(set_pieces, set_piece.id, set_piece, "set piece", line_no)
@@ -137,15 +177,12 @@ class StagingParser:
             except ValueError as exc:
                 self._warn(str(exc), line_no)
         flush_block()
+        flush_set()
         return StagingDocument(
             stage=stage,
             grid_standard=grid_standard,
-            anchors=anchors,
             actors=actors,
-            levels=levels,
-            connectors=connectors,
-            set_pieces=set_pieces,
-            props=props,
+            sets=sets,
             snapshots=snapshots,
             beats=tuple(beats),
             diagnostics=tuple(self.diagnostics),
@@ -197,7 +234,7 @@ class StagingParser:
 
     def _parse_set_piece(self, tokens: list[str], fields: dict[str, str], line_no: int) -> SetPieceDefinition | None:
         if len(tokens) < 2:
-            self._warn("Set statement requires an id", line_no)
+            self._warn("Set piece statement requires an id", line_no)
             return None
         return SetPieceDefinition(
             id=tokens[1],

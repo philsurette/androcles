@@ -3,15 +3,17 @@ grid standard=9
 actor HAM label=HM name=Hamlet
 actor CLA label=CD name=Claudius
 actor OPH label=OP name=Ophelia
+
+setup act1
 level balcony at=UC size=(18,4) z=8
 anchor door_l kind=exit at=(-16,20,0)
 anchor door_r kind=exit at=(16,20,0)
 anchor deck_l at=CL
 anchor balcony_l at=(-8,20,8)
 stair stair_l from=deck_l to=balcony_l
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 
-scene 1.3 snapshot
+scene 1.3 set=act1 snapshot
 HAM @ balcony_l face=CLA
 CLA @ DC
 OPH @ deck_l face=HAM

@@ -11,6 +11,7 @@ from stager.staging.model import (
     Point3D,
     ResolvedPlacement,
     ResolvedSnapshot,
+    ScenicSetDefinition,
     SetPieceDefinition,
     SourceLocation,
     StagingDocument,
@@ -39,11 +40,30 @@ class StagingResolver:
             scene_id="stage",
             stage=document.stage,
             areas=areas,
-            anchors=self._resolved_anchors(document, areas, diagnostics),
+            set_id=None,
+            anchors={},
             actors=document.actors,
-            connectors=self._resolved_connectors(document, areas, diagnostics),
-            levels=self._resolved_levels(document, areas, diagnostics),
-            set_pieces=self._resolved_set_pieces(document, areas, diagnostics),
+            connectors={},
+            levels={},
+            set_pieces={},
+            placements=(),
+            diagnostics=tuple(diagnostics),
+        )
+
+    def resolve_set(self, document: StagingDocument, set_id: str) -> ResolvedSnapshot:
+        diagnostics = list(document.diagnostics)
+        areas = self._areas(document)
+        scenic_set = self._scenic_set(document, set_id, diagnostics)
+        return ResolvedSnapshot(
+            scene_id=f"set:{set_id}",
+            stage=document.stage,
+            areas=areas,
+            set_id=set_id,
+            anchors=self._resolved_anchors(scenic_set, document, areas, diagnostics),
+            actors=document.actors,
+            connectors=self._resolved_connectors(scenic_set, document, areas, diagnostics),
+            levels=self._resolved_levels(scenic_set, document, areas, diagnostics),
+            set_pieces=self._resolved_set_pieces(scenic_set, document, areas, diagnostics),
             placements=(),
             diagnostics=tuple(diagnostics),
         )
@@ -54,21 +74,38 @@ class StagingResolver:
         snapshot = document.snapshots.get(scene_id)
         if snapshot is None:
             diagnostics.append(StagingDiagnostic("warning", f"Unknown scene snapshot {scene_id!r}"))
+            set_id = "default"
+            scenic_set = self._scenic_set(document, set_id, diagnostics)
             placements = ()
         else:
-            placements = tuple(self._resolve_placement(document, areas, placement, diagnostics) for placement in snapshot.placements)
+            set_id = snapshot.set_id
+            scenic_set = self._scenic_set(document, set_id, diagnostics)
+            placements = tuple(self._resolve_placement(document, scenic_set, areas, placement, diagnostics) for placement in snapshot.placements)
         return ResolvedSnapshot(
             scene_id=scene_id,
             stage=document.stage,
             areas=areas,
-            anchors=self._resolved_anchors(document, areas, diagnostics),
+            set_id=set_id,
+            anchors=self._resolved_anchors(scenic_set, document, areas, diagnostics),
             actors=document.actors,
-            connectors=self._resolved_connectors(document, areas, diagnostics),
-            levels=self._resolved_levels(document, areas, diagnostics),
-            set_pieces=self._resolved_set_pieces(document, areas, diagnostics),
+            connectors=self._resolved_connectors(scenic_set, document, areas, diagnostics),
+            levels=self._resolved_levels(scenic_set, document, areas, diagnostics),
+            set_pieces=self._resolved_set_pieces(scenic_set, document, areas, diagnostics),
             placements=placements,
             diagnostics=tuple(diagnostics),
         )
+
+    def _scenic_set(
+        self,
+        document: StagingDocument,
+        set_id: str,
+        diagnostics: list[StagingDiagnostic],
+    ) -> ScenicSetDefinition:
+        scenic_set = document.sets.get(set_id)
+        if scenic_set is not None:
+            return scenic_set
+        diagnostics.append(StagingDiagnostic("warning", f"Unknown set {set_id!r}"))
+        return ScenicSetDefinition(id=set_id)
 
     def _areas(self, document: StagingDocument) -> dict[str, AreaDefinition]:
         if document.grid_standard != 9:
@@ -104,36 +141,39 @@ class StagingResolver:
 
     def _resolved_anchors(
         self,
+        scenic_set: ScenicSetDefinition,
         document: StagingDocument,
         areas: dict[str, AreaDefinition],
         diagnostics: list[StagingDiagnostic],
     ) -> dict[str, AnchorDefinition]:
         return {
-            key: replace(anchor, at=self._resolve_source(document, areas, anchor.at, diagnostics))
-            for key, anchor in document.anchors.items()
+            key: replace(anchor, at=self._resolve_source(document, scenic_set, areas, anchor.at, diagnostics))
+            for key, anchor in scenic_set.anchors.items()
         }
 
     def _resolved_set_pieces(
         self,
+        scenic_set: ScenicSetDefinition,
         document: StagingDocument,
         areas: dict[str, AreaDefinition],
         diagnostics: list[StagingDiagnostic],
     ) -> dict[str, SetPieceDefinition]:
         return {
-            key: replace(set_piece, at=self._resolve_source(document, areas, set_piece.at, diagnostics))
-            for key, set_piece in document.set_pieces.items()
+            key: replace(set_piece, at=self._resolve_source(document, scenic_set, areas, set_piece.at, diagnostics))
+            for key, set_piece in scenic_set.set_pieces.items()
         }
 
     def _resolved_connectors(
         self,
+        scenic_set: ScenicSetDefinition,
         document: StagingDocument,
         areas: dict[str, AreaDefinition],
         diagnostics: list[StagingDiagnostic],
     ) -> dict[str, ConnectorDefinition]:
         resolved = {}
-        for key, connector in document.connectors.items():
-            start = self._resolve_source(document, areas, connector.start, diagnostics)
-            end = self._resolve_source(document, areas, connector.end, diagnostics)
+        for key, connector in scenic_set.connectors.items():
+            start = self._resolve_source(document, scenic_set, areas, connector.start, diagnostics)
+            end = self._resolve_source(document, scenic_set, areas, connector.end, diagnostics)
             if start.point is None:
                 diagnostics.append(StagingDiagnostic("warning", f"Unresolved connector start {connector.start.source!r} for {key}"))
             if end.point is None:
@@ -143,16 +183,17 @@ class StagingResolver:
 
     def _resolved_levels(
         self,
+        scenic_set: ScenicSetDefinition,
         document: StagingDocument,
         areas: dict[str, AreaDefinition],
         diagnostics: list[StagingDiagnostic],
     ) -> dict[str, LevelDefinition]:
         resolved = {}
-        for key, level in document.levels.items():
+        for key, level in scenic_set.levels.items():
             if level.at is None:
                 resolved[key] = level
                 continue
-            at = self._resolve_source(document, areas, level.at, diagnostics)
+            at = self._resolve_source(document, scenic_set, areas, level.at, diagnostics)
             if at.point is None:
                 diagnostics.append(StagingDiagnostic("warning", f"Unresolved level location {level.at.source!r} for {key}"))
             resolved[key] = replace(level, at=at)
@@ -161,11 +202,12 @@ class StagingResolver:
     def _resolve_placement(
         self,
         document: StagingDocument,
+        scenic_set: ScenicSetDefinition,
         areas: dict[str, AreaDefinition],
         placement,
         diagnostics: list[StagingDiagnostic],
     ) -> ResolvedPlacement:
-        kind = self._entity_kind(document, placement.entity)
+        kind = self._entity_kind(scenic_set, placement.entity)
         if placement.offstage:
             return ResolvedPlacement(
                 entity=placement.entity,
@@ -178,7 +220,7 @@ class StagingResolver:
         if placement.location is None:
             diagnostics.append(StagingDiagnostic("warning", f"Missing location for {placement.entity}", placement.line_no))
             return ResolvedPlacement(entity=placement.entity, kind=kind, source="unknown", line_no=placement.line_no)
-        location = self._resolve_source(document, areas, placement.location, diagnostics, line_no=placement.line_no)
+        location = self._resolve_source(document, scenic_set, areas, placement.location, diagnostics, line_no=placement.line_no)
         if location.point is None:
             diagnostics.append(
                 StagingDiagnostic(
@@ -199,6 +241,7 @@ class StagingResolver:
     def _resolve_source(
         self,
         document: StagingDocument,
+        scenic_set: ScenicSetDefinition,
         areas: dict[str, AreaDefinition],
         source: SourceLocation,
         diagnostics: list[StagingDiagnostic],
@@ -209,21 +252,21 @@ class StagingResolver:
         source_id = AREA_ALIASES.get(source.source, source.source)
         if source_id in areas:
             return SourceLocation(source=source.source, point=areas[source_id].center)
-        if source_id in document.anchors:
-            anchor = document.anchors[source_id]
-            return self._resolve_source(document, areas, anchor.at, diagnostics, line_no=line_no)
-        if source_id in document.set_pieces:
-            set_piece = document.set_pieces[source_id]
-            return self._resolve_source(document, areas, set_piece.at, diagnostics, line_no=line_no)
-        if source_id in document.props:
-            prop = document.props[source_id]
-            return self._resolve_source(document, areas, prop.preset, diagnostics, line_no=line_no)
+        if source_id in scenic_set.anchors:
+            anchor = scenic_set.anchors[source_id]
+            return self._resolve_source(document, scenic_set, areas, anchor.at, diagnostics, line_no=line_no)
+        if source_id in scenic_set.set_pieces:
+            set_piece = scenic_set.set_pieces[source_id]
+            return self._resolve_source(document, scenic_set, areas, set_piece.at, diagnostics, line_no=line_no)
+        if source_id in scenic_set.props:
+            prop = scenic_set.props[source_id]
+            return self._resolve_source(document, scenic_set, areas, prop.preset, diagnostics, line_no=line_no)
         diagnostics.append(StagingDiagnostic("warning", f"Unknown location reference {source.source!r}", line_no))
         return source
 
-    def _entity_kind(self, document: StagingDocument, entity: str) -> str:
-        if entity in document.set_pieces:
+    def _entity_kind(self, scenic_set: ScenicSetDefinition, entity: str) -> str:
+        if entity in scenic_set.set_pieces:
             return "set_piece"
-        if entity in document.props or not entity.isupper():
+        if entity in scenic_set.props or not entity.isupper():
             return "prop"
         return "actor"

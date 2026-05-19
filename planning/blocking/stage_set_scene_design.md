@@ -131,7 +131,7 @@ HAM @ DL face=CLA
 
 ### Keyword Changes
 
-The current prototype uses `set table kind=furniture at=C` for set pieces. That should change to `piece table kind=table at=C`.
+The current syntax uses `piece table kind=table at=C` for set pieces. The earlier prototype accepted `set table kind=furniture at=C`; that remains only as a temporary parser alias during migration.
 
 Rationale:
 
@@ -139,7 +139,7 @@ Rationale:
 - `set piece` is a theatre term, but `set <id>` and `set <piece_id>` create an avoidable parser and documentation ambiguity.
 - `piece` is terse, readable, and still maps to the existing `SetPieceDefinition` concept in code.
 
-Because no real productions depend on the prototype blocking syntax, this can be a breaking syntax cleanup rather than a compatibility shim.
+Because no real productions depend on the prototype blocking syntax, the parser alias should be removed after the remaining prototype-only docs and fixtures have migrated.
 
 ## Resolution Rules
 
@@ -224,13 +224,13 @@ Expected render contents:
 
 ## Migration Strategy
 
-The current Hamlet and planning examples should be migrated by:
+The current Hamlet and planning examples have been migrated by:
 
 1. Keeping the existing `stage` and `grid` records at top level.
 2. Adding `setup default` or a named setup such as `setup act1`.
-3. Moving `level`, `anchor`, `stair`, `ramp`, `lift`, `set`, and `prop` records into that setup.
+3. Moving `level`, `anchor`, `stair`, `ramp`, `lift`, `piece`, and `prop` records into that setup.
 4. Renaming `set <piece_id> ...` records to `piece <piece_id> ...`.
-5. Adding `set=<setup_id>` to every `scene <id> snapshot` header.
+5. Adding `set=<setup_id>` to every `scene <id> snapshot` header and embedded blocking block where applicable.
 6. Updating generated example SVG paths to include `set-<id>` where useful.
 
 ## Implementation Plan
@@ -241,62 +241,62 @@ The current Hamlet and planning examples should be migrated by:
 - [x] Update shared terminology so `Stage` no longer includes set-specific scenery.
 - [x] Update blocking README examples to show `stage`, `set`, `scene`, and `beat` commands.
 - [x] Update layout and blocking specs to describe set selection.
-- [ ] Update Hamlet example syntax to include one or more `setup` blocks.
+- [x] Update Hamlet example syntax to include one or more `setup` blocks.
 
 ### Phase 2 — Model Refactor
 
-- [ ] Add `ScenicSetDefinition`.
-- [ ] Move areas, anchors, levels, connectors, set pieces, and prop presets from `StagingDocument` into `ScenicSetDefinition`.
-- [ ] Add `set_id` to `SceneSnapshot`.
-- [ ] Add a resolved set model if it clarifies renderer input.
-- [ ] Keep actor definitions document-global.
-- [ ] Update `to_dict()` output to include `set_id` and selected set data.
+- [x] Add `ScenicSetDefinition`.
+- [x] Move anchors, levels, connectors, set pieces, and prop presets from `StagingDocument` into `ScenicSetDefinition`.
+- [x] Add `set_id` to `SceneSnapshot`.
+- [x] Use `ResolvedSnapshot.set_id` for renderer and JSON context.
+- [x] Keep actor definitions document-global.
+- [x] Update `to_dict()` output to include `set_id` and selected set data.
 
 ### Phase 3 — Parser Refactor
 
-- [ ] Parse `setup <id>` headers.
-- [ ] Parse `piece <id> ...` set-piece records.
-- [ ] Parse `scene <id> set=<set_id> snapshot`.
+- [x] Parse `setup <id>` headers.
+- [x] Parse `piece <id> ...` set-piece records.
+- [x] Parse `scene <id> set=<set_id> snapshot`.
 - [ ] Require set-owned records to appear inside a setup block.
-- [ ] Produce useful diagnostics for unknown setup references.
+- [x] Produce useful diagnostics for unknown setup references.
 - [ ] Remove the old `set <piece_id> ...` authoring form rather than adding long-term compatibility.
 
 ### Phase 4 — Resolver Refactor
 
-- [ ] Resolve stage-only state without any set records.
-- [ ] Resolve set-only state for `block set`.
-- [ ] Resolve scene snapshots against their selected set.
-- [ ] Resolve beat state against the scene's selected set.
+- [x] Resolve stage-only state without any set records.
+- [x] Resolve set-only state for `block set`.
+- [x] Resolve scene snapshots against their selected set.
+- [x] Resolve beat state against the scene's selected set.
 - [ ] Validate duplicate addressable ids in a resolved set.
 - [ ] Validate that vertical movements reference available connectors when required.
 
 ### Phase 5 — CLI Refactor
 
-- [ ] Keep `./block` as the standalone launcher.
-- [ ] Keep `block stage`.
-- [ ] Add `block set --set <id>`.
-- [ ] Add `block scene --scene <id>`.
-- [ ] Add `block beat --scene <id> --beat <id>`.
-- [ ] Keep or deprecate `block render` as a temporary alias for beat/scene rendering.
-- [ ] Update help text to use stage/set/scene/beat terminology consistently.
+- [x] Keep `./block` as the standalone launcher.
+- [x] Keep `block stage`.
+- [x] Add `block set --set <id>`.
+- [x] Add `block scene --scene <id>`.
+- [x] Add `block beat --scene <id> --beat <id>`.
+- [x] Keep `block render` as a temporary alias for beat/scene rendering.
+- [x] Update help text to use stage/set/scene/beat terminology consistently.
 
 ### Phase 6 — Tests And Fixtures
 
-- [ ] Add parser tests for setup blocks.
-- [ ] Add resolver tests for two scenes sharing one set.
-- [ ] Add resolver tests for two scenes using different sets with different levels/connectors.
-- [ ] Add CLI tests for `block set`, `block scene`, and `block beat`.
-- [ ] Add a Hamlet fixture with at least two sets.
-- [ ] Confirm stage-only rendering excludes set-specific scenery.
-- [ ] Confirm set rendering excludes scene actor placements.
+- [x] Add parser tests for setup blocks.
+- [x] Add resolver tests for two scenes sharing one set.
+- [x] Add resolver tests for two scenes using different sets with different levels/connectors.
+- [x] Add CLI tests for `block set`, `block scene`, and `block beat`.
+- [x] Add a Hamlet fixture with at least two sets.
+- [x] Confirm stage-only rendering excludes set-specific scenery.
+- [x] Confirm set rendering excludes scene actor placements.
 
 ### Phase 7 — Cleanup
 
 - [ ] Remove stale docs that imply the stage owns all scenic structure.
 - [ ] Rename examples and generated outputs where current filenames imply scene-only behavior.
 - [ ] Check for dead parser/resolver branches after dropping the old `set <piece_id>` syntax.
-- [ ] Run `PYTHONPATH=src .venv/bin/python -m pytest tests/stager/staging/test_point_in_time_svg.py`.
-- [ ] Run `.venv/bin/python run_tests.py`.
+- [x] Run `PYTHONPATH=src .venv/bin/python -m pytest tests/stager/staging/test_point_in_time_svg.py`.
+- [x] Run `.venv/bin/python run_tests.py`.
 
 ## Follow-On Features
 

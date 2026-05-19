@@ -38,6 +38,44 @@ sword @ table
     assert document.snapshots["1.2"].placements[2].offstage is True
 
 
+def test_parser_and_resolver_support_named_sets_for_scene_snapshots() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+
+setup act1
+level balcony at=UC size=(18,4) z=8
+anchor balcony_l at=(-8,20,8)
+piece table kind=table at=C size=(5,3)
+
+setup act2
+anchor throne = UC
+piece bench kind=bench at=DR size=(5,2)
+
+scene 1.2 set=act1 snapshot
+HAM @ balcony_l
+sword @ table
+
+scene 2.1 set=act2 snapshot
+HAM @ throne
+"""
+    )
+
+    act1 = StagingResolver().resolve_snapshot(document, "1.2")
+    act2 = StagingResolver().resolve_snapshot(document, "2.1")
+
+    assert document.snapshots["1.2"].set_id == "act1"
+    assert document.snapshots["2.1"].set_id == "act2"
+    assert "balcony" in act1.levels
+    assert "bench" not in act1.set_pieces
+    assert "bench" in act2.set_pieces
+    assert act1.placements[0].point is not None
+    assert act1.placements[0].point.z == 8
+    assert act2.placements[0].source == "throne"
+
+
 def test_resolver_uses_default_stage_and_preserves_unknowns_as_diagnostics() -> None:
     document = StagingParser().parse(
         """
@@ -537,6 +575,8 @@ HAM -> C
 def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
     source = tmp_path / "stage.txt"
     svg_path = tmp_path / "stage.svg"
+    scene_svg_path = tmp_path / "scene.svg"
+    beat_svg_path = tmp_path / "beat.svg"
     icons_path = tmp_path / "icons.svg"
     source.write_text(
         """
@@ -570,31 +610,58 @@ HAM -> C
             str(svg_path),
         ]
         main()
+        sys.argv = [
+            "block",
+            "scene",
+            str(source),
+            "--scene",
+            "1.2",
+            "--out",
+            str(scene_svg_path),
+        ]
+        main()
+        sys.argv = [
+            "block",
+            "beat",
+            str(source),
+            "--scene",
+            "1.2",
+            "--beat",
+            "b1",
+            "--out",
+            str(beat_svg_path),
+        ]
+        main()
         sys.argv = ["block", "icons", "--out", str(icons_path)]
         main()
     finally:
         sys.argv = original_argv
 
     assert "Scene 1.2@b1" in svg_path.read_text(encoding="utf-8")
+    assert "Scene 1.2" in scene_svg_path.read_text(encoding="utf-8")
+    assert "Scene 1.2@b1" in beat_svg_path.read_text(encoding="utf-8")
     assert '<symbol id="stage-icon-table"' in icons_path.read_text(encoding="utf-8")
 
 
 def test_block_cli_renders_stage_only_diagram(tmp_path: Path) -> None:
     source = tmp_path / "stage.txt"
     svg_path = tmp_path / "stage.svg"
+    set_svg_path = tmp_path / "set.svg"
     json_path = tmp_path / "stage.json"
+    set_json_path = tmp_path / "set.json"
     source.write_text(
         """
 stage type=proscenium
 grid standard=9
+setup act1
 level balcony at=UC size=(18,4) z=8
 anchor door_l = UL
 anchor deck_l at=CL
 anchor balcony_l at=(-8,20,8)
 stair stair_l from=deck_l to=balcony_l
-set table kind=furniture at=C size=(5,3)
+piece table kind=table at=C size=(5,3)
 
-scene 1.2 snapshot
+scene 1.2 set=act1 snapshot
 HAM @ DL
 """,
         encoding="utf-8",
@@ -615,15 +682,35 @@ HAM @ DL
             str(json_path),
         ]
         main()
+        sys.argv = [
+            "block",
+            "set",
+            str(source),
+            "--set",
+            "act1",
+            "--out",
+            str(set_svg_path),
+            "--json-out",
+            str(set_json_path),
+        ]
+        main()
     finally:
         sys.argv = original_argv
 
     svg = svg_path.read_text(encoding="utf-8")
+    set_svg = set_svg_path.read_text(encoding="utf-8")
     data = json.loads(json_path.read_text(encoding="utf-8"))
+    set_data = json.loads(set_json_path.read_text(encoding="utf-8"))
     assert "Scene stage" in svg
-    assert "<title>balcony +8</title>" in svg
-    assert "<title>table</title>" in svg
+    assert "<title>balcony +8</title>" not in svg
+    assert "<title>table</title>" not in svg
     assert ">HAM</text>" not in svg
     assert data["scene_id"] == "stage"
     assert data["placements"] == []
-    assert "balcony" in data["levels"]
+    assert data["levels"] == {}
+    assert "Scene set:act1" in set_svg
+    assert "<title>balcony +8</title>" in set_svg
+    assert "<title>table</title>" in set_svg
+    assert ">HAM</text>" not in set_svg
+    assert set_data["set_id"] == "act1"
+    assert "balcony" in set_data["levels"]
