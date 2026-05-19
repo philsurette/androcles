@@ -617,6 +617,7 @@ HAM -> C
     assert data["scene_id"] == "1.2"
     assert data["beat_id"] == "b1"
     assert data["entities"][0]["source"] == "C"
+    assert data["entities"][0]["movement_from_source"] == "DL"
 
 
 def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
@@ -685,6 +686,7 @@ HAM -> C
         sys.argv = original_argv
 
     assert "Scene 1.2@b1" in svg_path.read_text(encoding="utf-8")
+    assert '<line class="movement-arrow"' in beat_svg_path.read_text(encoding="utf-8")
     assert "Scene 1.2" in scene_svg_path.read_text(encoding="utf-8")
     assert "Scene 1.2@b1" in beat_svg_path.read_text(encoding="utf-8")
     assert '<symbol id="stage-icon-table"' in icons_path.read_text(encoding="utf-8")

@@ -182,6 +182,7 @@ class ScenicSetDefinition:
 class Placement:
     entity: str
     location: SourceLocation | None = None
+    origin: SourceLocation | None = None
     face: str | None = None
     offstage: bool = False
     via: str | None = None
@@ -192,6 +193,7 @@ class Placement:
             "entity": self.entity,
             "offstage": self.offstage,
             **({"location": self.location.to_dict()} if self.location is not None else {}),
+            **({"origin": self.origin.to_dict()} if self.origin is not None else {}),
             **({"face": self.face} if self.face is not None else {}),
             **({"via": self.via} if self.via is not None else {}),
             **({"line_no": self.line_no} if self.line_no is not None else {}),
@@ -278,6 +280,8 @@ class ResolvedPlacement:
     kind: str
     source: str
     point: Point3D | None = None
+    origin_source: str | None = None
+    origin_point: Point3D | None = None
     face: str | None = None
     offstage: bool = False
     via: str | None = None
@@ -290,6 +294,8 @@ class ResolvedPlacement:
             "source": self.source,
             "offstage": self.offstage,
             **({"point": self.point.to_dict()} if self.point is not None else {}),
+            **({"origin_source": self.origin_source} if self.origin_source is not None else {}),
+            **({"origin_point": self.origin_point.to_dict()} if self.origin_point is not None else {}),
             **({"face": self.face} if self.face is not None else {}),
             **({"via": self.via} if self.via is not None else {}),
             **({"line_no": self.line_no} if self.line_no is not None else {}),

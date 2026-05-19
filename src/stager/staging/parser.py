@@ -318,6 +318,7 @@ class StagingParser:
             return Placement(
                 entity=tokens[0],
                 location=self._source_location(tokens[4]),
+                origin=self._source_location(tokens[2]),
                 face=fields.get("face"),
                 line_no=line_no,
             )

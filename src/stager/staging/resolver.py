@@ -223,6 +223,9 @@ class StagingResolver:
             diagnostics.append(StagingDiagnostic("warning", f"Missing location for {placement.entity}", placement.line_no))
             return ResolvedPlacement(entity=placement.entity, kind=kind, source="unknown", line_no=placement.line_no)
         location = self._resolve_source(document, scenic_set, areas, placement.location, diagnostics, line_no=placement.line_no)
+        origin = None
+        if placement.origin is not None:
+            origin = self._resolve_source(document, scenic_set, areas, placement.origin, diagnostics, line_no=placement.line_no)
         if location.point is None:
             diagnostics.append(
                 StagingDiagnostic(
@@ -236,6 +239,8 @@ class StagingResolver:
             kind=kind,
             source=placement.location.source,
             point=location.point,
+            origin_source=placement.origin.source if placement.origin is not None else None,
+            origin_point=origin.point if origin is not None else None,
             face=placement.face,
             line_no=placement.line_no,
         )

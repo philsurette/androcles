@@ -42,6 +42,7 @@ class StageSvgRenderer:
             ".stage-boundary{fill:#fafafa;stroke:#222;stroke-width:2}",
             ".grid-line{stroke:#bbb;stroke-width:1}",
             ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}",
+            ".movement-arrow{stroke:#333;stroke-width:2;stroke-opacity:.38;fill:none;stroke-linecap:round;stroke-dasharray:5 4}",
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
             ".level-surface{fill:#d9edf7;fill-opacity:.34;stroke:#2f6f9f;stroke-width:2;stroke-dasharray:7 4}",
             ".connector{stroke:#6b614d;stroke-width:2;stroke-dasharray:5 4;fill:none}",
@@ -55,6 +56,7 @@ class StageSvgRenderer:
             ".small{font:11px sans-serif;fill:#333;paint-order:stroke;stroke:#fff;stroke-width:3}",
             ".diagnostic{font:12px sans-serif;fill:#8a3a00}",
             "</style>",
+            '<defs><marker id="movement-arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto" markerUnits="strokeWidth"><path d="M3,0 L7,4 L3,8" fill="none" stroke="#333" stroke-opacity=".38" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>',
             *self.icons.defs(),
             f'<rect class="stage-boundary" x="{self.margin_px}" y="{self.margin_px}" '
             f'width="{stage_draw_width:g}" height="{stage_draw_height:g}"/>',
@@ -253,6 +255,7 @@ class StageSvgRenderer:
         fill = self._elevation_fill(entity.elevation)
         stroke = self._elevation_stroke(entity.elevation)
         lines = [
+            *self._movement_arrow(diagram, entity, scale, x, y),
             f'<g class="actor-mark"><title>{escape(entity.title)}</title>',
             f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13" style="fill:{fill};stroke:{stroke}"/>',
             f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(entity.label or entity.source_id)}</text>',
@@ -263,6 +266,35 @@ class StageSvgRenderer:
         if entity.point.z:
             lines.append(f'<text class="small" x="{x - 10:g}" y="{y - 13:g}">+{entity.point.z:g}</text>')
         return lines
+
+    def _movement_arrow(
+        self,
+        diagram: DiagramState,
+        entity: DiagramEntity,
+        scale: float,
+        target_x: float,
+        target_y: float,
+    ) -> list[str]:
+        if entity.movement_from is None or entity.point is None:
+            return []
+        origin_x, origin_y = self._project(entity.movement_from, diagram.stage.width, diagram.stage.depth, scale)
+        dx = target_x - origin_x
+        dy = target_y - origin_y
+        distance = (dx * dx + dy * dy) ** 0.5
+        if distance < 1:
+            return []
+        unit_x = dx / distance
+        unit_y = dy / distance
+        arrow_length = min(32.4, max(16.8, distance * 0.24))
+        end_x = target_x - unit_x * 15
+        end_y = target_y - unit_y * 15
+        start_x = end_x - unit_x * arrow_length
+        start_y = end_y - unit_y * arrow_length
+        title = f"{entity.source_id} moved from {entity.movement_from_source}" if entity.movement_from_source else f"{entity.source_id} moved"
+        return [
+            f'<line class="movement-arrow" x1="{start_x:g}" y1="{start_y:g}" x2="{end_x:g}" y2="{end_y:g}" '
+            f'marker-end="url(#movement-arrowhead)"><title>{escape(title)}</title></line>'
+        ]
 
     def _prop(
         self,
