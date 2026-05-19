@@ -9,7 +9,7 @@ anchor door_l kind=exit at=(-16,20,0)
 anchor door_r kind=exit at=(16,20,0)
 piece table kind=table at=(0,12,0) size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ (-12,4,0) face=CD
 CD @ (0,20,0)
 OP offstage via=door_l

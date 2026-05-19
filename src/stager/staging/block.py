@@ -7,8 +7,10 @@ from pathlib import Path
 import re
 
 from stager.shared import paths
+from stager.scriptwright.production_script_parser import ProductionScriptParser
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
+from stager.staging.production_exporter import ProductionStagingExporter
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
@@ -17,6 +19,7 @@ from stager.staging.svg_renderer import StageSvgRenderer
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 DEFAULT_STAGING_FILE = Path("staging.txt")
+DEFAULT_PRODUCTION_FILE = Path("production.md")
 
 
 @dataclass
@@ -32,6 +35,7 @@ class BlockCli:
         self._add_scene_command(subparsers)
         self._add_beat_command(subparsers)
         self._add_render_command(subparsers)
+        self._add_export_command(subparsers)
         self._add_icons_command(subparsers)
         args = parser.parse_args()
         args.handler(args)
@@ -42,8 +46,7 @@ class BlockCli:
             "input",
             type=Path,
             nargs="?",
-            default=DEFAULT_STAGING_FILE,
-            help="Staging file. Defaults to staging.txt.",
+            help="Staging file. Defaults to the exported staging artifact for play directories.",
         )
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/stage.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
@@ -61,8 +64,7 @@ class BlockCli:
             "input",
             type=Path,
             nargs="?",
-            default=DEFAULT_STAGING_FILE,
-            help="Staging file. Defaults to staging.txt.",
+            help="Staging file. Defaults to the exported staging artifact for play directories.",
         )
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", help="Optional blocking beat id to apply up to")
@@ -84,7 +86,7 @@ class BlockCli:
             metavar="SET_ID",
             help="Set/setup id. If --set is used, this may be the staging file.",
         )
-        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to the exported staging artifact for play directories.")
         parser.add_argument("--set", dest="set_id", help="Set/setup id to render")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/set-<set>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
@@ -104,7 +106,7 @@ class BlockCli:
             metavar="SCENE_ID",
             help="Scene snapshot id. If --scene is used, this may be the staging file.",
         )
-        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to the exported staging artifact for play directories.")
         parser.add_argument("--scene", help="Scene snapshot id to render")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
@@ -125,7 +127,7 @@ class BlockCli:
             help="Scene snapshot id. If --scene is used, this may be the staging file.",
         )
         parser.add_argument("beat_arg", nargs="?", metavar="BEAT_ID", help="Blocking beat id to apply up to.")
-        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to the exported staging artifact for play directories.")
         parser.add_argument("--scene", help="Scene snapshot id to render")
         parser.add_argument("--beat", help="Blocking beat id to apply up to")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>-<beat>.svg.")
@@ -143,7 +145,14 @@ class BlockCli:
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/staging/block-icon-library.svg.")
         parser.set_defaults(handler=self._icons)
 
+    def _add_export_command(self, subparsers) -> None:
+        parser = subparsers.add_parser("export", help="Export staging.txt from production.md inline blocking notes.")
+        parser.add_argument("input", type=Path, nargs="?", help="Production script. Defaults to production.md.")
+        parser.add_argument("--out", type=Path, help="Output staging file. Defaults to build/<play>/staging/staging.txt.")
+        parser.set_defaults(handler=self._export)
+
     def _render(self, args) -> None:
+        args.input = args.input or self._default_input_path()
         document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
         if args.beat is None:
             snapshot = StagingResolver().resolve_snapshot(document, args.scene)
@@ -173,6 +182,7 @@ class BlockCli:
         self._write_snapshot(args, snapshot)
 
     def _stage(self, args) -> None:
+        args.input = args.input or self._default_input_path()
         document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
         snapshot = StagingResolver().resolve_stage(document)
         self._write_snapshot(args, snapshot)
@@ -196,6 +206,15 @@ class BlockCli:
         output_path.write_text(StageSvgIconLibrary().catalog_svg(), encoding="utf-8")
         print(paths.display_path(output_path))
 
+    def _export(self, args) -> None:
+        input_path = args.input or self._default_production_path()
+        output_path = args.out or self._default_staging_artifact_output(input_path)
+        production = ProductionScriptParser(source_path=input_path).parse_path()
+        text = ProductionStagingExporter().export(production)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(text, encoding="utf-8")
+        print(paths.display_path(output_path))
+
     def _default_diagram_output(self, input_path: Path, diagram) -> Path:
         return self._default_output_dir(input_path) / self._default_diagram_filename(diagram)
 
@@ -208,7 +227,38 @@ class BlockCli:
                 repo_root = Path(*parts[:plays_index])
                 play_id = parts[plays_index + 1]
                 return repo_root / "build" / play_id / "staging"
+        if "build" in parts:
+            build_index = parts.index("build")
+            if build_index + 1 < len(parts):
+                repo_root = Path(*parts[:build_index])
+                play_id = parts[build_index + 1]
+                return repo_root / "build" / play_id / "staging"
         return REPO_ROOT / "build" / input_path.stem / "staging"
+
+    def _default_input_path(self) -> Path:
+        cwd = Path.cwd().resolve()
+        parts = cwd.parts
+        if "plays" in parts:
+            plays_index = parts.index("plays")
+            if plays_index + 1 < len(parts):
+                repo_root = Path(*parts[:plays_index])
+                play_id = parts[plays_index + 1]
+                return repo_root / "build" / play_id / "staging" / "staging.txt"
+        return DEFAULT_STAGING_FILE
+
+    def _default_production_path(self) -> Path:
+        return DEFAULT_PRODUCTION_FILE
+
+    def _default_staging_artifact_output(self, input_path: Path) -> Path:
+        resolved = input_path.resolve()
+        parts = resolved.parts
+        if "plays" in parts:
+            plays_index = parts.index("plays")
+            if plays_index + 1 < len(parts):
+                repo_root = Path(*parts[:plays_index])
+                play_id = parts[plays_index + 1]
+                return repo_root / "build" / play_id / "staging" / "staging.txt"
+        return REPO_ROOT / "build" / input_path.stem / "staging" / "staging.txt"
 
     def _default_diagram_filename(self, diagram) -> str:
         if diagram.diagram_kind == "stage":
@@ -224,26 +274,26 @@ class BlockCli:
 
     def _resolve_set_args(self, args) -> tuple[str, Path]:
         if args.set_id is not None:
-            return args.set_id, Path(args.set_arg) if args.set_arg is not None else DEFAULT_STAGING_FILE
+            return args.set_id, Path(args.set_arg) if args.set_arg is not None else self._default_input_path()
         if args.set_arg is None:
             raise SystemExit("block set requires a set id, for example: block set act1")
-        return str(args.set_arg), args.input or DEFAULT_STAGING_FILE
+        return str(args.set_arg), args.input or self._default_input_path()
 
     def _resolve_scene_args(self, args) -> tuple[str, Path]:
         if args.scene is not None:
-            return args.scene, Path(args.scene_arg) if args.scene_arg is not None else DEFAULT_STAGING_FILE
+            return args.scene, Path(args.scene_arg) if args.scene_arg is not None else self._default_input_path()
         if args.scene_arg is None:
             raise SystemExit("block scene requires a scene id, for example: block scene 1.3")
-        return str(args.scene_arg), args.input or DEFAULT_STAGING_FILE
+        return str(args.scene_arg), args.input or self._default_input_path()
 
     def _resolve_beat_args(self, args) -> tuple[str, str, Path]:
         if args.scene is not None:
             if args.beat is None:
                 raise SystemExit("block beat requires a beat id, for example: block beat --scene 1.3 --beat b2")
-            return args.scene, args.beat, Path(args.scene_arg) if args.scene_arg is not None else DEFAULT_STAGING_FILE
+            return args.scene, args.beat, Path(args.scene_arg) if args.scene_arg is not None else self._default_input_path()
         if args.scene_arg is None or args.beat_arg is None:
             raise SystemExit("block beat requires a scene id and beat id, for example: block beat 1.3 b2")
-        return str(args.scene_arg), str(args.beat_arg), args.input or DEFAULT_STAGING_FILE
+        return str(args.scene_arg), str(args.beat_arg), args.input or self._default_input_path()
 
 
 def main() -> None:

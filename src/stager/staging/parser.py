@@ -25,8 +25,8 @@ from stager.staging.model import (
 
 COORD_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)(?:,(-?\d+(?:\.\d+)?))?\)$")
 SIZE_RE = re.compile(r"^\((-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)\)$")
-SCENE_SNAPSHOT_RE = re.compile(r"^scene\s+(\S+)(?:\s+set=(\S+))?\s+snapshot$")
-BEAT_RE = re.compile(r"^beat\s+(\S+)\s+scene=(\S+)$")
+SCENE_SNAPSHOT_RE = re.compile(r"^scene\s+(\S+)(?:\s+set=(\S+))?(?:\s+snapshot)?$")
+BEAT_ANCHOR_RE = re.compile(r"^(b\S*)\s+@\s+(\S+)$")
 
 
 @dataclass
@@ -48,14 +48,16 @@ class StagingParser:
         props: dict[str, PropDefinition] = {}
         snapshots: dict[str, SceneSnapshot] = {}
         beats: list[BlockingBeat] = []
+        active_scene: str | None = None
         current_block: str | None = None
         current_scene: str | None = None
         current_beat: str | None = None
+        current_script_anchor: str | None = None
         current_block_line: int | None = None
         current_placements: list[Placement] = []
 
         def flush_block() -> None:
-            nonlocal current_block, current_scene, current_beat, current_block_line, current_placements
+            nonlocal current_block, current_scene, current_beat, current_script_anchor, current_block_line, current_placements
             if current_block is None or current_scene is None:
                 return
             if current_block == "snapshot":
@@ -71,12 +73,14 @@ class StagingParser:
                         beat_id=current_beat,
                         scene_id=current_scene,
                         placements=tuple(current_placements),
+                        script_anchor=current_script_anchor,
                         line_no=current_block_line,
                     )
                 )
             current_block = None
             current_scene = None
             current_beat = None
+            current_script_anchor = None
             current_block_line = None
             current_placements = []
 
@@ -112,17 +116,22 @@ class StagingParser:
             scene_match = SCENE_SNAPSHOT_RE.match(line)
             if scene_match:
                 flush_block()
+                active_scene = scene_match.group(1)
                 current_block = "snapshot"
                 current_scene = scene_match.group(1)
                 current_set_id_for_scene = scene_match.group(2) or current_set_id
                 current_block_line = line_no
                 continue
-            beat_match = BEAT_RE.match(line)
-            if beat_match:
+            beat_anchor_match = BEAT_ANCHOR_RE.match(line)
+            if beat_anchor_match:
                 flush_block()
+                if active_scene is None:
+                    self._warn("Beat statement requires a preceding scene", line_no)
+                    continue
                 current_block = "beat"
-                current_beat = beat_match.group(1)
-                current_scene = beat_match.group(2)
+                current_beat = beat_anchor_match.group(1)
+                current_scene = active_scene
+                current_script_anchor = beat_anchor_match.group(2)
                 current_block_line = line_no
                 continue
             if current_block is not None and self._looks_like_blocking_statement(line):

@@ -147,7 +147,7 @@ letter @ table
 Scene-start example:
 
 ```text
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL face=CD
 CD @ UC
 OP offstage via=door_l
@@ -188,22 +188,22 @@ To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HM` at
 The first standalone renderer implements the same idea with ordered beat blocks:
 
 ```text
-scene 1.3 set=act1 snapshot
+scene 1.3 set=act1
 HM @ balcony_l face=CD
 CD @ DC
 OP @ deck_l face=HM
 sword @ table
 
-beat b1 scene=1.3
+b1 @ 1.3-2
 HM move balcony_l -> UC face=OP
 OP move deck_l -> C face=HM
 
-beat b2 scene=1.3
+b2 @ 1.3-3
 CD move DC -> DR
 sword remove
 ```
 
-Rendering `--scene 1.3 --beat b2` starts from the `scene 1.3 set=act1 snapshot`, resolves locations against set `act1`, applies `b1`, then applies `b2`.
+Rendering `--scene 1.3 --beat b2` starts from the `scene 1.3 set=act1` snapshot, resolves locations against set `act1`, applies `b1`, then applies `b2`. The `@` anchor records the production line or segment id that produced the beat.
 
 ## Timing model
 

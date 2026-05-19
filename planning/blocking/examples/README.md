@@ -1,6 +1,6 @@
 # Point-In-Time Staging Examples
 
-These files are standalone inputs for the `./block` CLI. They are intentionally decoupled from `production.md`, Playbook generation, and Cuemaster.
+These files mirror the exported staging overlay generated from inline notes in `production.md`. They remain useful as small renderer fixtures, but the normal workflow is to run `./block export` and render `build/<play_id>/staging/staging.txt`.
 
 These examples use the current stage/set/scene syntax: stage geometry is top-level, reusable scenic setup lives inside `setup` blocks, set pieces use `piece`, and scene snapshots reference a setup with `set=<setup_id>`.
 

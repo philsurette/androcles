@@ -37,11 +37,11 @@ Implementation should remove or replace the current blocking-note parser, public
 ## Current Terminology
 
 - **Block CLI**: standalone command surface for staging/blocking workflows, available as `./block`.
-- **Staging file**: standalone input file containing stage geometry, reusable sets, scene snapshots, and optional blocking beats. The default filename is `staging.txt`.
+- **Staging file**: exported staging overlay artifact containing stage geometry, reusable sets, scene snapshots, and optional blocking beats. It is normally generated from `production.md` at `build/<play_id>/staging/staging.txt`.
 - **Stage**: invariant physical playing space: type, dimensions, units, orientation, coordinate system, and generated grid.
 - **Set**: reusable scenic setup for one or more scenes. A set owns levels, anchors, connectors, set pieces, and prop presets.
-- **Scene snapshot**: authoritative initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`.
-- **Blocking beat**: ordered group of blocking directions, written as `beat <beat_id> scene=<scene_id>`.
+- **Scene snapshot**: authoritative initialization for a scene, written in the exported overlay as `scene <scene_id> set=<set_id>`.
+- **Blocking beat**: ordered group of blocking directions, written in the exported overlay as `<beat_id> @ <production-id>`.
 - **Blocking direction**: a single state change such as placement, move, enter, exit, or remove.
 - **Point-in-time state**: computed state after applying a scene snapshot plus beats up to the requested beat.
 - **Blocking diagram**: generated SVG for a point-in-time state.
@@ -49,41 +49,42 @@ Implementation should remove or replace the current blocking-note parser, public
 Example stage-only command:
 
 ```sh
-./block stage plays/hamlet/staging.txt
+./block export plays/hamlet/production.md
+./block stage build/hamlet/staging/staging.txt
 ```
 
 Example set-only command:
 
 ```sh
-./block set act1 plays/hamlet/staging.txt
+./block set act1 build/hamlet/staging/staging.txt
 ```
 
 Example scene snapshot command:
 
 ```sh
-./block scene 1.2 plays/hamlet/staging.txt
+./block scene 1.2 build/hamlet/staging/staging.txt
 ```
 
 Example beat command:
 
 ```sh
-./block beat 1.3 b2 plays/hamlet/staging.txt
+./block beat 1.3 b2 build/hamlet/staging/staging.txt
 ```
 
 Transitional point-in-time render alias:
 
 ```sh
 ./block render \
-  plays/hamlet/staging.txt \
+  build/hamlet/staging/staging.txt \
   --scene 1.3 \
   --beat b2
 ```
 
-When run from a play folder, the input defaults to `staging.txt`.
+When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first to build that artifact from `production.md`.
 
 From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 
-When the input is under `plays/<play_id>/`, `--out` defaults to `build/<play_id>/staging/`.
+When the input is under `plays/<play_id>/` or `build/<play_id>/staging/`, `--out` defaults to `build/<play_id>/staging/`.
 
 ## Design stance
 

@@ -223,6 +223,7 @@ class BlockingBeat:
     beat_id: str
     scene_id: str
     placements: tuple[Placement, ...]
+    script_anchor: str | None = None
     line_no: int | None = None
 
     def to_dict(self) -> dict:
@@ -230,6 +231,7 @@ class BlockingBeat:
             "beat_id": self.beat_id,
             "scene_id": self.scene_id,
             "placements": [placement.to_dict() for placement in self.placements],
+            **({"script_anchor": self.script_anchor} if self.script_anchor is not None else {}),
             **({"line_no": self.line_no} if self.line_no is not None else {}),
         }
 

@@ -9,7 +9,7 @@ anchor door_l = UL
 anchor door_r = UR
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL face=CD
 CD @ UC
 OP offstage via=door_l

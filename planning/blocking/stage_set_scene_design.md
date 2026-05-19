@@ -14,7 +14,7 @@ The staging model should therefore separate:
 
 ## Terminology
 
-- **Staging file**: the standalone authoring file consumed by the Block CLI. The default filename is `staging.txt` because the file contains stage, set, scene, and beat records.
+- **Staging file**: the exported staging overlay consumed by the Block CLI. The default artifact path is `build/<play_id>/staging/staging.txt`; it contains stage, set, scene, and beat records generated from inline notes in `production.md`.
 - **Stage**: invariant venue/play-space geometry. In v0.1 this means type, dimensions, units, coordinate system, audience orientation, and generated standard grid.
 - **Set**: a named scenic setup used by one or more scenes. A set owns levels, anchors, connectors, structural scenic elements, set pieces, and prop presets.
 - **Scene snapshot**: the authoritative initial state for a scene. It references exactly one set and places actors, props, and movable set pieces for that scene.
@@ -112,19 +112,19 @@ anchor door_r = CR
 piece throne kind=chair at=UC size=(4,4)
 piece bench kind=bench at=DR size=(5,2)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL face=CD
 CD @ balcony_l
 OP offstage via=door_l
 sword @ table
 
-scene 1.3 set=act1 snapshot
+scene 1.3 set=act1
 HM @ balcony_l face=CD
 CD @ DC
 OP @ deck_l face=HM
 sword @ table
 
-scene 2.1 set=act2 snapshot
+scene 2.1 set=act2
 CD @ throne
 HM @ DL face=CD
 ```
@@ -196,20 +196,22 @@ SceneSnapshot
 The Block CLI should expose the three layers directly:
 
 ```sh
-./block stage plays/hamlet/staging.txt
+./block export plays/hamlet/production.md
 
-./block set act1 plays/hamlet/staging.txt
+./block stage build/hamlet/staging/staging.txt
 
-./block scene 1.2 plays/hamlet/staging.txt
+./block set act1 build/hamlet/staging/staging.txt
 
-./block beat 1.3 b2 plays/hamlet/staging.txt
+./block scene 1.2 build/hamlet/staging/staging.txt
+
+./block beat 1.3 b2 build/hamlet/staging/staging.txt
 ```
 
-When run from a play folder, the input defaults to `staging.txt`.
+When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first to build that artifact from `production.md`.
 
 From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 
-For inputs under `plays/<play_id>/`, output defaults to `build/<play_id>/staging/`.
+For inputs under `plays/<play_id>/` or `build/<play_id>/staging/`, output defaults to `build/<play_id>/staging/`.
 
 `block render` can remain as a temporary developer alias during the transition, but the clearer producer-facing command names should be `stage`, `set`, `scene`, and `beat`.
 
@@ -228,7 +230,7 @@ The current Hamlet and planning examples have been migrated by:
 2. Adding `setup default` or a named setup such as `setup act1`.
 3. Moving `level`, `anchor`, `stair`, `ramp`, `lift`, `piece`, and `prop` records into that setup.
 4. Renaming `set <piece_id> ...` records to `piece <piece_id> ...`.
-5. Adding `set=<setup_id>` to every `scene <id> snapshot` header and embedded blocking block where applicable.
+5. Adding `set=<setup_id>` to every `scene <id>` header and embedded blocking block where applicable.
 6. Updating generated example SVG paths to include `set-<id>` where useful.
 
 ## Implementation Plan
@@ -254,7 +256,7 @@ The current Hamlet and planning examples have been migrated by:
 
 - [x] Parse `setup <id>` headers.
 - [x] Parse `piece <id> ...` set-piece records.
-- [x] Parse `scene <id> set=<set_id> snapshot`.
+- [x] Parse `scene <id> set=<set_id>`.
 - [ ] Require set-owned records to appear inside a setup block.
 - [x] Produce useful diagnostics for unknown setup references.
 - [ ] Remove the old `set <piece_id> ...` authoring form rather than adding long-term compatibility.

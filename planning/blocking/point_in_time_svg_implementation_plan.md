@@ -53,7 +53,7 @@ anchor door_l = UL
 anchor door_r = UR
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL face=CD
 CD @ UC
 OP offstage via=door_l
@@ -73,7 +73,7 @@ anchor door_l at=(-16,20,0)
 anchor door_r at=(16,20,0)
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL face=CD
 CD @ UC
 sword @ table
@@ -98,20 +98,13 @@ sword @ table
 Suggested standalone command during the spike:
 
 ```sh
-./block scene \
-  path/to/staging.txt \
-  --scene 1.2 \
-  --out /tmp/stage.svg
+./block scene 1.2 path/to/staging.txt --out /tmp/stage.svg
 ```
 
 Landscape output:
 
 ```sh
-./block scene \
-  path/to/staging.txt \
-  --scene 1.2 \
-  --out /tmp/stage-landscape.svg \
-  --orientation landscape
+./block scene 1.2 path/to/staging.txt --out /tmp/stage-landscape.svg --orientation landscape
 ```
 
 Potential later Quince command:
@@ -151,7 +144,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 ## Phase 3: Snapshot Parser
 
-- [x] Parse scene snapshot headers such as `scene 1.2 set=act1 snapshot`.
+- [x] Parse scene snapshot headers such as `scene 1.2 set=act1`.
 - [x] Parse actor placements:
   - `HM @ DL`
   - `HM @ balcony_l face=house`

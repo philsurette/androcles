@@ -28,11 +28,11 @@
 ## Staging And Blocking Terms
 
 - **Block CLI**: The standalone staging/blocking command surface, available as `./block`. Keep it decoupled from the main Stager build CLI while this feature is still stabilizing.
-- **Staging file**: A standalone text file that describes stage geometry, reusable sets, scene snapshots, and optional blocking beats. The default filename is `staging.txt`.
+- **Staging file**: An exported staging overlay artifact, normally written to `build/<play_id>/staging/staging.txt` from inline blocking/staging notes in `production.md`.
 - **Stage**: The invariant physical performance space: type, dimensions, units, coordinate system, audience orientation, and generated standard grid.
 - **Set**: A reusable scenic setup for one or more scenes. Sets own levels, anchors, connectors, set pieces, and prop presets that may change between acts or scene groups.
-- **Scene snapshot**: An authoritative point-in-time initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`. It references one set and provides the known starting state for actors, props, and movable set pieces.
-- **Blocking beat**: An ordered group of blocking directions for a scene, written as `beat <beat_id> scene=<scene_id>`. Resolving a beat starts from the scene snapshot and applies all earlier beats for that scene up to the requested beat.
+- **Scene snapshot**: An authoritative point-in-time initialization for a scene, written in exported overlays as `scene <scene_id> set=<set_id>`. It references one set and provides the known starting state for actors, props, and movable set pieces.
+- **Blocking beat**: An ordered group of blocking directions for a scene, written in exported overlays as `<beat_id> @ <production-id>`, such as `b2 @ 3.2-15`. Resolving a beat starts from the scene snapshot and applies all earlier beats for that scene up to the requested beat.
 - **Blocking direction**: A single actor, prop, or set-piece state change inside a scene snapshot or blocking beat, such as `HM @ DL`, `HM move DL -> C`, `OP enter door_l -> DR`, or `sword remove`.
 - **Point-in-time state**: The computed state after applying a scene snapshot and zero or more blocking beats. This is the model rendered to SVG.
 - **Diagram state**: The renderer-facing JSON contract compiled from a resolved point-in-time state. Python SVG export and future Cuemaster rendering should consume diagram state rather than authoring syntax or resolver internals.
@@ -51,6 +51,6 @@
 - Use **manifest** for the JSON contract inside a Playbook.
 - Use **Recording Request** for Stager- or Cuemaster-to-LineRecorder work orders and **recording package** for LineRecorder-to-Stager audio exports.
 - Keep **line** as actor-facing UI language; use **segment** for manifest fields, filenames, Stager IDs, and implementation details.
-- Use **staging file** for standalone blocking input files, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, **diagram state** for renderer-facing JSON, and **blocking diagram** for rendered SVG output.
+- Use **staging file** for exported staging overlay artifacts, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, **diagram state** for renderer-facing JSON, and **blocking diagram** for rendered SVG output.
 - Treat Playbooks as strict artifacts: required cue and response audio must exist for every rehearsable non-meta role line.
 - Keep `Androcles` only when referring to the sample/source play, not the tool.

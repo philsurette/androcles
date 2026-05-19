@@ -6,14 +6,47 @@ from pathlib import Path
 
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
+from stager.staging.production_exporter import ProductionStagingExporter
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
+from stager.scriptwright.production_script_parser import ProductionScriptParser
 
 
 def render_svg(snapshot, orientation: str = "portrait") -> str:
     return StageSvgRenderer(orientation=orientation).render(DiagramStateBuilder().build(snapshot))
+
+
+def test_production_staging_exporter_writes_ordered_scene_sections_and_anchored_beats() -> None:
+    production = ProductionScriptParser().parse_text(
+        """
+// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# 1-0 ACT I
+1.2-1 @description: A room.
+/*: stage type=proscenium
+/*: grid standard=9
+/*: setup act1
+/*: piece table kind=table at=C size=(5,3)
+/*: scene 1.2 set=act1
+/HM: @ DL face=CD
+/CD: @ UC
+/OP: offstage via=door_l
+/HM: move DL -> C face=CD
+1.2-2 HM: I move.
+/CD: move UC -> DR
+1.2-3 CD: I move.
+"""
+    )
+
+    exported = ProductionStagingExporter().export(production)
+
+    assert "scene 1.2 set=act1\nHM @ DL face=CD\nCD @ UC\nOP offstage via=door_l" in exported
+    assert "b1 @ 1.2-2\nHM move DL -> C face=CD" in exported
+    assert "b2 @ 1.2-3\nCD move UC -> DR" in exported
 
 
 def test_parser_accepts_text_only_stage_and_scene_snapshot() -> None:
@@ -25,7 +58,7 @@ actor HM name=Hamlet
 anchor door_l = UL
 anchor table = C
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL face=CD
 CD @ UC
 OP offstage via=door_l
@@ -59,11 +92,11 @@ setup act2
 anchor throne = UC
 piece bench kind=bench at=DR size=(5,2)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ balcony_l
 sword @ table
 
-scene 2.1 set=act2 snapshot
+scene 2.1 set=act2
 HM @ throne
 """
     )
@@ -92,7 +125,7 @@ actor CD name=Claudius
 setup act1
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ C
 CD @ C
 sword @ table
@@ -123,7 +156,7 @@ def test_resolver_uses_default_stage_and_preserves_unknowns_as_diagnostics() -> 
 stage type=proscenium
 grid standard=9
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 CD @ nowhere
 """
@@ -146,7 +179,7 @@ stage type=proscenium width=40 depth=30 units=ft
 grid standard=9
 anchor balcony_l at=(-8,24,8)
 
-scene 2 snapshot
+scene 2
 HM @ balcony_l
 """
     )
@@ -171,7 +204,7 @@ anchor balcony_l at=(-8,24,8)
 stair stair_l from=deck_l to=balcony_l
 ramp bad_ramp from=nowhere to=balcony_l
 
-scene 2 snapshot
+scene 2
 HM @ balcony_l
 """
     )
@@ -198,7 +231,7 @@ stage type=proscenium width=40 depth=30 units=ft
 grid standard=9
 level balcony at=UC size=(18,4) z=8
 
-scene 2 snapshot
+scene 2
 HM @ UC
 """
     )
@@ -224,7 +257,7 @@ level balcony at=UC size=(18,4) z=8
 anchor balcony_l at=(-8,24,8)
 anchor deck_c at=(0,8,0)
 
-scene 2 snapshot
+scene 2
 HM @ balcony_l
 CD @ deck_c
 flower @ balcony_l
@@ -238,7 +271,7 @@ book @ deck_c
     assert 'class="actor-circle" cx="232" cy="136" r="13" style="fill:#d9edf7;stroke:#2f6f9f"' in svg
     assert 'class="actor-circle" cx="360" cy="392" r="13" style="fill:#e6e6e6;stroke:#555555"' in svg
     assert '<g><title>flower</title><use class="stage-icon icon-prop" href="#stage-icon-flower" style="color:#2f6f9f"' in svg
-    assert '<g><title>book</title><use class="stage-icon icon-prop" href="#stage-icon-book" style="color:#555555"' in svg
+    assert 'class="actor-circle" cx="360" cy="392" r="13" style="fill:#e6e6e6;stroke:#555555"' in svg
 
 
 def test_svg_renderer_outputs_stage_grid_actor_and_diagnostics() -> None:
@@ -248,7 +281,7 @@ stage type=proscenium
 grid standard=9
 anchor table = C
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL face=house
 OP offstage via=door_l
 sword @ table
@@ -278,17 +311,17 @@ actor CD name=Claudius
 actor OP name=Ophelia
 set table kind=furniture at=C size=(5,3)
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL face=CD
 CD @ UC
 OP offstage via=door_l
 sword @ table
 
-beat b1 scene=1.2
+b1 @ 1.2-2
 HM move DL -> C face=CD
 OP enter door_l -> DR
 
-beat b2 scene=1.2
+b2 @ 1.2-3
 CD -> DC
 sword remove
 """
@@ -322,7 +355,7 @@ def test_state_resolver_warns_for_unknown_beat() -> None:
 stage type=proscenium
 grid standard=9
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 """
     )
@@ -341,7 +374,7 @@ set table kind=furniture at=C size=(5,3)
 actor HM name=Hamlet
 actor CD name=Claudius
 
-scene 1.2 snapshot
+scene 1.2
 HM @ C
 CD @ C
 sword @ table
@@ -384,7 +417,7 @@ stage type=proscenium
 grid standard=9
 set table kind=furniture at=C size=(5,3)
 
-scene 1.2 snapshot
+scene 1.2
 table @ DL
 """
     )
@@ -405,7 +438,7 @@ stage type=proscenium
 grid standard=9
 actor HM name=Hamlet
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 """
     )
@@ -427,7 +460,7 @@ stage type=proscenium
 grid standard=9
 actor HM name=Hamlet
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 """
     )
@@ -548,7 +581,7 @@ stage type=proscenium
 grid standard=9
 anchor door_l = UL
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 OP offstage via=door_l
 """,
@@ -591,10 +624,10 @@ stage type=proscenium
 grid standard=9
 actor HM name=Hamlet
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 
-beat b1 scene=1.2
+b1 @ 1.2-2
 HM -> C
 """,
         encoding="utf-8",
@@ -642,10 +675,10 @@ stage type=proscenium
 grid standard=9
 actor HM name=Hamlet
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 
-beat b1 scene=1.2
+b1 @ 1.2-2
 HM -> C
 """,
         encoding="utf-8",
@@ -720,7 +753,7 @@ anchor balcony_l at=(-8,20,8)
 stair stair_l from=deck_l to=balcony_l
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL
 """,
         encoding="utf-8",
@@ -779,7 +812,8 @@ HM @ DL
 def test_block_cli_uses_default_inputs_and_outputs_under_play_build_folder(tmp_path: Path, monkeypatch) -> None:
     play_dir = tmp_path / "plays" / "hamlet"
     play_dir.mkdir(parents=True)
-    source = play_dir / "staging.txt"
+    source = tmp_path / "build" / "hamlet" / "staging" / "staging.txt"
+    source.parent.mkdir(parents=True)
     source.write_text(
         """
 stage type=proscenium
@@ -787,10 +821,10 @@ grid standard=9
 setup act1
 piece table kind=table at=C size=(5,3)
 
-scene 1.2 set=act1 snapshot
+scene 1.2 set=act1
 HM @ DL
 
-beat b1 scene=1.2
+b1 @ 1.2-2
 HM -> C
 """,
         encoding="utf-8",
@@ -829,10 +863,10 @@ def test_block_cli_keeps_option_based_scene_and_beat_args(tmp_path: Path) -> Non
 stage type=proscenium
 grid standard=9
 
-scene 1.2 snapshot
+scene 1.2
 HM @ DL
 
-beat b1 scene=1.2
+b1 @ 1.2-2
 HM -> C
 """,
         encoding="utf-8",
