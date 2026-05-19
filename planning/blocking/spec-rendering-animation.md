@@ -24,8 +24,8 @@ Each blocking beat should be renderable as a static SVG showing:
 - relevant set pieces
 - actors
 - facing indicators
-- movement paths
-- cue badges
+- static previous/next movement hints
+- cue badges when cue-lite integration is implemented
 - optional notes
 
 The renderer should not require full-play state replay. It should render from diagram state produced from the nearest explicit snapshot/checkpoint plus the local events needed for the requested beat.
@@ -114,7 +114,7 @@ Implement:
 2. static SVG stage diagram rendered from diagram state
 3. actor placement rendered from diagram state
 4. stateful point-in-time rendering from scene snapshots plus ordered blocking directions
-5. optional movement path arrows
-6. optional cue badges
+5. static previous/next movement hints
+6. optional cue badges when cue-lite integration is implemented
 
 Animation can follow after diagrams are reliable.

@@ -1,5 +1,7 @@
 # Playbook Blocking Diagram Assets Implementation Plan
 
+Status: MVP complete. Playbooks include optional blocking diagram bundles by default when staging data exists, `--no-blocking-diagrams` opts out, and Cuemaster renders packaged DiagramState checkpoints/deltas with the packaged SVG icon library. Remaining schema, fixture, checkpoint-policy, and UX refinements are tracked in `planning/blocking/future-features.md`.
+
 ## Goal
 
 Package blocking diagram JSON into Playbooks so Cuemaster can render stage/blocking snapshots without parsing `production.md`, `staging.txt`, or Stager resolver internals.

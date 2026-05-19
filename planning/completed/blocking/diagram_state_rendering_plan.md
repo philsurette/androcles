@@ -1,5 +1,7 @@
 # Diagram State Rendering Design And Implementation Plan
 
+Status: completed for the static blocking MVP. The Python Block CLI and Cuemaster both render from DiagramState JSON, and Playbooks package checkpoint/delta DiagramState bundles rather than final SVG files. Remaining schema hardening and advanced checkpoint-policy work is tracked in `planning/blocking/future-features.md`.
+
 ## Recommendation
 
 Do this before continuing with new blocking features.

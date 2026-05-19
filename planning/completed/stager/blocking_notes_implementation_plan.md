@@ -1,6 +1,6 @@
 # Blocking Notes Implementation Plan
 
-> Superseded by [../blocking/README.md](../blocking/README.md). The earlier blocking-note implementation was only exercised by test data and does not need to be preserved for real productions. Future work should replace the implementation with the staging DSL under `planning/blocking/`, while still considering whether the inline `(_/action: ..._)` authoring shape is the best producer-facing syntax for line-local action.
+> Superseded by [../blocking/README.md](../../blocking/README.md). The earlier blocking-note implementation was only exercised by test data and does not need to be preserved for real productions. The static blocking MVP now uses the staging export, stage/set/scene model, DiagramState, Playbook diagram bundles, and Cuemaster on-demand rendering. Keep this file only as historical context for blocking-text and publication-diff decisions.
 
 ## Purpose
 

@@ -1,5 +1,7 @@
 # Implementation Plan
 
+Status: historical starter plan. The static blocking MVP is now complete through the stage/set/scene model, staging export, Block CLI, DiagramState rendering contract, Playbook checkpoint/delta assets, and Cuemaster on-demand diagrams. This file remains useful as early discovery context, but do not treat its unchecked items as the active implementation queue where it conflicts with `stage_set_scene_design.md` or the current code.
+
 ## Milestone 0 — Discovery
 
 - Locate existing Quince/Stager Markdown parsing code.

@@ -27,14 +27,12 @@ Stager is the existing CLI/build tool in this repository.
 - [stager/missing_audio_policy.md](stager/missing_audio_policy.md): Strict required-audio policy for Playbooks and user-consumable outputs.
 - [stager/playbook_usage.md](stager/playbook_usage.md): Current Stager CLI usage, output layout, tests, and dependencies for Playbook export.
 - [stager/cue_start_offsets.md](stager/cue_start_offsets.md): Plan for Stager-generated cue-start offsets so Cuemaster can trim long cues near word boundaries.
-- [stager/playbook_blocking_assets_plan.md](stager/playbook_blocking_assets_plan.md): Plan for packaging blocking diagram JSON checkpoints and deltas into Playbooks for Cuemaster.
 - [stager/production_pipeline.md](stager/production_pipeline.md): Master plan for ScriptWright, the Stager `production.md` source refactor, and production-id adoption.
 - [stager/scriptwright.md](stager/scriptwright.md): Resumable implementation plan for converting source scripts into locked `production.md`.
 - [stager/production_source_refactor.md](stager/production_source_refactor.md): Resumable implementation plan for making Stager consume locked `production.md`.
 - [stager/production_id_adoption.md](stager/production_id_adoption.md): Resumable implementation plan for adopting production ids across manifests, Cuemaster, and LineRecorder.
 - [stager/production_publication_workflow.md](stager/production_publication_workflow.md): Producer-facing publish workflow for production history, changed-line ids, and targeted Recording Requests.
 - [stager/versioning_implementation_plan.md](stager/versioning_implementation_plan.md): Resumable rollout plan for package format versions, structured production versions, fork detection, and production metadata propagation.
-- [stager/blocking_notes_implementation_plan.md](stager/blocking_notes_implementation_plan.md): Design and implementation plan for production blocking notes in `production.md`, publication diffs, actor artifacts, and Playbooks.
 - [stager/audio_cleanup_implementation_plan.md](stager/audio_cleanup_implementation_plan.md): Resumable implementation plan for denoise, declick, de-ess, light gating, and loudness cleanup.
 - [stager/voice_profiles_implementation_plan.md](stager/voice_profiles_implementation_plan.md): Resumable implementation plan for actor/role voice profiles, FFmpeg transforms, rendered audio caching, and Playbook/audioplay integration.
 - [stager/rehearsal_workflow_readiness_plan.md](stager/rehearsal_workflow_readiness_plan.md): Resumable plan for cast configuration, production status, Cuemaster Playbook update UX, and blocking-only rehearsal updates.
@@ -49,7 +47,9 @@ Blocking and staging design docs live under `planning/blocking/`.
 
 - [blocking/README.md](blocking/README.md): Index and current stance for the replacement blocking/staging system.
 - [blocking/stage_set_scene_design.md](blocking/stage_set_scene_design.md): Stage/set/scene distinction, CLI terminology, syntax direction, and rollout checklist.
-- [blocking/diagram_state_rendering_plan.md](blocking/diagram_state_rendering_plan.md): Rendering pipeline design for `ResolvedSnapshot -> DiagramState JSON -> renderer adapter`, intended before more blocking feature work.
+- [blocking/future-features.md](blocking/future-features.md): Future blocking features such as animation, richer prop semantics, authoring UX, and editor support.
+
+Completed blocking and staging plans are archived under [completed/](completed/).
 
 ## LineRecorder
 

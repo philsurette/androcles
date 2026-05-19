@@ -2,26 +2,27 @@
 
 ## Overview
 
-The staging system should compile human-authored Markdown blocks into deterministic assets.
+The staging system compiles human-authored staging notes in `production.md` into deterministic assets.
 
 This architecture replaces the current blocking-note implementation rather than wrapping it. The current implementation does not need compatibility support, but its inline authoring shape may still inform the replacement syntax. New downstream behavior should consume a compiled staging model rather than raw authoring text, regardless of whether that text came from fenced blocks, inline actions, or both.
 
 ```text
 production.md
   ↓
-block extraction
+staging export
   ↓
-layout parser     cue-lite parser     blocking parser
-  ↓               ↓                   ↓
+build/<play_id>/staging/staging.txt
+  ↓
+staging parser
+  ↓
 normalized staging model
   ↓
-validation and resolution
+validation and stage/set/scene/beat resolution
   ↓
-static SVG renderer
-  ↓
-optional timeline generator
-  ↓
-Playbook assets
+DiagramState JSON
+  ├─ Python SVG renderer for Block CLI and build artifacts
+  ├─ Playbook staging bundle: icons, checkpoints, deltas
+  └─ Cuemaster renderer for on-demand diagrams
 ```
 
 ## Authoring versus normalized model
@@ -53,17 +54,11 @@ Example normalized event:
 
 ## Modules
 
-### Block extractor
+### Staging Exporter
 
-Finds staging blocks inside Markdown.
+Finds inline and nearby staging notes inside `production.md` and writes the generated staging overlay to `build/<play_id>/staging/staging.txt`.
 
-Recommended block types:
-
-- `layout`
-- `blocking`
-- `cues`
-
-The extractor should preserve source positions for diagnostics.
+The exported overlay is the handoff between producer-facing script authoring and staging-specific parsing. It should preserve production ids and source positions for diagnostics.
 
 ### Layout parser
 
@@ -130,7 +125,13 @@ Recommended behavior:
 - warn, but still render useful output, when state is incomplete
 - keep unknown actors/props in diagnostics or an offstage/unknown list
 
-### SVG renderer
+### DiagramState Builder
+
+Builds renderer-neutral JSON from resolved state. This layer owns final icon ids, labels, titles, level colors, movement hints, offstage lists, and diagnostics.
+
+Renderers must not parse authoring syntax or resolve location references.
+
+### SVG Renderer
 
 Generates static SVG charts.
 
@@ -192,20 +193,22 @@ type Cue = {
 };
 ```
 
-## Playbook output
+## Playbook Output
 
 The compiled Playbook should contain authoring-independent assets:
 
 ```text
 playbook/
   staging/
-    staging.normalized.json
-    svg/
-      scene-1-beat-b12.svg
-    timeline/
-      scene-1-beat-b12.timeline.json
+    diagram_manifest.json
+    icons.svg
+    checkpoints/
+      scene-1.3-start.json
+      scene-1.3-b20.json
+    deltas/
+      scene-1.3.json
 ```
 
-Cuemaster should consume these compiled assets, not raw DSL.
+Cuemaster consumes these compiled assets, not raw DSL. It loads the nearest checkpoint DiagramState, applies semantic deltas, and renders the result locally.
 
-The old Playbook blocking entries can be removed or mapped into this staging asset set during implementation. Cuemaster should eventually render staging assets from the compiled model rather than from raw blocking-note text.
+Text blocking entries remain useful human-readable rehearsal context. Diagram assets are an optional Playbook minor-version addition and should be omitted when no staging data exists or when the producer passes `--no-blocking-diagrams`.

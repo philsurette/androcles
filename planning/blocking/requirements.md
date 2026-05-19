@@ -1,5 +1,7 @@
 # Quince Staging DSL Requirements
 
+Status: the first static blocking MVP is complete through the current staging export, Block CLI, DiagramState renderer contract, Playbook checkpoint/delta assets, and Cuemaster diagram display. The requirements below remain the product direction; items that describe starter syntax are historical examples rather than binding syntax.
+
 ## Goal
 
 Create a lightweight text-based staging language that can be embedded in `production.md` and compiled by Stager into normalized staging data, static SVG diagrams, and eventually optional animation timelines.
@@ -241,17 +243,21 @@ The compiler and generated assets must work without server infrastructure.
 - Mermaid compatibility.
 - Runtime parsing of authoring DSL inside Cuemaster.
 
-## Acceptance criteria for first vertical slice
+## Acceptance Criteria For The Completed Static MVP
 
-Given a `production.md` containing one layout block and one blocking block, Stager can:
+Given a `production.md` containing stage, set, scene, and beat staging notes, Quince can:
 
-1. parse the blocks
+1. export `build/<play_id>/staging/staging.txt`
 2. resolve the standard 9-zone grid
-3. normalize blocking events into JSON
-4. render a static SVG showing:
+3. normalize staging and blocking events into DiagramState JSON
+4. render static SVGs showing:
    - stage boundary
    - grid labels
    - actor positions
    - movement path arrows
-   - cue badges
-5. pass parser and renderer tests
+   - set pieces, props, icons, levels, and labels/titles
+5. package DiagramState checkpoints, deltas, and icons into Playbooks by default
+6. let Cuemaster display blocking text and open matching diagrams on demand
+7. pass parser, renderer, Playbook packaging, and Cuemaster rendering tests
+
+Cue badges and timeline animation remain future work.

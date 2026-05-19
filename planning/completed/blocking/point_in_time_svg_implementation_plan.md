@@ -2,7 +2,7 @@
 
 This is a focused implementation plan for rendering a described stage and a single point-in-time scene state to SVG. It intentionally starts independently of Quince Playbook integration, Cuemaster integration, publication diffs, audio timing, and animation.
 
-Status note: this plan documents the completed pre-stage/set/scene vertical slice. Future work should use [stage_set_scene_design.md](stage_set_scene_design.md), which moves set-specific records under named `setup` blocks and keeps `stage` limited to invariant geometry.
+Status note: this plan documents the completed pre-stage/set/scene vertical slice. Future work should use [stage_set_scene_design.md](../../blocking/stage_set_scene_design.md), which moves set-specific records under named `setup` blocks and keeps `stage` limited to invariant geometry.
 
 ## Goal
 
