@@ -42,6 +42,7 @@ class StageSvgRenderer:
             ".grid-line{stroke:#bbb;stroke-width:1}",
             ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}",
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
+            ".connector{stroke:#6b614d;stroke-width:2;stroke-dasharray:5 4;fill:none}",
             ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke:#6b614d;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
             ".actor-circle{fill:#2f6f9f;fill-opacity:.78;stroke:#12384f;stroke-width:1.5}",
@@ -62,6 +63,7 @@ class StageSvgRenderer:
         lines.append("</g>")
         lines.append('<g class="layer-scenery">')
         lines.extend(self._anchors(snapshot, scale))
+        lines.extend(self._connectors(snapshot, scale))
         lines.extend(self._set_pieces(snapshot, scale))
         lines.extend(self._placements(snapshot, scale, kind_filter="set_piece"))
         lines.append("</g>")
@@ -85,6 +87,26 @@ class StageSvgRenderer:
             x1, y1 = self._project(Point3D(-width / 2, y), width, depth, scale)
             x2, y2 = self._project(Point3D(width / 2, y), width, depth, scale)
             lines.append(f'<line class="grid-line" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}"/>')
+        return lines
+
+    def _connectors(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+        lines = []
+        for connector_id, connector in sorted(snapshot.connectors.items()):
+            if connector.start.point is None or connector.end.point is None:
+                continue
+            x1, y1 = self._project(connector.start.point, snapshot.stage.width, snapshot.stage.depth, scale)
+            x2, y2 = self._project(connector.end.point, snapshot.stage.width, snapshot.stage.depth, scale)
+            lines.append(
+                f'<line class="connector" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}">'
+                f'<title>{escape(connector_id)} {escape(connector.kind)}</title></line>'
+            )
+            if connector.start.point.z != connector.end.point.z:
+                label_x = (x1 + x2) / 2
+                label_y = (y1 + y2) / 2 - 6
+                lines.append(
+                    f'<text class="small" x="{label_x:g}" y="{label_y:g}" text-anchor="middle">'
+                    f'{escape(connector.kind)} {connector.start.point.z:g}->{connector.end.point.z:g}</text>'
+                )
         return lines
 
     def _area_labels(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:

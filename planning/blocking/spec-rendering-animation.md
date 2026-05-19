@@ -33,6 +33,11 @@ The renderer should convert stage coordinates into SVG coordinates. Because SVG 
 
 Choose the simpler and more testable approach.
 
+The static renderer supports two output orientations:
+
+- **portrait**: default, intended for mobile viewing; downstage renders to the right.
+- **landscape**: optional, preserves the more traditional wide plan view with downstage near the bottom.
+
 ## SVG primitives
 
 Recommended mapping:
@@ -44,8 +49,8 @@ Recommended mapping:
 | Level/platform | labelled `polygon` or `rect` |
 | Stair | repeated small `rect`/`line` shapes |
 | Ramp | `polygon` plus slope label |
-| Anchor | labelled `circle` or symbol |
-| Actor | `g` containing circle + label + facing arrow |
+| Anchor | `circle` or symbol with SVG `<title>` |
+| Actor | `g` containing circle + two-character label + full-name `<title>` |
 | Movement path | `path` with arrow marker |
 | Cue | small badge/text label |
 | Note | optional callout text |
@@ -65,17 +70,21 @@ Recommended conventions:
 
 For complicated multi-level designs, optionally generate separate SVG sheets per level. This should be treated as an output option, not a different authoring model.
 
-## Actor glyph
+## Actor Glyph
 
-A minimal actor glyph:
+Actors should not use the generic object icon. Render actors as circles with a standardized two-character shorthand inside the circle. The full character name should be present as an SVG `<title>` so browser hover and accessibility tooling can reveal it without adding visible clutter.
+
+Example:
 
 ```svg
-<g class="actor" data-actor="HAM" transform="translate(0,12) rotate(180)">
-  <circle r="0.25" />
-  <line x1="0" y1="0" x2="0" y2="0.5" />
-  <text x="0.35" y="0.1">HAM</text>
+<g class="actor-mark">
+  <title>Hamlet</title>
+  <circle class="actor-circle" cx="146.667" cy="395.556" r="13" />
+  <text class="actor-label" x="146.667" y="396.556">HM</text>
 </g>
 ```
+
+Props, set pieces, and anchors should generally avoid visible labels in crowded diagrams. Use embedded symbols plus SVG `<title>` metadata by default. A later interactive mode may add click-to-show labels, but the plain SVG baseline should remain useful without JavaScript.
 
 ## Movement path
 

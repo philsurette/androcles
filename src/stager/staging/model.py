@@ -242,6 +242,8 @@ class ResolvedSnapshot:
     areas: dict[str, AreaDefinition]
     anchors: dict[str, AnchorDefinition]
     actors: dict[str, ActorDefinition]
+    connectors: dict[str, ConnectorDefinition]
+    levels: dict[str, LevelDefinition]
     set_pieces: dict[str, SetPieceDefinition]
     placements: tuple[ResolvedPlacement, ...]
     diagnostics: tuple[StagingDiagnostic, ...] = ()
@@ -253,6 +255,8 @@ class ResolvedSnapshot:
             "areas": {key: value.to_dict() for key, value in sorted(self.areas.items())},
             "anchors": {key: value.to_dict() for key, value in sorted(self.anchors.items())},
             "actors": {key: value.to_dict() for key, value in sorted(self.actors.items())},
+            "connectors": {key: value.to_dict() for key, value in sorted(self.connectors.items())},
+            "levels": {key: value.to_dict() for key, value in sorted(self.levels.items())},
             "set_pieces": {key: value.to_dict() for key, value in sorted(self.set_pieces.items())},
             "placements": [placement.to_dict() for placement in self.placements],
             "diagnostics": [diagnostic.to_dict() for diagnostic in self.diagnostics],

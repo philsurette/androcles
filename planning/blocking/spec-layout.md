@@ -30,9 +30,10 @@ Minimal named-location layout:
 ```text
 stage type=proscenium
 grid standard=9
+actor HAM label=HM name=Hamlet
 anchor door_l = UL
 anchor door_r = UR
-anchor table = C
+set table kind=furniture at=C size=(5,3)
 anchor window = DR
 ```
 
@@ -41,9 +42,10 @@ Measured version of the same idea:
 ```text
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
+actor HAM label=HM name=Hamlet
 anchor door_l at=(-16,20,0)
 anchor door_r at=(16,20,0)
-anchor table at=C
+set table kind=furniture at=C size=(5,3)
 anchor window at=DR
 ```
 
@@ -142,6 +144,15 @@ DSC -> DC
 DSR -> DR
 ```
 
+### Actor
+
+```text
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+```
+
+Actor labels are the two-character strings rendered inside actor circles in static diagrams. The full `name` is exposed through SVG `<title>` metadata instead of a visible label.
+
 ### Custom area
 
 ```text
@@ -234,3 +245,11 @@ The static SVG renderer should show:
 - anchors
 - fixed set pieces
 - preset props, optionally hidden by default if diagrams become cluttered
+
+Default static rendering should minimize visible text:
+
+- standard area labels remain visible
+- actor circles show two-character labels
+- anchors, set pieces, and props expose names through SVG `<title>` metadata
+- portrait output is the default for mobile viewing, with downstage to the right
+- landscape output is available as an explicit option

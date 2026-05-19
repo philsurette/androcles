@@ -79,6 +79,35 @@ HAM @ balcony_l
     assert ham.point.z == 8
 
 
+def test_resolver_and_renderer_support_elevated_connectors_and_diagnostics() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium width=40 depth=30 units=ft
+grid standard=9
+level deck z=0
+level balcony z=8
+anchor deck_l at=(-12,14,0)
+anchor balcony_l at=(-8,24,8)
+stair stair_l from=deck_l to=balcony_l
+ramp bad_ramp from=nowhere to=balcony_l
+
+scene 2 snapshot
+HAM @ balcony_l
+"""
+    )
+
+    snapshot = StagingResolver().resolve_snapshot(document, "2")
+    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+
+    assert snapshot.connectors["stair_l"].start.point is not None
+    assert snapshot.connectors["stair_l"].end.point is not None
+    assert snapshot.connectors["stair_l"].end.point.z == 8
+    assert "Unresolved connector start 'nowhere' for bad_ramp" in [diagnostic.message for diagnostic in snapshot.diagnostics]
+    assert '<line class="connector"' in svg
+    assert "<title>stair_l stair</title>" in svg
+    assert ">stair 0->8</text>" in svg
+
+
 def test_svg_renderer_outputs_stage_grid_actor_and_diagnostics() -> None:
     document = StagingParser().parse(
         """

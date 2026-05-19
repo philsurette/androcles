@@ -43,15 +43,16 @@ Example:
 ```text
 stage type=proscenium
 grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
 anchor door_l = UL
 anchor door_r = UR
-anchor table = C
+set table kind=furniture at=C size=(5,3)
 
 scene 1.2 snapshot
 HAM @ DL face=CLA
 CLA @ UC
 OPH offstage via=door_l
-table @ C
 sword @ table
 ```
 
@@ -60,6 +61,8 @@ Measured version:
 ```text
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
 anchor door_l at=(-16,20,0)
 anchor door_r at=(16,20,0)
 set table kind=furniture at=C size=(5,3)
@@ -67,7 +70,6 @@ set table kind=furniture at=C size=(5,3)
 scene 1.2 snapshot
 HAM @ DL face=CLA
 CLA @ UC
-table @ C
 sword @ table
 ```
 
@@ -79,6 +81,11 @@ sword @ table
 - Scene snapshots are authoritative state; do not replay the whole play.
 - Absolute placement corrects state.
 - Missing state produces diagnostics and a useful partial SVG, not a hard failure.
+- Static SVG output defaults to portrait orientation for mobile viewing; in portrait, downstage renders to the right.
+- Landscape output remains available as an explicit render option.
+- Actors render as circles with two-character labels and full names in SVG `<title>` elements.
+- Set pieces, props, and anchors should avoid visible labels by default and expose names through SVG `<title>` elements to reduce clutter.
+- Set pieces and props use embedded SVG symbols so generated diagrams are self-contained.
 
 ## Output Shape
 
@@ -89,6 +96,16 @@ PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
   path/to/stage.txt \
   --scene 1.2 \
   --out /tmp/stage.svg
+```
+
+Landscape output:
+
+```sh
+PYTHONPATH=src .venv/bin/python -m stager.staging.render_point \
+  path/to/stage.txt \
+  --scene 1.2 \
+  --out /tmp/stage-landscape.svg \
+  --orientation landscape
 ```
 
 Potential later Quince command:
@@ -121,6 +138,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
   - `at=(x,y,z)`
   - `size=(w,d)`
 - [x] Generate default 9-zone areas from measured or default dimensions.
+- [x] Parse actor metadata with two-character diagram labels.
 - [x] Support standard aliases such as `USL`, `DSR`, and `CSC`.
 - [x] Add diagnostics for duplicate IDs and malformed statements.
 - [x] Add parser tests for text-only and measured layouts.
@@ -154,16 +172,19 @@ Do not implement the Quince command in this slice unless the standalone renderer
 - [x] Parse elevated anchors and set pieces.
 - [x] Parse stairs/ramps/lifts as connectors between z levels.
 - [x] Render z as metadata only; do not introduce 3D.
-- [ ] Add tests for elevated actor placement and connector diagnostics.
+- [x] Add tests for elevated actor placement and connector diagnostics.
 
 ## Phase 6: Static SVG Renderer
 
 - [x] Render stage boundary.
 - [x] Render 9-zone grid and labels.
 - [x] Render named anchors and set pieces.
-- [x] Render actor glyphs with labels and facing indicators.
-- [x] Render prop labels or compact prop markers.
-- [ ] Render elevated surfaces with 2D styling and elevation labels.
+- [x] Render actor circles with two-character labels and facing indicators.
+- [x] Render props and set pieces as compact embedded SVG markers.
+- [x] Add SVG `<title>` metadata for anchors, set pieces, props, and actors.
+- [x] Support portrait and landscape output; default to portrait.
+- [x] Render elevated connectors with 2D styling and elevation labels.
+- [ ] Render elevated surfaces/platforms with 2D styling and elevation labels.
 - [x] Render unresolved/offstage actors in a side list or diagnostics block.
 - [x] Use deterministic SVG output suitable for snapshot tests.
 - [x] Add renderer tests for text-only and measured stages.
@@ -173,6 +194,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
 - [x] Add a small standalone render entry point.
 - [x] Accept input path and output SVG path.
 - [x] Support selecting scene/snapshot by ID.
+- [x] Support selecting portrait or landscape orientation.
 - [x] Write normalized JSON next to the SVG when requested.
 - [x] Print diagnostics in producer-readable text.
 - [x] Add CLI smoke tests with temporary files.
