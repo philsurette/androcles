@@ -27,9 +27,17 @@ export type PlaybookManifest = {
     build_type: string;
   };
   sections: ManifestSection[];
+  staging?: ManifestStaging;
   context: ManifestContextBlock[];
   roles: ManifestRole[];
   assets: ManifestAudioAsset[];
+};
+
+export type ManifestStaging = {
+  included: true;
+  format: "quince.blocking.diagram_bundle";
+  format_version: string;
+  manifest_path: string;
 };
 
 export type ManifestAudioAsset = {

@@ -31,14 +31,32 @@ describe("validatePlaybookManifest", () => {
     warn.mockRestore();
   });
 
-  it("accepts a newer minor format with a warning", () => {
-    const manifest = structuredClone(manifestFixture);
+  it("accepts blocking staging metadata in playbook 1.1", () => {
+    const manifest = structuredClone(manifestFixture) as PlaybookManifest;
     manifest.format_version = "1.1.0";
+    manifest.staging = {
+      included: true,
+      format: "quince.blocking.diagram_bundle",
+      format_version: "1.0.0",
+      manifest_path: "staging/diagram_manifest.json"
+    };
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     expect(validatePlaybookManifest(manifest).format_version).toBe("1.1.0");
+    expect(validatePlaybookManifest(manifest).staging?.manifest_path).toBe("staging/diagram_manifest.json");
+    expect(warn).not.toHaveBeenCalled();
+
+    warn.mockRestore();
+  });
+
+  it("accepts a newer minor format with a warning", () => {
+    const manifest = structuredClone(manifestFixture);
+    manifest.format_version = "1.2.0";
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+
+    expect(validatePlaybookManifest(manifest).format_version).toBe("1.2.0");
     expect(warn).toHaveBeenCalledWith(
-      "playbook format version 1.1.0 is newer than supported 1.0.0; newer features may be ignored."
+      "playbook format version 1.2.0 is newer than supported 1.1.0; newer features may be ignored."
     );
 
     warn.mockRestore();
@@ -49,7 +67,7 @@ describe("validatePlaybookManifest", () => {
     manifest.format_version = "2.0.0";
 
     expect(() => validatePlaybookManifest(manifest)).toThrow(
-      "Unsupported playbook format version 2.0.0; supported version is 1.0.0"
+      "Unsupported playbook format version 2.0.0; supported version is 1.1.0"
     );
   });
 

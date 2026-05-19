@@ -406,6 +406,11 @@ def build_playbook(
     voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering."),
     build_type: str | None = typer.Option(None, "--build-type", help="Override configured build type."),
     staging: bool = typer.Option(True, "--staging/--no-staging", help="Export staging overlay from production.md before building."),
+    blocking_diagrams: bool = typer.Option(
+        True,
+        "--blocking-diagrams/--no-blocking-diagrams",
+        help="Include packaged blocking diagram JSON assets when staging data exists.",
+    ),
 ) -> None:
     """Build a Cuemaster Playbook package."""
     try:
@@ -422,6 +427,7 @@ def build_playbook(
             voice_profiles=voice_profiles,
             voice_actor=voice_actor,
             staging=staging,
+            blocking_diagrams=blocking_diagrams,
         )
     except RuntimeError as exc:
         raise click.ClickException(str(exc)) from exc

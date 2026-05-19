@@ -37,6 +37,7 @@ from stager.playbook.playbook_audio_work_item import PlaybookAudioWorkItem
 from stager.playbook.playbook_audio_packager import PlaybookAudioPackager
 from stager.playbook.playbook_cue_selector import PlaybookCueSelector
 from stager.playbook.playbook_progress_reporter import PlaybookProgressReporter
+from stager.playbook.staging_bundle_builder import PlaybookStagingBundleBuilder
 from stager.production_publication.published_version import PublishedVersion
 from stager.production_publication.production_change_report import ProductionChangeReport
 from stager.production_publication.production_version import ProductionVersion
@@ -59,6 +60,7 @@ class PlaybookBuilder:
     audio_source: str = "auto"
     voice_profiles: bool = False
     voice_actor: str | None = None
+    blocking_diagrams: bool = True
     build_id: str | None = None
     build_timestamp: str | None = None
     _manifest_assets: list[AppAudioAsset] = field(default_factory=list, init=False, repr=False)
@@ -114,6 +116,7 @@ class PlaybookBuilder:
         return self.zip_path
 
     def build_manifest(self) -> AppManifest:
+        staging = self._build_staging_bundle() if self.blocking_diagrams else None
         return AppManifest(
             play=AppPlay.from_play(self.play_id or self.paths.play_name, self.play),
             reading=AppReading.from_play(self.play, build_type=self.build_type),
@@ -123,7 +126,16 @@ class PlaybookBuilder:
             roles=[self._build_role(role) for role in self.play.roles if not role.meta and not role.name.startswith("_")],
             context=self._build_context_blocks(),
             assets=self._manifest_assets,
+            staging=staging,
+            format_version="1.1.0" if staging is not None else "1.0.0",
         )
+
+    def _build_staging_bundle(self):
+        result = PlaybookStagingBundleBuilder(paths_config=self.paths, app_dir=self.app_dir).build()
+        if result is None:
+            return None
+        self._logger.info("Wrote Playbook staging bundle %s", paths.display_path(result.manifest_path))
+        return result.manifest_entry
 
     def _build_metadata(self) -> AppManifestBuild:
         return AppManifestBuild(buildId=self._manifest_build_id(), buildTimestamp=self._manifest_build_timestamp())

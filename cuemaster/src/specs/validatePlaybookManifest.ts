@@ -91,6 +91,13 @@ const roleSchema = z.object({
   lines: z.array(lineSchema)
 });
 
+const stagingSchema = z.object({
+  included: z.literal(true),
+  format: z.literal("quince.blocking.diagram_bundle"),
+  format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
+  manifest_path: z.string().min(1)
+});
+
 const manifestSchema = z.object({
   schema_version: z.literal(1),
   format_version: z.string().regex(/^\d+\.\d+\.\d+$/),
@@ -120,6 +127,7 @@ const manifestSchema = z.object({
     build_type: z.string().min(1)
   }),
   sections: z.array(sectionSchema),
+  staging: stagingSchema.optional(),
   context: z.array(
     z.object({
       id: productionIdSchema,
@@ -139,6 +147,6 @@ const manifestSchema = z.object({
 });
 
 export function validatePlaybookManifest(input: unknown): PlaybookManifest {
-  validatePackageFormatVersion(input, "playbook", "1.0.0");
+  validatePackageFormatVersion(input, "playbook", "1.1.0");
   return manifestSchema.parse(input) as PlaybookManifest;
 }

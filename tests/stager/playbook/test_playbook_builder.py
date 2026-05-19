@@ -23,6 +23,9 @@ from stager.production_publication.production_publisher import ProductionPublish
 from stager.production_publication.production_version_store import ProductionVersionStore
 from stager.scriptwright import ProductionPlayLoader
 from stager.shared import paths
+from stager.staging.diagram_state_builder import DiagramStateBuilder
+from stager.staging.parser import StagingParser
+from stager.staging.state_resolver import StagingStateResolver
 
 
 def _write_wav(path: Path, duration_ms: int = 100) -> None:
@@ -201,6 +204,35 @@ def _write_cleanup_review(cfg: paths.PathConfig, *, entries: list[tuple[str, str
     )
 
 
+def _apply_delta(checkpoint: dict, delta: dict) -> dict:
+    state = json.loads(json.dumps(checkpoint))
+    for op in delta["targets"][0]["ops"]:
+        if op["op"] == "upsert_entity":
+            collection = "set_pieces" if op["entity"]["kind"] == "set_piece" else "entities"
+            _upsert_by_id(state[collection], op["entity"])
+        elif op["op"] == "remove_entity":
+            state["entities"] = [entity for entity in state["entities"] if entity["id"] != op["id"]]
+            state["set_pieces"] = [entity for entity in state["set_pieces"] if entity["id"] != op["id"]]
+        elif op["op"] == "upsert_offstage":
+            _upsert_by_id(state["offstage"], op["offstage"])
+        elif op["op"] == "remove_offstage":
+            state["offstage"] = [entity for entity in state["offstage"] if entity["id"] != op["id"]]
+        elif op["op"] == "replace_diagnostics":
+            state["diagnostics"] = op["diagnostics"]
+    state["diagram_id"] = delta["targets"][0]["target_id"]
+    state["diagram_kind"] = "beat"
+    state["beat_id"] = delta["targets"][0]["beat_id"]
+    return state
+
+
+def _upsert_by_id(items: list[dict], item: dict) -> None:
+    for index, candidate in enumerate(items):
+        if candidate["id"] == item["id"]:
+            items[index] = item
+            return
+    items.append(item)
+
+
 def _write_voice_profiles(cfg: paths.PathConfig, *, roles: tuple[str, ...] = ("MEGAERA",)) -> None:
     cfg.play_dir.mkdir(parents=True, exist_ok=True)
     role_targets = "\n".join(
@@ -290,6 +322,101 @@ def test_playbook_builder_writes_manifest_and_copies_required_audio(tmp_path: Pa
         assert "manifest.json" in archive.namelist()
         assert line["cue"]["audio"]["path"] in archive.namelist()
         assert line["response"]["segments"][0]["audio"]["path"] in archive.namelist()
+
+
+def test_playbook_builder_packages_blocking_diagram_bundle_when_staging_exists(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    staging_path = cfg.build_dir / "staging" / "staging.txt"
+    staging_path.parent.mkdir(parents=True)
+    staging_text = """
+stage type=proscenium
+grid standard=9
+actor AN name=Androcles
+actor MG name=Megaera
+setup act1
+piece table kind=table at=C size=(5,3)
+
+scene 1.1 set=act1
+AN @ DL face=MG
+MG @ UC
+sword @ table
+
+b1 @ I-2
+MG move UC -> DR
+sword remove
+"""
+    staging_path.write_text(staging_text, encoding="utf-8")
+
+    zip_path = PlaybookBuilder(play=play, paths=cfg).build()
+    manifest = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+    bundle_manifest_path = cfg.build_dir / "app" / manifest["staging"]["manifest_path"]
+    bundle = json.loads(bundle_manifest_path.read_text(encoding="utf-8"))
+    checkpoint = json.loads((cfg.build_dir / "app" / bundle["checkpoints"][0]["path"]).read_text(encoding="utf-8"))
+    delta = json.loads((cfg.build_dir / "app" / bundle["deltas"][0]["path"]).read_text(encoding="utf-8"))
+    reconstructed = _apply_delta(checkpoint, delta)
+    document = StagingParser().parse(staging_text)
+    direct = DiagramStateBuilder().build(StagingStateResolver().resolve_beat(document, "1.1", "b1")).to_dict()
+
+    assert manifest["format_version"] == "1.1.0"
+    assert manifest["staging"] == {
+        "included": True,
+        "format": "quince.blocking.diagram_bundle",
+        "format_version": "1.0.0",
+        "manifest_path": "staging/diagram_manifest.json",
+    }
+    assert bundle["checkpoints"][0]["scene_id"] == "1.1"
+    assert bundle["deltas"][0]["production_anchor"] == "I-2"
+    assert delta["targets"][0]["ops"]
+    assert any(entity["id"] == "actor:MG" and entity["source"] == "DR" for entity in reconstructed["entities"])
+    assert delta["format"] == "quince.blocking.diagram_delta"
+    assert reconstructed == direct
+    with zipfile.ZipFile(zip_path) as archive:
+        assert "staging/diagram_manifest.json" in archive.namelist()
+        assert bundle["checkpoints"][0]["path"] in archive.namelist()
+        assert bundle["deltas"][0]["path"] in archive.namelist()
+
+
+def test_playbook_builder_omits_blocking_diagram_bundle_when_staging_does_not_exist(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+
+    PlaybookBuilder(play=play, paths=cfg).build()
+    manifest = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["format_version"] == "1.0.0"
+    assert "staging" not in manifest
+    assert not (cfg.build_dir / "app" / "staging").exists()
+
+
+def test_playbook_builder_can_exclude_blocking_diagram_bundle(tmp_path: Path) -> None:
+    cfg = _cfg(tmp_path)
+    cue_block = _speech_block(0, 1, "ANDROCLES", "Well, dear, do you want to see one?")
+    response_block = _speech_block(0, 2, "MEGAERA", "I won't go another step.")
+    play = _play([_title_block(), cue_block, response_block])
+    _write_wav(cfg.segments_dir / "_NARRATOR" / "0_0_1.wav")
+    _write_wav(cfg.segments_dir / "ANDROCLES" / "0_1_1.wav")
+    _write_wav(cfg.segments_dir / "MEGAERA" / "0_2_1.wav")
+    staging_path = cfg.build_dir / "staging" / "staging.txt"
+    staging_path.parent.mkdir(parents=True)
+    staging_path.write_text("stage type=proscenium\nscene 1.1\nAN @ DL\n", encoding="utf-8")
+
+    PlaybookBuilder(play=play, paths=cfg, blocking_diagrams=False).build()
+    manifest = json.loads((cfg.build_dir / "app" / "manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["format_version"] == "1.0.0"
+    assert "staging" not in manifest
+    assert not (cfg.build_dir / "app" / "staging").exists()
 
 
 def test_playbook_builder_can_select_reviewed_cleaned_audio(tmp_path: Path) -> None:

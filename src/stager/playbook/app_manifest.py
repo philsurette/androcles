@@ -11,6 +11,7 @@ from stager.playbook.app_production import AppProduction
 from stager.playbook.app_reading import AppReading
 from stager.playbook.app_role import AppRole
 from stager.playbook.app_section import AppSection
+from stager.playbook.app_staging import AppStaging
 
 
 @dataclass
@@ -35,12 +36,13 @@ class AppManifest:
     context: list[AppContextBlock] = field(default_factory=list)
     sections: list[AppSection] = field(default_factory=list)
     assets: list[AppAudioAsset] = field(default_factory=list)
+    staging: AppStaging | None = None
     schema_version: int = 1
     format_version: str = "1.0.0"
     package_type: str = "playbook"
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data = {
             "schema_version": self.schema_version,
             "format_version": self.format_version,
             "package_type": self.package_type,
@@ -53,6 +55,9 @@ class AppManifest:
             "roles": [role.to_dict() for role in self.roles],
             "assets": [asset.to_dict() for asset in self.assets],
         }
+        if self.staging is not None:
+            data["staging"] = self.staging.to_dict()
+        return data
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2, sort_keys=False) + "\n"

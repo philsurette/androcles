@@ -13,9 +13,17 @@ export type Playbook = {
   source?: string;
   schemaVersion: number;
   importMetadata?: PlaybookImportMetadata;
+  staging?: PlaybookStaging;
   sections: Section[];
   context: ContextBlock[];
   roles: Role[];
+};
+
+export type PlaybookStaging = {
+  included: true;
+  format: "quince.blocking.diagram_bundle";
+  formatVersion: string;
+  manifestPath: string;
 };
 
 export type PlaybookBuild = {

@@ -27,6 +27,15 @@ export function normalizePlaybook(manifest: PlaybookManifest): Playbook {
     authors: manifest.play.authors,
     source: manifest.play.source,
     schemaVersion: manifest.schema_version,
+    staging:
+      manifest.staging === undefined
+        ? undefined
+        : {
+            included: manifest.staging.included,
+            format: manifest.staging.format,
+            formatVersion: manifest.staging.format_version,
+            manifestPath: manifest.staging.manifest_path
+          },
     sections: manifest.sections.map((section) => ({
       id: section.id,
       partId: section.part_id,

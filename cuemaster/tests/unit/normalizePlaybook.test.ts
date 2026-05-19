@@ -40,6 +40,40 @@ describe("normalizePlaybook", () => {
     expect(playbook.roles).toEqual([]);
   });
 
+  it("preserves optional staging bundle metadata", () => {
+    const manifest: PlaybookManifest = {
+      schema_version: 1,
+      format_version: "1.1.0",
+      package_type: "playbook",
+      production: { source: "working" },
+      build: {
+        buildId: "build-1",
+        buildTimestamp: "2026-05-10T10:00:00Z"
+      },
+      play: { id: "androcles", title: "Androcles and the Lion", authors: ["George Bernard Shaw"] },
+      reading: { type: "solo", build_type: "custom" },
+      staging: {
+        included: true,
+        format: "quince.blocking.diagram_bundle",
+        format_version: "1.0.0",
+        manifest_path: "staging/diagram_manifest.json"
+      },
+      sections: [],
+      context: [],
+      roles: [],
+      assets: []
+    };
+
+    const playbook = normalizePlaybook(manifest);
+
+    expect(playbook.staging).toEqual({
+      included: true,
+      format: "quince.blocking.diagram_bundle",
+      formatVersion: "1.0.0",
+      manifestPath: "staging/diagram_manifest.json"
+    });
+  });
+
   it("preserves line stage directions", () => {
     const manifest: PlaybookManifest = {
       schema_version: 1,

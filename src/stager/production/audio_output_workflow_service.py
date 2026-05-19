@@ -114,6 +114,7 @@ class AudioOutputWorkflowService:
         voice_profiles: bool = False,
         voice_actor: str | None = None,
         staging: bool = True,
+        blocking_diagrams: bool = True,
     ) -> OutputBuildResult:
         if audio_format not in ("wav", "mp3"):
             raise RuntimeError("audio-format must be one of: wav, mp3")
@@ -135,6 +136,7 @@ class AudioOutputWorkflowService:
             audio_source=audio_source,
             voice_profiles=voice_profiles,
             voice_actor=voice_actor,
+            blocking_diagrams=blocking_diagrams and staging,
         ).build()
         status = ProductionStatusService(paths_config=self.paths_config, play=self.play).build()
         return OutputBuildResult(

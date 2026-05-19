@@ -1012,6 +1012,11 @@ def playbook(
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
     staging: bool = STAGING_OPTION,
+    blocking_diagrams: bool = typer.Option(
+        True,
+        "--blocking-diagrams/--no-blocking-diagrams",
+        help="Include packaged blocking diagram JSON assets when staging data exists.",
+    ),
 ) -> None:
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -1029,6 +1034,7 @@ def playbook(
                 voice_actor=voice_actor,
                 ffmpeg_installation=ffmpeg_installation,
                 staging=staging,
+                blocking_diagrams=blocking_diagrams,
                 progress_reporter=RichPlaybookProgressReporter(progress),
             )
         except RuntimeError as exc:
@@ -1724,6 +1730,7 @@ def run_playbook(
     voice_actor: str | None = None,
     ffmpeg_installation=None,
     staging: bool = True,
+    blocking_diagrams: bool = True,
     progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
@@ -1733,6 +1740,7 @@ def run_playbook(
     cfg = paths_config or paths.current()
     if staging:
         run_staging_export(cfg)
+    effective_blocking_diagrams = blocking_diagrams and staging
     effective_build_type = BuildTypeResolver(
         paths_config=cfg,
         explicit_build_type=build_type,
@@ -1753,6 +1761,7 @@ def run_playbook(
         audio_source=audio_source,
         voice_profiles=voice_profiles,
         voice_actor=voice_actor,
+        blocking_diagrams=effective_blocking_diagrams,
         progress_reporter=progress_reporter,
     )
     return builder.build()
