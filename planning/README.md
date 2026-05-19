@@ -15,6 +15,8 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 - [static_actor_app_deployment.md](static_actor_app_deployment.md): Build and deploy Cuemaster and LineRecorder as static web apps.
 - [deployment_quick_start.md](deployment_quick_start.md): Actor and showrunner quick-start guide for hosted LineRecorder, hosted Cuemaster, shared folders, and app publishing.
 - [deployment_implementation_plan.md](deployment_implementation_plan.md): Resumable implementation plan for browser downloads, Cloudflare/static hosting, and Stager packaging.
+- [cuemaster/pwa_implementation_plan.md](cuemaster/pwa_implementation_plan.md): Active PWA-first plan for making hosted Cuemaster installable and offline-capable.
+- [mobile_app_implementation_plan.md](mobile_app_implementation_plan.md): Future fallback Capacitor plan for Cuemaster and LineRecorder if PWA limitations block the hosted-app route.
 - [webapp_refactor_implementation_plan.md](webapp_refactor_implementation_plan.md): Resumable implementation plan for Cuemaster and LineRecorder code quality refactors.
 
 ## Stager
@@ -66,6 +68,8 @@ LineRecorder is the actor-facing recording tool that consumes Stager-generated R
 Cuemaster is the mobile rehearsal app that consumes Playbooks.
 
 - [cuemaster/product_design.md](cuemaster/product_design.md): Product behavior, screens, session flow, and mobile-app concerns.
+- [cuemaster/capacitor_readiness.md](cuemaster/capacitor_readiness.md): Adapter-boundary notes for wrapping Cuemaster with Capacitor if PWA testing exposes a native-only blocker.
+- [cuemaster/pwa_implementation_plan.md](cuemaster/pwa_implementation_plan.md): Active implementation plan for installable, offline-capable hosted Cuemaster.
 - [cuemaster/cue_generation.md](cuemaster/cue_generation.md): Cue-selection and cue-audio rules for Playbooks.
 - [cuemaster/cloudflare_import_flow_plan.md](cuemaster/cloudflare_import_flow_plan.md): Hosted static Cuemaster import UX, storage diagnostics, and nested-path verification plan.
 - Future Cuemaster docs belong in `planning/cuemaster/`.

@@ -1139,19 +1139,24 @@ The following are intentionally not planned in detail until the core web app is 
 - Exportable practice reports.
 - Teacher/coach views.
 
-### PWA packaging
+### PWA install/offline work
+
+PWA install/offline work is no longer hand-wavy future polish. It is the active mobile strategy and is tracked in [pwa_implementation_plan.md](pwa_implementation_plan.md).
+
+At a high level, it includes:
 
 - Service worker.
-- Install prompt.
+- Web app manifest and icons.
+- Install UX.
 - Offline app shell.
 - Cache management.
 - Update prompts.
+- Real-device install/offline validation.
 
-This can wait until the normal browser app works. PWA work is not a substitute for Capacitor, but it may make Phase 1 nicer.
+### Native fallback phase
 
-### Mobile Phase
+Native work is a fallback, not the default next phase. Resume the Capacitor plan only if real-device PWA testing proves a blocking limitation. Candidate native fallback areas include:
 
-- Capacitor project creation.
 - Native filesystem implementation.
 - Native preferences implementation.
 - Background audio.

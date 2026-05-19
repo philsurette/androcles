@@ -1,10 +1,13 @@
 # Cuemaster Capacitor Readiness
 
-This note records what can remain unchanged when the browser app is wrapped with Capacitor, and what should become native/mobile adapters.
+This note records what can remain unchanged if the browser app is wrapped with Capacitor, and what should become native/mobile adapters.
+
+Cuemaster is now PWA-first. Active install/offline work is tracked in [pwa_implementation_plan.md](pwa_implementation_plan.md). Capacitor work is a fallback tracked in [../mobile_app_implementation_plan.md](../mobile_app_implementation_plan.md) and should resume only if real-device PWA testing exposes a native-only blocker.
 
 ## Current Adapter Boundaries
 
 - File import starts from browser `File` objects and Playbook zip extraction is isolated under `src/playbook/`.
+- Zip extraction now runs through a Web Worker when available, so the mobile spike should preserve that path unless a native file/storage adapter replaces it deliberately.
 - Storage is accessed through `CuemasterStorage` and the current implementation is `indexedDbStorage`.
 - Audio playback is isolated behind `AudioPlayer` and `AudioQueue`.
 - Microphone permission and stream acquisition are isolated in `platform/microphone.ts`; voice activity detection is app-owned.
@@ -12,7 +15,7 @@ This note records what can remain unchanged when the browser app is wrapped with
 
 ## Capacitor Replacement Points
 
-- Filesystem: keep Playbook import validation and normalization, but replace browser `File` selection/storage with Capacitor file picker/filesystem APIs. Do not assume audio assets must move out of IndexedDB until this is tested with real Playbooks; the current Androcles Playbook is the baseline fixture at about 322 MB zipped and 383 MB of audio.
+- Filesystem: keep Playbook import validation and normalization. First test the existing WebView file input and IndexedDB path on Android; replace browser file selection or storage with Capacitor file picker/filesystem APIs only if real-device testing shows usability, quota, performance, or playback problems.
 - Preferences: keep session/bookmark/timing interfaces, but decide whether small records stay in IndexedDB/SQLite or move to Capacitor Preferences. Do not store audio blobs in Preferences.
 - Native/background audio: keep `AudioQueue` semantics, but replace `AudioPlayer` with a native audio adapter if background playback, lock-screen controls, or more reliable pause/resume are required.
 - Microphone permission: keep `VoiceActivityTracker` and timing feedback, but replace `requestMicrophoneStream()` with a Capacitor/native permission and stream adapter if browser `getUserMedia` is insufficient.
@@ -29,14 +32,13 @@ This note records what can remain unchanged when the browser app is wrapped with
 
 ## Known Web Decisions That Need Follow-Up
 
-- Zip extraction currently runs on the main thread. Test import responsiveness with the real Androcles Playbook before deciding whether Web Worker extraction is required.
-- Browser IndexedDB is adequate for Phase 1 if the Androcles Playbook imports, persists, reloads, and plays reliably. MP3 Playbook packaging should be the first storage optimization if WAV assets create quota/import pressure; filesystem-backed audio should be a measured response to remaining import time, quota, or playback failures, not a default assumption.
-- Stage-direction toggling is not yet implemented because normalized role lines do not yet expose enough direction context.
+- Web Worker extraction exists for the browser app; Android should verify it behaves correctly inside the WebView.
+- Browser IndexedDB is adequate for the first Android spike if current MP3 Playbooks import, persist, reload, and play reliably. Filesystem-backed audio should be a measured response to import time, quota, or playback failures, not a default assumption.
 - Real microphone timing still needs a manual test matrix before declaring mobile-ready behavior.
 
 ## Real Playbook Baseline
 
-Use `build/androcles/androcles.playbook.zip` as the first large-file import test. Current local measurements:
+Use a current MP3 Playbook from a real production as the first Android import test. The older Androcles WAV-heavy Playbook remains a stress baseline if it is still available:
 
 - Playbook zip: about 322 MB.
 - Extracted Playbook audio: about 383 MB.
@@ -45,10 +47,10 @@ Use `build/androcles/androcles.playbook.zip` as the first large-file import test
 - Rehearsable roles: 26.
 - Rehearsable lines: 471.
 
-The test should measure import time, whether the UI remains responsive enough during import, whether the browser grants enough storage quota, whether reload/resume works after import, and whether cue/response playback still resolves assets promptly.
+The test should measure import time, whether the UI remains responsive enough during import, whether the WebView grants enough storage quota, whether reload/resume works after import, and whether cue/response playback still resolves assets promptly.
 
 The 95% product assumption is one active Playbook per actor at a time. Supporting several stored Playbooks is useful, but the app does not need to optimize for a large local library before the first mobile spike. If storage pressure appears, the acceptable first mitigation is clear user-facing guidance to remove old Playbooks.
 
-## Recommended Next Spike
+## Recommended Native Fallback Spike
 
-First run a web import stress test with the real Androcles Playbook. If IndexedDB storage is reliable at that size, the Capacitor proof of concept can start by preserving the storage interface and testing whether mobile WebView IndexedDB quotas are acceptable. If mobile quota or performance fails, then build a narrow Capacitor proof of concept that stores audio assets through the mobile filesystem while keeping session metadata behind the storage interface.
+Start with the PWA-first milestones in [pwa_implementation_plan.md](pwa_implementation_plan.md). If mobile browser storage, import/export, playback, microphone timing, or install/offline behavior fails in a way that blocks real use, record the failed capability and then run the smallest Capacitor spike that addresses that capability. Preserve the storage interface and add native adapters only behind existing boundaries.

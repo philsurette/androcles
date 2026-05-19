@@ -38,7 +38,7 @@ Use `planning/specs/playbook_manifest.md` as the authoritative manifest schema. 
 - **Narrow, transparent microphone use.** Microphone access is used only for explicitly enabled features: voice commands and voice-activity timing. Tempo timing does not record, save, transcribe, upload, or score audio.
 - **Simple state machine.** The app walks a flat, ordered list of rehearsal lines for the selected role. Navigation is the primary complexity; playback is deliberately straightforward.
 - **Blocking stays optional and non-disruptive.** Text blocking notes may be shown inline when enabled. Visual blocking diagrams are on-demand references and must not interrupt playback, auto-advance, or eyes-free rehearsal.
-- **Web app first, mobile wrapper second.** The app is built first as a browser-based React web app, then packaged for mobile using Capacitor.
+- **Hosted PWA first, native fallback only if needed.** The app is built as a browser-based React app that can be installed and used offline. Native packaging is a fallback for proven PWA limitations, not the default mobile path.
 - **Preserve commercial and open-source flexibility.** The shipped app must avoid GPL-family and other restrictive dependencies so it can be released as permissive open source, source-available, freeware, or paid software later.
 
 ---
@@ -79,11 +79,11 @@ Development-only tools should also prefer permissive licenses. A copyleft develo
 
 ---
 
-## Development Strategy: Two Phases
+## Development Strategy: PWA First, Native Fallback
 
-### Phase 1 — Browser Web App
+### Phase 1 — Hosted Installable PWA
 
-Build the full app as a standard browser-based web application.
+Build the full app as a hosted browser-based web application that can also be installed as a PWA.
 
 Prescribed stack:
 
@@ -99,28 +99,31 @@ Prescribed stack:
 - **fflate** for zip extraction.
 - **Web Worker** for Playbook extraction so large zips do not block the UI.
 - **IndexedDB** for browser-side Playbook storage.
+- **Web app manifest** for install metadata, icons, scope, and display mode.
+- **Service worker** for app-shell caching, offline launch, and controlled app updates.
 
 Phase 1 does not include wake-word voice commands or hardware media controls. All navigation interaction is via on-screen controls. Phase 1 may include microphone-based tempo timing because it does not require speech recognition; it only requires voice activity detection.
 
-The Phase 1 web app is a shippable product in its own right, not merely a prototype. It should work for actors rehearsing at a desk or on a laptop before the mobile wrapper is finished.
+The Phase 1 PWA is the primary product, not a prototype. It should work for actors rehearsing on phones, tablets, and laptops. After a first successful visit and Playbook import, actors should be able to launch the app and rehearse an imported Playbook without a network connection.
 
-### Phase 2 — Capacitor Mobile App
+Detailed rollout work belongs in [pwa_implementation_plan.md](pwa_implementation_plan.md).
 
-Once the browser app is stable, package the same React/Vite app using **Capacitor** for iOS and Android.
+### Native Fallback — Capacitor Mobile App
 
-Prescribed mobile direction:
+If real-device PWA testing shows a blocking limitation, package the same React/Vite app using **Capacitor** for iOS and Android.
+
+Fallback mobile direction:
 
 - Use **Capacitor**, not React Native, for v1.
 - Use **official Capacitor plugins** where possible.
-- Use `@capacitor/filesystem` for unpacked Playbook assets.
-- Use `@capacitor/preferences` for small persistent state.
+- Use native filesystem/preferences/audio APIs only for the specific capability that failed in PWA testing.
 - Add background audio, lock-screen metadata, media controls, and voice commands only after the core playback loop is stable.
 
-Capacitor is selected because Cuemaster is intentionally built as a web app first. React Native would make the mobile app primary and the browser app secondary, which is not the desired v1 strategy.
+Capacitor remains the preferred native fallback because Cuemaster is intentionally built as a web app first. React Native would make the mobile app primary and the browser app secondary, which is not the desired strategy.
 
-### Required Phase 2 Technical Spike
+### Required Native Fallback Technical Spike
 
-Before committing deeply to Phase 2, build a small Capacitor spike that verifies:
+Before committing deeply to native packaging, build a small Capacitor spike that verifies the failed PWA capability plus any adjacent behavior it depends on:
 
 1. Local audio playback from device filesystem.
 2. Sequential cue playback.
@@ -1003,17 +1006,17 @@ Platform requirements:
 - **Android**: playback must survive normal backgrounding behavior and audio focus changes.
 - Audio interruptions must pause the session and allow resumption.
 
-Driving mode should not be implemented until the Phase 2 audio/media-control spike succeeds.
+Driving mode should not be implemented until the native audio/media-control spike succeeds.
 
 ---
 
 ## Progressive Web App Position
 
-Cuemaster may eventually be installable as a Progressive Web App, but PWA support is not the primary v1 mobile strategy.
+Cuemaster should be installable as a Progressive Web App, and this is the primary mobile strategy.
 
 For this project, a PWA means a browser-delivered web app that can offer some app-like behavior such as offline caching, a home-screen icon, and local storage.
 
-PWA support is useful for the Phase 1 browser product, but it is not sufficient for the full v1 product because Cuemaster requires reliable background audio, device file access, lock-screen metadata, hardware media controls, and eventually offline voice commands. Capacitor remains the prescribed mobile packaging strategy.
+PWA support should be treated as sufficient until real-device testing proves otherwise. The first PWA target is not full native parity; it is reliable actor rehearsal from a hosted app that can be installed, launched offline, and used with locally imported Playbooks. Background audio, lock-screen metadata, hardware media controls, and offline voice commands remain possible native fallback triggers, not assumptions that block the PWA release.
 
 ---
 
@@ -1105,7 +1108,7 @@ The following are deliberate exclusions:
 
 | Area | Decision |
 |---|---|
-| App architecture | Web app first, Capacitor wrapper second. |
+| App architecture | Hosted installable PWA first, Capacitor fallback only if needed. |
 | UI | React. |
 | Build | Vite. |
 | Language | TypeScript. |
@@ -1118,9 +1121,10 @@ The following are deliberate exclusions:
 | Target hesitation | Default 500ms; optional line-specific Playbook override. |
 | Zip | `fflate` in a Web Worker. |
 | Browser storage | IndexedDB. |
-| Native packaging | Capacitor. |
-| Native storage | `@capacitor/filesystem` and `@capacitor/preferences`. |
-| Media controls | Required, but exact plugin deferred pending no-GPL spike. |
+| PWA shell | Web app manifest plus service worker. |
+| Native packaging | Capacitor fallback only after a recorded PWA blocker. |
+| Native storage | Use only if browser storage fails real-device testing. |
+| Media controls | Deferred; native implementation requires a no-GPL spike. |
 | Voice commands | Vosk only if runtime and model licenses are approved. |
 | Backend | None for v1. |
 | GPL-family dependencies | Prohibited. |
@@ -1131,11 +1135,11 @@ The following are deliberate exclusions:
 
 1. **Tempo timing thresholds**: What internal pause and end-of-line silence thresholds work best with real actors and real rehearsal spaces?
 2. **Voice activity implementation**: Should v1 use a simple app-owned energy-based detector, an AudioWorklet, or a permissively licensed VAD package?
-3. **Capacitor audio/media spike**: Which permissively licensed implementation provides reliable background audio and media controls on both iOS and Android?
+3. **PWA update flow**: Should app updates be applied immediately after user confirmation, or only at Library/session boundaries?
 4. **Vosk integration path**: Should voice commands use a native Vosk bridge or Vosk WASM inside the WebView?
 5. **Vosk model license**: Which English model is small enough, accurate enough, and permissively licensed for bundling?
 6. **Playbook size limits**: Should 500MB be a hard warning threshold, a soft warning, or configurable?
 7. **Playbook versioning**: What manifest fields identify package version, source, build date, and compatibility?
 8. **Audio format migration**: When should Stager add an app-optimized M4A/AAC packaging step?
 9. **Accessibility acceptance criteria**: What exact VoiceOver/TalkBack flows must pass before v1 release?
-10. **PWA packaging**: Should Phase 1 include a service worker and install prompt, or remain a plain browser app until the core loop stabilizes?
+10. **Native fallback threshold**: Which PWA limitations, if any, are severe enough to justify resuming Capacitor implementation?
