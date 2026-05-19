@@ -15,17 +15,13 @@ These examples use the current stage/set/scene syntax: stage geometry is top-lev
 Default portrait output, suitable for mobile viewing:
 
 ```sh
-./block scene \
-  planning/blocking/examples/text-only-stage.txt \
-  --scene 1.2
+./block scene 1.2 planning/blocking/examples/text-only-stage.txt
 ```
 
 Landscape output:
 
 ```sh
-./block scene \
-  planning/blocking/examples/multi-level-stage.txt \
-  --scene 1.3 \
+./block scene 1.3 planning/blocking/examples/multi-level-stage.txt \
   --orientation landscape
 ```
 
@@ -38,9 +34,7 @@ Stage-only output:
 Set-only output:
 
 ```sh
-./block set \
-  planning/blocking/examples/multi-level-stage.txt \
-  --set act1
+./block set act1 planning/blocking/examples/multi-level-stage.txt
 ```
 
 Dimensions are optional. If a stage omits `width` and `depth`, the renderer uses a deterministic default proscenium stage so producers can start with rough named locations and add precision later.
@@ -50,8 +44,5 @@ Scene snapshots are authoritative point-in-time state. The renderer does not rep
 For staged progression inside a scene, use ordered `beat` blocks. Rendering with `--beat` starts from the scene snapshot and applies all beats for that scene up to the requested beat:
 
 ```sh
-./block beat \
-  planning/blocking/examples/multi-level-stage.txt \
-  --scene 1.3 \
-  --beat b2
+./block beat 1.3 b2 planning/blocking/examples/multi-level-stage.txt
 ```

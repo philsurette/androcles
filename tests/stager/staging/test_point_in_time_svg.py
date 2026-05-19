@@ -789,11 +789,11 @@ HAM -> C
     try:
         sys.argv = ["block", "stage"]
         main()
-        sys.argv = ["block", "set", "--set", "act1"]
+        sys.argv = ["block", "set", "act1"]
         main()
-        sys.argv = ["block", "scene", "--scene", "1.2"]
+        sys.argv = ["block", "scene", "1.2"]
         main()
-        sys.argv = ["block", "beat", "--scene", "1.2", "--beat", "b1"]
+        sys.argv = ["block", "beat", "1.2", "b1"]
         main()
     finally:
         sys.argv = original_argv
@@ -803,6 +803,50 @@ HAM -> C
     assert (output_dir / "set-act1.svg").exists()
     assert (output_dir / "scene-1.2.svg").exists()
     assert (output_dir / "scene-1.2-b1.svg").exists()
+
+
+def test_block_cli_keeps_option_based_scene_and_beat_args(tmp_path: Path) -> None:
+    source = tmp_path / "staging.txt"
+    scene_svg_path = tmp_path / "scene.svg"
+    beat_svg_path = tmp_path / "beat.svg"
+    source.write_text(
+        """
+stage type=proscenium
+grid standard=9
+
+scene 1.2 snapshot
+HAM @ DL
+
+beat b1 scene=1.2
+HAM -> C
+""",
+        encoding="utf-8",
+    )
+
+    from stager.staging.block import main
+    import sys
+
+    original_argv = sys.argv
+    try:
+        sys.argv = ["block", "scene", str(source), "--scene", "1.2", "--out", str(scene_svg_path)]
+        main()
+        sys.argv = [
+            "block",
+            "beat",
+            str(source),
+            "--scene",
+            "1.2",
+            "--beat",
+            "b1",
+            "--out",
+            str(beat_svg_path),
+        ]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    assert "Scene 1.2" in scene_svg_path.read_text(encoding="utf-8")
+    assert "Scene 1.2@b1" in beat_svg_path.read_text(encoding="utf-8")
 
 
 def test_block_cli_icons_uses_default_output(capsys) -> None:

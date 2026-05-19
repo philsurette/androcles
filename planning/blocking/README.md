@@ -55,26 +55,19 @@ Example stage-only command:
 Example set-only command:
 
 ```sh
-./block set \
-  plays/hamlet/staging.txt \
-  --set act1
+./block set act1 plays/hamlet/staging.txt
 ```
 
 Example scene snapshot command:
 
 ```sh
-./block scene \
-  plays/hamlet/staging.txt \
-  --scene 1.2
+./block scene 1.2 plays/hamlet/staging.txt
 ```
 
 Example beat command:
 
 ```sh
-./block beat \
-  plays/hamlet/staging.txt \
-  --scene 1.3 \
-  --beat b2
+./block beat 1.3 b2 plays/hamlet/staging.txt
 ```
 
 Transitional point-in-time render alias:
@@ -87,6 +80,8 @@ Transitional point-in-time render alias:
 ```
 
 When run from a play folder, the input defaults to `staging.txt`.
+
+From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 
 When the input is under `plays/<play_id>/`, `--out` defaults to `build/<play_id>/staging/`.
 

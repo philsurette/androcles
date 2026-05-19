@@ -198,18 +198,16 @@ The Block CLI should expose the three layers directly:
 ```sh
 ./block stage plays/hamlet/staging.txt
 
-./block set plays/hamlet/staging.txt \
-  --set act1
+./block set act1 plays/hamlet/staging.txt
 
-./block scene plays/hamlet/staging.txt \
-  --scene 1.2
+./block scene 1.2 plays/hamlet/staging.txt
 
-./block beat plays/hamlet/staging.txt \
-  --scene 1.3 \
-  --beat b2
+./block beat 1.3 b2 plays/hamlet/staging.txt
 ```
 
 When run from a play folder, the input defaults to `staging.txt`.
+
+From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 
 For inputs under `plays/<play_id>/`, output defaults to `build/<play_id>/staging/`.
 
@@ -274,9 +272,9 @@ The current Hamlet and planning examples have been migrated by:
 
 - [x] Keep `./block` as the standalone launcher.
 - [x] Keep `block stage`.
-- [x] Add `block set --set <id>`.
-- [x] Add `block scene --scene <id>`.
-- [x] Add `block beat --scene <id> --beat <id>`.
+- [x] Add `block set <id>`.
+- [x] Add `block scene <id>`.
+- [x] Add `block beat <scene_id> <beat_id>`.
 - [x] Keep `block render` as a temporary alias for beat/scene rendering.
 - [x] Update help text to use stage/set/scene/beat terminology consistently.
 

@@ -79,13 +79,13 @@ class BlockCli:
     def _add_set_command(self, subparsers) -> None:
         parser = subparsers.add_parser("set", help="Render a set-only diagram.")
         parser.add_argument(
-            "input",
-            type=Path,
+            "set_arg",
             nargs="?",
-            default=DEFAULT_STAGING_FILE,
-            help="Staging file. Defaults to staging.txt.",
+            metavar="SET_ID",
+            help="Set/setup id. If --set is used, this may be the staging file.",
         )
-        parser.add_argument("--set", required=True, dest="set_id", help="Set/setup id to render")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("--set", dest="set_id", help="Set/setup id to render")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/set-<set>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
@@ -99,13 +99,13 @@ class BlockCli:
     def _add_scene_command(self, subparsers) -> None:
         parser = subparsers.add_parser("scene", help="Render a scene snapshot diagram.")
         parser.add_argument(
-            "input",
-            type=Path,
+            "scene_arg",
             nargs="?",
-            default=DEFAULT_STAGING_FILE,
-            help="Staging file. Defaults to staging.txt.",
+            metavar="SCENE_ID",
+            help="Scene snapshot id. If --scene is used, this may be the staging file.",
         )
-        parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("--scene", help="Scene snapshot id to render")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
@@ -119,14 +119,15 @@ class BlockCli:
     def _add_beat_command(self, subparsers) -> None:
         parser = subparsers.add_parser("beat", help="Render a point-in-time beat diagram.")
         parser.add_argument(
-            "input",
-            type=Path,
+            "scene_arg",
             nargs="?",
-            default=DEFAULT_STAGING_FILE,
-            help="Staging file. Defaults to staging.txt.",
+            metavar="SCENE_ID",
+            help="Scene snapshot id. If --scene is used, this may be the staging file.",
         )
-        parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
-        parser.add_argument("--beat", required=True, help="Blocking beat id to apply up to")
+        parser.add_argument("beat_arg", nargs="?", metavar="BEAT_ID", help="Blocking beat id to apply up to.")
+        parser.add_argument("input", type=Path, nargs="?", help="Staging file. Defaults to staging.txt.")
+        parser.add_argument("--scene", help="Scene snapshot id to render")
+        parser.add_argument("--beat", help="Blocking beat id to apply up to")
         parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>-<beat>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
@@ -151,18 +152,24 @@ class BlockCli:
         self._write_snapshot(args, snapshot)
 
     def _set(self, args) -> None:
+        set_id, input_path = self._resolve_set_args(args)
+        args.input = input_path
         document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
-        snapshot = StagingResolver().resolve_set(document, args.set_id)
+        snapshot = StagingResolver().resolve_set(document, set_id)
         self._write_snapshot(args, snapshot)
 
     def _scene(self, args) -> None:
+        scene_id, input_path = self._resolve_scene_args(args)
+        args.input = input_path
         document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
-        snapshot = StagingResolver().resolve_snapshot(document, args.scene)
+        snapshot = StagingResolver().resolve_snapshot(document, scene_id)
         self._write_snapshot(args, snapshot)
 
     def _beat(self, args) -> None:
+        scene_id, beat_id, input_path = self._resolve_beat_args(args)
+        args.input = input_path
         document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
-        snapshot = StagingStateResolver().resolve_beat(document, args.scene, args.beat)
+        snapshot = StagingStateResolver().resolve_beat(document, scene_id, beat_id)
         self._write_snapshot(args, snapshot)
 
     def _stage(self, args) -> None:
@@ -214,6 +221,29 @@ class BlockCli:
 
     def _path_id(self, value: str) -> str:
         return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-")
+
+    def _resolve_set_args(self, args) -> tuple[str, Path]:
+        if args.set_id is not None:
+            return args.set_id, Path(args.set_arg) if args.set_arg is not None else DEFAULT_STAGING_FILE
+        if args.set_arg is None:
+            raise SystemExit("block set requires a set id, for example: block set act1")
+        return str(args.set_arg), args.input or DEFAULT_STAGING_FILE
+
+    def _resolve_scene_args(self, args) -> tuple[str, Path]:
+        if args.scene is not None:
+            return args.scene, Path(args.scene_arg) if args.scene_arg is not None else DEFAULT_STAGING_FILE
+        if args.scene_arg is None:
+            raise SystemExit("block scene requires a scene id, for example: block scene 1.3")
+        return str(args.scene_arg), args.input or DEFAULT_STAGING_FILE
+
+    def _resolve_beat_args(self, args) -> tuple[str, str, Path]:
+        if args.scene is not None:
+            if args.beat is None:
+                raise SystemExit("block beat requires a beat id, for example: block beat --scene 1.3 --beat b2")
+            return args.scene, args.beat, Path(args.scene_arg) if args.scene_arg is not None else DEFAULT_STAGING_FILE
+        if args.scene_arg is None or args.beat_arg is None:
+            raise SystemExit("block beat requires a scene id and beat id, for example: block beat 1.3 b2")
+        return str(args.scene_arg), str(args.beat_arg), args.input or DEFAULT_STAGING_FILE
 
 
 def main() -> None:
