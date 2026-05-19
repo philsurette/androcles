@@ -44,6 +44,7 @@ class StagingResolver:
             stage=document.stage,
             areas=areas,
             anchors=self._resolved_anchors(document, areas, diagnostics),
+            actors=document.actors,
             set_pieces=self._resolved_set_pieces(document, areas, diagnostics),
             placements=placements,
             diagnostics=tuple(diagnostics),

@@ -7,6 +7,7 @@ import shlex
 from stager.staging.diagnostics import StagingDiagnostic
 from stager.staging.model import (
     AnchorDefinition,
+    ActorDefinition,
     ConnectorDefinition,
     LevelDefinition,
     Placement,
@@ -34,6 +35,7 @@ class StagingParser:
         stage = StageDefinition()
         grid_standard: int | None = 9
         anchors: dict[str, AnchorDefinition] = {}
+        actors: dict[str, ActorDefinition] = {}
         levels: dict[str, LevelDefinition] = {}
         connectors: dict[str, ConnectorDefinition] = {}
         set_pieces: dict[str, SetPieceDefinition] = {}
@@ -84,6 +86,10 @@ class StagingParser:
                     anchor = self._parse_anchor(tokens, fields, line_no)
                     if anchor is not None:
                         self._put_unique(anchors, anchor.id, anchor, "anchor", line_no)
+                elif keyword == "actor":
+                    actor = self._parse_actor(tokens, fields, line_no)
+                    if actor is not None:
+                        self._put_unique(actors, actor.id, actor, "actor", line_no)
                 elif keyword == "set":
                     set_piece = self._parse_set_piece(tokens, fields, line_no)
                     if set_piece is not None:
@@ -109,6 +115,7 @@ class StagingParser:
             stage=stage,
             grid_standard=grid_standard,
             anchors=anchors,
+            actors=actors,
             levels=levels,
             connectors=connectors,
             set_pieces=set_pieces,
@@ -128,6 +135,21 @@ class StagingParser:
             units=fields.get("units", "ft"),
             audience=fields.get("audience", "south"),
             measured=measured,
+        )
+
+    def _parse_actor(self, tokens: list[str], fields: dict[str, str], line_no: int) -> ActorDefinition | None:
+        if len(tokens) < 2:
+            self._warn("Actor statement requires an id", line_no)
+            return None
+        actor_id = tokens[1]
+        label = fields.get("label") or self._default_actor_label(actor_id)
+        if len(label) != 2:
+            self._warn(f"Actor {actor_id} label must be exactly two characters", line_no)
+            label = self._default_actor_label(actor_id)
+        return ActorDefinition(
+            id=actor_id,
+            label=label.upper(),
+            name=fields.get("name", actor_id),
         )
 
     def _parse_anchor(self, tokens: list[str], fields: dict[str, str], line_no: int) -> AnchorDefinition | None:
@@ -236,6 +258,12 @@ class StagingParser:
             raise ValueError("Missing location reference")
         value = value.strip()
         return SourceLocation(source=value, point=self._point(value))
+
+    def _default_actor_label(self, actor_id: str) -> str:
+        compact = "".join(character for character in actor_id if character.isalnum()).upper()
+        if len(compact) >= 2:
+            return compact[:2]
+        return compact.ljust(2, "?")
 
     def _point(self, value: str) -> Point3D | None:
         match = COORD_RE.match(value)

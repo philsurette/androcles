@@ -1,5 +1,7 @@
 stage type=proscenium
 grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
 anchor door_l = UL
 anchor door_r = UR
 set table kind=furniture at=C size=(5,3)

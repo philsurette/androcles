@@ -32,10 +32,10 @@ class StageSvgRenderer:
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
             ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke:#6b614d;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
-            ".icon-actor{color:#2f6f9f;opacity:.78}",
+            ".actor-circle{fill:#2f6f9f;fill-opacity:.78;stroke:#12384f;stroke-width:1.5}",
+            ".actor-label{font:10px sans-serif;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:middle}",
             ".icon-set-piece{color:#6b614d}",
             ".icon-prop{color:#7a4b9d}",
-            ".prop-leader{stroke:#7a4b9d;stroke-width:1;stroke-dasharray:2 2}",
             ".label{font:13px sans-serif;fill:#111}",
             ".small{font:11px sans-serif;fill:#333;paint-order:stroke;stroke:#fff;stroke-width:3}",
             ".diagnostic{font:12px sans-serif;fill:#8a3a00}",
@@ -93,8 +93,7 @@ class StageSvgRenderer:
             if anchor.at.point is None:
                 continue
             x, y = self._project(anchor.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            lines.append(f'<circle class="anchor" cx="{x:g}" cy="{y:g}" r="5"/>')
-            lines.append(f'<text class="small" x="{x + 7:g}" y="{y - 7:g}">{escape(anchor_id)}</text>')
+            lines.append(f'<circle class="anchor" cx="{x:g}" cy="{y:g}" r="5"><title>{escape(anchor_id)}</title></circle>')
             if anchor.at.point.z:
                 lines.append(f'<text class="small" x="{x + 7:g}" y="{y + 7:g}">+{anchor.at.point.z:g}</text>')
         return lines
@@ -118,8 +117,7 @@ class StageSvgRenderer:
                 f'width="{width * scale:g}" height="{depth * scale:g}" rx="2"/>'
             )
             icon_id = self._set_piece_icon_id(set_id, set_piece.kind)
-            lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32))
-            lines.append(f'<text class="small" x="{x:g}" y="{y + 29:g}" text-anchor="middle">{escape(set_id)}</text>')
+            lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=set_id))
             if set_piece.at.point.z:
                 lines.append(f'<text class="small" x="{x:g}" y="{y + 43:g}" text-anchor="middle">+{set_piece.at.point.z:g}</text>')
         return lines
@@ -163,12 +161,17 @@ class StageSvgRenderer:
         x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
         x += offset[0]
         y += offset[1]
+        actor = snapshot.actors.get(placement.entity)
+        label = actor.label if actor is not None else self._default_actor_label(placement.entity)
+        title = actor.name if actor is not None else placement.entity
         lines = [
-            self._icon_use(self.icons.default_actor_icon, "icon-actor", x, y, 26),
-            f'<text class="label" x="{x + 15:g}" y="{y + 4:g}">{escape(placement.entity)}</text>',
+            f'<g class="actor-mark"><title>{escape(title)}</title>',
+            f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13"/>',
+            f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(label)}</text>',
+            "</g>",
         ]
         if placement.face:
-            lines.append(f'<text class="small" x="{x + 15:g}" y="{y + 18:g}">face {escape(placement.face)}</text>')
+            lines.append(f'<text class="small" x="{x + 16:g}" y="{y + 18:g}">face {escape(placement.face)}</text>')
         if placement.point.z:
             lines.append(f'<text class="small" x="{x - 10:g}" y="{y - 13:g}">+{placement.point.z:g}</text>')
         return lines
@@ -189,8 +192,7 @@ class StageSvgRenderer:
         if placement.source in snapshot.set_pieces:
             return self._prop_on_set_piece(snapshot, placement, scale, slot_index, icon_id)
         return [
-            self._icon_use(icon_id, "icon-prop", x, y, 24),
-            f'<text class="small" x="{x + 14:g}" y="{y + 18:g}">{escape(placement.entity)}</text>',
+            self._icon_use(icon_id, "icon-prop", x, y, 24, title=placement.entity),
         ]
 
     def _prop_on_set_piece(
@@ -211,12 +213,8 @@ class StageSvgRenderer:
         rows = (-0.24, 0.08, 0.34)
         icon_x = center_x + half_width * columns[slot_index % len(columns)]
         icon_y = center_y + half_depth * rows[(slot_index // len(columns)) % len(rows)]
-        label_x = center_x + half_width + 14
-        label_y = center_y - half_depth + 16 + slot_index * 14
         return [
-            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22),
-            f'<line class="prop-leader" x1="{icon_x + 12:g}" y1="{icon_y:g}" x2="{label_x - 4:g}" y2="{label_y - 4:g}"/>',
-            f'<text class="small" x="{label_x:g}" y="{label_y:g}">{escape(placement.entity)}</text>',
+            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22, title=placement.entity),
         ]
 
     def _placed_set_piece(self, snapshot: ResolvedSnapshot, placement: ResolvedPlacement, scale: float) -> list[str]:
@@ -225,8 +223,7 @@ class StageSvgRenderer:
         set_piece = snapshot.set_pieces.get(placement.entity)
         icon_id = self._set_piece_icon_id(placement.entity, set_piece.kind if set_piece is not None else None)
         return [
-            self._icon_use(icon_id, "icon-set-piece", x, y, 32),
-            f'<text class="small" x="{x:g}" y="{y + 29:g}" text-anchor="middle">{escape(placement.entity)}</text>',
+            self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=placement.entity),
         ]
 
     def _side_panel(self, snapshot: ResolvedSnapshot, x: int, y: int) -> list[str]:
@@ -259,18 +256,27 @@ class StageSvgRenderer:
             self.margin_px + (stage_depth - point.y) * scale,
         )
 
-    def _icon_use(self, icon_id: str, class_name: str, x: float, y: float, size: int) -> str:
+    def _icon_use(self, icon_id: str, class_name: str, x: float, y: float, size: int, *, title: str | None = None) -> str:
         offset = size / 2
-        return (
+        use = (
             f'<use class="stage-icon {class_name}" href="#stage-icon-{escape(icon_id)}" '
             f'x="{x - offset:g}" y="{y - offset:g}" width="{size}" height="{size}"/>'
         )
+        if title is None:
+            return use
+        return f'<g><title>{escape(title)}</title>{use}</g>'
 
     def _set_piece_icon_id(self, entity: str, kind: str | None) -> str:
         entity_icon = self.icons.icon_id(entity, "")
         if entity_icon:
             return entity_icon
         return self.icons.icon_id(kind, self.icons.default_set_piece_icon)
+
+    def _default_actor_label(self, entity: str) -> str:
+        compact = "".join(character for character in entity if character.isalnum()).upper()
+        if len(compact) >= 2:
+            return compact[:2]
+        return compact.ljust(2, "?")
 
     def _actor_offsets(self, snapshot: ResolvedSnapshot, scale: float) -> dict[int, tuple[float, float]]:
         grouped: dict[tuple[int, int], list[int]] = {}

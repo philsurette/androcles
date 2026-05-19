@@ -15,6 +15,7 @@ def test_parser_accepts_text_only_stage_and_scene_snapshot() -> None:
         """
 stage type=proscenium
 grid standard=9
+actor HAM label=HM name=Hamlet
 anchor door_l = UL
 anchor table = C
 
@@ -29,6 +30,8 @@ sword @ table
 
     assert document.stage.stage_type == "proscenium"
     assert document.stage.measured is False
+    assert document.actors["HAM"].label == "HM"
+    assert document.actors["HAM"].name == "Hamlet"
     assert document.anchors["door_l"].at.source == "UL"
     assert document.snapshots["1.2"].placements[0].entity == "HAM"
     assert document.snapshots["1.2"].placements[2].offstage is True
@@ -109,6 +112,8 @@ def test_svg_renderer_uses_layers_top_left_area_labels_and_offsets_actor_collisi
 stage type=proscenium
 grid standard=9
 set table kind=furniture at=C size=(5,3)
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
 
 scene 1.2 snapshot
 HAM @ C
@@ -125,17 +130,24 @@ dagger @ table
     assert '<g class="layer-actors">' in svg
     assert ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}" in svg
     assert '<text class="area-label" x="45" y="55">UL</text>' in svg
-    assert ".icon-actor{color:#2f6f9f;opacity:.78}" in svg
-    actor_icons = re.findall(r'<use class="stage-icon icon-actor" href="#stage-icon-actor" x="([^"]+)" y="([^"]+)"', svg)
-    assert len(actor_icons) == 2
-    assert actor_icons[0] != actor_icons[1]
+    assert ".actor-circle{fill:#2f6f9f;fill-opacity:.78;" in svg
+    actor_circles = re.findall(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
+    assert len(actor_circles) == 2
+    assert actor_circles[0] != actor_circles[1]
+    assert "<title>Hamlet</title>" in svg
+    assert ">HM</text>" in svg
+    assert "<title>Claudius</title>" in svg
+    assert ">CD</text>" in svg
     prop_labels = re.findall(r'<use class="stage-icon icon-prop" href="#stage-icon-[^"]+" x="([^"]+)" y="([^"]+)"', svg)
     assert len(prop_labels) == 2
     assert prop_labels[0] != prop_labels[1]
     assert svg.index('<g class="layer-props">') < svg.index('<g class="layer-actors">')
     assert 'href="#stage-icon-sword"' in svg
     assert 'href="#stage-icon-dagger"' in svg
-    assert 'class="prop-leader"' in svg
+    assert "<title>sword</title>" in svg
+    assert "<title>dagger</title>" in svg
+    assert ">sword</text>" not in svg
+    assert ">dagger</text>" not in svg
 
 
 def test_svg_renderer_uses_snapshot_position_for_placed_set_piece() -> None:
@@ -154,6 +166,8 @@ table @ DL
     svg = StageSvgRenderer().render(snapshot)
 
     assert svg.count('href="#stage-icon-table"') == 1
+    assert "<title>table</title>" in svg
+    assert ">table</text>" not in svg
     assert svg.index('<g class="layer-scenery">') < svg.index('href="#stage-icon-table"') < svg.index('<g class="layer-props">')
 
 

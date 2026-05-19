@@ -66,6 +66,20 @@ class AreaDefinition:
 
 
 @dataclass(frozen=True)
+class ActorDefinition:
+    id: str
+    label: str
+    name: str
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "label": self.label,
+            "name": self.name,
+        }
+
+
+@dataclass(frozen=True)
 class AnchorDefinition:
     id: str
     at: SourceLocation
@@ -174,6 +188,7 @@ class StagingDocument:
     stage: StageDefinition = field(default_factory=StageDefinition)
     grid_standard: int | None = 9
     anchors: dict[str, AnchorDefinition] = field(default_factory=dict)
+    actors: dict[str, ActorDefinition] = field(default_factory=dict)
     levels: dict[str, LevelDefinition] = field(default_factory=dict)
     connectors: dict[str, ConnectorDefinition] = field(default_factory=dict)
     set_pieces: dict[str, SetPieceDefinition] = field(default_factory=dict)
@@ -186,6 +201,7 @@ class StagingDocument:
             "stage": self.stage.to_dict(),
             "grid_standard": self.grid_standard,
             "anchors": {key: value.to_dict() for key, value in sorted(self.anchors.items())},
+            "actors": {key: value.to_dict() for key, value in sorted(self.actors.items())},
             "levels": {key: value.to_dict() for key, value in sorted(self.levels.items())},
             "connectors": {key: value.to_dict() for key, value in sorted(self.connectors.items())},
             "set_pieces": {key: value.to_dict() for key, value in sorted(self.set_pieces.items())},
@@ -225,6 +241,7 @@ class ResolvedSnapshot:
     stage: StageDefinition
     areas: dict[str, AreaDefinition]
     anchors: dict[str, AnchorDefinition]
+    actors: dict[str, ActorDefinition]
     set_pieces: dict[str, SetPieceDefinition]
     placements: tuple[ResolvedPlacement, ...]
     diagnostics: tuple[StagingDiagnostic, ...] = ()
@@ -235,6 +252,7 @@ class ResolvedSnapshot:
             "stage": self.stage.to_dict(),
             "areas": {key: value.to_dict() for key, value in sorted(self.areas.items())},
             "anchors": {key: value.to_dict() for key, value in sorted(self.anchors.items())},
+            "actors": {key: value.to_dict() for key, value in sorted(self.actors.items())},
             "set_pieces": {key: value.to_dict() for key, value in sorted(self.set_pieces.items())},
             "placements": [placement.to_dict() for placement in self.placements],
             "diagnostics": [diagnostic.to_dict() for diagnostic in self.diagnostics],
