@@ -11,8 +11,10 @@
 .venv/
 .whisper/
 build/
+.deploy/
 bundle-build/
 bundle-dist/
+.cloudflare-deploy.env
 plays/androcles-no-appendix
 plays/fairies
 play-config.yaml

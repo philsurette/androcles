@@ -225,17 +225,31 @@ Upload the resulting zip files to email, Google Drive, Dropbox, or another share
 
 ## Command-Line Cloudflare Deployment
 
-After the Cloudflare Pages projects exist, deployment does not need to use the manual dashboard upload. Set a Cloudflare API token and account id in the environment, then run:
+After the Cloudflare Pages projects exist, deployment does not need to use the manual dashboard upload. Store the Cloudflare account id and API token in a private local env file:
 
 ```sh
-CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+mkdir -p ~/.config/quince
+chmod 700 ~/.config/quince
+$EDITOR ~/.config/quince/cloudflare-deploy.env
+chmod 600 ~/.config/quince/cloudflare-deploy.env
 ```
 
-The script builds `cuemaster/dist/` and `linerecorder/dist/`, then deploys each folder with Wrangler direct upload. Use these variables if your Cloudflare project names differ from the local folder names:
+The file should look like:
 
 ```sh
-CUEMASTER_PROJECT_NAME=my-cuemaster LINERECORDER_PROJECT_NAME=my-linerecorder scripts/deploy_webapps_to_cloudflare.sh
+CLOUDFLARE_ACCOUNT_ID=...
+CLOUDFLARE_API_TOKEN=...
+CUEMASTER_PROJECT_NAME=cuemaster
+LINERECORDER_PROJECT_NAME=linerecorder
 ```
+
+Then run:
+
+```sh
+scripts/deploy_webapps_to_cloudflare.sh
+```
+
+The script builds `cuemaster/dist/` and `linerecorder/dist/`, computes a content hash for each folder, skips unchanged artifacts, and deploys changed folders with Wrangler direct upload. Use `--force` only when you intentionally want a new Cloudflare deployment for unchanged files. Use `--env-file path/to/file` if the credentials live somewhere else.
 
 ## Notes
 

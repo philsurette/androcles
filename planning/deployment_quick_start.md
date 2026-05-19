@@ -118,11 +118,17 @@ linerecorder/dist/  -> linerecorder
 
 In Cloudflare, use **Workers & Pages**, choose the app, and upload the matching `dist/` folder. The hosted apps still do not contain production data; actors import Recording Request and Playbook zips separately from local files.
 
-For command-line deployment after the Cloudflare Pages projects exist, set a Cloudflare API token and account id, then run:
+For command-line deployment after the Cloudflare Pages projects exist, create a private local credential file:
 
 ```sh
-CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+mkdir -p ~/.config/quince
+chmod 700 ~/.config/quince
+$EDITOR ~/.config/quince/cloudflare-deploy.env
+chmod 600 ~/.config/quince/cloudflare-deploy.env
+scripts/deploy_webapps_to_cloudflare.sh
 ```
+
+The file must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`. The script skips unchanged `dist/` artifacts so Cloudflare deployments are not churned unnecessarily.
 
 ## Troubleshooting
 

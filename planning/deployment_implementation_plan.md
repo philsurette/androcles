@@ -73,10 +73,16 @@ cd ../linerecorder && npm run build:static
 Upload each resulting `dist/` folder through Cloudflare Workers & Pages, or deploy both apps from the command line:
 
 ```sh
-CLOUDFLARE_ACCOUNT_ID=<account-id> CLOUDFLARE_API_TOKEN=<token> scripts/deploy_webapps_to_cloudflare.sh
+mkdir -p ~/.config/quince
+chmod 700 ~/.config/quince
+$EDITOR ~/.config/quince/cloudflare-deploy.env
+chmod 600 ~/.config/quince/cloudflare-deploy.env
+scripts/deploy_webapps_to_cloudflare.sh
 ```
 
-The script builds each app with `build:static` and runs `wrangler pages deploy <dist> --project-name <app>`. Set `CUEMASTER_PROJECT_NAME` or `LINERECORDER_PROJECT_NAME` if the Cloudflare Pages project names differ from the local folder names.
+The local env file must contain `CLOUDFLARE_ACCOUNT_ID` and `CLOUDFLARE_API_TOKEN`; it may also set `CUEMASTER_PROJECT_NAME` or `LINERECORDER_PROJECT_NAME` if the Cloudflare Pages project names differ from the local folder names.
+
+The script builds each app with `build:static`, computes a content hash for the `dist/` folder, and skips deployment when the artifact matches the last successful deploy recorded in `.deploy/cloudflare/`. Use `--force` only when you intentionally want to create a Cloudflare deployment for an unchanged artifact.
 
 ## Milestone 4: User-Facing Deployment Docs
 
