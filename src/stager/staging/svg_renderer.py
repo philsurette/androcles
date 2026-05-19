@@ -4,7 +4,8 @@ from dataclasses import dataclass, field
 from typing import Literal
 from xml.sax.saxutils import escape
 
-from stager.staging.model import Point3D, ResolvedPlacement, ResolvedSnapshot
+from stager.staging.diagram_state import DiagramEntity, DiagramSize, DiagramState
+from stager.staging.model import Point3D
 from stager.staging.svg_icons import StageSvgIconLibrary
 
 
@@ -16,8 +17,8 @@ class StageSvgRenderer:
     orientation: Literal["portrait", "landscape"] = "portrait"
     icons: StageSvgIconLibrary = field(default_factory=StageSvgIconLibrary)
 
-    def render(self, snapshot: ResolvedSnapshot) -> str:
-        stage = snapshot.stage
+    def render(self, diagram: DiagramState) -> str:
+        stage = diagram.stage
         scale = self._scale(stage.width, stage.depth)
         stage_draw_width, stage_draw_height = self._stage_draw_size(stage.width, stage.depth, scale)
         stage_height_px = int(stage_draw_height + 2 * self.margin_px)
@@ -58,22 +59,22 @@ class StageSvgRenderer:
         ]
         lines.append('<g class="layer-grid">')
         lines.extend(self._grid_lines(stage.width, stage.depth, scale))
-        lines.extend(self._area_labels(snapshot, scale))
+        lines.extend(self._area_labels(diagram, scale))
         lines.append("</g>")
         lines.append('<g class="layer-scenery">')
-        lines.extend(self._levels(snapshot, scale))
-        lines.extend(self._anchors(snapshot, scale))
-        lines.extend(self._connectors(snapshot, scale))
-        lines.extend(self._set_pieces(snapshot, scale))
-        lines.extend(self._placements(snapshot, scale, kind_filter="set_piece"))
+        lines.extend(self._levels(diagram, scale))
+        lines.extend(self._anchors(diagram, scale))
+        lines.extend(self._connectors(diagram, scale))
+        lines.extend(self._set_pieces(diagram, scale))
+        lines.extend(self._placements(diagram, scale, kind_filter="set_piece"))
         lines.append("</g>")
         lines.append('<g class="layer-props">')
-        lines.extend(self._placements(snapshot, scale, kind_filter="prop"))
+        lines.extend(self._placements(diagram, scale, kind_filter="prop"))
         lines.append("</g>")
         lines.append('<g class="layer-actors">')
-        lines.extend(self._placements(snapshot, scale))
+        lines.extend(self._placements(diagram, scale))
         lines.append("</g>")
-        lines.extend(self._side_panel(snapshot, side_panel_x, side_panel_y))
+        lines.extend(self._side_panel(diagram, side_panel_x, side_panel_y))
         lines.append("</svg>")
         return "\n".join(lines) + "\n"
 
@@ -89,229 +90,200 @@ class StageSvgRenderer:
             lines.append(f'<line class="grid-line" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}"/>')
         return lines
 
-    def _levels(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+    def _levels(self, diagram: DiagramState, scale: float) -> list[str]:
         lines = []
-        for level_id, level in sorted(snapshot.levels.items()):
-            if level.at is None or level.at.point is None or level.size is None:
-                continue
-            x, y = self._project(level.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            width, depth = level.size
+        for level in diagram.levels:
+            x, y = self._project(level.point, diagram.stage.width, diagram.stage.depth, scale)
+            width = level.width
+            depth = level.depth
             footprint_width, footprint_height = self._footprint_size(width, depth, scale)
             lines.append(
                 f'<rect class="level-surface" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
                 f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2">'
-                f'<title>{escape(level_id)} +{level.z:g}</title></rect>'
+                f'<title>{escape(level.title)}</title></rect>'
             )
-            if level.z:
-                lines.append(f'<text class="small" x="{x:g}" y="{y - footprint_height / 2 + 16:g}" text-anchor="middle">{escape(level_id)} +{level.z:g}</text>')
+            if level.label:
+                lines.append(f'<text class="small" x="{x:g}" y="{y - footprint_height / 2 + 16:g}" text-anchor="middle">{escape(level.label)}</text>')
         return lines
 
-    def _connectors(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+    def _connectors(self, diagram: DiagramState, scale: float) -> list[str]:
         lines = []
-        for connector_id, connector in sorted(snapshot.connectors.items()):
-            if connector.start.point is None or connector.end.point is None:
-                continue
-            x1, y1 = self._project(connector.start.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            x2, y2 = self._project(connector.end.point, snapshot.stage.width, snapshot.stage.depth, scale)
+        for connector in diagram.connectors:
+            x1, y1 = self._project(connector.start, diagram.stage.width, diagram.stage.depth, scale)
+            x2, y2 = self._project(connector.end, diagram.stage.width, diagram.stage.depth, scale)
             lines.append(
                 f'<line class="connector" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}">'
-                f'<title>{escape(connector_id)} {escape(connector.kind)}</title></line>'
+                f'<title>{escape(connector.title)}</title></line>'
             )
-            if connector.start.point.z != connector.end.point.z:
+            if connector.label is not None:
                 label_x = (x1 + x2) / 2
                 label_y = (y1 + y2) / 2 - 6
                 lines.append(
                     f'<text class="small" x="{label_x:g}" y="{label_y:g}" text-anchor="middle">'
-                    f'{escape(connector.kind)} {connector.start.point.z:g}->{connector.end.point.z:g}</text>'
+                    f'{connector.label}</text>'
                 )
         return lines
 
-    def _area_labels(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+    def _area_labels(self, diagram: DiagramState, scale: float) -> list[str]:
         lines = []
-        for area_id, area in sorted(snapshot.areas.items()):
+        for area in diagram.areas:
             corners = [
-                self._project(Point3D(area.center.x - area.width / 2, area.center.y - area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
-                self._project(Point3D(area.center.x - area.width / 2, area.center.y + area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
-                self._project(Point3D(area.center.x + area.width / 2, area.center.y - area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
-                self._project(Point3D(area.center.x + area.width / 2, area.center.y + area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
+                self._project(Point3D(area.center.x - area.width / 2, area.center.y - area.depth / 2), diagram.stage.width, diagram.stage.depth, scale),
+                self._project(Point3D(area.center.x - area.width / 2, area.center.y + area.depth / 2), diagram.stage.width, diagram.stage.depth, scale),
+                self._project(Point3D(area.center.x + area.width / 2, area.center.y - area.depth / 2), diagram.stage.width, diagram.stage.depth, scale),
+                self._project(Point3D(area.center.x + area.width / 2, area.center.y + area.depth / 2), diagram.stage.width, diagram.stage.depth, scale),
             ]
             x = min(corner[0] for corner in corners) + 5
             y = min(corner[1] for corner in corners) + 15
-            lines.append(f'<text class="area-label" x="{x:g}" y="{y:g}">{escape(area_id)}</text>')
+            lines.append(f'<text class="area-label" x="{x:g}" y="{y:g}">{escape(area.id)}</text>')
         return lines
 
-    def _anchors(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+    def _anchors(self, diagram: DiagramState, scale: float) -> list[str]:
         lines = []
-        for anchor_id, anchor in sorted(snapshot.anchors.items()):
-            if anchor.at.point is None:
-                continue
-            x, y = self._project(anchor.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            stroke = self._elevation_stroke(anchor.at.point.z)
-            fill = self._elevation_fill(anchor.at.point.z)
+        for anchor in diagram.anchors:
+            x, y = self._project(anchor.point, diagram.stage.width, diagram.stage.depth, scale)
+            stroke = self._elevation_stroke(anchor.elevation)
+            fill = self._elevation_fill(anchor.elevation)
             lines.append(
                 f'<circle class="anchor" cx="{x:g}" cy="{y:g}" r="5" '
-                f'style="fill:{fill};stroke:{stroke}"><title>{escape(anchor_id)}</title></circle>'
+                f'style="fill:{fill};stroke:{stroke}"><title>{escape(anchor.title)}</title></circle>'
             )
-            if anchor.at.point.z:
-                lines.append(f'<text class="small" x="{x + 7:g}" y="{y + 7:g}">+{anchor.at.point.z:g}</text>')
+            if anchor.point.z:
+                lines.append(f'<text class="small" x="{x + 7:g}" y="{y + 7:g}">+{anchor.point.z:g}</text>')
         return lines
 
-    def _set_pieces(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+    def _set_pieces(self, diagram: DiagramState, scale: float) -> list[str]:
         lines = []
-        placed_set_piece_ids = {
-            placement.entity
-            for placement in snapshot.placements
-            if placement.kind == "set_piece" and not placement.offstage and placement.point is not None
-        }
-        for set_id, set_piece in sorted(snapshot.set_pieces.items()):
-            if set_id in placed_set_piece_ids:
+        for set_piece in diagram.set_pieces:
+            if set_piece.point is None:
                 continue
-            if set_piece.at.point is None:
-                continue
-            x, y = self._project(set_piece.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            width, depth = set_piece.size or (3.0, 2.0)
+            x, y = self._project(set_piece.point, diagram.stage.width, diagram.stage.depth, scale)
+            size = set_piece.size or self._default_entity_size()
+            width = size.width
+            depth = size.depth
             footprint_width, footprint_height = self._footprint_size(width, depth, scale)
-            stroke = self._elevation_stroke(set_piece.at.point.z)
+            stroke = self._elevation_stroke(set_piece.elevation)
             lines.append(
                 f'<rect class="set-piece-footprint" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
                 f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2" style="stroke:{stroke}"/>'
             )
-            icon_id = self._set_piece_icon_id(set_id, set_piece.kind)
-            lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=set_id, color=stroke))
-            if set_piece.at.point.z:
-                lines.append(f'<text class="small" x="{x:g}" y="{y + 43:g}" text-anchor="middle">+{set_piece.at.point.z:g}</text>')
+            lines.append(self._icon_use(set_piece.icon or self.icons.default_set_piece_icon, "icon-set-piece", x, y, 32, title=set_piece.title, color=stroke))
+            if set_piece.point.z:
+                lines.append(f'<text class="small" x="{x:g}" y="{y + 43:g}" text-anchor="middle">+{set_piece.point.z:g}</text>')
         return lines
 
-    def _placements(self, snapshot: ResolvedSnapshot, scale: float, kind_filter: str | None = None) -> list[str]:
+    def _placements(self, diagram: DiagramState, scale: float, kind_filter: str | None = None) -> list[str]:
         lines = []
-        actor_offsets = self._actor_offsets(snapshot, scale)
-        prop_offsets = self._prop_offsets(snapshot, scale)
-        prop_slot_indexes = self._prop_slot_indexes(snapshot)
-        for index, placement in enumerate(snapshot.placements):
-            if placement.offstage or placement.point is None:
+        for entity in diagram.entities:
+            if not entity.visible or entity.point is None:
                 continue
-            if kind_filter is not None and placement.kind != kind_filter:
+            if kind_filter is not None and entity.kind != kind_filter:
                 continue
-            if kind_filter is None and placement.kind in ("prop", "set_piece"):
+            if kind_filter is None and entity.kind in ("prop", "set_piece"):
                 continue
-            if placement.kind == "actor":
-                lines.extend(self._actor(snapshot, placement, scale, actor_offsets.get(index, (0.0, 0.0))))
-            elif placement.kind == "prop":
-                lines.extend(
-                    self._prop(
-                        snapshot,
-                        placement,
-                        scale,
-                        prop_offsets.get(index, (0.0, 0.0)),
-                        prop_slot_indexes.get(index, 0),
-                    )
-                )
-            elif placement.kind == "set_piece":
-                lines.extend(self._placed_set_piece(snapshot, placement, scale))
+            if entity.kind == "actor":
+                lines.extend(self._actor(diagram, entity, scale))
+            elif entity.kind == "prop":
+                lines.extend(self._prop(diagram, entity, scale))
+            elif entity.kind == "set_piece":
+                lines.extend(self._placed_set_piece(diagram, entity, scale))
         return lines
 
     def _actor(
         self,
-        snapshot: ResolvedSnapshot,
-        placement: ResolvedPlacement,
+        diagram: DiagramState,
+        entity: DiagramEntity,
         scale: float,
-        offset: tuple[float, float],
     ) -> list[str]:
-        assert placement.point is not None
-        x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-        x += offset[0]
-        y += offset[1]
-        actor = snapshot.actors.get(placement.entity)
-        label = actor.label if actor is not None else self._default_actor_label(placement.entity)
-        title = actor.name if actor is not None else placement.entity
-        fill = self._elevation_fill(placement.point.z)
-        stroke = self._elevation_stroke(placement.point.z)
+        assert entity.point is not None
+        x, y = self._project(entity.point, diagram.stage.width, diagram.stage.depth, scale)
+        x += entity.offset.x
+        y += entity.offset.y
+        fill = self._elevation_fill(entity.elevation)
+        stroke = self._elevation_stroke(entity.elevation)
         lines = [
-            f'<g class="actor-mark"><title>{escape(title)}</title>',
+            f'<g class="actor-mark"><title>{escape(entity.title)}</title>',
             f'<circle class="actor-circle" cx="{x:g}" cy="{y:g}" r="13" style="fill:{fill};stroke:{stroke}"/>',
-            f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(label)}</text>',
+            f'<text class="actor-label" x="{x:g}" y="{y + 1:g}">{escape(entity.label or entity.source_id)}</text>',
             "</g>",
         ]
-        if placement.face:
-            lines.append(f'<text class="small" x="{x + 16:g}" y="{y + 18:g}">face {escape(placement.face)}</text>')
-        if placement.point.z:
-            lines.append(f'<text class="small" x="{x - 10:g}" y="{y - 13:g}">+{placement.point.z:g}</text>')
+        if entity.face:
+            lines.append(f'<text class="small" x="{x + 16:g}" y="{y + 18:g}">face {escape(entity.face)}</text>')
+        if entity.point.z:
+            lines.append(f'<text class="small" x="{x - 10:g}" y="{y - 13:g}">+{entity.point.z:g}</text>')
         return lines
 
     def _prop(
         self,
-        snapshot: ResolvedSnapshot,
-        placement: ResolvedPlacement,
+        diagram: DiagramState,
+        entity: DiagramEntity,
         scale: float,
-        offset: tuple[float, float],
-        slot_index: int,
     ) -> list[str]:
-        assert placement.point is not None
-        x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-        x += offset[0]
-        y += offset[1]
-        icon_id = self.icons.icon_id(placement.entity, self.icons.default_prop_icon)
-        if placement.source in snapshot.set_pieces:
-            return self._prop_on_set_piece(snapshot, placement, scale, slot_index, icon_id)
+        assert entity.point is not None
+        x, y = self._project(entity.point, diagram.stage.width, diagram.stage.depth, scale)
+        x += entity.offset.x
+        y += entity.offset.y
+        icon_id = entity.icon or self.icons.default_prop_icon
+        set_piece = self._set_piece_entity(diagram, entity.source)
+        if set_piece is not None:
+            return self._prop_on_set_piece(diagram, entity, scale, icon_id, set_piece)
         return [
-            self._icon_use(icon_id, "icon-prop", x, y, 24, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
+            self._icon_use(icon_id, "icon-prop", x, y, 24, title=entity.title, color=self._elevation_stroke(entity.elevation)),
         ]
 
     def _prop_on_set_piece(
         self,
-        snapshot: ResolvedSnapshot,
-        placement: ResolvedPlacement,
+        diagram: DiagramState,
+        entity: DiagramEntity,
         scale: float,
-        slot_index: int,
         icon_id: str,
+        set_piece: DiagramEntity,
     ) -> list[str]:
-        assert placement.point is not None
-        set_piece = snapshot.set_pieces[placement.source]
-        center_x, center_y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-        width, depth = set_piece.size or (3.0, 2.0)
+        assert entity.point is not None
+        center_x, center_y = self._project(entity.point, diagram.stage.width, diagram.stage.depth, scale)
+        size = set_piece.size or self._default_entity_size()
+        width = size.width
+        depth = size.depth
         footprint_width, footprint_height = self._footprint_size(width, depth, scale)
         half_width = footprint_width / 2
         half_depth = footprint_height / 2
         columns = (-0.28, 0.0, 0.28)
         rows = (-0.24, 0.08, 0.34)
+        slot_index = entity.slot_index or 0
         icon_x = center_x + half_width * columns[slot_index % len(columns)]
         icon_y = center_y + half_depth * rows[(slot_index // len(columns)) % len(rows)]
         return [
-            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
+            self._icon_use(icon_id, "icon-prop", icon_x, icon_y, 22, title=entity.title, color=self._elevation_stroke(entity.elevation)),
         ]
 
-    def _placed_set_piece(self, snapshot: ResolvedSnapshot, placement: ResolvedPlacement, scale: float) -> list[str]:
-        assert placement.point is not None
-        x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-        set_piece = snapshot.set_pieces.get(placement.entity)
-        icon_id = self._set_piece_icon_id(placement.entity, set_piece.kind if set_piece is not None else None)
+    def _placed_set_piece(self, diagram: DiagramState, entity: DiagramEntity, scale: float) -> list[str]:
+        assert entity.point is not None
+        x, y = self._project(entity.point, diagram.stage.width, diagram.stage.depth, scale)
         return [
-            self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=placement.entity, color=self._elevation_stroke(placement.point.z)),
+            self._icon_use(entity.icon or self.icons.default_set_piece_icon, "icon-set-piece", x, y, 32, title=entity.title, color=self._elevation_stroke(entity.elevation)),
         ]
 
-    def _side_panel(self, snapshot: ResolvedSnapshot, x: int, y: int) -> list[str]:
+    def _side_panel(self, diagram: DiagramState, x: int, y: int) -> list[str]:
         lines = [
-            f'<text class="label" x="{x}" y="{y}">Scene {escape(snapshot.scene_id)}</text>',
-            f'<text class="small" x="{x}" y="{y + 20}">Stage: {escape(snapshot.stage.stage_type)}</text>',
+            f'<text class="label" x="{x}" y="{y}">Scene {escape(diagram.diagram_id.removeprefix("scene:"))}</text>',
+            f'<text class="small" x="{x}" y="{y + 20}">Stage: {escape(diagram.stage.stage_type)}</text>',
         ]
         cursor = y + 48
-        if snapshot.set_id is not None:
-            lines.append(f'<text class="small" x="{x}" y="{cursor}">Set: {escape(snapshot.set_id)}</text>')
+        if diagram.set_id is not None:
+            lines.append(f'<text class="small" x="{x}" y="{cursor}">Set: {escape(diagram.set_id)}</text>')
             cursor += 20
-        offstage = [placement for placement in snapshot.placements if placement.offstage or placement.point is None]
-        if offstage:
+        if diagram.offstage:
             lines.append(f'<text class="label" x="{x}" y="{cursor}">Offstage / unknown</text>')
             cursor += 18
-            for placement in offstage:
-                suffix = f" via {placement.via}" if placement.via else ""
-                source = "unknown" if placement.point is None and not placement.offstage else "offstage"
-                lines.append(f'<text class="small" x="{x}" y="{cursor}">{escape(placement.entity)}: {source}{escape(suffix)}</text>')
+            for entity in diagram.offstage:
+                suffix = f" via {entity.via}" if entity.via else ""
+                lines.append(f'<text class="small" x="{x}" y="{cursor}">{escape(entity.source_id)}: {escape(entity.source)}{escape(suffix)}</text>')
                 cursor += 16
-        if snapshot.diagnostics:
+        if diagram.diagnostics:
             cursor += 10
             lines.append(f'<text class="label" x="{x}" y="{cursor}">Diagnostics</text>')
             cursor += 18
-            for diagnostic in snapshot.diagnostics:
+            for diagnostic in diagram.diagnostics:
                 lines.append(f'<text class="diagnostic" x="{x}" y="{cursor}">{escape(diagnostic.message[:34])}</text>')
                 cursor += 16
         return lines
@@ -362,80 +334,25 @@ class StageSvgRenderer:
             return use
         return f'<g><title>{escape(title)}</title>{use}</g>'
 
-    def _set_piece_icon_id(self, entity: str, kind: str | None) -> str:
-        entity_icon = self.icons.icon_id(entity, "")
-        if entity_icon:
-            return entity_icon
-        return self.icons.icon_id(kind, self.icons.default_set_piece_icon)
+    def _set_piece_entity(self, diagram: DiagramState, source_id: str) -> DiagramEntity | None:
+        for entity in (*diagram.set_pieces, *diagram.entities):
+            if entity.kind == "set_piece" and entity.source_id == source_id:
+                return entity
+        return None
 
-    def _default_actor_label(self, entity: str) -> str:
-        compact = "".join(character for character in entity if character.isalnum()).upper()
-        if len(compact) >= 2:
-            return compact[:2]
-        return compact.ljust(2, "?")
+    def _default_entity_size(self):
+        return DiagramSize(width=3.0, depth=2.0)
 
-    def _elevation_fill(self, z: float) -> str:
-        if z > 0:
+    def _elevation_fill(self, elevation: str) -> str:
+        if elevation == "elevated":
             return "#d9edf7"
-        if z < 0:
+        if elevation == "below":
             return "#f4e3ff"
         return "#e6e6e6"
 
-    def _elevation_stroke(self, z: float) -> str:
-        if z > 0:
+    def _elevation_stroke(self, elevation: str) -> str:
+        if elevation == "elevated":
             return "#2f6f9f"
-        if z < 0:
+        if elevation == "below":
             return "#7a4b9d"
         return "#555555"
-
-    def _actor_offsets(self, snapshot: ResolvedSnapshot, scale: float) -> dict[int, tuple[float, float]]:
-        grouped: dict[tuple[int, int], list[int]] = {}
-        for index, placement in enumerate(snapshot.placements):
-            if placement.kind != "actor" or placement.offstage or placement.point is None:
-                continue
-            x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            grouped.setdefault((round(x), round(y)), []).append(index)
-        offsets = {}
-        pattern = [
-            (0.0, 0.0),
-            (18.0, 0.0),
-            (-18.0, 0.0),
-            (0.0, 18.0),
-            (0.0, -18.0),
-            (18.0, 18.0),
-            (-18.0, 18.0),
-            (18.0, -18.0),
-            (-18.0, -18.0),
-        ]
-        for indexes in grouped.values():
-            for offset_index, placement_index in enumerate(indexes):
-                offsets[placement_index] = pattern[offset_index % len(pattern)]
-        return offsets
-
-    def _prop_offsets(self, snapshot: ResolvedSnapshot, scale: float) -> dict[int, tuple[float, float]]:
-        grouped: dict[tuple[int, int], list[int]] = {}
-        for index, placement in enumerate(snapshot.placements):
-            if placement.kind != "prop" or placement.offstage or placement.point is None:
-                continue
-            if placement.source in snapshot.set_pieces:
-                continue
-            x, y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
-            grouped.setdefault((round(x), round(y)), []).append(index)
-        offsets = {}
-        for indexes in grouped.values():
-            for offset_index, placement_index in enumerate(indexes):
-                offsets[placement_index] = (0.0, offset_index * 14.0)
-        return offsets
-
-    def _prop_slot_indexes(self, snapshot: ResolvedSnapshot) -> dict[int, int]:
-        grouped: dict[str, list[int]] = {}
-        for index, placement in enumerate(snapshot.placements):
-            if placement.kind != "prop" or placement.offstage or placement.point is None:
-                continue
-            if placement.source in snapshot.set_pieces:
-                grouped.setdefault(placement.source, []).append(index)
-        slot_indexes = {}
-        for indexes in grouped.values():
-            for slot_index, placement_index in enumerate(indexes):
-                slot_indexes[placement_index] = slot_index
-        return slot_indexes

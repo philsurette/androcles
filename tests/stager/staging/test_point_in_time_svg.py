@@ -4,11 +4,16 @@ import json
 import re
 from pathlib import Path
 
+from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
+
+
+def render_svg(snapshot, orientation: str = "portrait") -> str:
+    return StageSvgRenderer(orientation=orientation).render(DiagramStateBuilder().build(snapshot))
 
 
 def test_parser_accepts_text_only_stage_and_scene_snapshot() -> None:
@@ -76,6 +81,42 @@ HAM @ throne
     assert act2.placements[0].source == "throne"
 
 
+def test_diagram_state_builder_outputs_renderer_contract() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+actor CLA label=CD name=Claudius
+
+setup act1
+piece table kind=table at=C size=(5,3)
+
+scene 1.2 set=act1 snapshot
+HAM @ C
+CLA @ C
+sword @ table
+dagger @ table
+OPH offstage via=door_l
+"""
+    )
+
+    snapshot = StagingResolver().resolve_snapshot(document, "1.2")
+    diagram = DiagramStateBuilder().build(snapshot)
+    data = diagram.to_dict()
+
+    assert data["format"] == "quince.blocking.diagram_state"
+    assert data["format_version"] == "1.0"
+    assert data["diagram_id"] == "scene:1.2"
+    assert data["diagram_kind"] == "scene"
+    assert data["set_id"] == "act1"
+    assert any(entity["id"] == "actor:HAM" and entity["label"] == "HM" for entity in data["entities"])
+    assert any(entity["id"] == "prop:sword" and entity["icon"] == "sword" and entity["slot_index"] == 0 for entity in data["entities"])
+    assert any(entity["id"] == "prop:dagger" and entity["slot_index"] == 1 for entity in data["entities"])
+    assert any(entity["id"] == "actor:CLA" and entity["offset"]["x"] == 18.0 for entity in data["entities"])
+    assert data["offstage"][0]["id"] == "actor:OPH"
+
+
 def test_resolver_uses_default_stage_and_preserves_unknowns_as_diagnostics() -> None:
     document = StagingParser().parse(
         """
@@ -136,7 +177,7 @@ HAM @ balcony_l
     )
 
     snapshot = StagingResolver().resolve_snapshot(document, "2")
-    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+    svg = render_svg(snapshot, orientation="landscape")
 
     assert snapshot.connectors["stair_l"].start.point is not None
     assert snapshot.connectors["stair_l"].end.point is not None
@@ -160,7 +201,7 @@ HAM @ UC
     )
 
     snapshot = StagingResolver().resolve_snapshot(document, "2")
-    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+    svg = render_svg(snapshot, orientation="landscape")
 
     assert snapshot.levels["balcony"].at is not None
     assert snapshot.levels["balcony"].at.point is not None
@@ -189,7 +230,7 @@ book @ deck_c
     )
 
     snapshot = StagingResolver().resolve_snapshot(document, "2")
-    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+    svg = render_svg(snapshot, orientation="landscape")
 
     assert 'class="actor-circle" cx="232" cy="136" r="13" style="fill:#d9edf7;stroke:#2f6f9f"' in svg
     assert 'class="actor-circle" cx="360" cy="392" r="13" style="fill:#e6e6e6;stroke:#555555"' in svg
@@ -213,7 +254,7 @@ CLA @ nowhere
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    svg = StageSvgRenderer().render(snapshot)
+    svg = render_svg(snapshot)
 
     assert svg.startswith("<?xml")
     assert "<svg" in svg
@@ -296,7 +337,7 @@ dagger @ table
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    svg = StageSvgRenderer().render(snapshot)
+    svg = render_svg(snapshot)
 
     assert '<g class="layer-props">' in svg
     assert '<g class="layer-actors">' in svg
@@ -336,7 +377,7 @@ table @ DL
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    svg = StageSvgRenderer().render(snapshot)
+    svg = render_svg(snapshot)
 
     assert svg.count('href="#stage-icon-table"') == 1
     assert "<title>table</title>" in svg
@@ -357,7 +398,7 @@ HAM @ DL
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    svg = StageSvgRenderer().render(snapshot)
+    svg = render_svg(snapshot)
 
     assert '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1260"' in svg
     match = re.search(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
@@ -379,7 +420,7 @@ HAM @ DL
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+    svg = render_svg(snapshot, orientation="landscape")
 
     assert '<svg xmlns="http://www.w3.org/2000/svg" width="940" height="506"' in svg
     match = re.search(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
@@ -568,8 +609,11 @@ HAM -> C
         sys.argv = original_argv
 
     data = json.loads(json_path.read_text(encoding="utf-8"))
-    assert data["scene_id"] == "1.2@b1"
-    assert data["placements"][0]["source"] == "C"
+    assert data["format"] == "quince.blocking.diagram_state"
+    assert data["diagram_kind"] == "beat"
+    assert data["scene_id"] == "1.2"
+    assert data["beat_id"] == "b1"
+    assert data["entities"][0]["source"] == "C"
 
 
 def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
@@ -705,12 +749,13 @@ HAM @ DL
     assert "<title>balcony +8</title>" not in svg
     assert "<title>table</title>" not in svg
     assert ">HAM</text>" not in svg
-    assert data["scene_id"] == "stage"
-    assert data["placements"] == []
-    assert data["levels"] == {}
+    assert data["diagram_id"] == "stage"
+    assert data["diagram_kind"] == "stage"
+    assert data["entities"] == []
+    assert data["levels"] == []
     assert "Scene set:act1" in set_svg
     assert "<title>balcony +8</title>" in set_svg
     assert "<title>table</title>" in set_svg
     assert ">HAM</text>" not in set_svg
     assert set_data["set_id"] == "act1"
-    assert "balcony" in set_data["levels"]
+    assert any(level["id"] == "balcony" for level in set_data["levels"])

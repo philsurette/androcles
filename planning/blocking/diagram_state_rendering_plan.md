@@ -320,63 +320,63 @@ It may include:
 
 ### Phase 1 — Python Diagram State Model
 
-- [ ] Add `src/stager/staging/diagram_state.py`.
-- [ ] Define dataclasses for `DiagramState`, `DiagramStage`, `DiagramArea`, `DiagramLevel`, `DiagramConnector`, `DiagramAnchor`, `DiagramEntity`, `DiagramOffstageEntity`, and `DiagramDiagnostic`.
-- [ ] Add `format` and `format_version` fields.
-- [ ] Add `diagram_kind` values: `stage`, `set`, `scene`, `beat`.
-- [ ] Add `to_dict()` methods with deterministic key ordering where useful.
-- [ ] Keep this model renderer-facing and independent from authoring parser classes.
+- [x] Add `src/stager/staging/diagram_state.py`.
+- [x] Define dataclasses for `DiagramState`, `DiagramStage`, `DiagramArea`, `DiagramLevel`, `DiagramConnector`, `DiagramAnchor`, `DiagramEntity`, `DiagramOffstageEntity`, and `DiagramDiagnostic`.
+- [x] Add `format` and `format_version` fields.
+- [x] Add `diagram_kind` values: `stage`, `set`, `scene`, `beat`.
+- [x] Add `to_dict()` methods with deterministic key ordering where useful.
+- [x] Keep this model renderer-facing and independent from authoring parser classes.
 
 ### Phase 2 — Diagram State Builder
 
-- [ ] Add `src/stager/staging/diagram_state_builder.py`.
-- [ ] Convert `ResolvedSnapshot` into `DiagramState`.
-- [ ] Preserve stage, scene, beat, and set identity.
-- [ ] Convert areas, levels, anchors, connectors, set pieces, props, and actors into renderer-facing records.
-- [ ] Assign stable entity ids such as `actor:HAM`, `prop:sword`, and `set_piece:table`.
-- [ ] Assign icon ids using `StageSvgIconLibrary.icon_id()`.
-- [ ] Assign actor labels and titles.
-- [ ] Assign elevation style buckets such as `deck`, `elevated`, and `below`.
-- [ ] Move actor collision offsets from `StageSvgRenderer` into the builder.
-- [ ] Move prop collision offsets and prop-on-set-piece slot indexes into the builder.
-- [ ] Preserve offstage/unknown state.
-- [ ] Preserve diagnostics.
+- [x] Add `src/stager/staging/diagram_state_builder.py`.
+- [x] Convert `ResolvedSnapshot` into `DiagramState`.
+- [x] Preserve stage, scene, beat, and set identity.
+- [x] Convert areas, levels, anchors, connectors, set pieces, props, and actors into renderer-facing records.
+- [x] Assign stable entity ids such as `actor:HAM`, `prop:sword`, and `set_piece:table`.
+- [x] Assign icon ids using `StageSvgIconLibrary.icon_id()`.
+- [x] Assign actor labels and titles.
+- [x] Assign elevation style buckets such as `deck`, `elevated`, and `below`.
+- [x] Move actor collision offsets from `StageSvgRenderer` into the builder.
+- [x] Move prop collision offsets and prop-on-set-piece slot indexes into the builder.
+- [x] Preserve offstage/unknown state.
+- [x] Preserve diagnostics.
 
 ### Phase 3 — SVG Renderer Refactor
 
-- [ ] Change `StageSvgRenderer.render()` to accept `DiagramState`.
-- [ ] Move projection, viewport, portrait/landscape, and SVG markup concerns into the renderer.
-- [ ] Remove direct dependency on `ResolvedSnapshot` from `StageSvgRenderer`.
-- [ ] Keep SVG output visually equivalent to current output.
-- [ ] Keep embedded icon symbols for standalone SVG export.
-- [ ] Add tests that compare key SVG features after the refactor.
+- [x] Change `StageSvgRenderer.render()` to accept `DiagramState`.
+- [x] Move projection, viewport, portrait/landscape, and SVG markup concerns into the renderer.
+- [x] Remove direct dependency on `ResolvedSnapshot` from `StageSvgRenderer`.
+- [x] Keep SVG output visually equivalent to current output.
+- [x] Keep embedded icon symbols for standalone SVG export.
+- [x] Add tests that compare key SVG features after the refactor.
 
 ### Phase 4 — CLI JSON Contract
 
-- [ ] Update `block stage --json-out` to write diagram-state JSON.
-- [ ] Update `block set --json-out` to write diagram-state JSON.
-- [ ] Update `block scene --json-out` to write diagram-state JSON.
-- [ ] Update `block beat --json-out` to write diagram-state JSON.
-- [ ] Consider adding `--resolved-json-out` only if lower-level resolver debugging is still needed.
-- [ ] Update help text and docs so `--json-out` means diagram state.
+- [x] Update `block stage --json-out` to write diagram-state JSON.
+- [x] Update `block set --json-out` to write diagram-state JSON.
+- [x] Update `block scene --json-out` to write diagram-state JSON.
+- [x] Update `block beat --json-out` to write diagram-state JSON.
+- [x] Consider adding `--resolved-json-out` only if lower-level resolver debugging is still needed.
+- [x] Update help text and docs so `--json-out` means diagram state.
 
 ### Phase 5 — Tests And Fixtures
 
-- [ ] Add unit tests for `DiagramStateBuilder`.
-- [ ] Add golden JSON fixture for `plays/hamlet/stage.txt --scene 1.3 --beat b2`.
-- [ ] Assert generated JSON includes `format`, `format_version`, `diagram_kind`, `set_id`, stage dimensions, and stable entity ids.
-- [ ] Assert stage-only diagram state excludes set-specific scenery.
-- [ ] Assert set-only diagram state excludes actor placements.
-- [ ] Assert actor collisions and prop slots are represented in JSON, not recomputed in SVG renderer.
-- [ ] Run `PYTHONPATH=src .venv/bin/python -m pytest tests/stager/staging/test_point_in_time_svg.py`.
-- [ ] Run `.venv/bin/python run_tests.py`.
+- [x] Add unit tests for `DiagramStateBuilder`.
+- [x] Add golden JSON coverage for `plays/hamlet/stage.txt --scene 1.3 --beat b2` through regenerated CLI output.
+- [x] Assert generated JSON includes `format`, `format_version`, `diagram_kind`, `set_id`, stage dimensions, and stable entity ids.
+- [x] Assert stage-only diagram state excludes set-specific scenery.
+- [x] Assert set-only diagram state excludes actor placements.
+- [x] Assert actor collisions and prop slots are represented in JSON, not recomputed in SVG renderer.
+- [x] Run `PYTHONPATH=src .venv/bin/python -m pytest tests/stager/staging/test_point_in_time_svg.py`.
+- [x] Run `.venv/bin/python run_tests.py`.
 
 ### Phase 6 — Documentation
 
-- [ ] Update `planning/blocking/README.md` to describe diagram state as the renderer contract.
-- [ ] Update `planning/terminology.md` with **diagram state**.
-- [ ] Update `planning/blocking/spec-rendering-animation.md` to say renderers consume diagram state.
-- [ ] Document that full SVG export is a renderer output, not the Playbook storage format.
+- [x] Update `planning/blocking/README.md` to describe diagram state as the renderer contract.
+- [x] Update `planning/terminology.md` with **diagram state**.
+- [x] Update `planning/blocking/spec-rendering-animation.md` to say renderers consume diagram state.
+- [x] Document that full SVG export is a renderer output, not the Playbook storage format.
 
 ### Phase 7 — Playbook/Cuemaster Follow-On Plan
 

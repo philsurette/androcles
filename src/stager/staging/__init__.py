@@ -3,5 +3,6 @@
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
 from stager.staging.svg_renderer import StageSvgRenderer
+from stager.staging.diagram_state_builder import DiagramStateBuilder
 
-__all__ = ["StagingParser", "StagingResolver", "StageSvgRenderer"]
+__all__ = ["DiagramStateBuilder", "StagingParser", "StagingResolver", "StageSvgRenderer"]

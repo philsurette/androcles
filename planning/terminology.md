@@ -35,6 +35,7 @@
 - **Blocking beat**: An ordered group of blocking directions for a scene, written as `beat <beat_id> scene=<scene_id>`. Resolving a beat starts from the scene snapshot and applies all earlier beats for that scene up to the requested beat.
 - **Blocking direction**: A single actor, prop, or set-piece state change inside a scene snapshot or blocking beat, such as `HAM @ DL`, `HAM move DL -> C`, `OPH enter door_l -> DR`, or `sword remove`.
 - **Point-in-time state**: The computed state after applying a scene snapshot and zero or more blocking beats. This is the model rendered to SVG.
+- **Diagram state**: The renderer-facing JSON contract compiled from a resolved point-in-time state. Python SVG export and future Cuemaster rendering should consume diagram state rather than authoring syntax or resolver internals.
 - **Blocking diagram**: The generated SVG rendering of a point-in-time state. It may be portrait or landscape.
 - **Level**: A named elevated or lowered 2D surface with z metadata, such as `level balcony at=UC size=(18,4) z=8`.
 - **Connector**: A named 2D connection between different level positions, such as a stair, ramp, or lift.
@@ -50,6 +51,6 @@
 - Use **manifest** for the JSON contract inside a Playbook.
 - Use **Recording Request** for Stager- or Cuemaster-to-LineRecorder work orders and **recording package** for LineRecorder-to-Stager audio exports.
 - Keep **line** as actor-facing UI language; use **segment** for manifest fields, filenames, Stager IDs, and implementation details.
-- Use **stage file** for standalone blocking input files, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, and **blocking diagram** for rendered SVG output.
+- Use **stage file** for standalone blocking input files, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, **diagram state** for renderer-facing JSON, and **blocking diagram** for rendered SVG output.
 - Treat Playbooks as strict artifacts: required cue and response audio must exist for every rehearsable non-meta role line.
 - Keep `Androcles` only when referring to the sample/source play, not the tool.

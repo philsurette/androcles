@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass
 from pathlib import Path
 
+from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
@@ -33,7 +34,7 @@ class BlockCli:
         parser = subparsers.add_parser("stage", help="Render a stage-only diagram.")
         parser.add_argument("input", type=Path, help="Blocking file / stage file")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
-        parser.add_argument("--json-out", type=Path, help="Optional normalized stage JSON output path")
+        parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
             choices=("portrait", "landscape"),
@@ -48,7 +49,7 @@ class BlockCli:
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", help="Optional blocking beat id to apply up to")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
-        parser.add_argument("--json-out", type=Path, help="Optional normalized point-in-time JSON output path")
+        parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
             choices=("portrait", "landscape"),
@@ -62,7 +63,7 @@ class BlockCli:
         parser.add_argument("input", type=Path, help="Blocking file / stage file")
         parser.add_argument("--set", required=True, dest="set_id", help="Set/setup id to render")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
-        parser.add_argument("--json-out", type=Path, help="Optional normalized set JSON output path")
+        parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
             choices=("portrait", "landscape"),
@@ -76,7 +77,7 @@ class BlockCli:
         parser.add_argument("input", type=Path, help="Blocking file / stage file")
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
-        parser.add_argument("--json-out", type=Path, help="Optional normalized scene JSON output path")
+        parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
             choices=("portrait", "landscape"),
@@ -91,7 +92,7 @@ class BlockCli:
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", required=True, help="Blocking beat id to apply up to")
         parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
-        parser.add_argument("--json-out", type=Path, help="Optional normalized beat JSON output path")
+        parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
             choices=("portrait", "landscape"),
@@ -134,11 +135,12 @@ class BlockCli:
         self._write_snapshot(args, snapshot)
 
     def _write_snapshot(self, args, snapshot) -> None:
+        diagram = DiagramStateBuilder().build(snapshot)
         args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(snapshot), encoding="utf-8")
+        args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(diagram), encoding="utf-8")
         if args.json_out is not None:
             args.json_out.parent.mkdir(parents=True, exist_ok=True)
-            args.json_out.write_text(json.dumps(snapshot.to_dict(), indent=2) + "\n", encoding="utf-8")
+            args.json_out.write_text(json.dumps(diagram.to_dict(), indent=2) + "\n", encoding="utf-8")
         for diagnostic in snapshot.diagnostics:
             location = f"line {diagnostic.line_no}: " if diagnostic.line_no is not None else ""
             print(f"{diagnostic.severity}: {location}{diagnostic.message}")

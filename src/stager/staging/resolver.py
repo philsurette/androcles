@@ -104,6 +104,8 @@ class StagingResolver:
         scenic_set = document.sets.get(set_id)
         if scenic_set is not None:
             return scenic_set
+        if set_id == "default":
+            return ScenicSetDefinition(id=set_id)
         diagnostics.append(StagingDiagnostic("warning", f"Unknown set {set_id!r}"))
         return ScenicSetDefinition(id=set_id)
 

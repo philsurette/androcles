@@ -2,9 +2,17 @@
 
 ## Purpose
 
-Generate visual blocking assets from normalized staging data.
+Generate visual blocking assets from diagram state.
 
-The active target is static SVG. Animation and timeline playback are future features tracked in `future-features.md`.
+The active target is static SVG rendered from the `quince.blocking.diagram_state` JSON contract. Animation and timeline playback are future features tracked in `future-features.md`.
+
+The rendering pipeline should be:
+
+```text
+resolved stage/set/scene/beat state -> diagram state JSON -> renderer adapter
+```
+
+Renderers should not parse authoring syntax or resolve blocking directions. Stager/block owns semantic compilation; SVG, Cuemaster, PNG, print, or future spatial renderers consume diagram state.
 
 ## Static SVG goals
 
@@ -20,13 +28,13 @@ Each blocking beat should be renderable as a static SVG showing:
 - cue badges
 - optional notes
 
-The renderer should not require full-play state replay. It should render from the nearest explicit snapshot/checkpoint plus the local events needed for the requested beat.
+The renderer should not require full-play state replay. It should render from diagram state produced from the nearest explicit snapshot/checkpoint plus the local events needed for the requested beat.
 
 ## SVG coordinate strategy
 
-Use the SVG `viewBox` as the canonical render coordinate space.
+Use the SVG `viewBox` as the canonical SVG output coordinate space.
 
-The renderer should convert stage coordinates into SVG coordinates. Because SVG y normally increases downward but stage y is recommended to increase upstage, the renderer may either:
+Diagram state stores stage coordinates. The renderer converts stage coordinates into SVG coordinates. Because SVG y normally increases downward but stage y is recommended to increase upstage, the renderer may either:
 
 1. use a transform on the root drawing group, or
 2. convert y values explicitly.
@@ -102,10 +110,11 @@ Do not implement full animation first.
 
 Implement:
 
-1. static SVG stage diagram
-2. actor placement
-3. stateful point-in-time rendering from scene snapshots plus ordered blocking directions
-4. optional movement path arrows
-5. optional cue badges
+1. diagram state generation from resolved snapshots
+2. static SVG stage diagram rendered from diagram state
+3. actor placement rendered from diagram state
+4. stateful point-in-time rendering from scene snapshots plus ordered blocking directions
+5. optional movement path arrows
+6. optional cue badges
 
 Animation can follow after diagrams are reliable.
