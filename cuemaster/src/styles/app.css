@@ -1667,15 +1667,15 @@ button:disabled {
 }
 
 .blocking-stage-icon-set-piece {
-  color: #24231e;
+  color: #151511;
   stroke: currentColor;
-  stroke-width: 0.2;
+  stroke-width: 0.28;
 }
 
 .blocking-stage-icon-prop {
-  color: #53376e;
+  color: #2f174a;
   stroke: currentColor;
-  stroke-width: 0.22;
+  stroke-width: 0.3;
 }
 
 .blocking-entity circle {

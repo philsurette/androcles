@@ -220,7 +220,20 @@ class StageSvgRenderer:
                 f'<rect class="set-piece-footprint" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
                 f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2" style="stroke:{stroke}"/>'
             )
-            lines.append(self._icon_use(set_piece.icon or self.icons.default_set_piece_icon, "icon-set-piece", x, y, 32, title=set_piece.title, color=stroke))
+            icon_size = self._set_piece_icon_size(footprint_width, footprint_height)
+            icon_x = x - footprint_width / 2 + 4 + icon_size / 2
+            icon_y = y - footprint_height / 2 + 4 + icon_size / 2
+            lines.append(
+                self._icon_use(
+                    set_piece.icon or self.icons.default_set_piece_icon,
+                    "icon-set-piece",
+                    icon_x,
+                    icon_y,
+                    icon_size,
+                    title=set_piece.title,
+                    color=stroke,
+                )
+            )
             if set_piece.point.z:
                 lines.append(f'<text class="small" x="{x:g}" y="{y + 43:g}" text-anchor="middle">+{set_piece.point.z:g}</text>')
         return lines
@@ -360,6 +373,10 @@ class StageSvgRenderer:
         footprint_width, footprint_height = self._footprint_size(width, depth, scale)
         half_width = footprint_width / 2
         half_depth = footprint_height / 2
+        if self._prop_count_on_source(diagram, entity.source) == 1:
+            return [
+                self._icon_use(icon_id, "icon-prop", center_x, center_y, 22, title=entity.title, color=self._elevation_stroke(entity.elevation)),
+            ]
         columns = (-0.28, 0.0, 0.28)
         rows = (-0.24, 0.08, 0.34)
         slot_index = entity.slot_index or 0
@@ -372,9 +389,34 @@ class StageSvgRenderer:
     def _placed_set_piece(self, diagram: DiagramState, entity: DiagramEntity, scale: float) -> list[str]:
         assert entity.point is not None
         x, y = self._project(entity.point, diagram.stage.width, diagram.stage.depth, scale)
+        if entity.size is not None:
+            footprint_width, footprint_height = self._footprint_size(entity.size.width, entity.size.depth, scale)
+            stroke = self._elevation_stroke(entity.elevation)
+            icon_size = self._set_piece_icon_size(footprint_width, footprint_height)
+            icon_x = x - footprint_width / 2 + 4 + icon_size / 2
+            icon_y = y - footprint_height / 2 + 4 + icon_size / 2
+            return [
+                f'<rect class="set-piece-footprint" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
+                f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2" style="stroke:{stroke}"/>',
+                self._icon_use(
+                    entity.icon or self.icons.default_set_piece_icon,
+                    "icon-set-piece",
+                    icon_x,
+                    icon_y,
+                    icon_size,
+                    title=entity.title,
+                    color=stroke,
+                ),
+            ]
         return [
             self._icon_use(entity.icon or self.icons.default_set_piece_icon, "icon-set-piece", x, y, 32, title=entity.title, color=self._elevation_stroke(entity.elevation)),
         ]
+
+    def _set_piece_icon_size(self, footprint_width: float, footprint_height: float) -> int:
+        return int(min(32, max(18, min(footprint_width, footprint_height) - 8)))
+
+    def _prop_count_on_source(self, diagram: DiagramState, source_id: str) -> int:
+        return sum(1 for entity in diagram.entities if entity.kind == "prop" and entity.source == source_id)
 
     def _side_panel(self, diagram: DiagramState, x: int, y: int) -> list[str]:
         lines = [

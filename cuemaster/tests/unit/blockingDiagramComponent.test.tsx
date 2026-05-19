@@ -18,7 +18,7 @@ describe("BlockingDiagram", () => {
     expect(container.querySelector('use[href="#stage-icon-sword"]')).toBeInTheDocument();
   });
 
-  it("offsets props that are placed on set pieces", () => {
+  it("places a single prop at the center of its set piece", () => {
     const { container } = render(
       <BlockingDiagram
         state={diagramState()}
@@ -27,9 +27,25 @@ describe("BlockingDiagram", () => {
     );
 
     expect(container.querySelector(".blocking-entity-prop use")).toHaveAttribute("x", "-0.675");
-    expect(container.querySelector(".blocking-entity-prop")?.getAttribute("transform")).not.toEqual(
+    expect(container.querySelector(".blocking-entity-prop")?.getAttribute("transform")).toEqual(
       container.querySelector(".blocking-set-piece")?.getAttribute("transform")
     );
+  });
+
+  it("offsets multiple props that are placed on the same set piece", () => {
+    const { container } = render(
+      <BlockingDiagram
+        state={diagramStateWithMultipleProps()}
+        iconLibrarySvg={
+          '<defs><symbol id="stage-icon-table" viewBox="0 0 24 24"></symbol><symbol id="stage-icon-sword" viewBox="0 0 24 24"></symbol><symbol id="stage-icon-dagger" viewBox="0 0 24 24"></symbol></defs>'
+        }
+      />
+    );
+
+    const transforms = [...container.querySelectorAll(".blocking-entity-prop")].map((element) =>
+      element.getAttribute("transform")
+    );
+    expect(new Set(transforms).size).toBe(2);
   });
 
   it("falls back to generic prop shapes when the icon library is unavailable", () => {
@@ -72,5 +88,23 @@ function diagramState(): DiagramState {
       }
     ],
     offstage: []
+  };
+}
+
+function diagramStateWithMultipleProps(): DiagramState {
+  return {
+    ...diagramState(),
+    entities: [
+      ...(diagramState().entities ?? []),
+      {
+        id: "prop:dagger",
+        kind: "prop",
+        title: "dagger",
+        icon: "dagger",
+        point: { x: 0, y: 10 },
+        source: "table",
+        slot_index: 1
+      }
+    ]
   };
 }

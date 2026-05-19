@@ -514,6 +514,15 @@ table @ DL
     assert svg.count('href="#stage-icon-table"') == 1
     assert "<title>table</title>" in svg
     assert ">table</text>" not in svg
+    footprint = re.search(
+        r'<rect class="set-piece-footprint" x="([^"]+)" y="([^"]+)"[\s\S]*?<g><title>table</title><use class="stage-icon icon-set-piece"[^>]* x="([^"]+)" y="([^"]+)"',
+        svg,
+    )
+    assert footprint is not None
+    assert float(footprint.group(3)) > float(footprint.group(1))
+    assert float(footprint.group(4)) > float(footprint.group(2))
+    assert float(footprint.group(3)) - float(footprint.group(1)) < 10
+    assert float(footprint.group(4)) - float(footprint.group(2)) < 10
     assert svg.index('<g class="layer-scenery">') < svg.index('href="#stage-icon-table"') < svg.index('<g class="layer-props">')
 
 

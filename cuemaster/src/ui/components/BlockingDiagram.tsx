@@ -18,6 +18,7 @@ export function BlockingDiagram({ state, iconLibrarySvg }: BlockingDiagramProps)
   const viewHeight = width + PADDING * 2;
   const setPieces = (state.set_pieces ?? []).filter(isVisible);
   const entities = (state.entities ?? []).filter(isVisible);
+  const propSourceCounts = propCountsBySource(entities);
 
   return (
     <svg
@@ -55,6 +56,7 @@ export function BlockingDiagram({ state, iconLibrarySvg }: BlockingDiagramProps)
           key={entity.id}
           project={project}
           setPieces={setPieces}
+          propSourceCounts={propSourceCounts}
           hasIconLibrary={Boolean(iconLibrarySvg)}
         />
       ))}
@@ -110,6 +112,7 @@ function SetPiece({
   const width = entity.size?.width ?? 16;
   const depth = entity.size?.depth ?? 16;
   const href = hasIconLibrary ? iconHref(entity) : null;
+  const icon = setPieceIconPlacement(width, depth);
   return (
     <g className="blocking-set-piece" transform={`translate(${projected.x} ${projected.y})`}>
       <title>{entity.title ?? entity.source_id ?? entity.id}</title>
@@ -120,10 +123,10 @@ function SetPiece({
           href={href}
           fill="none"
           stroke="currentColor"
-          x={-SET_PIECE_ICON_SIZE / 2}
-          y={-SET_PIECE_ICON_SIZE / 2}
-          width={SET_PIECE_ICON_SIZE}
-          height={SET_PIECE_ICON_SIZE}
+          x={icon.x}
+          y={icon.y}
+          width={icon.size}
+          height={icon.size}
         />
       ) : null}
     </g>
@@ -134,18 +137,20 @@ function BlockingEntity({
   entity,
   project,
   setPieces,
+  propSourceCounts,
   hasIconLibrary
 }: {
   entity: DiagramEntity;
   project: (point: Point3D) => { x: number; y: number };
   setPieces: DiagramEntity[];
+  propSourceCounts: Map<string, number>;
   hasIconLibrary: boolean;
 }) {
   const point = entityPoint(entity);
   if (!point) {
     return null;
   }
-  const projected = projectedEntityPoint(entity, project, setPieces);
+  const projected = projectedEntityPoint(entity, project, setPieces, propSourceCounts);
   const movementFrom = entity.movement_from ? project(entity.movement_from) : null;
   const title = entity.title ?? entity.source_id ?? entity.id;
   const href = hasIconLibrary ? iconHref(entity) : null;
@@ -203,7 +208,8 @@ function entityPoint(entity: DiagramEntity): Point3D | null {
 function projectedEntityPoint(
   entity: DiagramEntity,
   project: (point: Point3D) => { x: number; y: number },
-  setPieces: DiagramEntity[]
+  setPieces: DiagramEntity[],
+  propSourceCounts: Map<string, number>
 ): { x: number; y: number } {
   const point = entityPoint(entity);
   if (!point) {
@@ -217,8 +223,20 @@ function projectedEntityPoint(
       y: projected.y + (offset.y ?? 0)
     };
   }
+  if (!entity.source) {
+    return {
+      x: projected.x + (offset.x ?? 0),
+      y: projected.y + (offset.y ?? 0)
+    };
+  }
   const setPiece = setPieces.find((candidate) => candidate.source_id === entity.source || candidate.id === entity.source);
   if (!setPiece?.size) {
+    return {
+      x: projected.x + (offset.x ?? 0),
+      y: projected.y + (offset.y ?? 0)
+    };
+  }
+  if (propSourceCounts.get(entity.source) === 1) {
     return {
       x: projected.x + (offset.x ?? 0),
       y: projected.y + (offset.y ?? 0)
@@ -233,6 +251,26 @@ function projectedEntityPoint(
     x: projected.x + halfDepth * columns[slotIndex % columns.length] + (offset.x ?? 0),
     y: projected.y + halfWidth * rows[Math.floor(slotIndex / columns.length) % rows.length] + (offset.y ?? 0)
   };
+}
+
+function setPieceIconPlacement(width: number, depth: number): { x: number; y: number; size: number } {
+  const inset = 0.25;
+  const size = Math.min(SET_PIECE_ICON_SIZE, Math.max(1.1, Math.min(width, depth) - inset * 2));
+  return {
+    x: -depth / 2 + inset,
+    y: -width / 2 + inset,
+    size
+  };
+}
+
+function propCountsBySource(entities: DiagramEntity[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const entity of entities) {
+    if (entity.kind === "prop" && entity.source) {
+      counts.set(entity.source, (counts.get(entity.source) ?? 0) + 1);
+    }
+  }
+  return counts;
 }
 
 function isVisible(entity: DiagramEntity): boolean {
