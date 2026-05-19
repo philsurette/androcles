@@ -27,6 +27,7 @@ Implementation should remove or replace the current blocking-note parser, public
 - `spec-cue-lite.md` — cue/lighting-lite DSL draft.
 - `spec-rendering-animation.md` — SVG rendering and animation design.
 - `stage_set_scene_design.md` — stage/set/scene terminology, syntax direction, CLI shape, and rollout plan.
+- `diagram_state_rendering_plan.md` — design and implementation plan for refactoring rendering around a stable diagram-state JSON contract before further blocking feature work.
 - `implementation-plan.md` — staged implementation plan and acceptance tests.
 - `point_in_time_svg_implementation_plan.md` — focused plan for a standalone stage-description-to-SVG vertical slice before Quince/Playbook integration.
 - `future-features.md` — animation, timeline playback, and richer staging features deferred from the active implementation path.
@@ -101,6 +102,14 @@ The system should keep three concerns separate:
 2. **Set** defines reusable scenic setup for one or more scenes.
 3. **Blocking** defines actor, prop, and movable set-piece events against a scene snapshot.
 4. **Cue-lite** defines coordination cues, especially lighting/sound/set-shift references.
+
+Before adding more blocking features, the rendering pipeline should be refactored to use diagram-state JSON as the renderer contract:
+
+```text
+ResolvedSnapshot -> DiagramState JSON -> renderer adapter
+```
+
+See [diagram_state_rendering_plan.md](diagram_state_rendering_plan.md).
 
 Syntax remains open. A likely final design may use larger fenced blocks for layout and cue definitions, while allowing terse inline or nearby action notation for line-local movement and business.
 

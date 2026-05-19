@@ -48,6 +48,7 @@ Blocking and staging design docs live under `planning/blocking/`.
 
 - [blocking/README.md](blocking/README.md): Index and current stance for the replacement blocking/staging system.
 - [blocking/stage_set_scene_design.md](blocking/stage_set_scene_design.md): Stage/set/scene distinction, CLI terminology, syntax direction, and rollout checklist.
+- [blocking/diagram_state_rendering_plan.md](blocking/diagram_state_rendering_plan.md): Rendering pipeline design for `ResolvedSnapshot -> DiagramState JSON -> renderer adapter`, intended before more blocking feature work.
 
 ## LineRecorder
 
