@@ -24,27 +24,21 @@ This keeps the system explainable: actors receive a link to a web app and a pack
 
 LineRecorder and Cuemaster are good fits for static web hosting.
 
-The actor-facing URLs can be simple GitHub Pages paths:
+The actor-facing URLs can be simple Cloudflare-hosted app URLs:
 
 ```text
-https://philsurette.github.io/linerecorder/
-https://philsurette.github.io/cuemaster/
+https://linerecorder.phil-surette.workers.dev/
+https://cuemaster.phil-surette.workers.dev/
 ```
 
-The existing sibling repository at `../philsurette.github.io` is currently a small static site, so the deployment can be a simple copy of each app's built `dist/` files into matching subdirectories:
+Deployment should be a static upload of each app's built `dist/` directory to its matching Cloudflare app:
 
 ```text
-../philsurette.github.io/
-  index.md
-  linerecorder/
-    index.html
-    assets/
-  cuemaster/
-    index.html
-    assets/
+linerecorder/dist/ -> linerecorder app
+cuemaster/dist/    -> cuemaster app
 ```
 
-Both apps already have `build:static` scripts that run Vite with `--base=./`. That is the right default for GitHub Pages subdirectory hosting because asset URLs stay relative to each app directory.
+Both apps already have `build:static` scripts that run Vite with `--base=./`. That remains the right default for static hosting because asset URLs stay relative to each app directory.
 
 ## LineRecorder Web Workflow
 
@@ -205,8 +199,8 @@ The important point is that generated Recording Request, recording import, audio
 
 The first production-friendly release should have:
 
-- Hosted LineRecorder at `https://philsurette.github.io/linerecorder/`.
-- Hosted Cuemaster at `https://philsurette.github.io/cuemaster/`.
+- Hosted Cuemaster at `https://cuemaster.phil-surette.workers.dev/`.
+- Hosted LineRecorder at `https://linerecorder.phil-surette.workers.dev/`.
 - LineRecorder export as a browser download zip.
 - Cuemaster import from a local Playbook zip.
 - A documented Google Drive folder workflow.

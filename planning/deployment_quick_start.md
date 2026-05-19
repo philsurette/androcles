@@ -15,7 +15,7 @@ Use these files for the normal handoffs:
 Open:
 
 ```text
-https://philsurette.github.io/linerecorder/
+https://linerecorder.phil-surette.workers.dev/
 ```
 
 Steps:
@@ -37,7 +37,7 @@ If the actor needs to send a partial recording package, that is allowed. The exp
 Open:
 
 ```text
-https://philsurette.github.io/cuemaster/
+https://cuemaster.phil-surette.workers.dev/
 ```
 
 Steps:
@@ -100,36 +100,23 @@ Upload the Playbook zip from `build/<play_id>/<play_id>.playbook.zip` to `03 Pla
 
 ## Showrunner: Publish The Hosted Apps
 
-The hosted app files live in the sibling GitHub Pages checkout:
+Build each static app:
+
+```sh
+cd cuemaster
+npm run build:static
+cd ../linerecorder
+npm run build:static
+```
+
+Upload the built folders to their Cloudflare apps:
 
 ```text
-../philsurette.github.io/
+cuemaster/dist/     -> cuemaster
+linerecorder/dist/  -> linerecorder
 ```
 
-Preview the publish operation:
-
-```sh
-./scripts/publish_webapps_to_pages.sh --dry-run
-```
-
-Build and publish both apps into the Pages checkout:
-
-```sh
-./scripts/publish_webapps_to_pages.sh
-```
-
-Then review and commit the Pages repo separately:
-
-```sh
-git -C ../philsurette.github.io status --short
-```
-
-The publish script only replaces:
-
-```text
-../philsurette.github.io/cuemaster/
-../philsurette.github.io/linerecorder/
-```
+In Cloudflare, use **Workers & Pages**, choose the app, and upload the matching `dist/` folder. The hosted apps still do not contain production data; actors import Recording Request and Playbook zips separately.
 
 ## Troubleshooting
 

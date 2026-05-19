@@ -25,7 +25,7 @@ Deferred enhancements:
 
 Goal: actors can import a Playbook zip from disk and understand import/storage failures.
 
-- [ ] Confirm Playbook import works from a local file input when the app is hosted from a GitHub Pages subdirectory.
+- [ ] Confirm Playbook import works from a local file input when the app is hosted on Cloudflare.
 - [ ] Ensure import progress is visible for large MP3 Playbooks.
 - [ ] Ensure extraction work stays off the main UI path for large packages.
 - [ ] Add clear storage error handling for quota, private browsing, blocked IndexedDB, and unsupported browser cases.
@@ -33,43 +33,42 @@ Goal: actors can import a Playbook zip from disk and understand import/storage f
 - [ ] Add a browser compatibility note favoring current Chrome, Edge, Firefox, and Safari versions.
 - [ ] Add Playwright coverage for importing a built fixture Playbook from the hosted subdirectory base path.
 
-## Milestone 3: Static GitHub Pages Builds
+## Milestone 3: Static Cloudflare Builds
 
-Goal: both actor apps can be built and copied into `../philsurette.github.io`.
+Goal: both actor apps can be built as static artifacts and uploaded to Cloudflare.
 
 Current app status:
 
 - `cuemaster/package.json` has `build:static`, which runs `vite build --base=./`.
 - `linerecorder/package.json` has `build:static`, which runs `vite build --base=./`.
-- `../philsurette.github.io` is a simple static repository and can host subdirectories directly.
+- Cloudflare Workers & Pages can host each app from its built `dist/` directory.
 
 Implementation tasks:
 
 - [x] Add a repo script that builds Cuemaster with `npm run build:static` from `cuemaster/`.
 - [x] Add a repo script that builds LineRecorder with `npm run build:static` from `linerecorder/`.
-- [x] Add a publish script that removes and recreates only these target directories:
+- [x] Add or keep a local publish/build script that produces these deployable directories:
 
   ```text
-  ../philsurette.github.io/cuemaster/
-  ../philsurette.github.io/linerecorder/
+  cuemaster/dist/
+  linerecorder/dist/
   ```
 
-- [x] Copy each app's `dist/` contents into its matching target directory.
-- [x] Add or update `../philsurette.github.io/index.md` links for the hosted apps.
-- [x] Keep the publish script from touching unrelated files such as `dayafter.html` and `otherlondon.html`.
-- [x] Add a dry-run mode that prints source and destination paths before copying.
-- [x] Add instructions for manually reviewing the sibling repo diff before committing the GitHub Pages update.
-- [x] Verify the deployed paths locally with a static file server pointed at `../philsurette.github.io`.
+- [x] Build each app's `dist/` contents for static hosting.
+- [x] Document the Cloudflare-hosted app URLs for actors.
+- [x] Add local build steps that make the deployable `dist/` folders explicit before upload.
+- [x] Add instructions for manually uploading or deploying the built `dist/` folders to Cloudflare.
+- [x] Verify the deployed paths locally with Vite preview or a static file server pointed at each `dist/` folder.
 - [x] Verify that app asset paths are relative and do not assume site root.
 
-Suggested command shape:
+Current command shape:
 
 ```sh
-./scripts/publish_webapps_to_pages.sh --dry-run
-./scripts/publish_webapps_to_pages.sh
+cd cuemaster && npm run build:static
+cd ../linerecorder && npm run build:static
 ```
 
-The script should fail if the sibling repo is missing, dirty in the target directories, or if either app build fails.
+Upload each resulting `dist/` folder through Cloudflare Workers & Pages. If upload automation is added later, it should fail if either app build fails or if Cloudflare authentication/deployment fails.
 
 ## Milestone 4: User-Facing Deployment Docs
 
@@ -179,7 +178,7 @@ Possible later work:
 Recommended order:
 
 1. LineRecorder download export.
-2. Static GitHub Pages publishing for both apps.
+2. Static Cloudflare publishing for both apps.
 3. Actor/showrunner quick-start docs.
 4. Cuemaster import polish for large MP3 Playbooks.
 5. Stager ffmpeg checks.

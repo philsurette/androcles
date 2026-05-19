@@ -14,7 +14,7 @@ Use [terminology.md](terminology.md) for project names and shared vocabulary.
 - [deployment.md](deployment.md): Community-theatre deployment model for hosted actor apps, Google Drive handoffs, and local Stager packaging.
 - [static_actor_app_deployment.md](static_actor_app_deployment.md): Build and deploy Cuemaster and LineRecorder as static web apps.
 - [deployment_quick_start.md](deployment_quick_start.md): Actor and showrunner quick-start guide for hosted LineRecorder, hosted Cuemaster, shared folders, and app publishing.
-- [deployment_implementation_plan.md](deployment_implementation_plan.md): Resumable implementation plan for browser downloads, GitHub Pages publishing, and Stager packaging.
+- [deployment_implementation_plan.md](deployment_implementation_plan.md): Resumable implementation plan for browser downloads, Cloudflare/static hosting, and Stager packaging.
 - [webapp_refactor_implementation_plan.md](webapp_refactor_implementation_plan.md): Resumable implementation plan for Cuemaster and LineRecorder code quality refactors.
 
 ## Stager
