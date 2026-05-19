@@ -4,8 +4,8 @@
 stage type=proscenium width=36 depth=24 audience=south
 grid standard=9
 
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 
 setup act1
 level deck z=0
@@ -38,21 +38,21 @@ Q.17 type=group cues=[LX.13,SND.04] label="Revelation cue"
 HAMLET
 Now might I do it pat—
 
-[[blocking beat=b3 scene=1.2 set=act1 line=HAM-121]]
-HAM @ DL face=CLA
-CLA @ UC
-HAM move DL -> C dur=2.5 curve=arc
-HAM face CLA
-cue LX.12 at=HAM.arrive(C)
+[[blocking beat=b3 scene=1.2 set=act1 line=HM-121]]
+HM @ DL face=CD
+CD @ UC
+HM move DL -> C dur=2.5 curve=arc
+HM face CD
+cue LX.12 at=HM.arrive(C)
 [[/blocking]]
 
 CLAUDIUS
 A brother's murder—
 
-[[blocking beat=b4 scene=1.2 set=act1 line=CLA-122]]
-HAM gesture point target=CLA hand=R
-HAM move C -> table dur=1.5
-HAM pickup sword from=table
-CLA stand dur=1.0
-cue Q.17 at=CLA.stand
+[[blocking beat=b4 scene=1.2 set=act1 line=CD-122]]
+HM gesture point target=CD hand=R
+HM move C -> table dur=1.5
+HM pickup sword from=table
+CD stand dur=1.0
+cue Q.17 at=CD.stand
 [[/blocking]]

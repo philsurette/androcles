@@ -32,7 +32,7 @@ Q.17       grouped/called cue
 ```text
 LX.12 type=lighting label="Special on Hamlet" focus=C fade=1.5
 LX.13 type=lighting label="Widen to throne" focus=[C,UC] fade=2.0
-LX.24 type=lighting label="Moonlight catches Ophelia" focus=OPH fade=3.0 color="cool blue"
+LX.24 type=lighting label="Moonlight catches Ophelia" focus=OP fade=3.0 color="cool blue"
 ```
 
 Supported fields:
@@ -87,7 +87,7 @@ Group cues are for coordination/calling. They should not erase the underlying cu
 
 ```text
 cue LX.24
-cue LX.24 at=HAM.arrive(C)
+cue LX.24 at=HM.arrive(C)
 cue Q.17 at=end
 ```
 

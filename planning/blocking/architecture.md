@@ -33,8 +33,8 @@ The normalized model should be explicit and strict.
 Example authoring:
 
 ```text
-HAM move DL -> C dur=2.2
-cue LX.24 at=HAM.arrive(C)
+HM move DL -> C dur=2.2
+cue LX.24 at=HM.arrive(C)
 ```
 
 Example normalized event:
@@ -43,7 +43,7 @@ Example normalized event:
 {
   "id": "evt-b12-001",
   "type": "move",
-  "actor": "HAM",
+  "actor": "HM",
   "from": {"source": "DL", "x": -12, "y": 4, "z": 0},
   "to": {"source": "C", "x": 0, "y": 12, "z": 0},
   "duration": 2.2,

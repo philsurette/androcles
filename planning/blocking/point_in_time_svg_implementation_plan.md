@@ -45,8 +45,8 @@ Example:
 ```text
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 
 setup act1
 anchor door_l = UL
@@ -54,9 +54,9 @@ anchor door_r = UR
 piece table kind=table at=C size=(5,3)
 
 scene 1.2 set=act1 snapshot
-HAM @ DL face=CLA
-CLA @ UC
-OPH offstage via=door_l
+HM @ DL face=CD
+CD @ UC
+OP offstage via=door_l
 sword @ table
 ```
 
@@ -65,8 +65,8 @@ Measured version:
 ```text
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 
 setup act1
 anchor door_l at=(-16,20,0)
@@ -74,8 +74,8 @@ anchor door_r at=(16,20,0)
 piece table kind=table at=C size=(5,3)
 
 scene 1.2 set=act1 snapshot
-HAM @ DL face=CLA
-CLA @ UC
+HM @ DL face=CD
+CD @ UC
 sword @ table
 ```
 
@@ -144,7 +144,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
   - `at=(x,y,z)`
   - `size=(w,d)`
 - [x] Generate default 9-zone areas from measured or default dimensions.
-- [x] Parse actor metadata with two-character diagram labels.
+- [x] Parse actor metadata with two-character actor ids as default diagram labels.
 - [x] Support standard aliases such as `USL`, `DSR`, and `CSC`.
 - [x] Add diagnostics for duplicate IDs and malformed statements.
 - [x] Add parser tests for text-only and measured layouts.
@@ -153,9 +153,9 @@ Do not implement the Quince command in this slice unless the standalone renderer
 
 - [x] Parse scene snapshot headers such as `scene 1.2 set=act1 snapshot`.
 - [x] Parse actor placements:
-  - `HAM @ DL`
-  - `HAM @ balcony_l face=house`
-  - `OPH offstage via=door_l`
+  - `HM @ DL`
+  - `HM @ balcony_l face=house`
+  - `OP offstage via=door_l`
 - [x] Parse prop and set-piece placements:
   - `table @ C`
   - `sword @ table`
@@ -185,7 +185,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
 - [x] Render stage boundary.
 - [x] Render 9-zone grid and labels.
 - [x] Render named anchors and set pieces.
-- [x] Render actor circles with two-character labels and facing indicators.
+- [x] Render actor circles with two-character actor ids and facing indicators.
 - [x] Render props and set pieces as compact embedded SVG markers.
 - [x] Add SVG `<title>` metadata for anchors, set pieces, props, and actors.
 - [x] Support portrait and landscape output; default to portrait.

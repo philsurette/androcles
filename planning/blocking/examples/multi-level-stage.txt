@@ -1,8 +1,8 @@
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
-actor OPH label=OP name=Ophelia
+actor HM name=Hamlet
+actor CD name=Claudius
+actor OP name=Ophelia
 
 setup act1
 level balcony at=UC size=(18,4) z=8
@@ -14,17 +14,17 @@ stair stair_l from=deck_l to=balcony_l
 piece table kind=table at=C size=(5,3)
 
 scene 1.3 set=act1 snapshot
-HAM @ balcony_l face=CLA
-CLA @ DC
-OPH @ deck_l face=HAM
+HM @ balcony_l face=CD
+CD @ DC
+OP @ deck_l face=HM
 sword @ table
 flower @ balcony_l
 
 beat b1 scene=1.3
-HAM move balcony_l -> UC face=OPH
-OPH move deck_l -> C face=HAM
+HM move balcony_l -> UC face=OP
+OP move deck_l -> C face=HM
 
 beat b2 scene=1.3
-CLA move DC -> DR
+CD move DC -> DR
 sword remove
 flower remove

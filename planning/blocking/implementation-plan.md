@@ -68,11 +68,11 @@ Acceptance tests:
 Implement minimal statements:
 
 ```text
-HAM @ DL
-HAM move DL -> C dur=2.2
-HAM face OPH
-OPH enter vom_dr -> DR dur=1.6
-OPH exit door_l dur=1.4
+HM @ DL
+HM move DL -> C dur=2.2
+HM face OP
+OP enter vom_dr -> DR dur=1.6
+OP exit door_l dur=1.4
 cue LX.24
 snapshot
 ```
@@ -141,11 +141,11 @@ Renderers should be able to request a scene state at a specific beat. The resolv
 Initial supported beat statements:
 
 ```text
-HAM @ C
-HAM move DL -> C
-HAM -> C
-OPH enter door_l -> DL
-OPH exit via=door_r
+HM @ C
+HM move DL -> C
+HM -> C
+OP enter door_l -> DL
+OP exit via=door_r
 sword @ table
 sword remove
 ```

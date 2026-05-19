@@ -31,7 +31,7 @@ Minimal named-location layout:
 ```text
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 setup act1
 anchor door_l = UL
@@ -45,7 +45,7 @@ Measured version of the same idea:
 ```text
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 setup act1
 anchor door_l at=(-16,20,0)
@@ -101,8 +101,8 @@ level balcony polygon=(-10,18, 10,18, 10,22, -10,22) z=8
 stair stair_l from=(-12,14,0) to=(-10,18,8) steps=10
 
 anchor balcony_l kind=mark at=(-8,20,8)
-HAM @ balcony_l
-HAM move deck_c -> balcony_l via=stair_l
+HM @ balcony_l
+HM move deck_c -> balcony_l via=stair_l
 ```
 
 ## Minimal statements
@@ -163,11 +163,11 @@ Use **set** as the producer-facing term and **setup** as the authoring keyword. 
 ### Actor
 
 ```text
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 ```
 
-Actor labels are the two-character strings rendered inside actor circles in static diagrams. The full `name` is exposed through SVG `<title>` metadata instead of a visible label.
+Actor ids should normally be the two-character strings rendered inside actor circles in static diagrams. The full `name` is exposed through SVG `<title>` metadata instead of a visible label. `label=` remains available as an override, but examples should prefer two-character actor ids without a separate label.
 
 ### Custom area
 
@@ -269,7 +269,7 @@ The static SVG renderer should show:
 Default static rendering should minimize visible text:
 
 - standard area labels remain visible
-- actor circles show two-character labels
+- actor circles show two-character actor ids by default
 - anchors, set pieces, and props expose names through SVG `<title>` metadata
 - portrait output is the default for mobile viewing, with downstage to the right
 - landscape output is available as an explicit option

@@ -27,7 +27,7 @@ The authoring surface is `production.md`. The likely block forms are:
 ...
 [[/cues]]
 
-[[blocking beat=b12 line=HAM-042]]
+[[blocking beat=b12 line=HM-042]]
 ...
 [[/blocking]]
 ```

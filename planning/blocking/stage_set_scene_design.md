@@ -92,9 +92,9 @@ Recommended MVP syntax:
 stage type=proscenium width=36 depth=24 units=ft
 grid standard=9
 
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
-actor OPH label=OP name=Ophelia
+actor HM name=Hamlet
+actor CD name=Claudius
+actor OP name=Ophelia
 
 setup act1
 level balcony at=UC size=(18,4) z=8
@@ -113,20 +113,20 @@ piece throne kind=chair at=UC size=(4,4)
 piece bench kind=bench at=DR size=(5,2)
 
 scene 1.2 set=act1 snapshot
-HAM @ DL face=CLA
-CLA @ balcony_l
-OPH offstage via=door_l
+HM @ DL face=CD
+CD @ balcony_l
+OP offstage via=door_l
 sword @ table
 
 scene 1.3 set=act1 snapshot
-HAM @ balcony_l face=CLA
-CLA @ DC
-OPH @ deck_l face=HAM
+HM @ balcony_l face=CD
+CD @ DC
+OP @ deck_l face=HM
 sword @ table
 
 scene 2.1 set=act2 snapshot
-CLA @ throne
-HAM @ DL face=CLA
+CD @ throne
+HM @ DL face=CD
 ```
 
 ### Keyword Changes

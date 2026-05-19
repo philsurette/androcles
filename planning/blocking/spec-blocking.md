@@ -13,9 +13,9 @@ The authoring form is open. A fenced `[[blocking]]` block is useful for multi-ev
 Possible beat block:
 
 ```markdown
-[[blocking beat=b12 scene=1.2 line=HAM-042]]
-HAM move DL -> C dur=2.2
-cue LX.24 at=HAM.arrive(C)
+[[blocking beat=b12 scene=1.2 line=HM-042]]
+HM move DL -> C dur=2.2
+cue LX.24 at=HM.arrive(C)
 [[/blocking]]
 ```
 
@@ -23,7 +23,7 @@ Possible inline or line-local action:
 
 ```markdown
 HAMLET: Now might I do it pat— (_/action: move DL -> C dur=2.2_)
-HAMLET: Now might I do it pat— (_/HAM: move DL -> C dur=2.2_)
+HAMLET: Now might I do it pat— (_/HM: move DL -> C dur=2.2_)
 ```
 
 The final design may support both: block form for standalone staging beats, inline form for movement/business that belongs inside a spoken line.
@@ -42,14 +42,14 @@ Recommended block attributes:
 ### Actor placement
 
 ```text
-HAM @ DL
-HAM @ (2,8,0) face=house
+HM @ DL
+HM @ (2,8,0) face=house
 ```
 
 Equivalent explicit form:
 
 ```text
-HAM place DL
+HM place DL
 ```
 
 Placement is absolute. It may be used as an author correction or checkpoint even if prior movement state is incomplete.
@@ -57,9 +57,9 @@ Placement is absolute. It may be used as an author correction or checkpoint even
 ### Movement
 
 ```text
-HAM move DL -> C dur=2.2
-HAM cross DL -> C dur=2.2 curve=arc
-HAM -> C
+HM move DL -> C dur=2.2
+HM cross DL -> C dur=2.2 curve=arc
+HM -> C
 ```
 
 Supported movement options:
@@ -73,36 +73,36 @@ Supported movement options:
 ### Facing
 
 ```text
-HAM face OPH
-HAM face house
-HAM face 180
+HM face OP
+HM face house
+HM face 180
 ```
 
 ### Entrance
 
 ```text
-OPH enter vom_dr -> DR dur=1.6
+OP enter vom_dr -> DR dur=1.6
 ```
 
 ### Exit
 
 ```text
-OPH exit door_l dur=1.4
+OP exit door_l dur=1.4
 ```
 
 ### Hold
 
 ```text
 hold dur=0.5
-HAM hold dur=1.0
+HM hold dur=1.0
 ```
 
 ### Prop interaction
 
 ```text
-HAM pickup sword from=table
-HAM put sword at=table
-HAM give letter to=OPH
+HM pickup sword from=table
+HM put sword at=table
+HM give letter to=OP
 ```
 
 Prop interactions may be v0.2 if v0.1 needs to stay smaller.
@@ -110,8 +110,8 @@ Prop interactions may be v0.2 if v0.1 needs to stay smaller.
 ### Gesture / business
 
 ```text
-HAM gesture point target=trap_c hand=R
-HAM business "checks the letter, then hides it"
+HM gesture point target=trap_c hand=R
+HM business "checks the letter, then hides it"
 ```
 
 Business is intentionally semi-structured.
@@ -120,7 +120,7 @@ Business is intentionally semi-structured.
 
 ```text
 cue LX.24
-cue LX.24 at=HAM.arrive(C)
+cue LX.24 at=HM.arrive(C)
 cue Q.17 at=end
 ```
 
@@ -138,8 +138,8 @@ A `snapshot` is authoritative state at a beat, scene, or production boundary. Pr
 
 ```text
 snapshot
-HAM @ DL face=CLA
-CLA @ UC
+HM @ DL face=CD
+CD @ UC
 table @ C
 letter @ table
 ```
@@ -148,9 +148,9 @@ Scene-start example:
 
 ```text
 scene 1.2 set=act1 snapshot
-HAM @ DL face=CLA
-CLA @ UC
-OPH offstage via=door_l
+HM @ DL face=CD
+CD @ UC
+OP offstage via=door_l
 table @ C
 sword @ table
 ```
@@ -160,7 +160,7 @@ Rendering should start from the nearest prior snapshot and apply events up to th
 Rules:
 
 - `snapshot` resets known truth for listed actors/props/set pieces.
-- Absolute placement such as `HAM @ C` updates state regardless of prior state.
+- Absolute placement such as `HM @ C` updates state regardless of prior state.
 - Movement with explicit `from` should warn if it disagrees with known state.
 - Movement without explicit `from` may infer from current state.
 - If no current state exists, warn and still render the destination when possible.
@@ -171,35 +171,35 @@ Example:
 ```text
 [[blocking scene=1.2 beat=b12]]
 snapshot
-HAM @ DL face=CLA
-CLA @ UC
+HM @ DL face=CD
+CD @ UC
 sword @ table
 [[/blocking]]
 
 [[blocking scene=1.2 beat=b13]]
-HAM move DL -> C dur=2.5
-HAM pickup sword from=table
-cue LX.12 at=HAM.arrive(C)
+HM move DL -> C dur=2.5
+HM pickup sword from=table
+cue LX.12 at=HM.arrive(C)
 [[/blocking]]
 ```
 
-To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HAM` at `C`, `CLA` at `UC`, and `sword` carried by `HAM`.
+To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HM` at `C`, `CD` at `UC`, and `sword` carried by `HM`.
 
 The first standalone renderer implements the same idea with ordered beat blocks:
 
 ```text
 scene 1.3 set=act1 snapshot
-HAM @ balcony_l face=CLA
-CLA @ DC
-OPH @ deck_l face=HAM
+HM @ balcony_l face=CD
+CD @ DC
+OP @ deck_l face=HM
 sword @ table
 
 beat b1 scene=1.3
-HAM move balcony_l -> UC face=OPH
-OPH move deck_l -> C face=HAM
+HM move balcony_l -> UC face=OP
+OP move deck_l -> C face=HM
 
 beat b2 scene=1.3
-CLA move DC -> DR
+CD move DC -> DR
 sword remove
 ```
 
@@ -216,9 +216,9 @@ Timing should be layered:
 Examples:
 
 ```text
-HAM move DL -> C start=0.4 dur=2.2
-HAM move DL -> C start=lineStart+0.5 end=lineEnd
-HAM move DL -> C
+HM move DL -> C start=0.4 dur=2.2
+HM move DL -> C start=lineStart+0.5 end=lineEnd
+HM move DL -> C
 ```
 
 The first implementation may only support `dur`.
@@ -242,7 +242,7 @@ All blocking statements should normalize to explicit event records.
 Example:
 
 ```text
-HAM move DL -> C dur=2.2
+HM move DL -> C dur=2.2
 ```
 
 Normalizes to:
@@ -250,7 +250,7 @@ Normalizes to:
 ```json
 {
   "type": "move",
-  "actor": "HAM",
+  "actor": "HM",
   "from": {"source": "DL", "x": -12, "y": 4, "z": 0},
   "to": {"source": "C", "x": 0, "y": 12, "z": 0},
   "duration": 2.2

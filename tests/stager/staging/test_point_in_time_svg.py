@@ -21,14 +21,14 @@ def test_parser_accepts_text_only_stage_and_scene_snapshot() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 anchor door_l = UL
 anchor table = C
 
 scene 1.2 snapshot
-HAM @ DL face=CLA
-CLA @ UC
-OPH offstage via=door_l
+HM @ DL face=CD
+CD @ UC
+OP offstage via=door_l
 table @ C
 sword @ table
 """
@@ -36,10 +36,10 @@ sword @ table
 
     assert document.stage.stage_type == "proscenium"
     assert document.stage.measured is False
-    assert document.actors["HAM"].label == "HM"
-    assert document.actors["HAM"].name == "Hamlet"
+    assert document.actors["HM"].label == "HM"
+    assert document.actors["HM"].name == "Hamlet"
     assert document.anchors["door_l"].at.source == "UL"
-    assert document.snapshots["1.2"].placements[0].entity == "HAM"
+    assert document.snapshots["1.2"].placements[0].entity == "HM"
     assert document.snapshots["1.2"].placements[2].offstage is True
 
 
@@ -48,7 +48,7 @@ def test_parser_and_resolver_support_named_sets_for_scene_snapshots() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 setup act1
 level balcony at=UC size=(18,4) z=8
@@ -60,11 +60,11 @@ anchor throne = UC
 piece bench kind=bench at=DR size=(5,2)
 
 scene 1.2 set=act1 snapshot
-HAM @ balcony_l
+HM @ balcony_l
 sword @ table
 
 scene 2.1 set=act2 snapshot
-HAM @ throne
+HM @ throne
 """
     )
 
@@ -86,18 +86,18 @@ def test_diagram_state_builder_outputs_renderer_contract() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 
 setup act1
 piece table kind=table at=C size=(5,3)
 
 scene 1.2 set=act1 snapshot
-HAM @ C
-CLA @ C
+HM @ C
+CD @ C
 sword @ table
 dagger @ table
-OPH offstage via=door_l
+OP offstage via=door_l
 """
     )
 
@@ -110,11 +110,11 @@ OPH offstage via=door_l
     assert data["diagram_id"] == "scene:1.2"
     assert data["diagram_kind"] == "scene"
     assert data["set_id"] == "act1"
-    assert any(entity["id"] == "actor:HAM" and entity["label"] == "HM" for entity in data["entities"])
+    assert any(entity["id"] == "actor:HM" and entity["label"] == "HM" for entity in data["entities"])
     assert any(entity["id"] == "prop:sword" and entity["icon"] == "sword" and entity["slot_index"] == 0 for entity in data["entities"])
     assert any(entity["id"] == "prop:dagger" and entity["slot_index"] == 1 for entity in data["entities"])
-    assert any(entity["id"] == "actor:CLA" and entity["offset"]["x"] == 18.0 for entity in data["entities"])
-    assert data["offstage"][0]["id"] == "actor:OPH"
+    assert any(entity["id"] == "actor:CD" and entity["offset"]["x"] == 18.0 for entity in data["entities"])
+    assert data["offstage"][0]["id"] == "actor:OP"
 
 
 def test_resolver_uses_default_stage_and_preserves_unknowns_as_diagnostics() -> None:
@@ -124,15 +124,15 @@ stage type=proscenium
 grid standard=9
 
 scene 1.2 snapshot
-HAM @ DL
-CLA @ nowhere
+HM @ DL
+CD @ nowhere
 """
     )
 
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
 
-    ham = next(placement for placement in snapshot.placements if placement.entity == "HAM")
-    cla = next(placement for placement in snapshot.placements if placement.entity == "CLA")
+    ham = next(placement for placement in snapshot.placements if placement.entity == "HM")
+    cla = next(placement for placement in snapshot.placements if placement.entity == "CD")
     assert ham.point is not None
     assert ham.point.x < 0
     assert cla.point is None
@@ -147,7 +147,7 @@ grid standard=9
 anchor balcony_l at=(-8,24,8)
 
 scene 2 snapshot
-HAM @ balcony_l
+HM @ balcony_l
 """
     )
 
@@ -172,7 +172,7 @@ stair stair_l from=deck_l to=balcony_l
 ramp bad_ramp from=nowhere to=balcony_l
 
 scene 2 snapshot
-HAM @ balcony_l
+HM @ balcony_l
 """
     )
 
@@ -199,7 +199,7 @@ grid standard=9
 level balcony at=UC size=(18,4) z=8
 
 scene 2 snapshot
-HAM @ UC
+HM @ UC
 """
     )
 
@@ -218,15 +218,15 @@ def test_renderer_colors_actors_and_objects_by_elevation() -> None:
         """
 stage type=proscenium width=40 depth=30 units=ft
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 level balcony at=UC size=(18,4) z=8
 anchor balcony_l at=(-8,24,8)
 anchor deck_c at=(0,8,0)
 
 scene 2 snapshot
-HAM @ balcony_l
-CLA @ deck_c
+HM @ balcony_l
+CD @ deck_c
 flower @ balcony_l
 book @ deck_c
 """
@@ -249,10 +249,10 @@ grid standard=9
 anchor table = C
 
 scene 1.2 snapshot
-HAM @ DL face=house
-OPH offstage via=door_l
+HM @ DL face=house
+OP offstage via=door_l
 sword @ table
-CLA @ nowhere
+CD @ nowhere
 """
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
@@ -261,7 +261,7 @@ CLA @ nowhere
 
     assert svg.startswith("<?xml")
     assert "<svg" in svg
-    assert "HAM" in svg
+    assert "HM" in svg
     assert "face house" in svg
     assert "sword" in svg
     assert "Offstage / unknown" in svg
@@ -273,23 +273,23 @@ def test_state_resolver_applies_ordered_blocking_beats() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
-actor OPH label=OP name=Ophelia
+actor HM name=Hamlet
+actor CD name=Claudius
+actor OP name=Ophelia
 set table kind=furniture at=C size=(5,3)
 
 scene 1.2 snapshot
-HAM @ DL face=CLA
-CLA @ UC
-OPH offstage via=door_l
+HM @ DL face=CD
+CD @ UC
+OP offstage via=door_l
 sword @ table
 
 beat b1 scene=1.2
-HAM move DL -> C face=CLA
-OPH enter door_l -> DR
+HM move DL -> C face=CD
+OP enter door_l -> DR
 
 beat b2 scene=1.2
-CLA -> DC
+CD -> DC
 sword remove
 """
     )
@@ -298,12 +298,12 @@ sword remove
 
     placements = {placement.entity: placement for placement in snapshot.placements}
     assert snapshot.scene_id == "1.2@b2"
-    assert placements["HAM"].source == "C"
-    assert placements["OPH"].source == "DR"
-    assert placements["CLA"].source == "DC"
+    assert placements["HM"].source == "C"
+    assert placements["OP"].source == "DR"
+    assert placements["CD"].source == "DC"
     assert placements["sword"].offstage is True
-    assert placements["HAM"].point is not None
-    assert placements["HAM"].point.x == 0
+    assert placements["HM"].point is not None
+    assert placements["HM"].point.x == 0
 
 
 def test_state_resolver_warns_for_unknown_beat() -> None:
@@ -313,7 +313,7 @@ stage type=proscenium
 grid standard=9
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 """
     )
 
@@ -328,12 +328,12 @@ def test_svg_renderer_uses_layers_top_left_area_labels_and_offsets_actor_collisi
 stage type=proscenium
 grid standard=9
 set table kind=furniture at=C size=(5,3)
-actor HAM label=HM name=Hamlet
-actor CLA label=CD name=Claudius
+actor HM name=Hamlet
+actor CD name=Claudius
 
 scene 1.2 snapshot
-HAM @ C
-CLA @ C
+HM @ C
+CD @ C
 sword @ table
 dagger @ table
 """
@@ -393,10 +393,10 @@ def test_svg_renderer_defaults_to_portrait_with_downstage_on_right() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 """
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
@@ -415,10 +415,10 @@ def test_svg_renderer_supports_landscape_orientation() -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 """
     )
     snapshot = StagingResolver().resolve_snapshot(document, "1.2")
@@ -539,8 +539,8 @@ grid standard=9
 anchor door_l = UL
 
 scene 1.2 snapshot
-HAM @ DL
-OPH offstage via=door_l
+HM @ DL
+OP offstage via=door_l
 """,
         encoding="utf-8",
     )
@@ -566,7 +566,7 @@ OPH offstage via=door_l
     finally:
         sys.argv = original_argv
 
-    assert "HAM" in svg_path.read_text(encoding="utf-8")
+    assert "HM" in svg_path.read_text(encoding="utf-8")
     data = json.loads(json_path.read_text(encoding="utf-8"))
     assert data["scene_id"] == "1.2"
 
@@ -579,13 +579,13 @@ def test_render_point_cli_writes_beat_state(tmp_path: Path) -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 
 beat b1 scene=1.2
-HAM -> C
+HM -> C
 """,
         encoding="utf-8",
     )
@@ -630,13 +630,13 @@ def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
         """
 stage type=proscenium
 grid standard=9
-actor HAM label=HM name=Hamlet
+actor HM name=Hamlet
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 
 beat b1 scene=1.2
-HAM -> C
+HM -> C
 """,
         encoding="utf-8",
     )
@@ -711,7 +711,7 @@ stair stair_l from=deck_l to=balcony_l
 piece table kind=table at=C size=(5,3)
 
 scene 1.2 set=act1 snapshot
-HAM @ DL
+HM @ DL
 """,
         encoding="utf-8",
     )
@@ -753,7 +753,7 @@ HAM @ DL
     assert "Scene stage" in svg
     assert "<title>balcony +8</title>" not in svg
     assert "<title>table</title>" not in svg
-    assert ">HAM</text>" not in svg
+    assert ">HM</text>" not in svg
     assert data["diagram_id"] == "stage"
     assert data["diagram_kind"] == "stage"
     assert data["entities"] == []
@@ -761,7 +761,7 @@ HAM @ DL
     assert "Scene set:act1" in set_svg
     assert "<title>balcony +8</title>" in set_svg
     assert "<title>table</title>" in set_svg
-    assert ">HAM</text>" not in set_svg
+    assert ">HM</text>" not in set_svg
     assert set_data["set_id"] == "act1"
     assert any(level["id"] == "balcony" for level in set_data["levels"])
 
@@ -778,10 +778,10 @@ setup act1
 piece table kind=table at=C size=(5,3)
 
 scene 1.2 set=act1 snapshot
-HAM @ DL
+HM @ DL
 
 beat b1 scene=1.2
-HAM -> C
+HM -> C
 """,
         encoding="utf-8",
     )
@@ -820,10 +820,10 @@ stage type=proscenium
 grid standard=9
 
 scene 1.2 snapshot
-HAM @ DL
+HM @ DL
 
 beat b1 scene=1.2
-HAM -> C
+HM -> C
 """,
         encoding="utf-8",
     )

@@ -84,7 +84,7 @@ HAMLET: Now might I do it pat— (_/action: crosses DL -> C_)
 or a target-specific variant:
 
 ```markdown
-HAMLET: Now might I do it pat— (_/HAM: crosses DL -> C_)
+HAMLET: Now might I do it pat— (_/HM: crosses DL -> C_)
 ```
 
 The final syntax should optimize for producer readability and editability, not for the starter-pack examples.

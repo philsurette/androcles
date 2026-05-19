@@ -33,7 +33,7 @@
 - **Set**: A reusable scenic setup for one or more scenes. Sets own levels, anchors, connectors, set pieces, and prop presets that may change between acts or scene groups.
 - **Scene snapshot**: An authoritative point-in-time initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`. It references one set and provides the known starting state for actors, props, and movable set pieces.
 - **Blocking beat**: An ordered group of blocking directions for a scene, written as `beat <beat_id> scene=<scene_id>`. Resolving a beat starts from the scene snapshot and applies all earlier beats for that scene up to the requested beat.
-- **Blocking direction**: A single actor, prop, or set-piece state change inside a scene snapshot or blocking beat, such as `HAM @ DL`, `HAM move DL -> C`, `OPH enter door_l -> DR`, or `sword remove`.
+- **Blocking direction**: A single actor, prop, or set-piece state change inside a scene snapshot or blocking beat, such as `HM @ DL`, `HM move DL -> C`, `OP enter door_l -> DR`, or `sword remove`.
 - **Point-in-time state**: The computed state after applying a scene snapshot and zero or more blocking beats. This is the model rendered to SVG.
 - **Diagram state**: The renderer-facing JSON contract compiled from a resolved point-in-time state. Python SVG export and future Cuemaster rendering should consume diagram state rather than authoring syntax or resolver internals.
 - **Blocking diagram**: The generated SVG rendering of a point-in-time state. It may be portrait or landscape.

@@ -51,7 +51,7 @@ It also enables checkpoint/delta packaging later, where Stager stores full diagr
 
 Cuemaster can keep one rendered diagram mounted and update changed entities:
 
-- move actor `HAM`
+- move actor `HM`
 - hide prop `sword`
 - update facing label
 - show offstage entry
@@ -89,19 +89,19 @@ That survives renderer refactors.
 Cuemaster should not parse authoring syntax such as:
 
 ```text
-HAM move DL -> C face=OPH
+HM move DL -> C face=OP
 ```
 
 It should receive already-resolved state:
 
 ```json
 {
-  "id": "actor:HAM",
+  "id": "actor:HM",
   "kind": "actor",
   "point": {"x": 0, "y": 12, "z": 0},
   "label": "HM",
   "title": "Hamlet",
-  "face": "OPH"
+  "face": "OP"
 }
 ```
 
@@ -165,15 +165,15 @@ Actors, props, set pieces, and possibly anchors should become render entities wi
 
 ```json
 {
-  "id": "actor:HAM",
-  "source_id": "HAM",
+  "id": "actor:HM",
+  "source_id": "HM",
   "kind": "actor",
   "layer": "actors",
   "point": {"x": -12, "y": 4, "z": 0},
   "source": "DL",
   "label": "HM",
   "title": "Hamlet",
-  "face": "CLA",
+  "face": "CD",
   "style": {"elevation": "deck"},
   "visible": true
 }
@@ -218,7 +218,7 @@ Set pieces:
 Some layout behavior should be compiled into diagram state so Python and Cuemaster renderers match:
 
 - icon ids
-- actor labels
+- actor display labels, normally derived from two-character actor ids
 - full titles
 - entity layers
 - elevation style bucket
@@ -260,7 +260,7 @@ Delta:
   "from_checkpoint": "scene:1.3:start",
   "target": "scene:1.3@b2",
   "ops": [
-    {"op": "upsert_entity", "entity": {"id": "actor:CLA", "point": {"x": 12, "y": 4, "z": 0}, "source": "DR"}},
+    {"op": "upsert_entity", "entity": {"id": "actor:CD", "point": {"x": 12, "y": 4, "z": 0}, "source": "DR"}},
     {"op": "set_visible", "id": "prop:sword", "visible": false}
   ]
 }
@@ -333,9 +333,9 @@ It may include:
 - [x] Convert `ResolvedSnapshot` into `DiagramState`.
 - [x] Preserve stage, scene, beat, and set identity.
 - [x] Convert areas, levels, anchors, connectors, set pieces, props, and actors into renderer-facing records.
-- [x] Assign stable entity ids such as `actor:HAM`, `prop:sword`, and `set_piece:table`.
+- [x] Assign stable entity ids such as `actor:HM`, `prop:sword`, and `set_piece:table`.
 - [x] Assign icon ids using `StageSvgIconLibrary.icon_id()`.
-- [x] Assign actor labels and titles.
+- [x] Assign actor display labels and titles.
 - [x] Assign elevation style buckets such as `deck`, `elevated`, and `below`.
 - [x] Move actor collision offsets from `StageSvgRenderer` into the builder.
 - [x] Move prop collision offsets and prop-on-set-piece slot indexes into the builder.
