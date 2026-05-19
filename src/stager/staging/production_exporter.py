@@ -53,7 +53,8 @@ class ProductionStagingExporter:
                 current_anchor = entry.production_id
             lines.extend(rendered)
 
-        return "\n".join(lines).strip() + "\n"
+        text = "\n".join(lines).strip()
+        return f"{text}\n" if text else ""
 
     def _is_scene_directive(self, text: str) -> bool:
         return text.startswith("scene ")

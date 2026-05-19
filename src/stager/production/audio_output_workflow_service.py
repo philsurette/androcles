@@ -22,6 +22,7 @@ from stager.production.production_status import ProductionStatus, ProductionStat
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared import paths
+from stager.staging.export_service import StagingExportService
 
 
 @dataclass(frozen=True)
@@ -112,10 +113,13 @@ class AudioOutputWorkflowService:
         audio_source: str = "auto",
         voice_profiles: bool = False,
         voice_actor: str | None = None,
+        staging: bool = True,
     ) -> OutputBuildResult:
         if audio_format not in ("wav", "mp3"):
             raise RuntimeError("audio-format must be one of: wav, mp3")
         self._validate_audio_source(audio_source)
+        if staging:
+            StagingExportService(paths_config=self.paths_config).export()
         installation = self.tool_checker.require_audio_tools() if audio_format == "mp3" or voice_profiles else None
         if voice_profiles:
             self._render_voice_profiles(actor=voice_actor, audio_source=audio_source, installation=installation)
@@ -150,10 +154,13 @@ class AudioOutputWorkflowService:
         voice_actor: str | None = None,
         normalize_output: bool = True,
         prepare: bool = True,
+        staging: bool = True,
     ) -> OutputBuildResult:
         if audio_format not in ("mp4", "mp3", "wav"):
             raise RuntimeError("audio-format must be one of: mp4, mp3, wav")
         self._validate_audio_source(audio_source)
+        if staging:
+            StagingExportService(paths_config=self.paths_config).export()
         installation = self.tool_checker.require_audio_tools()
         out_paths = tuple(
             AudioPlayBuildService(

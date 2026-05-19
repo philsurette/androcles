@@ -79,6 +79,7 @@ from stager.audio.voice_render_cache import VoiceRenderCache, VoiceRenderSegment
 from stager.shared.build_type_resolver import BuildTypeResolver
 from stager.shared.external_tool_checker import ExternalToolChecker
 from stager.shared.progress_reporter import ProgressReporter
+from stager.staging.export_service import StagingExportResult, StagingExportService
 from huggingface_hub.errors import LocalEntryNotFoundError
 
 from stager.audio.spacing import (
@@ -129,6 +130,11 @@ PRODUCTION_SOURCE_OPTION = typer.Option(
     "--publication-source",
     "-ps",
     help="Production source: auto, published, or working. Auto uses published when available.",
+)
+STAGING_OPTION = typer.Option(
+    True,
+    "--staging/--no-staging",
+    help="Export build/<play>/staging/staging.txt from production.md before building.",
 )
 MODEL_CHOICES = ("tiny", "base", "small", "med")
 MODEL_NAME_MAP = {
@@ -267,6 +273,18 @@ def load_production_play(paths_config: paths.PathConfig) -> Play:
     return ProductionPlayLoader(paths_config=paths_config).load()
 
 
+def run_staging_export(paths_config: paths.PathConfig | None = None) -> StagingExportResult:
+    cfg = paths_config or paths.current()
+    result = StagingExportService(paths_config=cfg).export()
+    if result.written:
+        logging.info("exported staging overlay to %s", paths.display_path(result.output_path))
+    elif result.removed_stale:
+        logging.info("removed stale staging overlay %s", paths.display_path(result.output_path))
+    else:
+        logging.info("no staging notes found in %s", paths.display_path(cfg.production_markdown))
+    return result
+
+
 def apply_production_source(paths_config: paths.PathConfig, production_source: str = "auto") -> paths.PathConfig:
     try:
         return ProductionSourceResolver(paths_config).apply_to(production_source)
@@ -319,6 +337,7 @@ def text(
     librivox: bool | None = typer.Option(None, "--librivox/--no-librivox", help="Override configured build type for announcer text"),
     production_source: str = PRODUCTION_SOURCE_OPTION,
     blocking: bool = typer.Option(False, "--blocking/--no-blocking", help="Include blocking notes in markdown artifacts"),
+    staging: bool = STAGING_OPTION,
 ) -> None:
     """Build markdown artifacts."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -326,7 +345,7 @@ def text(
     apply_production_source(cfg, production_source)
     if ctx.invoked_subcommand is None:
         build_type = BuildTypeResolver(paths_config=cfg, librivox_override=librivox).resolve()
-        run_text(paths_config=cfg, build_type=build_type, include_blocking=blocking)
+        run_text(paths_config=cfg, build_type=build_type, include_blocking=blocking, staging=staging)
 
 
 @text_app.command("write-play", hidden=True)
@@ -416,7 +435,7 @@ def verify(
     cfg = paths.PathConfig(play or paths.default_play_name())
     setup_logging(cfg)
     apply_production_source(cfg, production_source)
-    require_audio_tools()
+    ffmpeg_installation = require_audio_tools()
     _run_verify(too_short, too_long, paths_config=cfg)
 
 
@@ -886,6 +905,7 @@ def audioplay(
     voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
+    staging: bool = STAGING_OPTION,
 ) -> None:
     """Assemble final audio play output for a part or full play."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -923,6 +943,7 @@ def audioplay(
             ffmpeg_installation=ffmpeg_installation,
             paths_config=cfg,
             prepare=prepare,
+            staging=staging,
             progress_reporter=RichProgressReporter(progress),
         )
 
@@ -990,6 +1011,7 @@ def playbook(
     voice_actor: str | None = typer.Option(None, "--voice-actor", help="Select actor for voice-profile rendering"),
     play: str | None = PLAY_OPTION,
     production_source: str = PRODUCTION_SOURCE_OPTION,
+    staging: bool = STAGING_OPTION,
 ) -> None:
     """Build a Cuemaster Playbook manifest and package."""
     cfg = paths.PathConfig(play or paths.default_play_name())
@@ -1006,6 +1028,7 @@ def playbook(
                 voice_profiles=voice_profiles,
                 voice_actor=voice_actor,
                 ffmpeg_installation=ffmpeg_installation,
+                staging=staging,
                 progress_reporter=RichPlaybookProgressReporter(progress),
             )
         except RuntimeError as exc:
@@ -1498,8 +1521,11 @@ def run_text(
     paths_config: paths.PathConfig | None = None,
     build_type: str | None = None,
     include_blocking: bool = False,
+    staging: bool = False,
 ) -> None:
     cfg = paths_config or paths.current()
+    if staging:
+        run_staging_export(cfg)
     TextArtifactBuilder(paths=cfg).build_all(
         line_no_prefix=line_no_prefix,
         build_type=build_type,
@@ -1627,6 +1653,7 @@ def run_audioplay(
     voice_actor: str | None = None,
     ffmpeg_installation=None,
     paths_config: paths.PathConfig | None = None,
+    staging: bool = True,
     progress_reporter: ProgressReporter | None = None,
 ):
     if audio_format not in ("mp4", "mp3", "wav"):
@@ -1634,6 +1661,8 @@ def run_audioplay(
     if audio_source not in SUPPORTED_AUDIO_SOURCES:
         raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
     cfg = paths_config or paths.current()
+    if staging:
+        run_staging_export(cfg)
     return AudioPlayBuildService(
         paths=cfg,
         progress_reporter=progress_reporter,
@@ -1694,6 +1723,7 @@ def run_playbook(
     voice_profiles: bool = False,
     voice_actor: str | None = None,
     ffmpeg_installation=None,
+    staging: bool = True,
     progress_reporter: PlaybookProgressReporter | None = None,
 ) -> Path:
     if audio_format not in ("wav", "mp3"):
@@ -1701,6 +1731,8 @@ def run_playbook(
     if audio_source not in SUPPORTED_AUDIO_SOURCES:
         raise typer.BadParameter("audio-source must be one of: auto, canonical, cleaned")
     cfg = paths_config or paths.current()
+    if staging:
+        run_staging_export(cfg)
     effective_build_type = BuildTypeResolver(
         paths_config=cfg,
         explicit_build_type=build_type,

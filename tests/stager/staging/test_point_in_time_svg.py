@@ -6,12 +6,14 @@ from pathlib import Path
 
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
+from stager.staging.export_service import StagingExportService
 from stager.staging.production_exporter import ProductionStagingExporter
 from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
 from stager.scriptwright.production_script_parser import ProductionScriptParser
+from stager.shared import paths
 
 
 def render_svg(snapshot, orientation: str = "portrait") -> str:
@@ -47,6 +49,69 @@ def test_production_staging_exporter_writes_ordered_scene_sections_and_anchored_
     assert "scene 1.2 set=act1\nHM @ DL face=CD\nCD @ UC\nOP offstage via=door_l" in exported
     assert "b1 @ 1.2-2\nHM move DL -> C face=CD" in exported
     assert "b2 @ 1.2-3\nCD move UC -> DR" in exported
+
+
+def test_staging_export_service_writes_build_artifact(tmp_path: Path) -> None:
+    cfg = paths.PathConfig(
+        play_name="hamlet",
+        root=tmp_path / "src",
+        build_root=tmp_path / "build",
+        plays_dir=tmp_path / "plays",
+        snippets_dir=tmp_path / "snippets",
+    )
+    cfg.play_dir.mkdir(parents=True)
+    cfg.production_markdown.write_text(
+        """
+// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# 1-0 ACT I
+1.2-1 @description: A room.
+/*: stage type=proscenium
+/*: scene 1.2 set=act1
+/HM: @ DL
+1.2-2 HM: Speak.
+""",
+        encoding="utf-8",
+    )
+
+    result = StagingExportService(paths_config=cfg).export()
+
+    assert result.written is True
+    assert result.output_path == cfg.build_dir / "staging" / "staging.txt"
+    assert "scene 1.2 set=act1\nHM @ DL" in result.output_path.read_text(encoding="utf-8")
+
+
+def test_staging_export_service_removes_stale_artifact_when_no_staging_notes(tmp_path: Path) -> None:
+    cfg = paths.PathConfig(
+        play_name="hamlet",
+        root=tmp_path / "src",
+        build_root=tmp_path / "build",
+        plays_dir=tmp_path / "plays",
+        snippets_dir=tmp_path / "snippets",
+    )
+    cfg.play_dir.mkdir(parents=True)
+    stale_path = cfg.build_dir / "staging" / "staging.txt"
+    stale_path.parent.mkdir(parents=True)
+    stale_path.write_text("stale\n", encoding="utf-8")
+    cfg.production_markdown.write_text(
+        """
+// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# 1-0 ACT I
+1.2-1 HM: Speak.
+""",
+        encoding="utf-8",
+    )
+
+    result = StagingExportService(paths_config=cfg).export()
+
+    assert result.written is False
+    assert result.removed_stale is True
+    assert not stale_path.exists()
 
 
 def test_parser_accepts_text_only_stage_and_scene_snapshot() -> None:

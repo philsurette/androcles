@@ -1,58 +1,69 @@
-# Sample Production with Embedded Staging
+# Sample Production With Embedded Staging
 
-[[layout id=main-stage units=ft]]
-stage type=proscenium width=36 depth=24 audience=south
-grid standard=9
+```markdown
+// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
 
-actor HM name=Hamlet
-actor CD name=Claudius
+# 1-0 ACT I
 
-setup act1
-level deck z=0
-level bridge at=UC size=(18,4) z=8
+## 1.2-0 SCENE 1.2
 
-anchor door_l kind=exit at=(-18,20,0)
-anchor door_r kind=exit at=(18,20,0)
-anchor vom_dr kind=entrance at=(18,3,0)
-anchor deck_l at=CL
-anchor bridge_l at=(-10,20,8)
-anchor trap_c kind=trap at=(0,12,0) size=(4,4)
-stair stair_l from=deck_l to=bridge_l
+1.2-1 @description: A room in the castle.
+/*: stage type=proscenium width=36 depth=24 units=ft
+/*: grid standard=9
+/*: actor HM name=Hamlet
+/*: actor CD name=Claudius
+/*: actor OP name=Ophelia
+/*: setup act1
+/*: level balcony at=UC size=(18,4) z=8
+/*: anchor door_l = UL
+/*: anchor door_r = UR
+/*: anchor deck_l at=CL
+/*: anchor balcony_l at=(-8,20,8)
+/*: stair stair_l from=deck_l to=balcony_l
+/*: piece table kind=table at=C size=(5,3)
+/*: scene 1.2 set=act1
+/HM: @ DL face=CD
+/CD: @ UC
+/OP: offstage via=door_l
+/*: sword @ table
 
-piece table kind=table at=C size=(5,3) fixed=true
-piece throne kind=chair at=UC size=(4,4) fixed=true
+1.2-2 HM: I will watch from below.
 
-prop letter preset=table
-prop sword preset=throne
-[[/layout]]
+## 1.3-0 SCENE 1.3
 
-[[cues]]
-LX.12 type=lighting label="Special on Hamlet" focus=C fade=1.5
-LX.13 type=lighting label="Widen to throne" focus=[C,UC] fade=2.0
-SND.04 type=sound label="Distant bell"
-Q.17 type=group cues=[LX.13,SND.04] label="Revelation cue"
-[[/cues]]
+1.3-1 @description: The balcony is revealed.
+/*: scene 1.3 set=act1
+/HM: @ balcony_l face=CD
+/CD: @ DC
+/OP: @ deck_l face=HM
+/*: sword @ table
 
-## Act 1, Scene 2
+/HM: move balcony_l -> UC face=OP
+/OP: move deck_l -> C face=HM
 
-HAMLET
-Now might I do it pat—
+1.3-2 HM: I will speak with her.
+/CD: move DC -> DR
+/*: sword remove
 
-[[blocking beat=b3 scene=1.2 set=act1 line=HM-121]]
-HM @ DL face=CD
-CD @ UC
-HM move DL -> C dur=2.5 curve=arc
-HM face CD
-cue LX.12 at=HM.arrive(C)
-[[/blocking]]
+1.3-3 CD: I will go.
+```
 
-CLAUDIUS
-A brother's murder—
+The exported overlay groups scene initialization under `scene <id> set=<set_id>` and turns line-local blocking changes into ordered beats anchored to production ids:
 
-[[blocking beat=b4 scene=1.2 set=act1 line=CD-122]]
-HM gesture point target=CD hand=R
-HM move C -> table dur=1.5
-HM pickup sword from=table
-CD stand dur=1.0
-cue Q.17 at=CD.stand
-[[/blocking]]
+```text
+scene 1.3 set=act1
+HM @ balcony_l face=CD
+CD @ DC
+OP @ deck_l face=HM
+sword @ table
+
+b1 @ 1.3-2
+HM move balcony_l -> UC face=OP
+OP move deck_l -> C face=HM
+
+b2 @ 1.3-3
+CD move DC -> DR
+sword remove
+```

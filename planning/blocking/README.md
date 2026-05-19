@@ -53,6 +53,17 @@ Example stage-only command:
 ./block stage build/hamlet/staging/staging.txt
 ```
 
+Normal Stager and Quince build commands export the staging overlay automatically before building:
+
+```sh
+./main text
+./main playbook
+quince build-playbook
+quince build-audioplay
+```
+
+Use `--no-staging` on those build commands when you intentionally want to skip this generated artifact. The standalone `./block export` command remains useful when you only want to refresh diagrams without running a larger build.
+
 Example set-only command:
 
 ```sh
@@ -80,7 +91,7 @@ Transitional point-in-time render alias:
   --beat b2
 ```
 
-When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first to build that artifact from `production.md`.
+When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first if no build command has refreshed that artifact yet.
 
 From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 

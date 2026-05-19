@@ -349,6 +349,7 @@ def test_quince_build_playbook_reports_output_path(tmp_path: Path, monkeypatch) 
 
         def build_playbook(self, **kwargs):
             assert kwargs["audio_format"] == "wav"
+            assert kwargs["staging"] is True
             return SimpleNamespace(
                 paths=(cfg.build_dir / "androcles.playbook.zip",),
                 production_version="1@test",
@@ -363,6 +364,33 @@ def test_quince_build_playbook_reports_output_path(tmp_path: Path, monkeypatch) 
     assert result.exit_code == 0
     assert "Built Playbook from published source." in result.output
     assert "build/androcles/androcles.playbook.zip" in result.output
+
+
+def test_quince_build_playbook_can_skip_staging_export(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    ProductionPublisher(paths_config=cfg).publish(change_summary="Initial.")
+    monkeypatch.chdir(cfg.play_dir)
+
+    class FakeAudioOutputWorkflowService:
+        def __init__(self, *, paths_config, play):
+            self.paths_config = paths_config
+            self.play = play
+
+        def build_playbook(self, **kwargs):
+            assert kwargs["staging"] is False
+            return SimpleNamespace(
+                paths=(cfg.build_dir / "androcles.playbook.zip",),
+                production_version="1@test",
+                production_source="published",
+                audio_source=kwargs["audio_source"],
+            )
+
+    monkeypatch.setattr("stager.cli.quince.AudioOutputWorkflowService", FakeAudioOutputWorkflowService)
+
+    result = CliRunner().invoke(app, ["build-playbook", "--no-staging"])
+
+    assert result.exit_code == 0
+    assert "Built Playbook from published source." in result.output
 
 
 def test_quince_build_audioplay_reports_output_path(tmp_path: Path, monkeypatch) -> None:

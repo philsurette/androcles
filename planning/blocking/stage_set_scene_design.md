@@ -207,13 +207,15 @@ The Block CLI should expose the three layers directly:
 ./block beat 1.3 b2 build/hamlet/staging/staging.txt
 ```
 
-When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first to build that artifact from `production.md`.
+When run from a play folder, render commands default to `build/<play_id>/staging/staging.txt`; run `./block export` first if no build command has refreshed that artifact yet.
 
 From a play folder, the same commands can be shortened to `./block set act1`, `./block scene 1.2`, and `./block beat 1.3 b2`.
 
 For inputs under `plays/<play_id>/` or `build/<play_id>/staging/`, output defaults to `build/<play_id>/staging/`.
 
 `block render` can remain as a temporary developer alias during the transition, but the clearer producer-facing command names should be `stage`, `set`, `scene`, and `beat`.
+
+Stager and Quince build commands should refresh `build/<play_id>/staging/staging.txt` automatically from the selected `production.md` before building. Producer-facing build commands should expose `--staging/--no-staging`; the default is `--staging`. Manual `./block export` remains the narrow command for refreshing only the staging overlay.
 
 Expected render contents:
 
