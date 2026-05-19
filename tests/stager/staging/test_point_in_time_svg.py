@@ -171,6 +171,50 @@ table @ DL
     assert svg.index('<g class="layer-scenery">') < svg.index('href="#stage-icon-table"') < svg.index('<g class="layer-props">')
 
 
+def test_svg_renderer_defaults_to_portrait_with_downstage_on_right() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+
+scene 1.2 snapshot
+HAM @ DL
+"""
+    )
+    snapshot = StagingResolver().resolve_snapshot(document, "1.2")
+
+    svg = StageSvgRenderer().render(snapshot)
+
+    assert '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1260"' in svg
+    match = re.search(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
+    assert match is not None
+    assert float(match.group(1)) > 450
+    assert float(match.group(2)) < 300
+
+
+def test_svg_renderer_supports_landscape_orientation() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor HAM label=HM name=Hamlet
+
+scene 1.2 snapshot
+HAM @ DL
+"""
+    )
+    snapshot = StagingResolver().resolve_snapshot(document, "1.2")
+
+    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+
+    assert '<svg xmlns="http://www.w3.org/2000/svg" width="940" height="506"' in svg
+    match = re.search(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
+    assert match is not None
+    assert float(match.group(1)) < 250
+    assert float(match.group(2)) > 350
+
+
 def test_svg_icon_library_contains_stage_object_icons() -> None:
     icons = StageSvgIconLibrary()
     expected_icons = [
@@ -298,6 +342,8 @@ OPH offstage via=door_l
             str(svg_path),
             "--json-out",
             str(json_path),
+            "--orientation",
+            "landscape",
         ]
         main()
     finally:

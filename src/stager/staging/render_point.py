@@ -15,12 +15,18 @@ def main() -> None:
     parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
     parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
     parser.add_argument("--json-out", type=Path, help="Optional normalized JSON output path")
+    parser.add_argument(
+        "--orientation",
+        choices=("portrait", "landscape"),
+        default="portrait",
+        help="SVG orientation. Portrait puts downstage to the right and is the default.",
+    )
     args = parser.parse_args()
 
     document = StagingParser().parse(args.input.read_text(encoding="utf-8"))
     snapshot = StagingResolver().resolve_snapshot(document, args.scene)
     args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(StageSvgRenderer().render(snapshot), encoding="utf-8")
+    args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(snapshot), encoding="utf-8")
     if args.json_out is not None:
         args.json_out.parent.mkdir(parents=True, exist_ok=True)
         args.json_out.write_text(json.dumps(snapshot.to_dict(), indent=2) + "\n", encoding="utf-8")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 from xml.sax.saxutils import escape
 
 from stager.staging.model import Point3D, ResolvedPlacement, ResolvedSnapshot
@@ -12,18 +13,29 @@ class StageSvgRenderer:
     stage_width_px: int = 720
     margin_px: int = 40
     side_panel_px: int = 220
+    orientation: Literal["portrait", "landscape"] = "portrait"
     icons: StageSvgIconLibrary = field(default_factory=StageSvgIconLibrary)
 
     def render(self, snapshot: ResolvedSnapshot) -> str:
         stage = snapshot.stage
-        scale = (self.stage_width_px - 2 * self.margin_px) / stage.width
-        stage_height_px = int(stage.depth * scale + 2 * self.margin_px)
-        total_width = self.stage_width_px + self.side_panel_px
+        scale = self._scale(stage.width, stage.depth)
+        stage_draw_width, stage_draw_height = self._stage_draw_size(stage.width, stage.depth, scale)
+        stage_height_px = int(stage_draw_height + 2 * self.margin_px)
+        if self.orientation == "portrait":
+            total_width = int(stage_draw_width + 2 * self.margin_px)
+            total_height = stage_height_px + self.side_panel_px
+            side_panel_x = self.margin_px
+            side_panel_y = stage_height_px + 28
+        else:
+            total_width = int(stage_draw_width + 2 * self.margin_px + self.side_panel_px)
+            total_height = stage_height_px
+            side_panel_x = int(stage_draw_width + 2 * self.margin_px + 20)
+            side_panel_y = 30
         lines = [
             '<?xml version="1.0" encoding="UTF-8"?>',
             (
-                f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{stage_height_px}" '
-                f'viewBox="0 0 {total_width} {stage_height_px}" role="img">'
+                f'<svg xmlns="http://www.w3.org/2000/svg" width="{total_width}" height="{total_height}" '
+                f'viewBox="0 0 {total_width} {total_height}" role="img">'
             ),
             "<style>",
             ".stage-boundary{fill:#fafafa;stroke:#222;stroke-width:2}",
@@ -42,7 +54,7 @@ class StageSvgRenderer:
             "</style>",
             *self.icons.defs(),
             f'<rect class="stage-boundary" x="{self.margin_px}" y="{self.margin_px}" '
-            f'width="{stage.width * scale:g}" height="{stage.depth * scale:g}"/>',
+            f'width="{stage_draw_width:g}" height="{stage_draw_height:g}"/>',
         ]
         lines.append('<g class="layer-grid">')
         lines.extend(self._grid_lines(stage.width, stage.depth, scale))
@@ -59,31 +71,33 @@ class StageSvgRenderer:
         lines.append('<g class="layer-actors">')
         lines.extend(self._placements(snapshot, scale))
         lines.append("</g>")
-        lines.extend(self._side_panel(snapshot, self.stage_width_px + 20, 30))
+        lines.extend(self._side_panel(snapshot, side_panel_x, side_panel_y))
         lines.append("</svg>")
         return "\n".join(lines) + "\n"
 
     def _grid_lines(self, width: float, depth: float, scale: float) -> list[str]:
         lines = []
         for x in (-width / 6, width / 6):
-            sx, _ = self._project(Point3D(x, 0), width, depth, scale)
-            lines.append(f'<line class="grid-line" x1="{sx:g}" y1="{self.margin_px:g}" x2="{sx:g}" y2="{self.margin_px + depth * scale:g}"/>')
+            x1, y1 = self._project(Point3D(x, 0), width, depth, scale)
+            x2, y2 = self._project(Point3D(x, depth), width, depth, scale)
+            lines.append(f'<line class="grid-line" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}"/>')
         for y in (depth / 3, depth * 2 / 3):
-            _, sy = self._project(Point3D(0, y), width, depth, scale)
-            lines.append(f'<line class="grid-line" x1="{self.margin_px:g}" y1="{sy:g}" x2="{self.margin_px + width * scale:g}" y2="{sy:g}"/>')
+            x1, y1 = self._project(Point3D(-width / 2, y), width, depth, scale)
+            x2, y2 = self._project(Point3D(width / 2, y), width, depth, scale)
+            lines.append(f'<line class="grid-line" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}"/>')
         return lines
 
     def _area_labels(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
         lines = []
         for area_id, area in sorted(snapshot.areas.items()):
-            top_left = Point3D(
-                area.center.x - area.width / 2,
-                area.center.y + area.depth / 2,
-                area.center.z,
-            )
-            x, y = self._project(top_left, snapshot.stage.width, snapshot.stage.depth, scale)
-            x += 5
-            y += 15
+            corners = [
+                self._project(Point3D(area.center.x - area.width / 2, area.center.y - area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
+                self._project(Point3D(area.center.x - area.width / 2, area.center.y + area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
+                self._project(Point3D(area.center.x + area.width / 2, area.center.y - area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
+                self._project(Point3D(area.center.x + area.width / 2, area.center.y + area.depth / 2), snapshot.stage.width, snapshot.stage.depth, scale),
+            ]
+            x = min(corner[0] for corner in corners) + 5
+            y = min(corner[1] for corner in corners) + 15
             lines.append(f'<text class="area-label" x="{x:g}" y="{y:g}">{escape(area_id)}</text>')
         return lines
 
@@ -112,9 +126,10 @@ class StageSvgRenderer:
                 continue
             x, y = self._project(set_piece.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
             width, depth = set_piece.size or (3.0, 2.0)
+            footprint_width, footprint_height = self._footprint_size(width, depth, scale)
             lines.append(
-                f'<rect class="set-piece-footprint" x="{x - width * scale / 2:g}" y="{y - depth * scale / 2:g}" '
-                f'width="{width * scale:g}" height="{depth * scale:g}" rx="2"/>'
+                f'<rect class="set-piece-footprint" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
+                f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2"/>'
             )
             icon_id = self._set_piece_icon_id(set_id, set_piece.kind)
             lines.append(self._icon_use(icon_id, "icon-set-piece", x, y, 32, title=set_id))
@@ -207,8 +222,9 @@ class StageSvgRenderer:
         set_piece = snapshot.set_pieces[placement.source]
         center_x, center_y = self._project(placement.point, snapshot.stage.width, snapshot.stage.depth, scale)
         width, depth = set_piece.size or (3.0, 2.0)
-        half_width = width * scale / 2
-        half_depth = depth * scale / 2
+        footprint_width, footprint_height = self._footprint_size(width, depth, scale)
+        half_width = footprint_width / 2
+        half_depth = footprint_height / 2
         columns = (-0.28, 0.0, 0.28)
         rows = (-0.24, 0.08, 0.34)
         icon_x = center_x + half_width * columns[slot_index % len(columns)]
@@ -251,10 +267,29 @@ class StageSvgRenderer:
         return lines
 
     def _project(self, point: Point3D, stage_width: float, stage_depth: float, scale: float) -> tuple[float, float]:
+        if self.orientation == "portrait":
+            return (
+                self.margin_px + (stage_depth - point.y) * scale,
+                self.margin_px + (point.x + stage_width / 2) * scale,
+            )
         return (
             self.margin_px + (point.x + stage_width / 2) * scale,
             self.margin_px + (stage_depth - point.y) * scale,
         )
+
+    def _scale(self, stage_width: float, stage_depth: float) -> float:
+        stage_screen_width = stage_depth if self.orientation == "portrait" else stage_width
+        return (self.stage_width_px - 2 * self.margin_px) / stage_screen_width
+
+    def _stage_draw_size(self, stage_width: float, stage_depth: float, scale: float) -> tuple[float, float]:
+        if self.orientation == "portrait":
+            return (stage_depth * scale, stage_width * scale)
+        return (stage_width * scale, stage_depth * scale)
+
+    def _footprint_size(self, stage_width: float, stage_depth: float, scale: float) -> tuple[float, float]:
+        if self.orientation == "portrait":
+            return (stage_depth * scale, stage_width * scale)
+        return (stage_width * scale, stage_depth * scale)
 
     def _icon_use(self, icon_id: str, class_name: str, x: float, y: float, size: int, *, title: str | None = None) -> str:
         offset = size / 2
