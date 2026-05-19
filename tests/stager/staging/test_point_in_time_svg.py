@@ -526,7 +526,7 @@ def test_render_icon_library_cli_writes_svg(tmp_path: Path) -> None:
 
 
 def test_render_point_cli_writes_svg_and_json(tmp_path: Path) -> None:
-    source = tmp_path / "stage.txt"
+    source = tmp_path / "staging.txt"
     svg_path = tmp_path / "stage.svg"
     json_path = tmp_path / "stage.json"
     source.write_text(
@@ -569,7 +569,7 @@ OPH offstage via=door_l
 
 
 def test_render_point_cli_writes_beat_state(tmp_path: Path) -> None:
-    source = tmp_path / "stage.txt"
+    source = tmp_path / "staging.txt"
     svg_path = tmp_path / "stage.svg"
     json_path = tmp_path / "stage.json"
     source.write_text(
@@ -617,7 +617,7 @@ HAM -> C
 
 
 def test_block_cli_renders_beat_state_and_icons(tmp_path: Path) -> None:
-    source = tmp_path / "stage.txt"
+    source = tmp_path / "staging.txt"
     svg_path = tmp_path / "stage.svg"
     scene_svg_path = tmp_path / "scene.svg"
     beat_svg_path = tmp_path / "beat.svg"
@@ -688,7 +688,7 @@ HAM -> C
 
 
 def test_block_cli_renders_stage_only_diagram(tmp_path: Path) -> None:
-    source = tmp_path / "stage.txt"
+    source = tmp_path / "staging.txt"
     svg_path = tmp_path / "stage.svg"
     set_svg_path = tmp_path / "set.svg"
     json_path = tmp_path / "stage.json"
@@ -759,3 +759,62 @@ HAM @ DL
     assert ">HAM</text>" not in set_svg
     assert set_data["set_id"] == "act1"
     assert any(level["id"] == "balcony" for level in set_data["levels"])
+
+
+def test_block_cli_uses_default_inputs_and_outputs_under_play_build_folder(tmp_path: Path, monkeypatch) -> None:
+    play_dir = tmp_path / "plays" / "hamlet"
+    play_dir.mkdir(parents=True)
+    source = play_dir / "staging.txt"
+    source.write_text(
+        """
+stage type=proscenium
+grid standard=9
+setup act1
+piece table kind=table at=C size=(5,3)
+
+scene 1.2 set=act1 snapshot
+HAM @ DL
+
+beat b1 scene=1.2
+HAM -> C
+""",
+        encoding="utf-8",
+    )
+
+    from stager.staging.block import main
+    import sys
+
+    monkeypatch.chdir(play_dir)
+    original_argv = sys.argv
+    try:
+        sys.argv = ["block", "stage"]
+        main()
+        sys.argv = ["block", "set", "--set", "act1"]
+        main()
+        sys.argv = ["block", "scene", "--scene", "1.2"]
+        main()
+        sys.argv = ["block", "beat", "--scene", "1.2", "--beat", "b1"]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    output_dir = tmp_path / "build" / "hamlet" / "staging"
+    assert (output_dir / "stage.svg").exists()
+    assert (output_dir / "set-act1.svg").exists()
+    assert (output_dir / "scene-1.2.svg").exists()
+    assert (output_dir / "scene-1.2-b1.svg").exists()
+
+
+def test_block_cli_icons_uses_default_output() -> None:
+    from stager.staging.block import REPO_ROOT, main
+    import sys
+
+    output_path = REPO_ROOT / "build" / "staging" / "block-icon-library.svg"
+    original_argv = sys.argv
+    try:
+        sys.argv = ["block", "icons"]
+        main()
+    finally:
+        sys.argv = original_argv
+
+    assert '<symbol id="stage-icon-table"' in output_path.read_text(encoding="utf-8")

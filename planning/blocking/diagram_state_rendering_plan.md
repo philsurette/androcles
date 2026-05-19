@@ -9,7 +9,7 @@ The current Python renderer goes directly from `ResolvedSnapshot` to SVG. That i
 The next architecture should be:
 
 ```text
-stage file / production.md blocking
+staging file / production.md blocking
   -> parsed staging model
   -> resolved stage/set/scene/beat state
   -> diagram state JSON
@@ -363,7 +363,7 @@ It may include:
 ### Phase 5 — Tests And Fixtures
 
 - [x] Add unit tests for `DiagramStateBuilder`.
-- [x] Add golden JSON coverage for `plays/hamlet/stage.txt --scene 1.3 --beat b2` through regenerated CLI output.
+- [x] Add golden JSON coverage for `plays/hamlet/staging.txt --scene 1.3 --beat b2` through regenerated CLI output.
 - [x] Assert generated JSON includes `format`, `format_version`, `diagram_kind`, `set_id`, stage dimensions, and stable entity ids.
 - [x] Assert stage-only diagram state excludes set-specific scenery.
 - [x] Assert set-only diagram state excludes actor placements.

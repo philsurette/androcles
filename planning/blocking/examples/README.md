@@ -17,8 +17,7 @@ Default portrait output, suitable for mobile viewing:
 ```sh
 ./block scene \
   planning/blocking/examples/text-only-stage.txt \
-  --scene 1.2 \
-  --out /tmp/text-only-stage.svg
+  --scene 1.2
 ```
 
 Landscape output:
@@ -27,16 +26,13 @@ Landscape output:
 ./block scene \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
-  --out /tmp/multi-level-stage-landscape.svg \
   --orientation landscape
 ```
 
 Stage-only output:
 
 ```sh
-./block stage \
-  planning/blocking/examples/multi-level-stage.txt \
-  --out /tmp/multi-level-stage.svg
+./block stage planning/blocking/examples/multi-level-stage.txt
 ```
 
 Set-only output:
@@ -44,8 +40,7 @@ Set-only output:
 ```sh
 ./block set \
   planning/blocking/examples/multi-level-stage.txt \
-  --set act1 \
-  --out /tmp/multi-level-stage-set.svg
+  --set act1
 ```
 
 Dimensions are optional. If a stage omits `width` and `depth`, the renderer uses a deterministic default proscenium stage so producers can start with rough named locations and add precision later.
@@ -58,6 +53,5 @@ For staged progression inside a scene, use ordered `beat` blocks. Rendering with
 ./block beat \
   planning/blocking/examples/multi-level-stage.txt \
   --scene 1.3 \
-  --beat b2 \
-  --out /tmp/multi-level-stage-b2.svg
+  --beat b2
 ```

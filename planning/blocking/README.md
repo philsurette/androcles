@@ -37,7 +37,7 @@ Implementation should remove or replace the current blocking-note parser, public
 ## Current Terminology
 
 - **Block CLI**: standalone command surface for staging/blocking workflows, available as `./block`.
-- **Stage file**: standalone input file containing stage geometry, reusable sets, scene snapshots, and optional blocking beats.
+- **Staging file**: standalone input file containing stage geometry, reusable sets, scene snapshots, and optional blocking beats. The default filename is `staging.txt`.
 - **Stage**: invariant physical playing space: type, dimensions, units, orientation, coordinate system, and generated grid.
 - **Set**: reusable scenic setup for one or more scenes. A set owns levels, anchors, connectors, set pieces, and prop presets.
 - **Scene snapshot**: authoritative initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`.
@@ -49,48 +49,46 @@ Implementation should remove or replace the current blocking-note parser, public
 Example stage-only command:
 
 ```sh
-./block stage \
-  plays/hamlet/stage.txt \
-  --out build/hamlet/staging/stage.svg
+./block stage plays/hamlet/staging.txt
 ```
 
 Example set-only command:
 
 ```sh
 ./block set \
-  plays/hamlet/stage.txt \
-  --set act1 \
-  --out build/hamlet/staging/set-act1.svg
+  plays/hamlet/staging.txt \
+  --set act1
 ```
 
 Example scene snapshot command:
 
 ```sh
 ./block scene \
-  plays/hamlet/stage.txt \
-  --scene 1.2 \
-  --out build/hamlet/staging/scene-1.2.svg
+  plays/hamlet/staging.txt \
+  --scene 1.2
 ```
 
 Example beat command:
 
 ```sh
 ./block beat \
-  plays/hamlet/stage.txt \
+  plays/hamlet/staging.txt \
   --scene 1.3 \
-  --beat b2 \
-  --out build/hamlet/staging/scene-1.3-b2.svg
+  --beat b2
 ```
 
 Transitional point-in-time render alias:
 
 ```sh
 ./block render \
-  plays/hamlet/stage.txt \
+  plays/hamlet/staging.txt \
   --scene 1.3 \
-  --beat b2 \
-  --out build/hamlet/staging/scene-1.3-b2.svg
+  --beat b2
 ```
+
+When run from a play folder, the input defaults to `staging.txt`.
+
+When the input is under `plays/<play_id>/`, `--out` defaults to `build/<play_id>/staging/`.
 
 ## Design stance
 

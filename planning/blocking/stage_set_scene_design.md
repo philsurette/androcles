@@ -14,7 +14,7 @@ The staging model should therefore separate:
 
 ## Terminology
 
-- **Stage file**: the standalone authoring file consumed by the Block CLI. The filename may stay `stage.txt` during the prototype even though the file contains stage, set, scene, and beat records.
+- **Staging file**: the standalone authoring file consumed by the Block CLI. The default filename is `staging.txt` because the file contains stage, set, scene, and beat records.
 - **Stage**: invariant venue/play-space geometry. In v0.1 this means type, dimensions, units, coordinate system, audience orientation, and generated standard grid.
 - **Set**: a named scenic setup used by one or more scenes. A set owns levels, anchors, connectors, structural scenic elements, set pieces, and prop presets.
 - **Scene snapshot**: the authoritative initial state for a scene. It references exactly one set and places actors, props, and movable set pieces for that scene.
@@ -196,22 +196,22 @@ SceneSnapshot
 The Block CLI should expose the three layers directly:
 
 ```sh
-./block stage plays/hamlet/stage.txt \
-  --out build/hamlet/staging/stage.svg
+./block stage plays/hamlet/staging.txt
 
-./block set plays/hamlet/stage.txt \
-  --set act1 \
-  --out build/hamlet/staging/set-act1.svg
+./block set plays/hamlet/staging.txt \
+  --set act1
 
-./block scene plays/hamlet/stage.txt \
-  --scene 1.2 \
-  --out build/hamlet/staging/scene-1.2.svg
+./block scene plays/hamlet/staging.txt \
+  --scene 1.2
 
-./block beat plays/hamlet/stage.txt \
+./block beat plays/hamlet/staging.txt \
   --scene 1.3 \
-  --beat b2 \
-  --out build/hamlet/staging/scene-1.3-b2.svg
+  --beat b2
 ```
+
+When run from a play folder, the input defaults to `staging.txt`.
+
+For inputs under `plays/<play_id>/`, output defaults to `build/<play_id>/staging/`.
 
 `block render` can remain as a temporary developer alias during the transition, but the clearer producer-facing command names should be `stage`, `set`, `scene`, and `beat`.
 

@@ -99,7 +99,7 @@ Suggested standalone command during the spike:
 
 ```sh
 ./block scene \
-  path/to/stage.txt \
+  path/to/staging.txt \
   --scene 1.2 \
   --out /tmp/stage.svg
 ```
@@ -108,7 +108,7 @@ Landscape output:
 
 ```sh
 ./block scene \
-  path/to/stage.txt \
+  path/to/staging.txt \
   --scene 1.2 \
   --out /tmp/stage-landscape.svg \
   --orientation landscape

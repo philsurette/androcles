@@ -28,7 +28,7 @@
 ## Staging And Blocking Terms
 
 - **Block CLI**: The standalone staging/blocking command surface, available as `./block`. Keep it decoupled from the main Stager build CLI while this feature is still stabilizing.
-- **Stage file**: A standalone text file that describes stage geometry, reusable sets, scene snapshots, and optional blocking beats.
+- **Staging file**: A standalone text file that describes stage geometry, reusable sets, scene snapshots, and optional blocking beats. The default filename is `staging.txt`.
 - **Stage**: The invariant physical performance space: type, dimensions, units, coordinate system, audience orientation, and generated standard grid.
 - **Set**: A reusable scenic setup for one or more scenes. Sets own levels, anchors, connectors, set pieces, and prop presets that may change between acts or scene groups.
 - **Scene snapshot**: An authoritative point-in-time initialization for a scene, written as `scene <scene_id> set=<set_id> snapshot`. It references one set and provides the known starting state for actors, props, and movable set pieces.
@@ -51,6 +51,6 @@
 - Use **manifest** for the JSON contract inside a Playbook.
 - Use **Recording Request** for Stager- or Cuemaster-to-LineRecorder work orders and **recording package** for LineRecorder-to-Stager audio exports.
 - Keep **line** as actor-facing UI language; use **segment** for manifest fields, filenames, Stager IDs, and implementation details.
-- Use **stage file** for standalone blocking input files, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, **diagram state** for renderer-facing JSON, and **blocking diagram** for rendered SVG output.
+- Use **staging file** for standalone blocking input files, **stage** for invariant geometry, **set** for reusable scenic setup, **scene snapshot** for scene initialization, **blocking beat** for ordered changes, **diagram state** for renderer-facing JSON, and **blocking diagram** for rendered SVG output.
 - Treat Playbooks as strict artifacts: required cue and response audio must exist for every rehearsable non-meta role line.
 - Keep `Androcles` only when referring to the sample/source play, not the tool.

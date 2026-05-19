@@ -4,6 +4,7 @@ import argparse
 import json
 from dataclasses import dataclass
 from pathlib import Path
+import re
 
 from stager.staging.diagram_state_builder import DiagramStateBuilder
 from stager.staging.parser import StagingParser
@@ -11,6 +12,10 @@ from stager.staging.resolver import StagingResolver
 from stager.staging.state_resolver import StagingStateResolver
 from stager.staging.svg_icons import StageSvgIconLibrary
 from stager.staging.svg_renderer import StageSvgRenderer
+
+
+REPO_ROOT = Path(__file__).resolve().parents[3]
+DEFAULT_STAGING_FILE = Path("staging.txt")
 
 
 @dataclass
@@ -32,8 +37,14 @@ class BlockCli:
 
     def _add_stage_command(self, subparsers) -> None:
         parser = subparsers.add_parser("stage", help="Render a stage-only diagram.")
-        parser.add_argument("input", type=Path, help="Blocking file / stage file")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument(
+            "input",
+            type=Path,
+            nargs="?",
+            default=DEFAULT_STAGING_FILE,
+            help="Staging file. Defaults to staging.txt.",
+        )
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/stage.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
@@ -45,10 +56,16 @@ class BlockCli:
 
     def _add_render_command(self, subparsers) -> None:
         parser = subparsers.add_parser("render", help="Render a scene or beat diagram. Transitional alias for scene/beat.")
-        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument(
+            "input",
+            type=Path,
+            nargs="?",
+            default=DEFAULT_STAGING_FILE,
+            help="Staging file. Defaults to staging.txt.",
+        )
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", help="Optional blocking beat id to apply up to")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>[-<beat>].svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
@@ -60,9 +77,15 @@ class BlockCli:
 
     def _add_set_command(self, subparsers) -> None:
         parser = subparsers.add_parser("set", help="Render a set-only diagram.")
-        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument(
+            "input",
+            type=Path,
+            nargs="?",
+            default=DEFAULT_STAGING_FILE,
+            help="Staging file. Defaults to staging.txt.",
+        )
         parser.add_argument("--set", required=True, dest="set_id", help="Set/setup id to render")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/set-<set>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
@@ -74,9 +97,15 @@ class BlockCli:
 
     def _add_scene_command(self, subparsers) -> None:
         parser = subparsers.add_parser("scene", help="Render a scene snapshot diagram.")
-        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument(
+            "input",
+            type=Path,
+            nargs="?",
+            default=DEFAULT_STAGING_FILE,
+            help="Staging file. Defaults to staging.txt.",
+        )
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
@@ -88,10 +117,16 @@ class BlockCli:
 
     def _add_beat_command(self, subparsers) -> None:
         parser = subparsers.add_parser("beat", help="Render a point-in-time beat diagram.")
-        parser.add_argument("input", type=Path, help="Blocking file / stage file")
+        parser.add_argument(
+            "input",
+            type=Path,
+            nargs="?",
+            default=DEFAULT_STAGING_FILE,
+            help="Staging file. Defaults to staging.txt.",
+        )
         parser.add_argument("--scene", required=True, help="Scene snapshot id to render")
         parser.add_argument("--beat", required=True, help="Blocking beat id to apply up to")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/<play>/staging/scene-<scene>-<beat>.svg.")
         parser.add_argument("--json-out", type=Path, help="Optional diagram-state JSON output path")
         parser.add_argument(
             "--orientation",
@@ -103,7 +138,7 @@ class BlockCli:
 
     def _add_icons_command(self, subparsers) -> None:
         parser = subparsers.add_parser("icons", help="Render a browsable SVG icon catalog.")
-        parser.add_argument("--out", type=Path, required=True, help="Output SVG path")
+        parser.add_argument("--out", type=Path, help="Output SVG path. Defaults to build/staging/block-icon-library.svg.")
         parser.set_defaults(handler=self._icons)
 
     def _render(self, args) -> None:
@@ -136,20 +171,48 @@ class BlockCli:
 
     def _write_snapshot(self, args, snapshot) -> None:
         diagram = DiagramStateBuilder().build(snapshot)
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(StageSvgRenderer(orientation=args.orientation).render(diagram), encoding="utf-8")
+        output_path = args.out or self._default_diagram_output(args.input, diagram)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(StageSvgRenderer(orientation=args.orientation).render(diagram), encoding="utf-8")
         if args.json_out is not None:
             args.json_out.parent.mkdir(parents=True, exist_ok=True)
             args.json_out.write_text(json.dumps(diagram.to_dict(), indent=2) + "\n", encoding="utf-8")
         for diagnostic in snapshot.diagnostics:
             location = f"line {diagnostic.line_no}: " if diagnostic.line_no is not None else ""
             print(f"{diagnostic.severity}: {location}{diagnostic.message}")
-        print(args.out)
+        print(output_path)
 
     def _icons(self, args) -> None:
-        args.out.parent.mkdir(parents=True, exist_ok=True)
-        args.out.write_text(StageSvgIconLibrary().catalog_svg(), encoding="utf-8")
-        print(args.out)
+        output_path = args.out or REPO_ROOT / "build" / "staging" / "block-icon-library.svg"
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(StageSvgIconLibrary().catalog_svg(), encoding="utf-8")
+        print(output_path)
+
+    def _default_diagram_output(self, input_path: Path, diagram) -> Path:
+        return self._default_output_dir(input_path) / self._default_diagram_filename(diagram)
+
+    def _default_output_dir(self, input_path: Path) -> Path:
+        resolved = input_path.resolve()
+        parts = resolved.parts
+        if "plays" in parts:
+            plays_index = parts.index("plays")
+            if plays_index + 1 < len(parts):
+                repo_root = Path(*parts[:plays_index])
+                play_id = parts[plays_index + 1]
+                return repo_root / "build" / play_id / "staging"
+        return REPO_ROOT / "build" / input_path.stem / "staging"
+
+    def _default_diagram_filename(self, diagram) -> str:
+        if diagram.diagram_kind == "stage":
+            return "stage.svg"
+        if diagram.diagram_kind == "set":
+            return f"set-{self._path_id(diagram.set_id or 'default')}.svg"
+        if diagram.diagram_kind == "beat":
+            return f"scene-{self._path_id(diagram.scene_id or 'scene')}-{self._path_id(diagram.beat_id or 'beat')}.svg"
+        return f"scene-{self._path_id(diagram.scene_id or diagram.diagram_id)}.svg"
+
+    def _path_id(self, value: str) -> str:
+        return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-")
 
 
 def main() -> None:
