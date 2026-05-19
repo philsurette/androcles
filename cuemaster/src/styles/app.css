@@ -1632,7 +1632,7 @@ button:disabled {
 
 .blocking-diagram-backdrop {
   align-items: stretch;
-  background: rgba(20, 20, 18, 0.45);
+  background: rgba(20, 20, 18, 0.72);
   display: flex;
   inset: 0;
   justify-content: center;
@@ -1642,7 +1642,7 @@ button:disabled {
 }
 
 .blocking-diagram-sheet {
-  background: var(--panel);
+  background: var(--paper);
   border: 1px solid rgba(45, 43, 35, 0.22);
   border-radius: 8px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.22);
@@ -1667,8 +1667,21 @@ button:disabled {
   align-items: center;
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: 0.28rem;
   justify-content: flex-end;
+}
+
+.blocking-diagram-header-actions .quick-toggle {
+  background: rgba(30, 38, 31, 0.08);
+  border-radius: 0.45rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  height: 1.7rem;
+  line-height: 1;
+  min-height: 1.7rem;
+  min-width: 1.7rem;
+  padding: 0;
+  width: 1.7rem;
 }
 
 .blocking-diagram-position {
