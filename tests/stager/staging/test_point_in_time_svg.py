@@ -183,9 +183,12 @@ HAM @ balcony_l
     assert snapshot.connectors["stair_l"].end.point is not None
     assert snapshot.connectors["stair_l"].end.point.z == 8
     assert "Unresolved connector start 'nowhere' for bad_ramp" in [diagnostic.message for diagnostic in snapshot.diagnostics]
-    assert '<line class="connector"' in svg
+    assert '<line class="stair-tread"' in svg
+    assert '<polygon class="stair-footprint"' in svg
+    assert '<line class="connector"' not in svg
     assert "<title>stair_l stair</title>" in svg
     assert ">stair 0->8</text>" in svg
+    assert 'stroke="#555555"' in svg
 
 
 def test_renderer_draws_level_surfaces_with_elevation_labels() -> None:

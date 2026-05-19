@@ -45,6 +45,8 @@ class StageSvgRenderer:
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
             ".level-surface{fill:#d9edf7;fill-opacity:.34;stroke:#2f6f9f;stroke-width:2;stroke-dasharray:7 4}",
             ".connector{stroke:#6b614d;stroke-width:2;stroke-dasharray:5 4;fill:none}",
+            ".stair-footprint{fill:#6b614d;fill-opacity:.08;stroke:none}",
+            ".stair-tread{stroke-width:2;stroke-linecap:round}",
             ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
             ".actor-circle{fill-opacity:.86;stroke-width:1.5}",
@@ -111,10 +113,13 @@ class StageSvgRenderer:
         for connector in diagram.connectors:
             x1, y1 = self._project(connector.start, diagram.stage.width, diagram.stage.depth, scale)
             x2, y2 = self._project(connector.end, diagram.stage.width, diagram.stage.depth, scale)
-            lines.append(
-                f'<line class="connector" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}">'
-                f'<title>{escape(connector.title)}</title></line>'
-            )
+            if connector.kind == "stair":
+                lines.extend(self._stair_connector(connector, x1, y1, x2, y2))
+            else:
+                lines.append(
+                    f'<line class="connector" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}">'
+                    f'<title>{escape(connector.title)}</title></line>'
+                )
             if connector.label is not None:
                 label_x = (x1 + x2) / 2
                 label_y = (y1 + y2) / 2 - 6
@@ -122,6 +127,52 @@ class StageSvgRenderer:
                     f'<text class="small" x="{label_x:g}" y="{label_y:g}" text-anchor="middle">'
                     f'{connector.label}</text>'
                 )
+        return lines
+
+    def _stair_connector(self, connector, x1: float, y1: float, x2: float, y2: float) -> list[str]:
+        if connector.start.z <= connector.end.z:
+            bottom = (x1, y1, connector.start.z)
+            top = (x2, y2, connector.end.z)
+        else:
+            bottom = (x2, y2, connector.end.z)
+            top = (x1, y1, connector.start.z)
+        bottom_x, bottom_y, bottom_z = bottom
+        top_x, top_y, top_z = top
+        dx = top_x - bottom_x
+        dy = top_y - bottom_y
+        distance = (dx * dx + dy * dy) ** 0.5
+        if distance == 0:
+            return []
+        normal_x = -dy / distance
+        normal_y = dx / distance
+        tread_count = max(4, min(9, round(distance / 32)))
+        lines = [f'<g class="stair-connector"><title>{escape(connector.title)}</title>']
+        top_width = 36
+        bottom_width = top_width * 0.2
+        footprint_half_top = top_width / 2 + 4
+        footprint_half_bottom = bottom_width / 2 + 4
+        points = [
+            (bottom_x - normal_x * footprint_half_bottom, bottom_y - normal_y * footprint_half_bottom),
+            (top_x - normal_x * footprint_half_top, top_y - normal_y * footprint_half_top),
+            (top_x + normal_x * footprint_half_top, top_y + normal_y * footprint_half_top),
+            (bottom_x + normal_x * footprint_half_bottom, bottom_y + normal_y * footprint_half_bottom),
+        ]
+        point_text = " ".join(f"{point_x:g},{point_y:g}" for point_x, point_y in points)
+        lines.append(f'<polygon class="stair-footprint" points="{point_text}"/>')
+        bottom_color = self._z_stroke(bottom_z)
+        top_color = self._z_stroke(top_z)
+        for index in range(tread_count - 1):
+            ratio = index / (tread_count - 1) if tread_count > 1 else 1
+            center_x = bottom_x + dx * ratio
+            center_y = bottom_y + dy * ratio
+            length = top_width * (0.2 + 0.8 * ratio)
+            half = length / 2
+            color = self._mix_hex(bottom_color, top_color, ratio)
+            lines.append(
+                f'<line class="stair-tread" x1="{center_x - normal_x * half:g}" y1="{center_y - normal_y * half:g}" '
+                f'x2="{center_x + normal_x * half:g}" y2="{center_y + normal_y * half:g}" stroke="{color}"/>'
+            )
+        lines.append("</g>")
         return lines
 
     def _area_labels(self, diagram: DiagramState, scale: float) -> list[str]:
@@ -356,3 +407,20 @@ class StageSvgRenderer:
         if elevation == "below":
             return "#7a4b9d"
         return "#555555"
+
+    def _z_stroke(self, z: float) -> str:
+        if z > 0:
+            return self._elevation_stroke("elevated")
+        if z < 0:
+            return self._elevation_stroke("below")
+        return self._elevation_stroke("deck")
+
+    def _mix_hex(self, start: str, end: str, ratio: float) -> str:
+        start_rgb = self._hex_to_rgb(start)
+        end_rgb = self._hex_to_rgb(end)
+        mixed = tuple(round(start_rgb[index] + (end_rgb[index] - start_rgb[index]) * ratio) for index in range(3))
+        return f"#{mixed[0]:02x}{mixed[1]:02x}{mixed[2]:02x}"
+
+    def _hex_to_rgb(self, value: str) -> tuple[int, int, int]:
+        value = value.removeprefix("#")
+        return (int(value[0:2], 16), int(value[2:4], 16), int(value[4:6], 16))
