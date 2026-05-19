@@ -47,7 +47,7 @@ class StageSvgRenderer:
             ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
             ".actor-circle{fill-opacity:.86;stroke-width:1.5}",
-            ".actor-label{font:10px sans-serif;font-weight:700;fill:#fff;text-anchor:middle;dominant-baseline:middle}",
+            ".actor-label{font:10px sans-serif;font-weight:700;fill:#111;text-anchor:middle;dominant-baseline:middle}",
             ".label{font:13px sans-serif;fill:#111}",
             ".small{font:11px sans-serif;fill:#333;paint-order:stroke;stroke:#fff;stroke-width:3}",
             ".diagnostic{font:12px sans-serif;fill:#8a3a00}",

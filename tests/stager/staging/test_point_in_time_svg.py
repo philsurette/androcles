@@ -265,6 +265,7 @@ dagger @ table
     assert ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}" in svg
     assert '<text class="area-label" x="45" y="55">UL</text>' in svg
     assert ".actor-circle{fill-opacity:.86;stroke-width:1.5}" in svg
+    assert ".actor-label{font:10px sans-serif;font-weight:700;fill:#111;" in svg
     actor_circles = re.findall(r'<circle class="actor-circle" cx="([^"]+)" cy="([^"]+)"', svg)
     assert len(actor_circles) == 2
     assert actor_circles[0] != actor_circles[1]
