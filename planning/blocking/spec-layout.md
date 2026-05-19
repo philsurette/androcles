@@ -41,6 +41,34 @@ y = 0..24
 z = 0+
 ```
 
+## Multiple levels without 3D
+
+The cheapest supported model is **2D plan view with z-axis metadata**.
+
+Stager should store coordinates as `(x,y,z)` where available, but the first renderer should project to `(x,y)` and communicate elevation through labels and styling rather than true 3D.
+
+Recommended behavior:
+
+- `level` records define named surfaces such as `deck`, `platform`, `bridge`, and `balcony`.
+- Areas, anchors, set pieces, and props may carry a `z` value or reference a named level.
+- The renderer draws elevated surfaces as 2D overlays with labels such as `balcony +8'`.
+- Actor glyphs on non-deck levels get a small level/elevation badge.
+- Stairs, ramps, and lifts are connectors between levels, not 3D geometry.
+- Vertical moves should validate that a connector exists. Missing connectors should warn, not require true path solving.
+- Complicated sets may render as split diagrams per level, still using the same 2D model.
+
+Example:
+
+```text
+level deck z=0
+level balcony polygon=(-10,18, 10,18, 10,22, -10,22) z=8
+stair stair_l from=(-12,14,0) to=(-10,18,8) steps=10
+
+anchor balcony_l kind=mark at=(-8,20,8)
+HAM @ balcony_l
+HAM move deck_c -> balcony_l via=stair_l
+```
+
 ## Minimal statements
 
 ### Stage

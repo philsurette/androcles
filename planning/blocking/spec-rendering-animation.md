@@ -20,6 +20,8 @@ Each blocking beat should be renderable as a static SVG showing:
 - cue badges
 - optional notes
 
+The renderer should not require full-play state replay. It should render from the nearest explicit snapshot/checkpoint plus the local events needed for the requested beat.
+
 ## SVG coordinate strategy
 
 Use the SVG `viewBox` as the canonical render coordinate space.
@@ -48,6 +50,21 @@ Recommended mapping:
 | Cue | small badge/text label |
 | Note | optional callout text |
 
+## Rendering levels
+
+Render multiple levels in 2D plan view. Do not introduce a 3D camera for the first implementation.
+
+Recommended conventions:
+
+- deck-level surfaces use normal outlines
+- raised platforms use thicker outlines or light fill
+- balconies/bridges use dashed outlines, hatch, or distinct tint
+- labels include the level name and elevation, such as `bridge +8'`
+- actor glyphs on nonzero `z` include a small level/elevation badge
+- stairs/ramps/lifts are drawn as connector symbols in plan view
+
+For complicated multi-level designs, optionally generate separate SVG sheets per level. This should be treated as an output option, not a different authoring model.
+
 ## Actor glyph
 
 A minimal actor glyph:
@@ -67,6 +84,8 @@ A movement path should use SVG path data:
 ```svg
 <path class="move-path" d="M -12 4 Q -5 8 0 12" />
 ```
+
+Vertical movement should render as 2D movement with connector labels, for example `via stair_l`, rather than true vertical motion. If the normalized model contains a z change without a valid connector, the renderer should include a warning/diagnostic badge.
 
 ## Animation recommendation
 

@@ -52,6 +52,8 @@ Equivalent explicit form:
 HAM place DL
 ```
 
+Placement is absolute. It may be used as an author correction or checkpoint even if prior movement state is incomplete.
+
 ### Movement
 
 ```text
@@ -127,6 +129,50 @@ cue Q.17 at=end
 ```text
 note "Director wants this cross to feel reluctant."
 ```
+
+## State and snapshots
+
+Rendering a beat requires knowing where actors, props, and movable set pieces are at that moment. Replaying every prior event from the start of the play is brittle, so the staging model should support explicit snapshots/checkpoints.
+
+A `snapshot` is authoritative state at a beat, scene, or production boundary:
+
+```text
+snapshot
+HAM @ DL face=CLA
+CLA @ UC
+table @ C
+letter @ table
+```
+
+Rendering should start from the nearest prior snapshot and apply events up to the requested beat. This keeps diagrams useful even when earlier blocking is incomplete or has changed.
+
+Rules:
+
+- `snapshot` resets known truth for listed actors/props/set pieces.
+- Absolute placement such as `HAM @ C` updates state regardless of prior state.
+- Movement with explicit `from` should warn if it disagrees with known state.
+- Movement without explicit `from` may infer from current state.
+- If no current state exists, warn and still render the destination when possible.
+- Unknown actor/prop locations should not fail the entire diagram; render them in an "unknown/offstage" list or diagnostics section.
+
+Example:
+
+```text
+[[blocking scene=1.2 beat=b12]]
+snapshot
+HAM @ DL face=CLA
+CLA @ UC
+sword @ table
+[[/blocking]]
+
+[[blocking scene=1.2 beat=b13]]
+HAM move DL -> C dur=2.5
+HAM pickup sword from=table
+cue LX.12 at=HAM.arrive(C)
+[[/blocking]]
+```
+
+To render `b13`, Stager uses snapshot `b12`, applies `b13`, then renders `HAM` at `C`, `CLA` at `UC`, and `sword` carried by `HAM`.
 
 ## Timing model
 

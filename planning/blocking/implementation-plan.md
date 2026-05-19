@@ -57,6 +57,8 @@ Acceptance tests:
 - parses anchors
 - parses set pieces
 - parses prop presets
+- stores z/elevation metadata without requiring 3D rendering
+- parses stairs/ramps/lifts as level connectors
 
 ## Milestone 3 — Blocking parser
 
@@ -69,6 +71,7 @@ HAM face OPH
 OPH enter vom_dr -> DR dur=1.6
 OPH exit door_l dur=1.4
 cue LX.24
+snapshot
 ```
 
 Acceptance tests:
@@ -78,6 +81,7 @@ Acceptance tests:
 - parses facing
 - parses enter/exit
 - parses cue reference
+- parses snapshots/checkpoints
 - gives useful diagnostics for malformed lines
 
 ## Milestone 4 — Cue-lite parser
@@ -114,6 +118,8 @@ Acceptance tests:
 - `DSR` resolves as alias of `DR`
 - `table` resolves to set-piece location
 - unknown locations produce diagnostics
+- vertical moves warn when no stair/ramp/lift connector exists
+- rendering state resolves from the nearest prior snapshot rather than from full-play replay
 
 ## Milestone 6 — Static SVG renderer
 
@@ -132,6 +138,9 @@ Acceptance tests:
 - includes actor IDs/classes
 - includes path for movement
 - deterministic output for snapshot testing
+- labels elevated levels in 2D plan view
+- renders actor level/elevation badges for non-deck positions
+- includes diagnostics for unknown actor/prop state instead of failing the whole diagram
 
 ## Milestone 7 — Playbook integration
 

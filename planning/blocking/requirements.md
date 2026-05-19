@@ -104,6 +104,8 @@ The layout spec must support practical z-axis staging features:
 
 The first implementation may render z as labels and layering in plan-view SVG rather than true 3D.
 
+The system should explicitly avoid true 3D in the first implementation. Store z/elevation in the normalized model, render it as 2D plan-view metadata, and validate vertical movement through named connectors such as stairs, ramps, and lifts.
+
 ### R6. Named anchors and areas
 
 The layout spec must support named locations:
@@ -143,6 +145,8 @@ Blocking must support:
 - holds
 - notes
 - cue references
+
+Blocking must also support snapshots/checkpoints so diagrams do not depend on fragile full-play state replay. A producer should be able to restate actor/prop/set-piece positions at scene or beat boundaries and have rendering start from the nearest checkpoint.
 
 ### R9. Prop interactions
 

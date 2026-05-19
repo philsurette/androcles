@@ -102,6 +102,7 @@ Resolves:
 - actor references
 - cue references
 - line/beat references
+- nearest snapshots/checkpoints for rendering state
 
 ### Validator
 
@@ -111,9 +112,23 @@ Reports:
 - impossible movement references
 - missing layout
 - unsupported z-axis transitions
+- z-axis transitions without an available stair/ramp/lift connector
+- state mismatches between known actor/prop position and explicit movement `from`
 - malformed timing expressions
 
 Validation should warn rather than fail where possible.
+
+### State resolver
+
+The renderer should not depend on replaying the whole play from the beginning. The compiler should build state from explicit snapshots/checkpoints and then apply local events.
+
+Recommended behavior:
+
+- find the nearest prior snapshot for the requested beat
+- apply events from that snapshot through the requested beat
+- treat absolute placement as a state correction
+- warn, but still render useful output, when state is incomplete
+- keep unknown actors/props in diagnostics or an offstage/unknown list
 
 ### SVG renderer
 
@@ -147,7 +162,14 @@ type BlockingBeat = {
   sceneId?: string;
   lineId?: string;
   sourceRange?: SourceRange;
+  snapshot?: BlockingSnapshot;
   events: BlockingEvent[];
+};
+
+type BlockingSnapshot = {
+  placements: Record<string, PlacementState>;
+  props: Record<string, PropState>;
+  setPieces: Record<string, SetPieceState>;
 };
 
 type BlockingEvent =
