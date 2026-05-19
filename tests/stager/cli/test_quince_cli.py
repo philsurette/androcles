@@ -451,6 +451,108 @@ def test_quince_build_audioplay_reports_output_path(tmp_path: Path, monkeypatch)
     assert "build/androcles/audio/androcles.mp3" in result.output
 
 
+def test_quince_blocking_renders_scene_for_blocking_id_without_beat(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# P-0 Prologue
+/*: stage type=proscenium width=36 depth=24 units=ft
+/*: actor CAPTAIN label=CP name=Captain
+/*: scene P
+/CAPTAIN: @ C
+P-1 CAPTAIN: Stand fast.
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["blocking", "P-1:b1"])
+
+    assert result.exit_code == 0
+    assert "Blocking P-1:b1: scene P" in result.output
+    assert "build/androcles/staging/blocking-P-1-b1.svg" in result.output
+    assert (cfg.build_dir / "staging" / "blocking-P-1-b1.svg").exists()
+
+
+def test_quince_blocking_accepts_lowercase_blocking_id(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# P-0 Prologue
+/*: stage type=proscenium width=36 depth=24 units=ft
+/*: actor CAPTAIN label=CP name=Captain
+/*: scene P
+/CAPTAIN: @ C
+P-1 CAPTAIN: Stand fast.
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["blocking", "p-1:b1"])
+
+    assert result.exit_code == 0
+    assert "Blocking P-1:b1: scene P" in result.output
+
+
+def test_quince_blocking_rejects_unknown_blocking_id(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# P-0 Prologue
+/*: stage type=proscenium width=36 depth=24 units=ft
+/*: actor CAPTAIN label=CP name=Captain
+/*: scene P
+/CAPTAIN: @ C
+P-1 CAPTAIN: Stand fast.
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["blocking", "P-99:b1"])
+
+    assert result.exit_code != 0
+    assert "Unknown blocking id: P-99:b1" in result.output
+
+
+def test_quince_blocking_renders_beat_for_anchored_blocking_id(tmp_path: Path, monkeypatch) -> None:
+    cfg = _scriptwright_workspace(tmp_path, "androcles")
+    cfg.production_markdown.write_text(
+        """// script_format: quince-production-v1
+// source_kind: production
+// production_ids: locked
+
+# P-0 Prologue
+/*: stage type=proscenium width=36 depth=24 units=ft
+/*: actor CAPTAIN label=CP name=Captain
+/*: scene P
+/CAPTAIN: @ C
+P-1 CAPTAIN: Stand fast.
+/CAPTAIN: move C -> DR
+P-2 CAPTAIN: Advance.
+""",
+        encoding="utf-8",
+    )
+    monkeypatch.chdir(cfg.play_dir)
+
+    result = CliRunner().invoke(app, ["blocking", "P-2:b1"])
+
+    assert result.exit_code == 0
+    assert "Blocking P-2:b1: scene P beat b1" in result.output
+    assert "build/androcles/staging/blocking-P-2-b1.svg" in result.output
+    assert (cfg.build_dir / "staging" / "blocking-P-2-b1.svg").exists()
+
+
 def _workspace(root: Path, *play_ids: str) -> None:
     (root / "plays").mkdir(exist_ok=True)
     (root / "pyproject.toml").write_text("[project]\nname = 'test'\n", encoding="utf-8")

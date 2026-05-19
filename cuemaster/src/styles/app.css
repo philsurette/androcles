@@ -1639,37 +1639,37 @@ button:disabled {
 .blocking-stage {
   fill: #f8f8f4;
   stroke: rgba(45, 43, 35, 0.35);
-  stroke-width: 1;
+  stroke-width: 0.08;
 }
 
 .blocking-area {
   fill: rgba(124, 170, 184, 0.08);
   stroke: rgba(45, 43, 35, 0.14);
-  stroke-width: 0.5;
+  stroke-width: 0.04;
 }
 
 .blocking-area-label {
   fill: var(--quiet);
-  font-size: 7px;
+  font-size: 0.75px;
   font-weight: 700;
 }
 
 .blocking-set-piece rect {
   fill: rgba(177, 160, 119, 0.22);
   stroke: rgba(45, 43, 35, 0.55);
-  stroke-width: 1;
+  stroke-width: 0.1;
 }
 
 .blocking-entity circle {
   fill: #eef3f6;
   stroke: rgba(45, 43, 35, 0.7);
-  stroke-width: 1;
+  stroke-width: 0.12;
 }
 
 .blocking-entity text {
   dominant-baseline: middle;
   fill: #111;
-  font-size: 7px;
+  font-size: 0.95px;
   font-weight: 800;
   text-anchor: middle;
 }
@@ -1677,15 +1677,15 @@ button:disabled {
 .blocking-entity path {
   fill: rgba(115, 83, 145, 0.18);
   stroke: rgba(83, 55, 110, 0.8);
-  stroke-width: 1.2;
+  stroke-width: 0.14;
 }
 
 .blocking-movement-arrow {
   fill: none;
   stroke: rgba(45, 43, 35, 0.45);
-  stroke-dasharray: 3 2;
+  stroke-dasharray: 0.35 0.22;
   stroke-linecap: round;
-  stroke-width: 1.2;
+  stroke-width: 0.12;
 }
 
 .inline-stage-direction {

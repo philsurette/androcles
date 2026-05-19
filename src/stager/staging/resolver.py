@@ -80,7 +80,7 @@ class StagingResolver:
         else:
             set_id = snapshot.set_id
             scenic_set = self._scenic_set(document, set_id, diagnostics)
-            placements = tuple(self._resolve_placement(document, scenic_set, areas, placement, diagnostics) for placement in snapshot.placements)
+            placements = self._resolved_placements(document, scenic_set, areas, snapshot.placements, diagnostics)
         return ResolvedSnapshot(
             scene_id=scene_id,
             stage=document.stage,
@@ -94,6 +94,12 @@ class StagingResolver:
             placements=placements,
             diagnostics=tuple(diagnostics),
         )
+
+    def _resolved_placements(self, document, scenic_set, areas, placements, diagnostics):
+        by_entity = {}
+        for placement in placements:
+            by_entity[placement.entity] = self._resolve_placement(document, scenic_set, areas, placement, diagnostics)
+        return tuple(by_entity.values())
 
     def _scenic_set(
         self,

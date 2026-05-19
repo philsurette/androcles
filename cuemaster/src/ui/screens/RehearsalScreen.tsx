@@ -146,6 +146,7 @@ export function RehearsalScreen({
   const [diagramBundleManifest, setDiagramBundleManifest] = useState<DiagramBundleManifest | null>(null);
   const [selectedBlockingDiagram, setSelectedBlockingDiagram] = useState<{
     state: DiagramState;
+    blockingId: string;
     noteText: string;
   } | null>(null);
   const {
@@ -255,7 +256,7 @@ export function RehearsalScreen({
           candidateLine.id,
           blocking.id
         );
-        setSelectedBlockingDiagram({ state: diagramState, noteText: blocking.text });
+        setSelectedBlockingDiagram({ state: diagramState, blockingId: blocking.id, noteText: blocking.text });
       } catch (error) {
         setStorageStatus(error instanceof Error ? error.message : "Blocking diagram could not be loaded.");
       }
@@ -1401,6 +1402,7 @@ export function RehearsalScreen({
         {selectedBlockingDiagram ? (
           <BlockingDiagramSheet
             state={selectedBlockingDiagram.state}
+            blockingId={selectedBlockingDiagram.blockingId}
             noteText={selectedBlockingDiagram.noteText}
             onClose={() => setSelectedBlockingDiagram(null)}
           />

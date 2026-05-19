@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import re
 from typing import Annotated
 
 import click
@@ -23,7 +24,15 @@ from stager.production.quince_context import QuinceContext, QuinceContextResolve
 from stager.production.recording_workflow_service import RecordingWorkflowService
 from stager.production_publication.production_source_resolver import ProductionSourceResolver
 from stager.production_publication.production_publisher import ProductionPublisher
+from stager.domain.block import BlockingBlock, RoleBlock
+from stager.domain.segment import BlockingSegment
 from stager.scriptwright import ProductionPlayLoader
+from stager.staging.diagram_state_builder import DiagramStateBuilder
+from stager.staging.export_service import StagingExportService
+from stager.staging.parser import StagingParser
+from stager.staging.resolver import StagingResolver
+from stager.staging.state_resolver import StagingStateResolver
+from stager.staging.svg_renderer import StageSvgRenderer
 
 
 app = typer.Typer(
@@ -484,6 +493,49 @@ def build_audioplay(
         typer.echo(_relative(context, output_path))
 
 
+@app.command("blocking")
+def blocking(
+    blocking_id: str,
+    play: PlayOption = None,
+    workspace: WorkspaceOption = None,
+    output_path: Path | None = typer.Option(None, "--out", help="Output SVG path. Defaults to build/<play>/staging/blocking-<id>.svg."),
+    json_output_path: Path | None = typer.Option(None, "--json-out", help="Optional diagram-state JSON output path."),
+    orientation: str = typer.Option("portrait", "--orientation", help="Diagram orientation: portrait or landscape."),
+    staging: bool = typer.Option(True, "--staging/--no-staging", help="Export staging overlay from production.md before rendering."),
+) -> None:
+    """Render the blocking diagram associated with a production/blocking id."""
+    if orientation not in ("portrait", "landscape"):
+        raise typer.BadParameter("orientation must be portrait or landscape")
+    try:
+        context = _resolve_context(play=play, workspace=workspace, production_source="working")
+        canonical_blocking_id = _canonical_blocking_id(context, blocking_id)
+        staging_path = _ensure_staging_file(context, staging=staging)
+        document = StagingParser().parse(staging_path.read_text(encoding="utf-8"))
+        base_id = _base_blocking_id(canonical_blocking_id)
+        target_beat = _beat_for_blocking_id(document, base_id)
+        if target_beat is not None:
+            snapshot = StagingStateResolver().resolve_beat(document, target_beat.scene_id, target_beat.beat_id)
+            target_label = f"scene {target_beat.scene_id} beat {target_beat.beat_id}"
+        else:
+            scene_id = _scene_id_for_blocking_id(document, base_id)
+            snapshot = StagingResolver().resolve_snapshot(document, scene_id)
+            target_label = f"scene {scene_id}"
+        diagram = DiagramStateBuilder().build(snapshot)
+        output = output_path or context.path_config.build_dir / "staging" / f"blocking-{_path_id(canonical_blocking_id)}.svg"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        output.write_text(StageSvgRenderer(orientation=orientation).render(diagram), encoding="utf-8")
+        if json_output_path is not None:
+            json_output_path.parent.mkdir(parents=True, exist_ok=True)
+            json_output_path.write_text(json.dumps(diagram.to_dict(), indent=2) + "\n", encoding="utf-8")
+    except RuntimeError as exc:
+        raise click.ClickException(str(exc)) from exc
+    typer.echo(render_quince_context(context))
+    typer.echo(f"Blocking {canonical_blocking_id}: {target_label}")
+    typer.echo(_relative(context, output))
+    if json_output_path is not None:
+        typer.echo(_relative(context, json_output_path))
+
+
 @cast_app.command("show")
 def cast_show(play: PlayOption = None, workspace: WorkspaceOption = None) -> None:
     """Show cast assignments for the selected production."""
@@ -609,6 +661,71 @@ def _audio_output_service_for_build(
         AudioOutputWorkflowService(paths_config=context.path_config, play=loaded_play),
         resolved_source.kind,
     )
+
+
+def _ensure_staging_file(context: QuinceContext, *, staging: bool) -> Path:
+    service = StagingExportService(paths_config=context.path_config)
+    staging_path = service.output_path()
+    if staging:
+        result = service.export()
+        if not result.written:
+            raise RuntimeError(f"No staging notes found in {context.path_config.production_markdown.as_posix()}.")
+        return result.output_path
+    if not staging_path.exists():
+        raise RuntimeError(f"Missing staging overlay {staging_path.as_posix()}; rerun without --no-staging.")
+    return staging_path
+
+
+def _canonical_blocking_id(context: QuinceContext, blocking_id: str) -> str:
+    valid_ids = _blocking_ids(context)
+    if blocking_id in valid_ids:
+        return blocking_id
+    lowered = blocking_id.lower()
+    matches = [candidate for candidate in valid_ids if candidate.lower() == lowered]
+    if len(matches) == 1:
+        return matches[0]
+    if matches:
+        raise RuntimeError(f"Blocking id {blocking_id!r} is ambiguous.")
+    raise RuntimeError(f"Unknown blocking id: {blocking_id}")
+
+
+def _blocking_ids(context: QuinceContext) -> set[str]:
+    play = ProductionPlayLoader(paths_config=context.path_config).load()
+    ids: set[str] = set()
+    for block in play.blocks:
+        if isinstance(block, BlockingBlock) and block.production_id is not None:
+            ids.add(block.production_id)
+        if isinstance(block, RoleBlock):
+            for segment in block.segments:
+                if isinstance(segment, BlockingSegment) and segment.production_id is not None:
+                    ids.add(segment.production_id)
+    return ids
+
+
+def _base_blocking_id(blocking_id: str) -> str:
+    return re.sub(r":b\d+$", "", blocking_id)
+
+
+def _beat_for_blocking_id(document, base_id: str):
+    matches = [beat for beat in document.beats if beat.script_anchor == base_id]
+    if not matches:
+        lowered_base_id = base_id.lower()
+        matches = [beat for beat in document.beats if (beat.script_anchor or "").lower() == lowered_base_id]
+    return matches[-1] if matches else None
+
+
+def _scene_id_for_blocking_id(document, base_id: str) -> str:
+    requested_scene_id = base_id.split("-", 1)[0]
+    if requested_scene_id in document.snapshots:
+        return requested_scene_id
+    for scene_id in document.snapshots:
+        if scene_id.lower() == requested_scene_id.lower():
+            return scene_id
+    return requested_scene_id
+
+
+def _path_id(value: str) -> str:
+    return re.sub(r"[^A-Za-z0-9_.-]+", "-", value).strip("-")
 
 
 def _relative(context: QuinceContext, path: Path) -> str:

@@ -4,7 +4,9 @@ type BlockingDiagramProps = {
   state: DiagramState;
 };
 
-const PADDING = 24;
+const PADDING = 2;
+const ACTOR_RADIUS = 1.35;
+const PROP_RADIUS = 0.8;
 
 export function BlockingDiagram({ state }: BlockingDiagramProps) {
   const width = state.stage.width;
@@ -93,11 +95,11 @@ function BlockingEntity({
       {movementFrom ? <MovementArrow from={{ x: movementFrom.x - projected.x, y: movementFrom.y - projected.y }} /> : null}
       {entity.kind === "actor" ? (
         <>
-          <circle r="10" />
-          <text y="4">{entity.label ?? entity.source_id ?? entity.id}</text>
+          <circle r={ACTOR_RADIUS} />
+          <text y="0.08">{entity.label ?? entity.source_id ?? entity.id}</text>
         </>
       ) : (
-        <path d="M 0 -8 L 8 0 L 0 8 L -8 0 Z" />
+        <path d={`M 0 ${-PROP_RADIUS} L ${PROP_RADIUS} 0 L 0 ${PROP_RADIUS} L ${-PROP_RADIUS} 0 Z`} />
       )}
     </g>
   );
@@ -108,13 +110,13 @@ function MovementArrow({ from }: { from: { x: number; y: number } }) {
   if (length === 0) {
     return null;
   }
-  const scale = Math.min(18, length) / length;
+  const scale = Math.min(2.5, length) / length;
   const start = { x: from.x * scale, y: from.y * scale };
   return (
     <g className="blocking-movement-arrow">
       <line x1={start.x} y1={start.y} x2="0" y2="0" />
-      <line x1="-5" y1="-5" x2="0" y2="0" transform={`rotate(${arrowRotation(start)})`} />
-      <line x1="-5" y1="5" x2="0" y2="0" transform={`rotate(${arrowRotation(start)})`} />
+      <line x1="-0.55" y1="-0.55" x2="0" y2="0" transform={`rotate(${arrowRotation(start)})`} />
+      <line x1="-0.55" y1="0.55" x2="0" y2="0" transform={`rotate(${arrowRotation(start)})`} />
     </g>
   );
 }

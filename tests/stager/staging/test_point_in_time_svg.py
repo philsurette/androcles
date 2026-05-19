@@ -414,6 +414,27 @@ sword remove
     assert previous_placements["HM"].next_point is None
 
 
+def test_snapshot_resolver_keeps_latest_repeated_entity_placement() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium
+grid standard=9
+actor LI name=Lillian
+
+scene P
+LI @ DL
+LI @ DR face=CHRISTINE
+"""
+    )
+
+    snapshot = StagingResolver().resolve_snapshot(document, "P")
+
+    placements = [placement for placement in snapshot.placements if placement.entity == "LI"]
+    assert len(placements) == 1
+    assert placements[0].source == "DR"
+    assert placements[0].face == "CHRISTINE"
+
+
 def test_state_resolver_warns_for_unknown_beat() -> None:
     document = StagingParser().parse(
         """
