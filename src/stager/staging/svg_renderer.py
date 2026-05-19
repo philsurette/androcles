@@ -42,6 +42,7 @@ class StageSvgRenderer:
             ".grid-line{stroke:#bbb;stroke-width:1}",
             ".area-label{font:12px sans-serif;fill:#555;text-anchor:start}",
             ".anchor{fill:#fff;stroke:#555;stroke-width:1.5}",
+            ".level-surface{fill:#d9edf7;fill-opacity:.34;stroke:#2f6f9f;stroke-width:2;stroke-dasharray:7 4}",
             ".connector{stroke:#6b614d;stroke-width:2;stroke-dasharray:5 4;fill:none}",
             ".set-piece-footprint{fill:#e8e2d0;fill-opacity:.5;stroke:#6b614d;stroke-width:1}",
             ".stage-icon{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}",
@@ -62,6 +63,7 @@ class StageSvgRenderer:
         lines.extend(self._area_labels(snapshot, scale))
         lines.append("</g>")
         lines.append('<g class="layer-scenery">')
+        lines.extend(self._levels(snapshot, scale))
         lines.extend(self._anchors(snapshot, scale))
         lines.extend(self._connectors(snapshot, scale))
         lines.extend(self._set_pieces(snapshot, scale))
@@ -87,6 +89,23 @@ class StageSvgRenderer:
             x1, y1 = self._project(Point3D(-width / 2, y), width, depth, scale)
             x2, y2 = self._project(Point3D(width / 2, y), width, depth, scale)
             lines.append(f'<line class="grid-line" x1="{x1:g}" y1="{y1:g}" x2="{x2:g}" y2="{y2:g}"/>')
+        return lines
+
+    def _levels(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:
+        lines = []
+        for level_id, level in sorted(snapshot.levels.items()):
+            if level.at is None or level.at.point is None or level.size is None:
+                continue
+            x, y = self._project(level.at.point, snapshot.stage.width, snapshot.stage.depth, scale)
+            width, depth = level.size
+            footprint_width, footprint_height = self._footprint_size(width, depth, scale)
+            lines.append(
+                f'<rect class="level-surface" x="{x - footprint_width / 2:g}" y="{y - footprint_height / 2:g}" '
+                f'width="{footprint_width:g}" height="{footprint_height:g}" rx="2">'
+                f'<title>{escape(level_id)} +{level.z:g}</title></rect>'
+            )
+            if level.z:
+                lines.append(f'<text class="small" x="{x:g}" y="{y - footprint_height / 2 + 16:g}" text-anchor="middle">{escape(level_id)} +{level.z:g}</text>')
         return lines
 
     def _connectors(self, snapshot: ResolvedSnapshot, scale: float) -> list[str]:

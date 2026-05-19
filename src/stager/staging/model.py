@@ -99,9 +99,16 @@ class AnchorDefinition:
 class LevelDefinition:
     id: str
     z: float
+    at: SourceLocation | None = None
+    size: tuple[float, float] | None = None
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "z": self.z}
+        return {
+            "id": self.id,
+            "z": self.z,
+            **({"at": self.at.to_dict()} if self.at is not None else {}),
+            **({"size": list(self.size)} if self.size is not None else {}),
+        }
 
 
 @dataclass(frozen=True)

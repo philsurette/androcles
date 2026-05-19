@@ -108,6 +108,28 @@ HAM @ balcony_l
     assert ">stair 0->8</text>" in svg
 
 
+def test_renderer_draws_level_surfaces_with_elevation_labels() -> None:
+    document = StagingParser().parse(
+        """
+stage type=proscenium width=40 depth=30 units=ft
+grid standard=9
+level balcony at=UC size=(18,4) z=8
+
+scene 2 snapshot
+HAM @ UC
+"""
+    )
+
+    snapshot = StagingResolver().resolve_snapshot(document, "2")
+    svg = StageSvgRenderer(orientation="landscape").render(snapshot)
+
+    assert snapshot.levels["balcony"].at is not None
+    assert snapshot.levels["balcony"].at.point is not None
+    assert '<rect class="level-surface"' in svg
+    assert "<title>balcony +8</title>" in svg
+    assert ">balcony +8</text>" in svg
+
+
 def test_svg_renderer_outputs_stage_grid_actor_and_diagnostics() -> None:
     document = StagingParser().parse(
         """

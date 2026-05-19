@@ -177,7 +177,10 @@ polygon=(x1,y1, x2,y2, x3,y3, ...)
 ```text
 level deck z=0
 level bridge polygon=(-10,18, 10,18, 10,22, -10,22) z=8
+level balcony at=UC size=(18,4) z=8
 ```
+
+The first static renderer supports rectangular level surfaces with `at=` and `size=`. Polygon surfaces remain a later extension.
 
 ### Stairs
 

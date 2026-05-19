@@ -194,7 +194,13 @@ class StagingParser:
         if len(tokens) < 2:
             self._warn("Level statement requires an id", line_no)
             return None
-        return LevelDefinition(id=tokens[1], z=self._float(fields.get("z"), default=0.0))
+        at = self._source_location(fields.get("at")) if fields.get("at") is not None else None
+        return LevelDefinition(
+            id=tokens[1],
+            z=self._float(fields.get("z"), default=0.0),
+            at=at,
+            size=self._size(fields.get("size")),
+        )
 
     def _parse_connector(
         self,

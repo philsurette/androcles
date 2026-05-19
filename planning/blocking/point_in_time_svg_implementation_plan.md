@@ -184,7 +184,7 @@ Do not implement the Quince command in this slice unless the standalone renderer
 - [x] Add SVG `<title>` metadata for anchors, set pieces, props, and actors.
 - [x] Support portrait and landscape output; default to portrait.
 - [x] Render elevated connectors with 2D styling and elevation labels.
-- [ ] Render elevated surfaces/platforms with 2D styling and elevation labels.
+- [x] Render elevated surfaces/platforms with 2D styling and elevation labels.
 - [x] Render unresolved/offstage actors in a side list or diagnostics block.
 - [x] Use deterministic SVG output suitable for snapshot tests.
 - [x] Add renderer tests for text-only and measured stages.
@@ -213,6 +213,6 @@ Do not implement the Quince command in this slice unless the standalone renderer
 - [x] A producer can define a scene-start snapshot.
 - [x] The renderer produces a useful SVG without exact dimensions.
 - [x] The renderer uses exact dimensions when provided.
-- [ ] Multi-level stage elements render in 2D with elevation labels.
+- [x] Multi-level stage elements render in 2D with elevation labels.
 - [x] Missing actor/prop state produces diagnostics and does not prevent SVG generation.
 - [x] The implementation is independent of Quince Playbook/Cuemaster integration.

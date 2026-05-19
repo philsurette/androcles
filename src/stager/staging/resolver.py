@@ -7,6 +7,7 @@ from stager.staging.model import (
     AnchorDefinition,
     AreaDefinition,
     ConnectorDefinition,
+    LevelDefinition,
     Point3D,
     ResolvedPlacement,
     ResolvedSnapshot,
@@ -47,7 +48,7 @@ class StagingResolver:
             anchors=self._resolved_anchors(document, areas, diagnostics),
             actors=document.actors,
             connectors=self._resolved_connectors(document, areas, diagnostics),
-            levels=document.levels,
+            levels=self._resolved_levels(document, areas, diagnostics),
             set_pieces=self._resolved_set_pieces(document, areas, diagnostics),
             placements=placements,
             diagnostics=tuple(diagnostics),
@@ -122,6 +123,23 @@ class StagingResolver:
             if end.point is None:
                 diagnostics.append(StagingDiagnostic("warning", f"Unresolved connector end {connector.end.source!r} for {key}"))
             resolved[key] = replace(connector, start=start, end=end)
+        return resolved
+
+    def _resolved_levels(
+        self,
+        document: StagingDocument,
+        areas: dict[str, AreaDefinition],
+        diagnostics: list[StagingDiagnostic],
+    ) -> dict[str, LevelDefinition]:
+        resolved = {}
+        for key, level in document.levels.items():
+            if level.at is None:
+                resolved[key] = level
+                continue
+            at = self._resolve_source(document, areas, level.at, diagnostics)
+            if at.point is None:
+                diagnostics.append(StagingDiagnostic("warning", f"Unresolved level location {level.at.source!r} for {key}"))
+            resolved[key] = replace(level, at=at)
         return resolved
 
     def _resolve_placement(
