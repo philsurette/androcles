@@ -33,7 +33,7 @@ User-facing labels:
 | Manual | cue -> wait | Normal line practice. The actor chooses next/check/repeat. |
 | Listen | cue -> reference -> next cue | Driving or passive review. |
 | Try | cue -> silent response window -> next cue | Driving practice without hearing the answer. |
-| Try, Then Check | cue -> silent response window -> reference -> next cue | Driving practice with immediate correction. |
+| Try, Then Hear Line | cue -> silent response window -> reference -> next cue | Driving practice with immediate correction. |
 
 The word "autoplay" should not be used in the main UI. Use **Flow** or **Practice Flow**. Technically this is continuous playback after the actor presses Play, not browser autoplay.
 
@@ -41,7 +41,7 @@ The word "autoplay" should not be used in the main UI. Use **Flow** or **Practic
 
 Keep these visible settings:
 
-- **Flow**: Manual, Listen, Try, Try then Check.
+- **Flow**: Manual, Listen, Try, Try + Hear Line.
 - **Line pace**: 0.4x-1.3x, used for reference playback and derived silent response windows.
 - **Cue length**: existing preset from `planning/specs/cue_window_presets.json`.
 - **Start**: Resume, beginning, scene, bookmark.
@@ -79,7 +79,7 @@ Rules:
 - Silent response windows are based on the target response duration adjusted by `linePace`.
 - If a line has no response duration, fall back to a conservative text-derived estimate only if such an estimator already exists; otherwise use a default 3s window and log/report the missing duration as a Playbook quality problem.
 - Manual flow never advances automatically.
-- Listen, Try, and Try then Check advance until paused/stopped or the role ends.
+- Listen, Try, and Try + Hear Line advance until paused/stopped or the role ends.
 
 ## One Primary Transport
 
@@ -90,19 +90,19 @@ Use one primary Play/Pause button:
 - In Manual flow, Play means "play the current cue".
 - In Listen flow, Play starts/resumes the continuous cue/reference sequence.
 - In Try flow, Play starts/resumes the continuous cue/silent-window sequence.
-- In Try then Check flow, Play starts/resumes the continuous cue/silent-window/reference sequence.
+- In Try + Hear Line flow, Play starts/resumes the continuous cue/silent-window/reference sequence.
 - While reference audio is playing, the same button pauses/resumes the current flow.
 - Stop ends the current flow but keeps the cursor on the current line unless the line has already advanced.
 
 Use secondary controls for deliberate jumps/actions:
 
-- Back: previous role line.
+- Previous: previous role line.
 - Repeat: replay current cue.
-- Check: play the current actor reference line once.
+- Play/Pause: starts or pauses the selected flow.
+- Hear line: play the current actor reference line once.
 - Next: advance to the next role line.
-- Bookmark.
 
-This reduces the confusing "which play button do I press?" question. There is one Play button for the session, and "Check" is a named action for hearing the correct line.
+This reduces the confusing "which play button do I press?" question. There is one Play button for the session, and "Hear line" is a named action for hearing the correct line without replaying the cue.
 
 ## Mobile Session Mockup
 
@@ -124,15 +124,15 @@ Normal portrait phone layout:
 │        ◀      ▶ / ⏸      ▶        │
 │      Back      Play      Next      │
 │                                    │
-│        ↺      ✓       ★     ⚙     │
-│      Repeat  Check  Bookmark Opts │
+│  ◀      ↺       ▶/⏸      ear      ▶ │
+│ Prev  Repeat    Play     Line    Next│
 └────────────────────────────────────┘
 ```
 
 Notes:
 
 - The central button is always the session Play/Pause.
-- "Check" replaces the old "play your line" button.
+- "Hear line" replaces the old "play your line" button.
 - "Repeat" means repeat cue, not repeat line.
 - Flow is visible but compact.
 - Options opens the full setup drawer/page.
@@ -190,7 +190,7 @@ Practice
 ┌────────────────────────────────────┐
 │ Flow                               │
 │ [ Manual ] [ Listen ]              │
-│ [ Try ]    [ Try, then Check ]     │
+│ [ Try ]    [ Try + Hear Line ]     │
 │                                    │
 │ Line pace                          │
 │ 0.8x  0.9x  [1.0x]  1.1x  1.2x    │
@@ -259,7 +259,7 @@ The user must press Play to start a flow. From that gesture:
 - Do not rely on the HTML `autoplay` attribute.
 - Catch `HTMLMediaElement.play()` rejections.
 - If iOS blocks continuation, pause the runner and show "Tap Play to continue."
-- Do not request microphone permission for Listen, Try, or Try then Check.
+- Do not request microphone permission for Listen, Try, or Try + Hear Line.
 
 ## Reduced Functionality Decisions
 
@@ -273,7 +273,7 @@ Remove or defer these for the first simplified flow release:
 
 Keep as explicit actions:
 
-- Check current line.
+- Hear current line.
 - Repeat cue.
 - Next/back.
 - Tempo timing as an Advanced/manual mode.
@@ -295,7 +295,7 @@ Keep as explicit actions:
 ### Phase 2: Flow Runner
 
 - [ ] Add a flow runner service under `cuemaster/src/rehearsal/`.
-- [ ] Build step sequences for Manual, Listen, Try, and Try then Check.
+- [ ] Build step sequences for Manual, Listen, Try, and Try + Hear Line.
 - [ ] Add silent response timers derived from adjusted response duration.
 - [ ] Add cancellation for role/line/settings changes.
 - [ ] Add play rejection handling for iOS/browser policy failures.
@@ -304,7 +304,7 @@ Keep as explicit actions:
 ### Phase 3: Rehearsal Screen Controls
 
 - [ ] Replace separate cue/line play controls with one primary Play/Pause.
-- [ ] Rename "Hear my line" to "Check".
+- [ ] Rename "Hear my line" to "Hear line".
 - [ ] Keep Repeat as "repeat cue".
 - [ ] Keep Back/Next as line navigation.
 - [ ] Ensure controls stay in stable positions across flow states.
@@ -333,7 +333,7 @@ Keep as explicit actions:
 - [ ] Manual flow preserves cue-first, actor-speaks, explicit-next behavior.
 - [ ] Listen flow plays cue -> reference -> next cue continuously after one Play tap.
 - [ ] Try flow plays cue -> silent response window -> next cue continuously after one Play tap.
-- [ ] Try then Check flow plays cue -> silent response window -> reference -> next cue continuously after one Play tap.
+- [ ] Try + Hear Line flow plays cue -> silent response window -> reference -> next cue continuously after one Play tap.
 - [ ] Reference playback and silent windows respect configured line pace.
 - [ ] The default options screen has fewer concepts than the current Speak-along/Tempo/Cue Pickup/Autoadvance grouping.
 - [ ] iPhone testing confirms either continuous playback works or the UI recovers with "Tap Play to continue."

@@ -70,6 +70,8 @@ Cuemaster is the mobile rehearsal app that consumes Playbooks.
 - [cuemaster/product_design.md](cuemaster/product_design.md): Product behavior, screens, session flow, and mobile-app concerns.
 - [cuemaster/capacitor_readiness.md](cuemaster/capacitor_readiness.md): Adapter-boundary notes for wrapping Cuemaster with Capacitor if PWA testing exposes a native-only blocker.
 - [cuemaster/pwa_implementation_plan.md](cuemaster/pwa_implementation_plan.md): Active implementation plan for installable, offline-capable hosted Cuemaster.
+- [cuemaster/v2_rebuild_plan.md](cuemaster/v2_rebuild_plan.md): Active plan for rebuilding Cuemaster in `cuemaster-v2/` around Practice Flow and one rehearsal surface.
+- [cuemaster/v2_ux_wireframes.md](cuemaster/v2_ux_wireframes.md): Draft v2 UX use cases, information architecture, and review questions for the functional wireframe.
 - [cuemaster/practice_flow_simplification_plan.md](cuemaster/practice_flow_simplification_plan.md): Proposed plan and UI mockups for replacing speak-along/autoadvance controls with simpler Practice Flow modes.
 - [cuemaster/cue_generation.md](cuemaster/cue_generation.md): Cue-selection and cue-audio rules for Playbooks.
 - [cuemaster/cloudflare_import_flow_plan.md](cuemaster/cloudflare_import_flow_plan.md): Hosted static Cuemaster import UX, storage diagnostics, and nested-path verification plan.

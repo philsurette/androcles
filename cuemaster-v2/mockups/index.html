@@ -1,0 +1,1477 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cuemaster V2 Wireframe</title>
+    <style>
+      :root {
+        --paper: #f4eedf;
+        --surface: #fff9ec;
+        --surface-2: #ece7d8;
+        --ink: #1f271f;
+        --muted: #66705f;
+        --rule: #d8d0bf;
+        --accent: #b94f31;
+        --accent-dark: #8e3927;
+        --green: #687660;
+        --blue: #435d7c;
+        --shadow: rgba(30, 30, 22, 0.16);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #e8edf5;
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      button,
+      input,
+      select {
+        font: inherit;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .page {
+        min-height: 100vh;
+        padding: 24px;
+      }
+
+      .workspace {
+        display: grid;
+        grid-template-columns: minmax(340px, 430px) minmax(320px, 1fr);
+        gap: 24px;
+        max-width: 1200px;
+        margin: 0 auto;
+        align-items: start;
+      }
+
+      .phone {
+        position: relative;
+        width: min(100%, 430px);
+        min-height: 820px;
+        border: 16px solid #4a4940;
+        border-radius: 20px;
+        background: var(--paper);
+        box-shadow: 0 20px 60px var(--shadow);
+        overflow: hidden;
+      }
+
+      .app {
+        min-height: 788px;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 44px minmax(0, 1fr) auto auto;
+        align-items: center;
+        gap: 8px;
+        min-height: 72px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--rule);
+      }
+
+      .title-block {
+        min-width: 0;
+      }
+
+      .play-title {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.98rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .subtitle {
+        margin: 2px 0 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        font-weight: 750;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .position-pill {
+        padding: 8px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        background: var(--surface-2);
+        color: var(--green);
+        font-weight: 900;
+      }
+
+      .icon-button,
+      .transport-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid transparent;
+        border-radius: 10px;
+        background: var(--surface-2);
+        color: var(--ink);
+      }
+
+      .icon-button {
+        width: 42px;
+        height: 42px;
+      }
+
+      .icon-button svg,
+      .transport-button svg {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+      }
+
+      .content {
+        flex: 1;
+        padding: 14px;
+      }
+
+      .card {
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--surface);
+        padding: 14px;
+      }
+
+      .card + .card {
+        margin-top: 12px;
+      }
+
+      .library-card {
+        display: grid;
+        gap: 10px;
+      }
+
+      h2,
+      h3,
+      p {
+        margin-top: 0;
+      }
+
+      .library-card h2,
+      .setup-card h2,
+      .cue-card h2,
+      .line-card h2,
+      .play-card h2 {
+        margin-bottom: 8px;
+        color: var(--accent);
+        font-size: 0.98rem;
+        font-weight: 900;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .library-card p,
+      .setup-card p,
+      .cue-card p,
+      .line-card p,
+      .play-card p,
+      .sheet p {
+        margin-bottom: 0;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+
+      .row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .button {
+        border: 1px solid transparent;
+        border-radius: 8px;
+        padding: 10px 12px;
+        background: var(--surface-2);
+        color: var(--ink);
+        font-weight: 850;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .button.active {
+        border-color: var(--accent);
+        background: #f2ded6;
+        color: var(--accent-dark);
+      }
+
+      .button.ghost {
+        background: transparent;
+        border-color: var(--rule);
+      }
+
+      .setup-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      .segmented {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .flow-choice,
+      .role-choice {
+        width: 100%;
+        min-height: 72px;
+        text-align: left;
+      }
+
+      .flow-choice strong,
+      .role-choice strong {
+        display: block;
+      }
+
+      .flow-choice span,
+      .role-choice span {
+        display: block;
+        margin-top: 4px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.25;
+      }
+
+      .role-list {
+        display: grid;
+        gap: 8px;
+      }
+
+      .rehearsal,
+      .whole-play {
+        display: flex;
+        min-height: 716px;
+        flex-direction: column;
+      }
+
+      .rehearsal-main,
+      .play-main {
+        flex: 1;
+        display: grid;
+        gap: 12px;
+        align-content: start;
+      }
+
+      .mode-summary {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 9px 10px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: #fffdf7;
+        color: var(--green);
+        font-size: 0.85rem;
+        font-weight: 850;
+      }
+
+      .cue-text,
+      .play-line-text {
+        margin-top: 10px;
+        font-size: 1.22rem;
+        line-height: 1.35;
+      }
+
+      .script-scroll {
+        max-height: 472px;
+        overflow: auto;
+        padding: 6px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: #fffdf7;
+        scroll-behavior: smooth;
+      }
+
+      .script-line {
+        width: 100%;
+        margin: 0 0 8px;
+        padding: 12px;
+        border: 1px solid transparent;
+        border-radius: 8px;
+        background: transparent;
+        color: var(--ink);
+        text-align: left;
+      }
+
+      .script-line.current {
+        border-color: #e0b4a4;
+        background: #fff3ec;
+        box-shadow: inset 4px 0 0 var(--accent);
+      }
+
+      .script-line strong {
+        display: block;
+        margin-bottom: 5px;
+        color: var(--accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .script-line span {
+        display: block;
+        font-size: 1.08rem;
+        line-height: 1.35;
+      }
+
+      .script-blocking {
+        display: inline-flex;
+        margin-top: 8px;
+        padding: 5px 8px;
+        border: 0;
+        border-radius: 999px;
+        background: #eef3ea;
+        color: var(--green);
+        font-size: 0.78rem;
+        font-weight: 850;
+      }
+
+      .line-text {
+        margin-top: 10px;
+        font-size: 1.34rem;
+        line-height: 1.32;
+        font-weight: 700;
+      }
+
+      .hidden-line {
+        margin-top: 10px;
+        padding: 16px;
+        border: 1px dashed var(--rule);
+        border-radius: 8px;
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .blocking-note {
+        display: inline-flex;
+        margin-top: 10px;
+        padding: 7px 9px;
+        border: 0;
+        border-radius: 999px;
+        background: #eef3ea;
+        color: var(--green);
+        font-size: 0.85rem;
+        font-weight: 850;
+      }
+
+      .status-panel {
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        background: #fffdf7;
+        padding: 6px 8px 7px;
+      }
+
+      .status-line {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        align-items: center;
+        gap: 8px;
+        color: var(--green);
+        font-size: 0.78rem;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+
+      .status-primary,
+      .status-detail {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .status-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        max-width: 150px;
+        color: var(--accent-dark);
+      }
+
+      .status-primary::before {
+        content: "";
+        width: 7px;
+        height: 7px;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        background: var(--accent);
+      }
+
+      .status-detail {
+        color: var(--muted);
+        text-align: right;
+      }
+
+      .progress {
+        height: 3px;
+        margin-top: 5px;
+        border-radius: 999px;
+        background: #e4dece;
+        overflow: hidden;
+      }
+
+      .progress span {
+        display: block;
+        height: 100%;
+        width: var(--progress, 0%);
+        background: var(--accent);
+        transition: width 160ms linear;
+      }
+
+      .transport {
+        margin-top: 12px;
+        padding: 10px 12px 12px;
+        border-top: 1px solid var(--rule);
+        background: rgba(255, 249, 236, 0.94);
+      }
+
+      .transport-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 8px;
+      }
+
+      .transport-button {
+        min-width: 0;
+        min-height: 54px;
+        flex-direction: column;
+        gap: 3px;
+        font-weight: 850;
+      }
+
+      .transport-button.primary {
+        background: var(--accent);
+        color: white;
+      }
+
+      .transport-button span {
+        font-size: 0.64rem;
+        line-height: 1;
+      }
+
+      .sheet-backdrop {
+        position: absolute;
+        inset: 0;
+        display: none;
+        align-items: end;
+        background: rgba(31, 39, 31, 0.32);
+      }
+
+      .sheet-backdrop.open {
+        display: flex;
+      }
+
+      .sheet {
+        width: 100%;
+        max-height: 88%;
+        overflow: auto;
+        border-radius: 16px 16px 0 0;
+        background: var(--paper);
+        border-top: 1px solid var(--rule);
+        padding: 16px;
+        box-shadow: 0 -12px 30px var(--shadow);
+      }
+
+      .sheet-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .sheet-header h2 {
+        margin: 0;
+        color: var(--accent);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .option-group {
+        margin-top: 14px;
+      }
+
+      .option-group h3 {
+        margin: 0 0 8px;
+        font-size: 0.9rem;
+        color: var(--green);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .pace-row {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 6px;
+      }
+
+      .check-row {
+        display: grid;
+        gap: 8px;
+      }
+
+      .check-row label {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        gap: 8px;
+        align-items: start;
+        padding: 10px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: var(--surface);
+      }
+
+      .check-row strong {
+        display: block;
+      }
+
+      .check-row span {
+        display: block;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.35;
+      }
+
+      .search-box {
+        width: 100%;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        padding: 11px 12px;
+        background: var(--surface);
+      }
+
+      .nav-list {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .nav-item {
+        width: 100%;
+        text-align: left;
+      }
+
+      .diagram {
+        height: 430px;
+        border: 1px solid var(--rule);
+        border-radius: 8px;
+        background: #f9fbf8;
+        display: grid;
+        place-items: center;
+      }
+
+      .diagram svg {
+        width: 92%;
+        height: auto;
+      }
+
+      .notes {
+        display: grid;
+        gap: 16px;
+      }
+
+      .notes-card {
+        border: 1px solid #cad2df;
+        border-radius: 10px;
+        background: #ffffff;
+        padding: 18px;
+      }
+
+      .notes-card h1,
+      .notes-card h2 {
+        margin: 0 0 10px;
+      }
+
+      .notes-card h1 {
+        color: var(--accent);
+        font-size: 1.55rem;
+      }
+
+      .notes-card p,
+      .notes-card li {
+        color: #4c5662;
+        line-height: 1.5;
+      }
+
+      .notes-card ul {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      .screen-tabs {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      @media (max-width: 860px) {
+        .page {
+          padding: 10px;
+        }
+
+        .workspace {
+          grid-template-columns: 1fr;
+        }
+
+        .phone {
+          margin: 0 auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="workspace">
+        <div class="phone">
+          <div class="app" id="app"></div>
+          <div class="sheet-backdrop" id="sheet"></div>
+        </div>
+        <aside class="notes">
+          <section class="notes-card">
+            <h1>Cuemaster V2 Wireframe</h1>
+            <p>
+              Pass four: compact role rehearsal plus a Whole Play lyrics-style script view with a slim always-on
+              status readout, auto-scroll, clickable lines, and clickable blocking notes.
+            </p>
+            <div class="screen-tabs" aria-label="Mockup screens">
+              <button class="button active" data-screen="library">Library</button>
+              <button class="button" data-screen="setup">Setup</button>
+              <button class="button" data-screen="rehearsal">Rehearsal</button>
+              <button class="button" data-screen="play">Whole Play</button>
+            </div>
+          </section>
+          <section class="notes-card">
+            <h2>Use Cases To Vet</h2>
+            <ul>
+              <li>Does Hear Line solve the reminder case without bringing back a second Play button?</li>
+              <li>Are five compact transport icons clear enough?</li>
+              <li>Does the browse/search icon communicate navigation better than the hamburger?</li>
+              <li>Does Whole Play now preserve the old Play page use case?</li>
+              <li>Should tempo timing be hidden entirely on iOS?</li>
+            </ul>
+          </section>
+          <section class="notes-card">
+            <h2>Current State</h2>
+            <p id="debug-state"></p>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <script>
+      const lines = [
+        {
+          id: "P-3",
+          scene: "Scene 1",
+          cueSpeaker: "CHRISTINE",
+          cue: "Do you mind if I record?",
+          role: "LILLIAN",
+          response: "Please do.",
+          blocking: "@ interview_chair face=CHRISTINE",
+          responseDurationMs: 1600
+        },
+        {
+          id: "P-4",
+          scene: "Scene 1",
+          cueSpeaker: "CHRISTINE",
+          cue: "I have a dozen such drawings, you know. Though this one is my favourite.",
+          role: "LILLIAN",
+          response: "I wish I could have spoken to her, too. Heard her side of things.",
+          blocking: "move guest_chair -> C face=LILLIAN",
+          responseDurationMs: 4200
+        },
+        {
+          id: "P-5",
+          scene: "Scene 2",
+          cueSpeaker: "CHRISTINE",
+          cue: "You may still learn more than you expect.",
+          role: "LILLIAN",
+          response: "Then I suppose I should listen carefully.",
+          blocking: "",
+          responseDurationMs: 2800
+        }
+      ];
+
+      const playLines = [
+        {
+          id: "P-1",
+          speaker: "NARRATOR",
+          text: "The parlor is quiet except for the scrape of a chair.",
+          blocking: ""
+        },
+        {
+          id: "P-2",
+          speaker: "CHRISTINE",
+          text: "I have never liked beginning at the beginning.",
+          blocking: "@ interview_chair face=LILLIAN"
+        },
+        {
+          id: "P-3",
+          speaker: "LILLIAN",
+          text: "Please do.",
+          blocking: "@ interview_chair face=CHRISTINE"
+        },
+        {
+          id: "P-4",
+          speaker: "LILLIAN",
+          text: "I wish I could have spoken to her, too. Heard her side of things.",
+          blocking: "move guest_chair -> C face=LILLIAN"
+        },
+        {
+          id: "P-5",
+          speaker: "CHRISTINE",
+          text: "Then we should begin with what she left behind.",
+          blocking: ""
+        },
+        {
+          id: "P-6",
+          speaker: "NARRATOR",
+          text: "Christine sets the drawing on the table between them.",
+          blocking: "prop drawing -> table"
+        }
+      ];
+
+      const flowLabels = {
+        manual: "Manual",
+        listen: "Listen",
+        try: "Try",
+        try_then_check: "Try + Hear Line"
+      };
+
+      const flowDescriptions = {
+        manual: "Cue, then wait for me.",
+        listen: "Cue and line continuously.",
+        try: "Cue, then give me time.",
+        try_then_check: "Cue, wait, then play the line."
+      };
+
+      const state = {
+        screen: "rehearsal",
+        flow: "manual",
+        lineIndex: 0,
+        playIndex: 0,
+        linePace: 1,
+        cueLength: "Full cue",
+        playing: false,
+        status: "Waiting for you",
+        detail: "Press Play to hear the cue.",
+        progress: 0,
+        showLine: false,
+        showBlocking: true,
+        includeDirections: true,
+        includeCallouts: true,
+        platform: "ios",
+        timer: null
+      };
+
+      const app = document.getElementById("app");
+      const sheet = document.getElementById("sheet");
+      const debugState = document.getElementById("debug-state");
+
+      const icons = {
+        browse: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h9M4 11h8M4 16h6"/><circle cx="16.5" cy="15.5" r="3.5"/><path d="m19 18 2.5 2.5"/></svg>',
+        settings: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8.2a3.8 3.8 0 1 0 0 7.6 3.8 3.8 0 0 0 0-7.6Z"/><path d="M19.4 15a1.8 1.8 0 0 0 .36 1.98l.04.04-2.2 2.2-.04-.04a1.8 1.8 0 0 0-1.98-.36 1.8 1.8 0 0 0-1.1 1.66V20.5h-3.1v-.02a1.8 1.8 0 0 0-1.1-1.66 1.8 1.8 0 0 0-1.98.36l-.04.04-2.2-2.2.04-.04A1.8 1.8 0 0 0 4.6 15a1.8 1.8 0 0 0-1.66-1.1H2.9v-3.1h.04A1.8 1.8 0 0 0 4.6 9.7a1.8 1.8 0 0 0-.36-1.98L4.2 7.68l2.2-2.2.04.04a1.8 1.8 0 0 0 1.98.36 1.8 1.8 0 0 0 1.1-1.66V4.2h3.1v.02a1.8 1.8 0 0 0 1.1 1.66 1.8 1.8 0 0 0 1.98-.36l.04-.04 2.2 2.2-.04.04a1.8 1.8 0 0 0-.36 1.98 1.8 1.8 0 0 0 1.66 1.1h.04v3.1h-.04A1.8 1.8 0 0 0 19.4 15Z"/></svg>',
+        previous: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 20 9 12l10-8v16Z"/><path d="M5 19V5"/></svg>',
+        next: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 4 10 8-10 8V4Z"/><path d="M19 5v14"/></svg>',
+        play: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M7 4.8v14.4c0 .8.9 1.3 1.6.8l10.9-7.2c.6-.4.6-1.3 0-1.7L8.6 4C7.9 3.5 7 4 7 4.8Z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M7 5h3.5v14H7V5Zm6.5 0H17v14h-3.5V5Z"/></svg>',
+        repeat: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a8 8 0 0 1 13.6-5.7L19 8.7"/><path d="M19 4v4.7h-4.7"/><path d="M21 12a8 8 0 0 1-13.6 5.7L5 15.3"/><path d="M5 20v-4.7h4.7"/></svg>',
+        hear: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 10a6 6 0 1 1 11.6 2.1c-.5 1.3-1.5 2.2-2.5 3.1-.8.8-1.2 1.3-1.2 2.3 0 1.5-1.2 2.8-2.8 2.8A2.8 2.8 0 0 1 8.3 18"/><path d="M10 10a2 2 0 1 1 4 0c0 .9-.4 1.4-1 1.9-.6.6-1 1-1 2.1"/></svg>',
+        search: '<svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 5 5"/></svg>'
+      };
+
+      document.querySelectorAll("[data-screen]").forEach((button) => {
+        button.addEventListener("click", () => {
+          stopFlow("Waiting for you", "Screen changed.");
+          state.screen = button.dataset.screen;
+          document.querySelectorAll("[data-screen]").forEach((candidate) => candidate.classList.remove("active"));
+          button.classList.add("active");
+          render();
+        });
+      });
+
+      function currentLine() {
+        return lines[state.lineIndex];
+      }
+
+      function currentPlayLine() {
+        return playLines[state.playIndex];
+      }
+
+      function render() {
+        const isLibrary = state.screen === "library";
+        const position = state.screen === "play" ? currentPlayLine().id : currentLine().id;
+        app.innerHTML = `
+          <header class="topbar">
+            <button class="icon-button" type="button" data-open-nav="true" aria-label="Open navigation and search" title="Browse lines">${icons.browse}</button>
+            <div class="title-block">
+              <p class="play-title">The Curious Case of the Cotti...</p>
+              <p class="subtitle">${subtitle()}</p>
+            </div>
+            <div class="position-pill">${isLibrary ? "PWA" : position}</div>
+            <button class="icon-button" type="button" data-open-options="true" aria-label="Open options" title="Options">${icons.settings}</button>
+          </header>
+          <div class="content">${renderScreen()}</div>
+        `;
+        debugState.textContent =
+          `Screen: ${state.screen}; Flow: ${flowLabels[state.flow]}; Line: ${currentLine().id}; Status: ${state.status}`;
+        bindAppEvents();
+        scrollCurrentScriptLine();
+      }
+
+      function subtitle() {
+        if (state.screen === "library") {
+          return "Library";
+        }
+        if (state.screen === "setup") {
+          return "Role setup";
+        }
+        if (state.screen === "play") {
+          return "Whole Play";
+        }
+        return `LILLIAN · ${flowLabels[state.flow]}`;
+      }
+
+      function renderScreen() {
+        if (state.screen === "library") {
+          return renderLibrary();
+        }
+        if (state.screen === "setup") {
+          return renderSetup();
+        }
+        if (state.screen === "play") {
+          return renderWholePlay();
+        }
+        return renderRehearsal();
+      }
+
+      function renderLibrary() {
+        return `
+          <section class="card library-card">
+            <h2>Local Playbooks</h2>
+            <p>Installed playbooks are available offline after import.</p>
+            <button class="button primary">Import Playbook Zip</button>
+          </section>
+          <section class="card library-card">
+            <h2>The Curious Case...</h2>
+            <p>LILLIAN, CHRISTINE, NARRATOR. Updated today. Stored locally.</p>
+            <div class="row">
+              <button class="button primary" data-go="setup">Practice Role</button>
+              <button class="button" data-go="play">Listen to Play</button>
+              <button class="button ghost">Details</button>
+            </div>
+          </section>
+          <section class="card library-card">
+            <h2>Fairies</h2>
+            <p>Playbook has blocking diagrams. Stored locally.</p>
+            <div class="row">
+              <button class="button" data-go="setup">Practice Role</button>
+              <button class="button ghost">Remove</button>
+            </div>
+          </section>
+        `;
+      }
+
+      function renderSetup() {
+        return `
+          <div class="setup-grid">
+            <section class="card setup-card">
+              <h2>Choose Role</h2>
+              <div class="role-list">
+                <button class="button role-choice active"><strong>LILLIAN</strong><span>19 lines, last practiced P-3</span></button>
+                <button class="button role-choice"><strong>CHRISTINE</strong><span>22 lines</span></button>
+                <button class="button role-choice"><strong>NARRATOR</strong><span>Reference only</span></button>
+              </div>
+            </section>
+            <section class="card setup-card">
+              <h2>Practice Flow</h2>
+              <div class="segmented">${flowButtons()}</div>
+            </section>
+            <section class="card setup-card">
+              <h2>Start</h2>
+              <p>Resume at ${currentLine().id}. Line pace ${state.linePace.toFixed(1)}x. Cue length ${state.cueLength}.</p>
+              <div class="row">
+                <button class="button primary" data-go="rehearsal">Start Practice</button>
+                <button class="button ghost" data-open-options="true">Options</button>
+              </div>
+            </section>
+          </div>
+        `;
+      }
+
+      function renderRehearsal() {
+        const line = currentLine();
+        return `
+          <section class="rehearsal">
+            <div class="rehearsal-main">
+              <div class="mode-summary">
+                <span>${flowLabels[state.flow]}</span>
+                <span>${state.linePace.toFixed(1)}x line pace</span>
+              </div>
+              <article class="card cue-card">
+                <h2>Cue: ${line.cueSpeaker}</h2>
+                <div class="cue-text">${line.cue}</div>
+              </article>
+              <article class="card line-card">
+                <h2>${line.role}</h2>
+                ${state.showLine ? `<div class="line-text">${line.response}</div>` : `<div class="hidden-line">Line hidden</div>`}
+                ${state.showBlocking && line.blocking ? `<button class="blocking-note" data-open-blocking="true">${line.blocking}</button>` : ""}
+              </article>
+              ${renderStatusPanel("rehearsal")}
+            </div>
+            ${renderTransport("rehearsal")}
+          </section>
+        `;
+      }
+
+      function renderWholePlay() {
+        return `
+          <section class="whole-play">
+            <div class="play-main">
+              <div class="mode-summary">
+                <span>Whole Play</span>
+                <span>Autoscroll script</span>
+              </div>
+              <div class="script-scroll" id="script-scroll" aria-label="Whole play script">
+                ${playLines.map((line, index) => `
+                  <button class="script-line ${state.playIndex === index ? "current" : ""}" data-script-line="${index}" type="button">
+                    <strong>${line.id} · ${line.speaker}</strong>
+                    <span>${line.text}</span>
+                    ${state.showBlocking && line.blocking ? `<span class="script-blocking" data-script-blocking="${index}">${line.blocking}</span>` : ""}
+                  </button>
+                `).join("")}
+              </div>
+              ${renderStatusPanel("play")}
+            </div>
+            ${renderTransport("play")}
+          </section>
+        `;
+      }
+
+      function renderStatusPanel(mode) {
+        const status = statusForMode(mode);
+        return `
+          <section class="status-panel" aria-live="polite">
+            <div class="status-line">
+              <span class="status-primary">${status.label}</span>
+              <span class="status-detail">${status.detail}</span>
+            </div>
+            <div class="progress"><span style="--progress: ${state.progress}%"></span></div>
+          </section>
+        `;
+      }
+
+      function statusForMode(mode) {
+        if (mode === "play") {
+          const line = currentPlayLine();
+          if (state.status === "Whole Play complete") {
+            return { label: "Complete", detail: state.detail };
+          }
+          if (state.status === "Paused") {
+            return { label: "Paused", detail: `${line.id} · tap Play` };
+          }
+          if (state.playing || state.status === "Playing whole play") {
+            return { label: "Playing", detail: `${line.id} · ${line.speaker}` };
+          }
+          if (state.status === "Playing again") {
+            return { label: "Repeating", detail: `${line.id} · ${line.speaker}` };
+          }
+          return { label: "Ready", detail: `${line.id} · ${line.speaker}` };
+        }
+
+        if (state.status === "Waiting for you") {
+          if (state.detail.startsWith("Say the line")) {
+            return { label: "Your turn", detail: "Line or Next when ready" };
+          }
+          return { label: readyStatusForFlow(), detail: `${currentLine().id} · ${flowLabels[state.flow]}` };
+        }
+
+        return { label: state.status, detail: state.detail };
+      }
+
+      function readyStatusForFlow() {
+        if (state.flow === "listen") {
+          return "Ready to listen";
+        }
+        if (state.flow === "try") {
+          return "Ready to try";
+        }
+        if (state.flow === "try_then_check") {
+          return "Ready to try + hear";
+        }
+        return "Ready for cue";
+      }
+
+      function renderTransport(mode) {
+        const primaryIcon = state.playing ? icons.pause : icons.play;
+        const primaryLabel = state.playing ? "Pause" : "Play";
+        const hearDisabled = mode === "play" ? "disabled" : "";
+        return `
+          <nav class="transport" aria-label="${mode === "play" ? "Whole play controls" : "Rehearsal controls"}">
+            <div class="transport-grid">
+              <button class="transport-button" data-command="${mode === "play" ? "play-back" : "back"}" aria-label="Previous" title="Previous">${icons.previous}<span>Prev</span></button>
+              <button class="transport-button" data-command="repeat" aria-label="Repeat cue" title="Repeat cue">${icons.repeat}<span>Repeat</span></button>
+              <button class="transport-button primary" data-command="play" aria-label="${primaryLabel}" title="${primaryLabel}">${primaryIcon}<span>${primaryLabel}</span></button>
+              <button class="transport-button" data-command="hear-line" aria-label="Hear line" title="Hear line" ${hearDisabled}>${icons.hear}<span>Line</span></button>
+              <button class="transport-button" data-command="${mode === "play" ? "play-next" : "next"}" aria-label="Next" title="Next">${icons.next}<span>Next</span></button>
+            </div>
+          </nav>
+        `;
+      }
+
+      function scrollCurrentScriptLine() {
+        if (state.screen !== "play") {
+          return;
+        }
+        window.requestAnimationFrame(() => {
+          const current = app.querySelector(".script-line.current");
+          if (current) {
+            current.scrollIntoView({ block: "center" });
+          }
+        });
+      }
+
+      function flowButtons() {
+        return Object.entries(flowLabels).map(([value, label]) => `
+          <button class="button flow-choice ${state.flow === value ? "active" : ""}" data-flow="${value}">
+            <strong>${label}</strong>
+            <span>${flowDescriptions[value]}</span>
+          </button>
+        `).join("");
+      }
+
+      function bindAppEvents() {
+        app.querySelectorAll("[data-go]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.screen = button.dataset.go;
+            stopFlow("Waiting for you", "Screen changed.");
+            render();
+          });
+        });
+        app.querySelectorAll("[data-flow]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.flow = button.dataset.flow;
+            stopFlow("Waiting for you", "Flow changed.");
+            render();
+          });
+        });
+        app.querySelectorAll("[data-command]").forEach((button) => {
+          button.addEventListener("click", () => runCommand(button.dataset.command));
+        });
+        app.querySelectorAll("[data-open-options]").forEach((button) => {
+          button.addEventListener("click", openOptions);
+        });
+        app.querySelectorAll("[data-open-nav]").forEach((button) => {
+          button.addEventListener("click", openNavigation);
+        });
+        app.querySelectorAll("[data-open-blocking]").forEach((button) => {
+          button.addEventListener("click", openBlocking);
+        });
+        app.querySelectorAll("[data-script-line]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.playIndex = Number(button.dataset.scriptLine);
+            stopFlow("Whole Play", "Jumped to script line.");
+            render();
+          });
+        });
+        app.querySelectorAll("[data-script-blocking]").forEach((button) => {
+          button.addEventListener("click", (event) => {
+            event.stopPropagation();
+            state.playIndex = Number(button.dataset.scriptBlocking);
+            openBlocking();
+          });
+        });
+      }
+
+      function runCommand(command) {
+        if (command === "play") {
+          if (state.playing) {
+            stopFlow("Paused", "Tap Play to continue.");
+          } else {
+            startFlow();
+          }
+          render();
+          return;
+        }
+        if (command === "next") {
+          moveLine(1);
+          return;
+        }
+        if (command === "back") {
+          moveLine(-1);
+          return;
+        }
+        if (command === "play-next") {
+          movePlayLine(1);
+          return;
+        }
+        if (command === "play-back") {
+          movePlayLine(-1);
+          return;
+        }
+        if (command === "repeat") {
+          stopFlow("Playing again", state.screen === "play" ? "Repeat current passage." : "Repeat cue.");
+          state.progress = 35;
+          render();
+          return;
+        }
+        if (command === "hear-line") {
+          stopFlow("Playing line", `${state.linePace.toFixed(1)}x line pace`);
+          state.showLine = true;
+          state.progress = 70;
+          render();
+        }
+      }
+
+      function moveLine(delta) {
+        stopFlow("Waiting for you", "Line changed.");
+        state.lineIndex = Math.max(0, Math.min(lines.length - 1, state.lineIndex + delta));
+        state.progress = 0;
+        render();
+      }
+
+      function movePlayLine(delta) {
+        stopFlow("Whole Play", "Passage changed.");
+        state.playIndex = Math.max(0, Math.min(playLines.length - 1, state.playIndex + delta));
+        state.progress = 0;
+        render();
+      }
+
+      function startFlow() {
+        clearTimer();
+        state.playing = true;
+        if (state.screen === "play") {
+          runWholePlayStep();
+          return;
+        }
+        runStepSequence(stepsForFlow(), 0);
+      }
+
+      function runWholePlayStep() {
+        if (!state.playing) {
+          return;
+        }
+        state.status = "Playing whole play";
+        state.detail = currentPlayLine().speaker;
+        state.progress = 60;
+        render();
+        state.timer = window.setTimeout(() => {
+          if (state.playIndex < playLines.length - 1) {
+            state.playIndex += 1;
+            runWholePlayStep();
+          } else {
+            stopFlow("Whole Play complete", "End of available passages.");
+            render();
+          }
+        }, 1500);
+      }
+
+      function stepsForFlow() {
+        if (state.flow === "manual") {
+          return ["cue", "wait"];
+        }
+        if (state.flow === "listen") {
+          return ["cue", "reference", "advance"];
+        }
+        if (state.flow === "try") {
+          return ["cue", "silent", "advance"];
+        }
+        return ["cue", "silent", "reference", "advance"];
+      }
+
+      function runStepSequence(steps, index) {
+        if (!state.playing) {
+          return;
+        }
+        const step = steps[index];
+        if (!step) {
+          stopFlow("Waiting for you", "Flow complete.");
+          render();
+          return;
+        }
+        if (step === "cue") {
+          state.status = "Playing cue";
+          state.detail = currentLine().cueSpeaker;
+          state.progress = 25;
+        } else if (step === "wait") {
+          state.playing = false;
+          state.status = "Waiting for you";
+          state.detail = "Say the line, then use Line or Next.";
+          state.progress = 0;
+          render();
+          return;
+        } else if (step === "silent") {
+          const seconds = Math.max(1, Math.round((currentLine().responseDurationMs / state.linePace + 750) / 1000));
+          state.status = "Speak now";
+          state.detail = `${seconds}s window`;
+          state.progress = 55;
+        } else if (step === "reference") {
+          state.status = "Playing line";
+          state.detail = `${state.linePace.toFixed(1)}x line pace`;
+          state.showLine = true;
+          state.progress = 78;
+        } else if (step === "advance") {
+          if (state.lineIndex < lines.length - 1) {
+            state.lineIndex += 1;
+            state.status = "Next cue";
+            state.detail = currentLine().id;
+            state.progress = 5;
+            render();
+            state.timer = window.setTimeout(() => runStepSequence(stepsForFlow(), 0), 650);
+            return;
+          }
+          stopFlow("Role complete", "End of role.");
+          render();
+          return;
+        }
+        render();
+        state.timer = window.setTimeout(() => runStepSequence(steps, index + 1), step === "silent" ? 1500 : 1100);
+      }
+
+      function stopFlow(status, detail) {
+        clearTimer();
+        state.playing = false;
+        state.status = status;
+        state.detail = detail;
+        if (status === "Paused") {
+          state.progress = Math.max(state.progress, 20);
+        }
+      }
+
+      function clearTimer() {
+        if (state.timer !== null) {
+          window.clearTimeout(state.timer);
+          state.timer = null;
+        }
+      }
+
+      function openOptions() {
+        sheet.classList.add("open");
+        sheet.innerHTML = `
+          <section class="sheet" role="dialog" aria-label="Practice options">
+            <div class="sheet-header">
+              <h2>Options</h2>
+              <button class="button ghost" data-close-sheet="true">Close</button>
+            </div>
+            <div class="option-group">
+              <h3>Practice Flow</h3>
+              <div class="segmented">${flowButtons()}</div>
+            </div>
+            <div class="option-group">
+              <h3>Line pace</h3>
+              <div class="pace-row">
+                ${[0.8, 0.9, 1.0, 1.1, 1.2].map((pace) => `
+                  <button class="button ${state.linePace === pace ? "active" : ""}" data-pace="${pace}">${pace.toFixed(1)}x</button>
+                `).join("")}
+              </div>
+            </div>
+            <div class="option-group">
+              <h3>Cue length</h3>
+              <div class="row">
+                ${["Full cue", "Last 10s", "Last line"].map((label) => `
+                  <button class="button ${state.cueLength === label ? "active" : ""}" data-cue-length="${label}">${label}</button>
+                `).join("")}
+              </div>
+            </div>
+            <div class="option-group">
+              <h3>Display and content</h3>
+              <div class="check-row">
+                <label>
+                  <input type="checkbox" ${state.showLine ? "checked" : ""} data-toggle-option="showLine" />
+                  <span><strong>Show my lines by default</strong><span>Reveals role text while practicing.</span></span>
+                </label>
+                <label>
+                  <input type="checkbox" ${state.showBlocking ? "checked" : ""} data-toggle-option="showBlocking" />
+                  <span><strong>Show blocking notes and diagrams</strong><span>When enabled, blocking appears inline on cue or line cards when present.</span></span>
+                </label>
+                <label>
+                  <input type="checkbox" ${state.includeDirections ? "checked" : ""} data-toggle-option="includeDirections" />
+                  <span><strong>Include stage directions</strong><span>Uses direction audio/text when it belongs in the cue.</span></span>
+                </label>
+                <label>
+                  <input type="checkbox" ${state.includeCallouts ? "checked" : ""} data-toggle-option="includeCallouts" />
+                  <span><strong>Use cue callouts</strong><span>Speaks who your cue is coming from when available.</span></span>
+                </label>
+              </div>
+            </div>
+            <div class="option-group">
+              <h3>Advanced</h3>
+              <p>${state.platform === "ios" ? "Tempo timing is hidden on iOS in this mockup because microphone setup may disrupt playback volume." : "Tempo timing setup would appear here on supported devices."}</p>
+            </div>
+          </section>
+        `;
+        bindSheetEvents();
+      }
+
+      function openNavigation() {
+        sheet.classList.add("open");
+        sheet.innerHTML = `
+          <section class="sheet" role="dialog" aria-label="Navigation and search">
+            <div class="sheet-header">
+              <h2>Navigate</h2>
+              <button class="button ghost" data-close-sheet="true">Close</button>
+            </div>
+            <input class="search-box" type="search" placeholder="Search scenes, cues, lines, or IDs" aria-label="Search" />
+            <div class="option-group">
+              <h3>Current role</h3>
+              <div class="nav-list">
+                ${lines.map((line, index) => `
+                  <button class="button nav-item ${state.lineIndex === index ? "active" : ""}" data-jump-line="${index}">
+                    <strong>${line.id} · ${line.scene}</strong><br />
+                    ${line.cueSpeaker}: ${line.cue}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+            <div class="option-group">
+              <h3>Whole play</h3>
+              <div class="nav-list">
+                ${playLines.map((line, index) => `
+                  <button class="button nav-item ${state.playIndex === index ? "active" : ""}" data-jump-play="${index}">
+                    <strong>${line.id} · ${line.speaker}</strong><br />
+                    ${line.text}
+                  </button>
+                `).join("")}
+              </div>
+            </div>
+          </section>
+        `;
+        bindSheetEvents();
+      }
+
+      function openBlocking() {
+        if (!state.showBlocking) {
+          return;
+        }
+        sheet.classList.add("open");
+        sheet.innerHTML = `
+          <section class="sheet" role="dialog" aria-label="Blocking diagram">
+            <div class="sheet-header">
+              <h2>${currentLine().id}</h2>
+              <div class="row">
+                <button class="button ghost">Prev</button>
+                <button class="button ghost">Next</button>
+                <button class="button primary" data-close-sheet="true">Close</button>
+              </div>
+            </div>
+            <p>${blockingTextForCurrentContext()}</p>
+            <div class="diagram" aria-label="Stage diagram wireframe">
+              <svg viewBox="0 0 320 430" role="img" aria-labelledby="diagram-title">
+                <title id="diagram-title">Blocking diagram wireframe</title>
+                <rect x="30" y="28" width="260" height="360" rx="18" fill="#f8fbf8" stroke="#8c9187" />
+                <line x1="30" y1="148" x2="290" y2="148" stroke="#d5dcd1" />
+                <line x1="30" y1="268" x2="290" y2="268" stroke="#d5dcd1" />
+                <line x1="116" y1="28" x2="116" y2="388" stroke="#d5dcd1" />
+                <line x1="204" y1="28" x2="204" y2="388" stroke="#d5dcd1" />
+                <text x="42" y="52" font-size="12" font-weight="700" fill="#687660">UL</text>
+                <text x="138" y="52" font-size="12" font-weight="700" fill="#687660">CL</text>
+                <text x="234" y="52" font-size="12" font-weight="700" fill="#687660">DL</text>
+                <rect x="132" y="178" width="58" height="76" rx="5" fill="#e8e4d7" stroke="#74786f" stroke-width="2" />
+                <circle cx="228" cy="94" r="20" fill="#f1f7ff" stroke="#555b54" stroke-width="2" />
+                <text x="219" y="101" font-size="14" font-weight="900" fill="#111">CH</text>
+                <circle cx="224" cy="320" r="20" fill="#f1f7ff" stroke="#555b54" stroke-width="2" />
+                <text x="217" y="327" font-size="14" font-weight="900" fill="#111">LI</text>
+                <path d="M220 300 l-24 -24" stroke="#9aa19a" stroke-width="2" stroke-dasharray="4 4" fill="none" />
+              </svg>
+            </div>
+          </section>
+        `;
+        bindSheetEvents();
+      }
+
+      function blockingTextForCurrentContext() {
+        if (state.screen === "play") {
+          return currentPlayLine().blocking || "No blocking note for this passage.";
+        }
+        return currentLine().blocking || "No blocking note for this line.";
+      }
+
+      function bindSheetEvents() {
+        sheet.querySelectorAll("[data-close-sheet]").forEach((button) => {
+          button.addEventListener("click", closeSheet);
+        });
+        sheet.querySelectorAll("[data-flow]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.flow = button.dataset.flow;
+            stopFlow("Waiting for you", "Flow changed.");
+            openOptions();
+            render();
+          });
+        });
+        sheet.querySelectorAll("[data-pace]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.linePace = Number(button.dataset.pace);
+            openOptions();
+            render();
+          });
+        });
+        sheet.querySelectorAll("[data-cue-length]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.cueLength = button.dataset.cueLength;
+            openOptions();
+            render();
+          });
+        });
+        sheet.querySelectorAll("[data-toggle-option]").forEach((input) => {
+          input.addEventListener("change", () => {
+            state[input.dataset.toggleOption] = input.checked;
+            openOptions();
+            render();
+          });
+        });
+        sheet.querySelectorAll("[data-jump-line]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.lineIndex = Number(button.dataset.jumpLine);
+            state.screen = "rehearsal";
+            stopFlow("Waiting for you", "Jumped to line.");
+            closeSheet();
+            render();
+          });
+        });
+        sheet.querySelectorAll("[data-jump-play]").forEach((button) => {
+          button.addEventListener("click", () => {
+            state.playIndex = Number(button.dataset.jumpPlay);
+            state.screen = "play";
+            stopFlow("Whole Play", "Jumped to passage.");
+            closeSheet();
+            render();
+          });
+        });
+        sheet.addEventListener("click", (event) => {
+          if (event.target === sheet) {
+            closeSheet();
+          }
+        });
+      }
+
+      function closeSheet() {
+        sheet.classList.remove("open");
+        sheet.innerHTML = "";
+      }
+
+      render();
+    </script>
+  </body>
+</html>

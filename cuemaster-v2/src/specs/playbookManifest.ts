@@ -1,0 +1,137 @@
+export type PlaybookManifest = {
+  schema_version: 1;
+  format_version: string;
+  package_type: "playbook";
+  production: {
+    source: "published" | "working";
+    version?: string;
+    sequence?: number;
+    publication_id?: string;
+    parent_version?: string;
+    published_at?: string;
+    change_summary?: string;
+    blocking_changes?: string[];
+  };
+  build: {
+    buildId: string;
+    buildTimestamp: string;
+  };
+  play: {
+    id: string;
+    title: string;
+    authors: string[];
+    source?: string;
+  };
+  reading: {
+    type: string;
+    build_type: string;
+  };
+  sections: ManifestSection[];
+  staging?: ManifestStaging;
+  context: ManifestContextBlock[];
+  roles: ManifestRole[];
+  assets: ManifestAudioAsset[];
+};
+
+export type ManifestStaging = {
+  included: true;
+  format: "quince.blocking.diagram_bundle";
+  format_version: string;
+  manifest_path: string;
+};
+
+export type ManifestAudioAsset = {
+  path: string;
+  duration_ms: number;
+  required: boolean;
+  cue_start_offsets?: ManifestCueStartOffset[];
+};
+
+export type ManifestCueStartOffset = {
+  requested_window_ms: number;
+  start_ms: number;
+  confidence: "exact" | "boundary" | "fallback";
+};
+
+export type ManifestSection = {
+  id: string;
+  part_id: number | null;
+  block_id: string | null;
+  title: string;
+  ordinal: number;
+};
+
+export type ManifestContextBlock = {
+  id: string;
+  part_id: number | null;
+  block_id: string;
+  kind: "heading" | "description" | "direction" | "blocking";
+  speaker: string;
+  text: string;
+  audio?: ManifestAudioAsset;
+  content_hash: string;
+  targets?: string[];
+  placement?: "before" | "after";
+};
+
+export type ManifestRole = {
+  id: string;
+  display_name?: string | null;
+  name?: string | null;
+  reader?: string | null;
+  meta?: boolean;
+  parts?: Array<number | null>;
+  lines: ManifestLine[];
+};
+
+export type ManifestLine = {
+  id: string;
+  part_id: number | null;
+  block_id: string;
+  role: string;
+  speaker: string;
+  content_hash: string;
+  cue: {
+    speaker: string;
+    text: string;
+    audio: ManifestAudioAsset;
+  };
+  response: {
+    text: string;
+    segments: ManifestResponseSegment[];
+  };
+  directions: ManifestDirection[];
+  blocking?: ManifestBlockingNote[];
+  previous_roles: string[];
+  simultaneous?: boolean;
+  timing?: {
+    target_hesitation_ms?: number;
+  };
+};
+
+export type ManifestResponseSegment = {
+  id: string;
+  segment_id: string;
+  content_hash: string;
+  owners: string[];
+  text: string;
+  audio: ManifestAudioAsset;
+  simultaneous?: boolean;
+};
+
+export type ManifestDirection = {
+  id: string;
+  segment_id: string;
+  content_hash: string;
+  text: string;
+  placement: "top_level" | "inline" | "description";
+};
+
+export type ManifestBlockingNote = {
+  id: string;
+  segment_id?: string;
+  content_hash: string;
+  targets: string[];
+  text: string;
+  placement: "top_level" | "inline" | "description";
+};
