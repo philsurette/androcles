@@ -157,7 +157,7 @@ The spike must use only license-approved dependencies. The previously considered
 | Zip execution model | Web Worker | Required | Prevents large Playbook imports from freezing the UI. |
 | Browser storage | IndexedDB | Required | Suitable for manifests and large extracted Playbook assets. |
 | Browser file import | Browser File API | Approved | Standard `.zip` file picker for Phase 1. |
-| Native wrapper | Capacitor | Approved pending audio spike | Preserves the web-first architecture. |
+| Native wrapper | Capacitor | Fallback only | Preserves the web-first architecture if PWA testing exposes a blocker. |
 | Native filesystem | `@capacitor/filesystem` | Approved pending Phase 2 spike | Stores unpacked Playbook assets on device. |
 | Native preferences | `@capacitor/preferences` | Approved pending Phase 2 spike | Stores small session/config values on device. |
 | Testing | Vitest + Playwright | Approved | Unit tests for domain logic; browser tests for app flows. |
@@ -485,6 +485,8 @@ Persist tempo attempts locally per Playbook, role, and line. Timing history is a
 
 ## Session Flow
 
+The simplified target direction for session behavior is tracked in [practice_flow_simplification_plan.md](practice_flow_simplification_plan.md). That plan replaces the current separate speak-along/autoadvance controls with one Practice Flow setting and one primary Play/Pause control. Until implemented, this section describes the older manual-first behavior.
+
 ### Standard Rehearsal Flow
 
 ```text
@@ -618,9 +620,9 @@ Rules:
 - Release object URLs when no longer needed.
 - Keep the interface narrow enough that a native implementation can replace it later.
 
-### Phase 2
+### Native Fallback
 
-The Phase 2 audio layer may remain `HTMLAudioElement` inside the WebView if the technical spike proves it works for background audio and media controls. If not, implement a native-backed audio adapter behind the same `AudioPlayer` interface.
+The native fallback audio layer may remain `HTMLAudioElement` inside the WebView if the technical spike proves it works for the failed capability. If not, implement a native-backed audio adapter behind the same `AudioPlayer` interface.
 
 Do not choose a native audio plugin until license and behavior are verified.
 
@@ -661,6 +663,7 @@ Implementation rules:
 - Audio must not be saved, uploaded, or transcribed.
 - Tempo timing must degrade gracefully when microphone permission is denied.
 - Echo cancellation should be enabled where available, but v1 avoids simultaneous reference playback and timing.
+- On iOS/iPadOS, microphone setup must be treated as an audio-session risk. Do not open the microphone during general app startup. Request microphone access from an explicit user action, initialize or resume microphone-analysis audio resources inside that flow, play a post-setup test cue, and disable or warn on tempo timing if playback volume becomes unusably quiet.
 
 ---
 
@@ -798,6 +801,8 @@ Actions:
 - Store timing attempts locally for line history and later drill modes.
 
 If microphone permission is denied, the app continues to function without tempo timing.
+
+On iOS/iPadOS, enabling the microphone can change the browser audio session and make playback very quiet or reroute output. Cuemaster should isolate that risk to the optional timing setup flow: normal rehearsal must not request the microphone, and timing setup must include a real playback-volume check before the feature is considered enabled.
 
 ### 4. Wake Word + Voice Commands
 

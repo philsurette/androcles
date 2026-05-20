@@ -155,7 +155,45 @@ Acceptance:
 - [ ] Offline failures are user-facing and actionable.
 - [ ] No Playbook audio fetch depends on network after import.
 
-## Phase 4: Storage Readiness And Recovery
+## Phase 4: Microphone And iOS Audio-Session Validation
+
+Purpose: prove that tempo timing can use the microphone without making playback unusably quiet, especially on iPhone/iPad Safari and installed iOS PWAs.
+
+iOS/WebKit has a known class of problems where opening the microphone with `getUserMedia()` can switch the page into a recording-style audio session. That can duck playback, route audio through a quieter speaker path, change Bluetooth behavior, or leave playback quiet even after the microphone track stops. Treat this as a release risk for tempo timing, not as a general blocker for Playbook rehearsal.
+
+Implementation checklist:
+
+- [ ] Do not request microphone permission during app startup, Playbook import, Library browsing, or normal rehearsal setup.
+- [ ] Request microphone access only when the user explicitly enables tempo timing or another microphone feature.
+- [ ] Add a platform adapter for microphone setup so iOS-specific sequencing stays out of React screens.
+- [ ] Lazy-create or resume any `AudioContext` used for voice activity detection after the user starts microphone setup.
+- [ ] Test whether creating/resuming the audio context after microphone permission improves iOS playback volume.
+- [ ] Test whether an explicit post-permission audio repair action from a user tap restores normal playback volume.
+- [ ] Test `getUserMedia` constraints such as `echoCancellation`, `noiseSuppression`, and `autoGainControl` on iOS and record whether they affect playback volume, input reliability, or feedback.
+- [ ] If supported by the target browser, test the WebKit `navigator.audioSession` type sequence as an optional iOS-only mitigation.
+- [ ] After microphone setup, play a test cue and ask the user to confirm that playback volume is acceptable before enabling tempo timing.
+- [ ] Stop microphone tracks when tempo timing is disabled or the user leaves the timing flow.
+- [ ] Add user-facing iPhone troubleshooting for quiet playback after microphone setup.
+
+Manual device matrix:
+
+- [ ] iPhone Safari, browser tab.
+- [ ] iPhone installed PWA from Home Screen.
+- [ ] iPad Safari, browser tab.
+- [ ] iPad installed PWA from Home Screen.
+- [ ] iPhone with built-in speaker.
+- [ ] iPhone with wired headphones if available.
+- [ ] iPhone with AirPods/Bluetooth headphones.
+- [ ] Chrome on iOS as a WebKit-based comparison, if target users are likely to try it.
+
+Acceptance:
+
+- [ ] Normal rehearsal playback remains loud before microphone permission is requested.
+- [ ] If tempo timing is enabled, cue and response playback remain usable after microphone setup on supported devices.
+- [ ] If iOS playback volume cannot be repaired reliably, tempo timing is disabled or clearly warned on affected iOS contexts while normal rehearsal remains available.
+- [ ] Any decision to resume native work for microphone timing identifies the exact iOS PWA failure and the native API expected to fix it.
+
+## Phase 5: Storage Readiness And Recovery
 
 Purpose: make local browser storage understandable and recoverable for non-technical actors.
 
@@ -176,7 +214,7 @@ Acceptance:
 - [ ] Storage failures explain what to do next.
 - [ ] Removing old Playbooks is visible and reliable.
 
-## Phase 5: App Updates
+## Phase 6: App Updates
 
 Purpose: avoid stale hosted app code confusing actors after the producer deploys a fix.
 
@@ -196,7 +234,7 @@ Acceptance:
 - [ ] Applying an app update does not delete imported Playbooks.
 - [ ] Users are not interrupted mid-cue by a forced reload.
 
-## Phase 6: Real-Device PWA Matrix
+## Phase 7: Real-Device PWA Matrix
 
 Purpose: decide from evidence whether PWA is sufficient or a native fallback is needed.
 
@@ -205,7 +243,9 @@ Checklist:
 - [ ] Test Android Chrome install, offline launch, import, storage persistence, playback, and update.
 - [ ] Test Android Firefox if it is part of the expected actor environment.
 - [ ] Test iPhone Safari Add to Home Screen, offline launch, import, storage persistence, playback, and update.
+- [ ] Test iPhone microphone setup and verify playback volume before and after `getUserMedia`.
 - [ ] Test iPad Safari if tablets are expected.
+- [ ] Test iPad microphone setup and verify playback volume before and after `getUserMedia`.
 - [ ] Test desktop Chrome or Edge install for laptop rehearsal.
 - [ ] Test macOS Safari Add to Dock if relevant.
 - [ ] Measure import time for small, medium, and current real Playbooks.
@@ -228,6 +268,7 @@ Resume the Capacitor/native plan only if one or more of these are proven on real
 - Foreground audio playback is unreliable for rehearsing.
 - Required background playback, lock-screen media controls, or hardware controls cannot be achieved acceptably as a PWA.
 - Microphone tempo timing cannot work reliably in the installed PWA.
+- iOS microphone setup makes playback volume unusably quiet and cannot be repaired or isolated to optional timing features.
 - iOS install/offline limitations are unacceptable for the target users.
 - Cloudflare-hosted PWA update behavior creates operational risk that cannot be fixed in the browser app.
 
@@ -250,7 +291,8 @@ Checklist:
 2. Service-worker app-shell caching.
 3. Install UX.
 4. Offline rehearsal validation.
-5. Storage readiness and recovery.
-6. App update flow.
-7. Real-device matrix.
-8. Native fallback decision, only if needed.
+5. Microphone and iOS audio-session validation.
+6. Storage readiness and recovery.
+7. App update flow.
+8. Real-device matrix.
+9. Native fallback decision, only if needed.

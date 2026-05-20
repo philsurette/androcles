@@ -33,6 +33,7 @@ Valid fallback triggers include:
 - Foreground audio playback is unreliable for rehearsing.
 - Required background playback, lock-screen media controls, or hardware controls cannot be achieved acceptably as a PWA.
 - Microphone tempo timing cannot work reliably in the installed PWA.
+- iOS microphone setup makes playback volume unusably quiet and cannot be repaired or isolated to optional timing features.
 - iOS install/offline limitations are unacceptable for target users.
 
 Checklist:
